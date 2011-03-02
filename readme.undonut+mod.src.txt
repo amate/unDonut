@@ -1,180 +1,180 @@
-��unDonut +mod.1.48 �� �\�[�X�ł��B
+■unDonut +mod.1.48 の ソースです。
 
 
-MS Visual Studio .net 2008 sp1(Standard) + WTL8.0 �ŊJ�����Ă��܂��B
-�ꉞ�Avs.net2003,2005 �ł�  �ŃR���p�C���ʂ�悤�ɂ��Ă����ł��B
-�i�������ǂ̒��x���v���͊m�F���Ă܂���j
+MS Visual Studio .net 2008 sp1(Standard) + WTL8.0 で開発しています。
+一応、vs.net2003,2005 でも  でコンパイル通るようにしてるつもりです。
+（しかしどの程度大丈夫かは確認してません）
 
-donut9.00.sln  vs.net 2008 �p (win32,win64 UNICODE��)
-donut8.00.sln  vs.net 2005 �p (win32,win64 ??)
-donut7.10.sln  vs.net 2003 �p (win32 �}���`�o�C�g��)
-�� 2003�p�� vcslncnv.vbs �ŕϊ��������̂ł����A2005,8�p�ɂ�x64�̐ݒ肪����A
-   ���ꂪ�c�����܂܂���vs2003���N�����Ȃ��̂ŏȂ������m�ɂ��Ă��܂��B
+donut9.00.sln  vs.net 2008 用 (win32,win64 UNICODE版)
+donut8.00.sln  vs.net 2005 用 (win32,win64 ??)
+donut7.10.sln  vs.net 2003 用 (win32 マルチバイト版)
+※ 2003用は vcslncnv.vbs で変換したものですが、2005,8用にはx64の設定があり、
+   これが残ったままだとvs2003が起動しないので省いたモノにしています。
 
-�I�v�V�����ݒ�́A�evcproj�ŋ��ʂłȂ��A
-�E2003  �}���`�o�C�g��
-�E2005  (�s��A�K�����)
-�E2008  UNICODE��
-�ɂȂ��Ă܂��B�ꉞ�A2003�ŃR���p�C���������̂Ȃ�win9x�n�ŋN������悤�ł��B
-(���ǁA2003�ŃR���p�C������Unicode�ł͕s���������?��)
+オプション設定は、各vcprojで共通でなく、
+・2003  マルチバイト版
+・2005  (不定、適当状態)
+・2008  UNICODE版
+になってます。一応、2003でコンパイルしたものならwin9x系で起動するようです。
+(けど、2003でコンパイルしたUnicode版は不具合があった?り)
 
-.vcproj�ɂ́A�R���p�C������atl�w�b�_���o�^���Ă���ꍇ������܂����A
-���R���ɂ���ăp�X�͈Ⴂ�܂��̂ŁAatl/���폜����Ȃ�Ȃ�Ȃ��
-�Ώ����Ă���Ă��������B
+.vcprojには、コンパイラ側のatlヘッダも登録している場合がありますが、
+当然環境によってパスは違いますので、atl/を削除するなりなんなりで
+対処してやってください。
 
-����(���\)�M���Ă��܂��Ă�̂ŁA�ʓ|������wtl8.0/include ���ꏏ��
-����Ă܂�. (CPL,MS-PL�Ȃ���v�������Ǝv���j
+多少(結構)弄ってしまってるので、面倒がってwtl8.0/include も一緒に
+いれてます. (CPL,MS-PLなら大丈夫そうだと思い）
 
 
-ATL7�ȏ�̋@�\���g���Ă��邽�߁Avc++ 200? express + platform sdk
-���ł́A�܂Ƃ��ɃR���p�C���ł��܂���B
+ATL7以上の機能が使われているため、vc++ 200? express + platform sdk
+環境では、まともにコンパイルできません。
 
-(�ꎞ���APlatform SDK�t���̕s���S�� ATL3 ��
+(一時期、Platform SDK付属の不完全な ATL3 に
 http://hpcgi2.nifty.com/tokd/index.cgi?HowToBuildDonutL
-�Ō��J����Ă���p�b�`�����Ă��łŁA�������R���p�C���͒ʂ�悤�ɂ�
-���Ă݂܂����B�Ƃ����Ă��R���p�C���̒ʂ�Ȃ��ӏ����R�����g�A�E�g����
-�Ώ����Ă��肷��̂ŁA�g���Ȃ��@�\����������A�o�O�����������Ԃł��B
-�EATL::CMutex���Ȃ��̂ŁA������g�����r�����䂪�@�\���Ă��܂���...�̂�
-�@dfg�̎����ۑ����Ńn���O���̕s�����������\��������܂��B
-�EAtlHostEx.h���ӂ��s�\���ȑΉ��̂��߁A�h���b�O���h���b�v�֌W(�����I�ɂ����
-  �p�������̂�)�̏����������Ƌ@�\���Ă��܂���B
-�ȂǂȂ�. 1.40���݁A���ł�atl3�Œʂ�Ȃ����������Ă���Ǝv���̂ŁA
-����Ȃ�蒼�����K�v�ł��傤�j
+で公開されているパッチをあてた版で、無理やりコンパイルは通るようには
+してみました。といってもコンパイルの通らない箇所をコメントアウトして
+対処してたりするので、使えない機能があったり、バグが発生する状態です。
+・ATL::CMutexがないので、それを使った排他制御が機能していません...ので
+　dfgの自動保存等でハング等の不具合が発生する可能性があります。
+・AtlHostEx.h周辺が不十分な対応のため、ドラッグ＆ドロップ関係(内部的にそれを
+  用いたものも)の処理がちゃんと機能していません。
+などなど. 1.40現在、すでにatl3で通らない処理をしていると思うので、
+するなら手直しが必要でしょう）
 
 
-�����\�[�X(undonut.rc, release.h)�́A��{�I�Ɏ�C����Ԃł��B
-�Ƃ���.rc���ł�#if���g���Ă��āAvs��ŕҏW����Ƃ���炪�����Ă��܂��܂�
-�̂ŁAvs�ō�Ƃ���Ƃ��͋C�����Ă��������B
+※リソース(undonut.rc, release.h)は、基本的に手修正状態です。
+とくに.rc中では#ifを使っていて、vs上で編集するとそれらが消えてしまいます
+ので、vsで作業するときは気をつけてください。
 
 
 
-���ݒ�⑫
+■設定補足
 
-stdafx.h ��#define ��`�Őݒ肷���`�ɂ���.
+stdafx.h の#define 定義で設定する定義について.
 
 USE_ORG_UNDONUT_INI
-�@�@������`����ƁAunDonut+ �ŕύX�̂����� unDonut.ini, search.ini,.url
-�@�@�Ɋi�[�����g���v���p�e�B���̏����A����unDonut�݊��œǂݏ�������
-�@�@�łɂ��܂��B
-�@�@�������Ƒ����ɔF�����Ă���� unDonut �݊��ɖ߂�����������܂��񂪁A
-�@�@������߂��ق�����Q�������Ȃ̂ŁA�����z�z�łŒ�`���邱�Ƃ͂Ȃ��ł�.
+　　これを定義すると、unDonut+ で変更のあった unDonut.ini, search.ini,.url
+　　に格納される拡張プロパティ等の情報を、元のunDonut互換で読み書きする
+　　版にします。
+　　※もっと早くに認識していれば unDonut 互換に戻せたかもしれませんが、
+　　今さら戻すほうが被害多そうなので、これを配布版で定義することはないです.
 
 USE_INNER_MANIFEST
-�@�@�����C/C++�R���p�C�������\�[�X�E�R���p�C���̃I�v�V�����Œ�`����ƁA
-�@�@manifest�t�@�C�����������悤�ɂȂ�܂��B���� 32�r�b�g�ł̏ꍇ
-�@�@unicode�t�@�C��������ƕs����ł邱�Ƃ�����悤�Ȃ̂ŁA
-�@�@�z�z�ł�64�r�b�g�ł̂ݓ������Ă��܂��B
+　　これをC/C++コンパイラ＆リソース・コンパイラのオプションで定義すると、
+　　manifestファイルを内臓するようになります。ただ 32ビット版の場合
+　　unicodeファイルがあると不具合がでることもあるようなので、
+　　配布では64ビット版のみ内臓しています。
 
 USE_DIET
-�@�@�����C/C++�R���p�C�������\�[�X�E�R���p�C���̃I�v�V�����Œ�`����ƁA
-�@�@���K�\�����about:�t�@�C�����A���̋@�\���폜���āA���s�t�@�C����
-�@�@����������exe�����܂��B
-�@�@1.41���_�ł̂������B
-�@�@���܂�T�C�Y����Ȃ�����ɒ��r���[�ɋ@�\�Ȃ��Ȃ�̂ł��ꂵ������܂���B
+　　これをC/C++コンパイラ＆リソース・コンパイラのオプションで定義すると、
+　　正規表現やらabout:ファイル名、やらの機能を削除して、実行ファイルが
+　　多少小さいexeを作れます。
+　　1.41時点でのお試し。
+　　あまりサイズ減らない割りに中途半端に機能なくなるのでうれしくありません。
 
 
-���\�[�X�͍D�݂ŃC���f���g�����`���Ȃ�������ignu indent �� Uncrustify
-+��C���j�A(���l�ɂ�)���Ӗ��Ɏ����\����ς����肵�Ă��܂�.
-�i�ߋ��\�[�X�Ɣ�r����ꍇ�s�ւ����G���o�O�̊댯������̂�(�Ƃ�����
-�@���ۂ�����܂����邵) �d������ւ���ɋ߂���Ƃł����A���`�x�[�V����
-�@�������킯�ɐG���Ă��܂��B�j
+■ソースは好みでインデント等整形しなおしたり（gnu indent や Uncrustify
++手修正）、(他人には)無意味に式文表現を変えたりしています.
+（過去ソースと比較する場合不便だしエンバグの危険もあるので(というか
+　実際やっちまったるし) 仕事じゃ禁じ手に近い作業ですが、モチベーション
+　をいいわけに触っています。）
 
-�@�\�[�X��r���������A���߂�Ȃ����B
+　ソース比較をされる方、ごめんなさい。
 
-���Ȃ�ׂ��������G�����Ƃ���� //+++ �� /*+++*/ ��t���Ă��܂��B
-���A�ꊇ�u��������A���ׂ�������A�Y��Ă��������̂�...
-
-
-
-�� 1.33
-unicode(api)�łֈڍs���܂����B
-��؂͂����ł������A��͂�A�ׁX�ƕs��͔������A
-�����ԃ}�V�ɂȂ�܂������A�܂��Ȃɂ����邩���ł��B
-
-UNICODE���̃����b�g�͈����镶���������邱�Ƃ�����ǁA�l�I�ɂ�
-���K�V�[�A�v���ۂ���������ă\�t�g(�\�[�X)�̎������������т��悤��
-�����ł��B�C�����̖��ł���
-
-.dfg .ini �t�@�C���̑���Ɏg���Ă��� win-api ���t�@�C���ɏ����o���i��
-sjis�ɂ��Ă����̂Ŋy�Ȕ��ʁAUNICODE���������̂܂܎��߂��Ȃ��̂ŁA
-�i�Ђ���Ƃ��ĉ����̐ݒ�Ő؂�ւ�����̂�������Ȃ�����ǂ킩��Ȃ��j�A
-sjis�ɂł��Ȃ�unicode�������utf8�����āAurl�Ɠ��l��%HH�����Ď��߂�
-���Ƃœ����܂����B
-.ini��.dfg���̉ǐ����Ђǂ��Ȃ邯��ǁA�����������ړǂނ��̂ł��Ȃ����B
-�����̕Ń^�C�g������%HH ���g���Ă���ƌ�ϊ����邩�������ǁA�]�薳�����ŁB
-�i.ini,.dfg�����O�Ńt�@�C���A�N�Z�X����utf8�����悤���Ƃ��l���܂�����
-�@(�ق�CIniFile�֌W�ŕ���͂�)�A�l��.ini,dfg�̕ϊ�������I�ȃA�N�Z�X
-�@�Ƃ��r��������v�����肷��Ɩʓ|�������Ȃ��ĂƂ肠�������̌`�Ɂj
-
-
-�� 1.36
-url�ʃZ�L�����e�B�Ή��ŁAvs2008�ł� tr1�̐��K�\��(regex)���C�u�������A
-vs2003,2005�ł�boost��(tr1�݊�)regex���g���Ă��܂��B
-�̂ŁAvs2008��sp1��K�����Ă���̑O��Avs2003,2005�ł�boost�̃Z�b�e�B���O��
-����Ă���K�v������܂��B
-
-�� 1.40
-MB�ō쐬�̂��߃^�[�Q�b�g�ݒ�𑝂₵�܂����Brelease-mb,debug-mb�B
-����plugin�ɂ��ẮA�K�v�Ȃ��̂̂݁i-mb��p�ӂ��Ă��Ȃ��z�͎���mb��)
-
-�� 1.41
-�^�[�Q�b�g�� Relase-DIET,Debug-DIET��ǉ��B��LUSE_DIET�Q��.
-
-
-�� 1.47
-
-1���ɂ�����ƘM���āA�������������Ă���A�Ǝv���Ă�����ꃖ��������
-���܂��A�����(�����炭4�`6�����قǂ�)�{�Ƃ�牽����undonut�܂�
-�肪���Ȃ���Ԃ����������Ȃ̂ŁA�Ƃ肠�����A���炵�Ă����܂��B
-
-�܂��A����Ȃ��Ə����Ă��M������A�b�v����Ǝv���̂ŁA���܂łƂ�����
-�󋵂�����킯�ł͂Ȃ��̂ł����A���̌�������������肷��̂ŁA
-�t�F�[�h�A�E�g���Ă��܂����炷�݂܂���B
-
-�҂����ɁA����ō���Ă�������l����������ɂ��肪�����̂ł���^^;
-
-
-�� 1.48
-
-�V�����l�����ꂽ?�悤�Ȃ�ŁA����ĂāA���������˂Ă���1.48�̃\�[�X
-�������Ă����܂�... ���m�ɂ�1.48�ȍ~�ő����M������Ԃł��B
-
-ie8beta�̂Ƃ��ɕ������[�`�����ꕔ�A������ie8�ł͑��v�������̂�
-������������... vista��ie8���Ƒ��v�Ȃ̂�xp��ie8���ƃo�O�����܂�
-�̉ӏ����������̂ł�����xp�����Ƃ߂���...
-(�ł��A���傤�ǂ��̂ւ��part26��816�̕���ie8�Ή�����Ă�悤�Ȃ̂�)
-����wtl��8.1(�ȍ~��svn-trunk��������Ɣ��f)�ɂ�������.
-
-�ߋ��I�ɂ́A6�������ăT�o��ǂ񂾒l�������̂ł����B
-����ς葫��Ă܂���ˁB�܂��A�悭����b�ł����B����ɃS�^�S�^��
-��������\��̂���unDonut�ǂ��낶��Ȃ��Ƃ����̂������ȂƂ���....
-�S�����Ȃ����B
+※なるべく自分が触ったところは //+++ や /*+++*/ を付けています。
+が、一括置換したり、些細だったり、忘れてたりもあるので...
 
 
 
+■ 1.33
+unicode(api)版へ移行しました。
+大筋はすぐでしたが、やはり、細々と不具合は発生し、
+だいぶマシになりましたが、まだなにかあるかもです。
 
-�� ���C�Z���X
+UNICODE化のメリットは扱える文字が増えることだけれど、個人的には
+レガシーアプリぽさが一つ減ってソフト(ソース)の寿命が多少延びたような
+感じです。気持ちの問題ですが
 
-�\�[�X�� mtl �̕����ɂ��ẮA
+.dfg .ini ファイルの操作に使っている win-api がファイルに書き出す段で
+sjisにしてくれるので楽な反面、UNICODE文字をそのまま収められないので、
+（ひょっとして何かの設定で切り替えられるのかもしれないけれどわからない）、
+sjisにできないunicodeがあればutf8化して、urlと同様の%HH化して収める
+ことで逃げました。
+.iniや.dfg中の可読性がひどくなるけれど、そうそう直接読むものでもないし。
+既存の頁タイトル等で%HH が使われていると誤変換するかもだけど、余り無さそで。
+（.ini,.dfgを自前でファイルアクセスしてutf8化しようかとも考えましたが
+　(ほぼCIniFile関係で閉じるはず)、個人の.ini,dfgの変換や効率的なアクセス
+　とか排他制御を思ったりすると面倒くさくなってとりあえず今の形に）
+
+
+■ 1.36
+url別セキュリティ対応で、vs2008では tr1の正規表現(regex)ライブラリを、
+vs2003,2005ではboostの(tr1互換)regexを使っています。
+ので、vs2008はsp1を適応しているの前提、vs2003,2005ではboostのセッティングが
+されている必要があります。
+
+■ 1.40
+MB版作成のためターゲット設定を増やしました。release-mb,debug-mb。
+ただpluginについては、必要なもののみ（-mbを用意していない奴は実はmb版)
+
+■ 1.41
+ターゲットに Relase-DIET,Debug-DIETを追加。上記USE_DIET参照.
+
+
+■ 1.47
+
+1末にちょっと弄って、も少し何かしてから、と思っていたら一ヶ月たって
+しまい、今後も(おそらく4～6ヶ月ほどは)本業やら何やらでundonutまで
+手が回らない状態が続きそうなので、とりあえず、さらしておきます。
+
+まあ、こんなこと書いても弄ったらアップすると思うので、今までとさして
+状況が代わるわけではないのですが、その後も微妙だったりするので、
+フェードアウトしてしまったらすみません。
+
+待たずに、分岐版作ってくださる人がいたら非常にありがたいのですが^^;
+
+
+■ 1.48
+
+新しい人が現れた?ようなんで、あわてて、だしそこねていた1.48のソース
+をだしておきます... 正確には1.48以降で多少弄った状態です。
+
+ie8betaのときに閉じたルーチンが一部、正式のie8では大丈夫だったので
+復活しただけ... vistaのie8だと大丈夫なのにxpのie8だとバグったまま
+の箇所があったのでそこはxpだけとめたり...
+(でも、ちょうどそのへんをpart26の816の方がie8対応されてるようなので)
+あとwtlは8.1(以降のsvn-trunkをちょっと反映)にしたかな.
+
+近況的には、6ヶ月ってサバを読んだ値だったのですが。
+やっぱり足りてませんね。まあ、よくある話ですが。さらにゴタゴタが
+発生する予定のためunDonutどころじゃないというのが正直なところ....
+ゴメンなさい。
+
+
+
+
+■ ライセンス
+
+ソース中 mtl の部分については、
 // All rights unreserved.
 //
 // This file is a part of Mb Template Library.
 // The code and information is *NOT* provided "as-is" without
 // warranty of any kind, either expressed or implied.
-�ƂȂ��Ă���A
-�܂��A���cdonut�z�z�T�C�g�͏������Ă��܂��Ă��܂����A
-internet archaive�ɋL�^����Ă���T�C�g��donut�̔z�z�y�[�W�ɂ�
-�g���̃\�[�X�R�[�h�̂����闘�p�Ɖ��ς�F�߂܂��B
-�܂�����ɔ������s�t�@�C���̂�����`���ł̍Ĕz�z��F�߂܂��B�h
-�Ə�����Ă���悤�ł��B
+となっており、
+また、元祖donut配布サイトは消失してしまっていますが、
+internet archaiveに記録されているサイトのdonutの配布ページには
+“このソースコードのあらゆる利用と改変を認めます。
+またそれに伴う実行ファイルのあらゆる形式での再配布を認めます。”
+と書かれているようです。
 
-��p�̍�҂͂Ƃ肽�ĂĖʓ|�Ȃ��Ƃ͂�����Ă��Ȃ��Ǝv����̂ŁA
-�����炭�ADonutR,DonutP,unDonut,unDonut+,�Ƃ��ɓ��l��
-�݂Ȃ��邾�낤�Ǝv���܂��B
-������� unDonut+mod �����l�B
+後継の作者はとりたてて面倒なことはかかれていないと思われるので、
+おそらく、DonutR,DonutP,unDonut,unDonut+,ともに同様に
+みなせるだろうと思われます。
+もちろん unDonut+mod も同様。
 
-plugin�֌W�́Adonut�̂ł͂Ȃ��A���̃v���O�C�����Ƃ�
-�Ⴂ�܂��̂ŁA�ʂɔ��f���Ă��������B
+plugin関係は、donutのではなく、そのプラグインごとに
+違いますので、個別に判断してください。
 
 
-�����A���̃\�[�X���番��/���p�����������͋C�ɂ����ǂ����A�ł��B
+もし、このソースから分岐/流用したいかたは気にせずどうぞ、です。
