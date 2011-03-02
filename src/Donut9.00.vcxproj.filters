@@ -1,0 +1,884 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{f0e7788f-11db-497f-be24-c4be1fa28a8a}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;rc;def;r;odl;idl;hpj;bat</Extensions>
+    </Filter>
+    <Filter Include="Source Files\dialog">
+      <UniqueIdentifier>{67bfa585-dab5-41fb-b336-563a66736910}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\MTL">
+      <UniqueIdentifier>{0256df49-c1ce-4d84-a377-65c759de8687}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\option">
+      <UniqueIdentifier>{61f8f63b-43ed-46c4-9bbe-485653456c01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ATL">
+      <UniqueIdentifier>{ec225c71-cefd-4c8f-94fd-6aae429afa2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WTL">
+      <UniqueIdentifier>{d860aad7-dbfc-45a6-8b92-de9aa842f1bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{046c42aa-fcaf-4f6b-912f-0fa296d2de93}</UniqueIdentifier>
+      <Extensions>ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="AccelManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="appconst.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChildFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CmbboxPrxy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlmalloc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Donut.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutClipboardBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutPFunc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutSecurityZone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutToolBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FavoriteOrder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FavTreeViewCtrl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IniFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ItemIDList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_Api.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_Dfg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_InitTerm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_OpenFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_PreTrnMsg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MainFrame_Skin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MDITabCtrl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Misc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="newdelete.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ParseInternetShortcutFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SearchBar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\aboutdlg.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\AlphaDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\CommandSelectDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\DebugWindow.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\OpenURLDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="dialog\RenameFileDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlCom.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlCtrls.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlMisc.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlUser.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlWeb.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="MtlWin.cpp">
+      <Filter>Source Files\MTL</Filter>
+    </ClCompile>
+    <ClCompile Include="option\CloseTitleOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\DestroyDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\DLControlOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\DonutConfirmOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\ExecutableDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\ExplorerBarDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\FavoriteMenuDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\FileNewOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\IgnoreURLsOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\KeyBoardDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\MainOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\MenuDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\MouseDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\MouseGestureDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\PluginDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\ProxyDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\SkinOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\StartUpOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\ToolBarDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\UrlSecurityOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AccelManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AddressBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AmbientDispatch.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="API.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="appconst.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChevronHandler.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildFrame.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CmbboxPrxy.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomContextMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogHook.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DialogKiller.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DocHostUIHandlerDispatch.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Donut.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutClipboardBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutDefine.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutExplorerBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutFavoritesMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutLinksBarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutOptions.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutPanelBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutPCP.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutPFunc.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutRebarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutSecurityZone.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutSimpleEventManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutStatusBarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutToolBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Donutview.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutViewOption.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DropDownButton.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExplorerMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExplorerToolBarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExplorerTreeViewCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ExStyle.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FavoriteMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FavoriteOrder.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FavoritesMenu.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FavTreeViewCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FileNotification.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FlatComboBox.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FlatComboBox_SearchKeyword.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HlinkDataObject.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IniFile.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ItemIDList.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrame.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MainFrameFileDropTarget.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MDIChildUserMessenger.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MDITabCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuControl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuDefines.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuDropTargetWindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Misc.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OleDragDropExpToolBarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OleDragDropExpTreeViewCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="OleDragDropTabCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ParseInternetShortcutFile.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginEventImpl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\PluginInfo.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PropertySheet.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RebarSupport.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ReBarVerticalBorder.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RecentDocumentListFixed.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ScriptErrorCommandTargetImpl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SearchBar.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SearchDialog.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleTree.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StdToolBarCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StyleSheetOption.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TabCtrl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Thumbnail.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ToolTipManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\aboutdlg.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\AlphaDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\CommandSelectDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\DebugWindow.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\OpenURLDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="dialog\RenameFileDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="MenuEncode.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="Mtl.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlBase.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlBrowser.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlCom.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlCtrls.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlCtrlw.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlDragDrop.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlFile.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlMisc.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlProfile.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlUpdateCmdUI.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlUser.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlWeb.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="MtlWin.h">
+      <Filter>Source Files\MTL</Filter>
+    </ClInclude>
+    <ClInclude Include="option\AddressBarPropertyPage.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\CloseTitleOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\DestroyDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\DLControlOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\DonutConfirmOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\ExecutableDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\ExplorerBarDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\FavoriteMenuDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\FileNewOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\IgnoreURLsOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\KeyBoardDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\LinkBarPropertyPage.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\MainOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\MDITabDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\MenuDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\MouseDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\MouseGestureDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\PluginDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\ProxyDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\SearchPropertyPage.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\SkinOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\StartUpOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\ToolBarDialog.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\UrlSecurityOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="AtlhostEx.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="WtlFixed\AtlSplit.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlapp.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlcrack.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlctrls.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlctrlw.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlctrlx.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlddx.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atldlgs.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atldwm.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlfind.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlframe.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlgdi.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlmisc.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlprint.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlres.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlresce.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlscrl.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atltheme.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atluser.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlwinx.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\uxtheme_wrap.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlacc.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlalloc.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlassem.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlbase.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlbuild.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlchecked.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlcoll.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlcom.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlcomcli.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\ATLComMem.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\ATLComTime.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlconv.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlcore.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlctl.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlcur.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldb.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldbcli.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldbgmem.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldbsch.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldebugapi.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atldef.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlenc.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlevent.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlexcept.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlfile.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlhost.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atliface.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlimage.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlmem.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlpath.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlplus.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlrc.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsafe.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsecurity.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsimpcoll.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsimpstr.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsnap.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsocket.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlstdthunk.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlstr.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsync.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atltime.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atltrace.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atltypes.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlutil.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlwin.h">
+      <Filter>Source Files\ATL</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="DonutP.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
+    <Midl Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atliface.idl">
+      <Filter>Source Files\ATL</Filter>
+    </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlbase.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\ATLComTime.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsecurity.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsocket.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atlsync.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atltime.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="C:\Program Files (x86)\Microsoft Visual Studio 9.0\VC\atlmfc\include\atltypes.inl">
+      <Filter>Source Files\ATL</Filter>
+    </None>
+    <None Include="res\API.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="API.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DonutDoc.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DonutP.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="DonutP.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\ExpBar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\FavBar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\FavBarHot.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Go.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\GoHot.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Icon_100.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Icon_64.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SearchBar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SearchBarDis.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SearchBarHot.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\secure.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Small.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SmallDisable.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\SmallHot.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\tab.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\text1.bin">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Donut.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

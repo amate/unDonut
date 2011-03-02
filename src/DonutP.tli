@@ -1,0 +1,123 @@
+// Created by Microsoft (R) C/C++ Compiler Version 12.00.8447.0 (b80a7676).
+//
+// DonutP.tli
+//
+// Wrapper implementations for Win32 type library ..\\Donut\\Debug\\DonutP.exe
+// compiler-generated file created 04/06/03 at 19:53:26 - DO NOT EDIT!
+
+#pragma once
+
+//
+// dispinterface IDonutPEvents wrapper method implementations
+//
+
+inline HRESULT IDonutPEvents::DocumentComplete ( long nIndex, IDispatch * pDisp, _bstr_t bstrURL ) {
+    HRESULT _result;
+    _com_dispatch_method(this, 0x1, DISPATCH_METHOD, VT_ERROR, (void*)&_result, 
+        L"\x0003\x0009\x0008", nIndex, pDisp, (BSTR)bstrURL);
+    return _result;
+}
+
+//
+// interface IAPI wrapper method implementations
+//
+
+inline HRESULT IAPI::Close ( int nIndex ) {
+    HRESULT _hr = raw_Close(nIndex);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline IDispatchPtr IAPI::GetDocumentObject ( int nIndex ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetDocumentObject(nIndex, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline IDispatchPtr IAPI::GetWindowObject ( int nIndex ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetWindowObject(nIndex, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline IDispatchPtr IAPI::GetWebBrowserObject ( int nIndex ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetWebBrowserObject(nIndex, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline long IAPI::GetTabIndex ( ) {
+    long _result;
+    HRESULT _hr = get_TabIndex(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void IAPI::PutTabIndex ( long pVal ) {
+    HRESULT _hr = put_TabIndex(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline long IAPI::GetTabCount ( ) {
+    long _result;
+    HRESULT _hr = raw_GetTabCount(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IAPI::MoveToTab ( unsigned short wBefor, unsigned short wAfter ) {
+    HRESULT _hr = raw_MoveToTab(wBefor, wAfter);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long IAPI::NewWindow ( _bstr_t bstrURL, long bActive ) {
+    long _result;
+    HRESULT _hr = raw_NewWindow(bstrURL, bActive, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline long IAPI::MessageBox ( _bstr_t bstrText, _bstr_t bstrCaption, unsigned int uType ) {
+    long _result;
+    HRESULT _hr = raw_MessageBox(bstrText, bstrCaption, uType, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IAPI::ShowPanelBar ( ) {
+    HRESULT _hr = raw_ShowPanelBar();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline IDispatchPtr IAPI::GetPanelDocumentObject ( ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetPanelDocumentObject(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline IDispatchPtr IAPI::GetPanelWindowObject ( ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetPanelWindowObject(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline IDispatchPtr IAPI::GetPanelWebBrowserObject ( ) {
+    IDispatch * _result;
+    HRESULT _hr = raw_GetPanelWebBrowserObject(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IDispatchPtr(_result, false);
+}
+
+inline long IAPI::GetTabState ( int nIndex ) {
+    long _result;
+    HRESULT _hr = raw_GetTabState(nIndex, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}

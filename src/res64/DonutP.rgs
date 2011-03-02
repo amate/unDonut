@@ -1,0 +1,11 @@
+HKCR
+{
+	NoRemove AppID
+	{
+		{4B7D57D0-3765-4193-B203-F9A7CEA09D29} = s 'DonutP'
+		'DONUTP.EXE'
+		{
+			val AppID = s {4B7D57D0-3765-4193-B203-F9A7CEA09D29}
+		}
+	}
+}
