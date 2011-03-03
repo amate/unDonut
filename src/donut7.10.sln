@@ -1,0 +1,37 @@
+Microsoft Visual Studio Solution File, Format Version 8.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Donut", "Donut7.10.vcproj", "{00E880FB-42A1-414A-9903-9AC14F495544}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		Debug = Debug
+		Release = Release
+		Release-DIET = Release-DIET
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug.ActiveCfg = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug.Build.0 = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release.ActiveCfg = Release|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release.Build.0 = Release|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET.ActiveCfg = Release-DIET|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET.Build.0 = Release-DIET|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|Win32.ActiveCfg = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|Win32.Build.0 = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|Win32.ActiveCfg = Release|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

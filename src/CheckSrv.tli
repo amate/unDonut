@@ -1,0 +1,276 @@
+// Created by Microsoft (R) C/C++ Compiler Version 12.00.8447.0 (0fbd83d0).
+//
+// CheckSrv.tli
+//
+// Wrapper implementations for Win32 type library CheckSrv.tlb
+// compiler-generated file created 04/06/03 at 19:53:26 - DO NOT EDIT!
+
+#pragma once
+
+//
+// interface IUpdateItem wrapper method implementations
+//
+
+inline _bstr_t IUpdateItem::GetName ( ) {
+    BSTR _result;
+    HRESULT _hr = get_Name(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void IUpdateItem::PutName ( _bstr_t pVal ) {
+    HRESULT _hr = put_Name(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline _bstr_t IUpdateItem::GetOpenUrl ( ) {
+    BSTR _result;
+    HRESULT _hr = get_OpenUrl(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline void IUpdateItem::PutOpenUrl ( _bstr_t pVal ) {
+    HRESULT _hr = put_OpenUrl(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline long IUpdateItem::GetStatus ( ) {
+    long _result;
+    HRESULT _hr = get_Status(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void IUpdateItem::PutStatus ( long pVal ) {
+    HRESULT _hr = put_Status(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline DATE IUpdateItem::GetLastOpened ( ) {
+    DATE _result;
+    HRESULT _hr = get_LastOpened(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void IUpdateItem::PutLastOpened ( DATE pVal ) {
+    HRESULT _hr = put_LastOpened(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline DATE IUpdateItem::GetLastChecked ( ) {
+    DATE _result;
+    HRESULT _hr = get_LastChecked(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void IUpdateItem::PutLastChecked ( DATE pVal ) {
+    HRESULT _hr = put_LastChecked(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+inline DATE IUpdateItem::GetLastModified ( ) {
+    DATE _result;
+    HRESULT _hr = get_LastModified(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline void IUpdateItem::PutLastModified ( DATE pVal ) {
+    HRESULT _hr = put_LastModified(pVal);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+}
+
+//
+// interface IUpdateItemCollection wrapper method implementations
+//
+
+inline long IUpdateItemCollection::GetCount ( ) {
+    long _result;
+    HRESULT _hr = get_Count(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline IUpdateItemPtr IUpdateItemCollection::GetItem ( long index ) {
+    struct IUpdateItem * _result;
+    HRESULT _hr = get_Item(index, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IUpdateItemPtr(_result, false);
+}
+
+inline HRESULT IUpdateItemCollection::Add ( struct IUpdateItem * pItem ) {
+    HRESULT _hr = raw_Add(pItem);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateItemCollection::Sort ( long howto ) {
+    HRESULT _hr = raw_Sort(howto);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+//
+// interface IUpdateChecker wrapper method implementations
+//
+
+inline HRESULT IUpdateChecker::ShowSettingDlg ( ) {
+    HRESULT _hr = raw_ShowSettingDlg();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long IUpdateChecker::GetIsAllChecking ( ) {
+    long _result;
+    HRESULT _hr = get_IsAllChecking(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IUpdateChecker::SendNemuEvent ( long id, long param ) {
+    HRESULT _hr = raw_SendNemuEvent(id, param);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long IUpdateChecker::IsDenyURL ( _bstr_t url ) {
+    long _result;
+    HRESULT _hr = raw_IsDenyURL(url, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline long IUpdateChecker::IsDenyTitle ( _bstr_t title ) {
+    long _result;
+    HRESULT _hr = raw_IsDenyTitle(title, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IUpdateChecker::AddDenyURL ( _bstr_t url ) {
+    HRESULT _hr = raw_AddDenyURL(url);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateChecker::ReloadDenyList ( ) {
+    HRESULT _hr = raw_ReloadDenyList();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateChecker::StartAllCheck ( ) {
+    HRESULT _hr = raw_StartAllCheck();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateChecker::StartCheck ( ) {
+    HRESULT _hr = raw_StartCheck();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateChecker::StopCheck ( ) {
+    HRESULT _hr = raw_StopCheck();
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long IUpdateChecker::GetIsChecking ( ) {
+    long _result;
+    HRESULT _hr = get_IsChecking(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline long IUpdateChecker::GetUpdateItemCount ( ) {
+    long _result;
+    HRESULT _hr = get_UpdateItemCount(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IUpdateChecker::NavigateComplete ( _bstr_t url ) {
+    HRESULT _hr = raw_NavigateComplete(url);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline HRESULT IUpdateChecker::AddDenyTitle ( _bstr_t title ) {
+    HRESULT _hr = raw_AddDenyTitle(title);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline _bstr_t IUpdateChecker::GetStatusFilePath ( ) {
+    BSTR _result;
+    HRESULT _hr = get_StatusFilePath(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline long IUpdateChecker::GetIsShowSettingWnd ( ) {
+    long _result;
+    HRESULT _hr = get_IsShowSettingWnd(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT IUpdateChecker::AddNewItem ( _bstr_t Name, _bstr_t targeturl, _bstr_t OpenUrl ) {
+    HRESULT _hr = raw_AddNewItem(Name, targeturl, OpenUrl);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long IUpdateChecker::GetIsShowPropertySheet ( ) {
+    long _result;
+    HRESULT _hr = get_IsShowPropertySheet(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline IUpdateItemCollectionPtr IUpdateChecker::GetUpdateItems ( ) {
+    struct IUpdateItemCollection * _result;
+    HRESULT _hr = get_UpdateItems(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IUpdateItemCollectionPtr(_result, false);
+}
+
+inline IUpdateItemCollectionPtr IUpdateChecker::GetItems ( ) {
+    struct IUpdateItemCollection * _result;
+    HRESULT _hr = get_Items(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IUpdateItemCollectionPtr(_result, false);
+}
+
+inline _bstr_t IUpdateChecker::GetItemOpenUrl ( _bstr_t Name ) {
+    BSTR _result;
+    HRESULT _hr = get_ItemOpenUrl(Name, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+inline _bstr_t IUpdateChecker::GetTmpFileName ( _bstr_t Extension ) {
+    BSTR _result;
+    HRESULT _hr = raw_GetTmpFileName(Extension, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _bstr_t(_result, false);
+}
+
+//
+// dispinterface _IUpdateCheckerEvents wrapper method implementations
+//
+
+inline HRESULT _IUpdateCheckerEvents::OnHpUpdate ( struct IUpdateChecker * checker ) {
+    return _com_dispatch_method(this, 0x1, DISPATCH_METHOD, VT_EMPTY, NULL, 
+        L"\x0009", checker);
+}
+
+inline HRESULT _IUpdateCheckerEvents::OnNemuEvent ( long id, long param ) {
+    return _com_dispatch_method(this, 0x2, DISPATCH_METHOD, VT_EMPTY, NULL, 
+        L"\x0003\x0003", id, param);
+}
