@@ -1945,10 +1945,10 @@ bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
 {
 	//dmfTRACE(_T("CMainFrame::OnDDEOpenFile(%s)\n"), strFileName);
   #if 1 //+++ トレイ状態からの復帰でのバグ対策.
-	IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
 	DWORD flags = DonutGetStdOpenFlag();
 	OnUserOpenFile( strFileName, flags );
 	if (CStartUpOption::s_dwActivate) {
+		IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
 			ShowWindow_Restore(true);
 		MtlSetForegroundWindow(m_hWnd);
@@ -4847,16 +4847,21 @@ LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 	case ID_SPECIAL_DOWN:		nCode = VK_DOWN;	break;
 	default:	ATLASSERT(FALSE);
 	}
-	INPUT	inputs[2] = { 0 };
-	inputs[0].type		= INPUT_KEYBOARD;
-	inputs[0].ki.wVk	= nCode;
-	inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
-	inputs[0].ki.dwFlags= 0;
-	inputs[1].type		= INPUT_KEYBOARD;
-	inputs[1].ki.wVk	= nCode;
-	inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
-	inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
-	SendInput(2, inputs, sizeof(INPUT));
+	CChildFrame* pChild = GetActiveChildFrame();
+	if (pChild) {
+		pChild->SetFocus();
+
+		INPUT	inputs[2] = { 0 };
+		inputs[0].type		= INPUT_KEYBOARD;
+		inputs[0].ki.wVk	= nCode;
+		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[0].ki.dwFlags= 0;
+		inputs[1].type		= INPUT_KEYBOARD;
+		inputs[1].ki.wVk	= nCode;
+		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
+		SendInput(2, inputs, sizeof(INPUT));
+	}
 	//PostMessage(WM_KEYDOWN, nCode, 0);
 	return S_OK;
 }

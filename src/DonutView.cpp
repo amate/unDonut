@@ -208,8 +208,8 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 		if ( MtlGetDropFileName(pDataObj, arrFiles) ) {	// ƒtƒ@ƒCƒ‹‚ªDrop‚³‚ê‚½
 			unsigned  df   = DonutGetStdOpenFlag();
 			unsigned  size = arrFiles.GetSize();
-			if (size == 1)
-				df |= D_OPENFILE_NOCREATE;
+			//if (size == 1)
+			//	df |= D_OPENFILE_NOCREATE;
 			for (unsigned i = 0; i < size; ++i)
 				DonutOpenFile(m_hWnd, arrFiles[i], df);
 			*pdwEffect = DROPEFFECT_COPY;

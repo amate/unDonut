@@ -569,8 +569,8 @@ LRESULT	CExplorerMenu::Impl::OnDrawItem(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 				//					nIndex = MtlGetSystemIconIndex(idlURL);
 				nIndex = MtlGetNormalIconIndex(idlURL);
 			} else {
-				int nIcon = m_mapIcon.Lookup(strExt);
-
+				//int nIcon = m_mapIcon.Lookup(strExt);
+				int nIcon = 0;	//\\+
 				if (nIcon == 0) {
 					CItemIDList idlURL(pMenuData->m_strPath);
 					//						nIcon = MtlGetSystemIconIndex(idlURL);

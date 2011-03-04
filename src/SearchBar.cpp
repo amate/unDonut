@@ -406,7 +406,8 @@ void CDonutSearchBar::OnSearchWeb_engineId(UINT code, int id, HWND hWnd)
 	unsigned n = id - ID_INSERTPOINT_SEARCHENGINE;
 	CString 	strEngine;
 	MtlGetLBTextFixed(m_cmbEngine, n, strEngine);
-	CString str = GetSearchStr();
+	//\\CString str = GetSearchStr();
+	CString str = Donut_GetActiveSelectedText();	//\\+ ‚Ü‚½•Ê‚ÅƒoƒO‚é‚©‚à
 	SearchWeb_str_engine(str, strEngine);
 }
 

@@ -1,4 +1,4 @@
-■unDonut +mod.1.48 の ソースです。
+﻿■unDonut +mod.1.48 の ソースです。
 
 
 MS Visual Studio .net 2008 sp1(Standard) + WTL8.0 で開発しています。
