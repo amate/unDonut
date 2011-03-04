@@ -1,0 +1,24 @@
+HKCR
+{
+	DonutP.API.1 = s 'API Class'
+	{
+		CLSID = s '{DFA77729-9333-4E33-8D52-7D4684CF9867}'
+	}
+	DonutP.API = s 'API Class'
+	{
+		CLSID = s '{DFA77729-9333-4E33-8D52-7D4684CF9867}'
+		CurVer = s 'DonutP.API.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {DFA77729-9333-4E33-8D52-7D4684CF9867} = s 'API Class'
+		{
+			ProgID = s 'DonutP.API.1'
+			VersionIndependentProgID = s 'DonutP.API'
+			ForceRemove 'Programmable'
+			LocalServer32 = s '%MODULE%'
+			val AppID = s '{4B7D57D0-3765-4193-B203-F9A7CEA09D29}'
+			'TypeLib' = s '{2BCC2287-AAEF-4F0E-A86B-C206ECABF44D}'
+		}
+	}
+}

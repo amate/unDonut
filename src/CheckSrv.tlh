@@ -1,0 +1,326 @@
+// Created by Microsoft (R) C/C++ Compiler Version 12.00.8447.0 (0fbd83d0).
+//
+// CheckSrv.tlh
+//
+// C++ source equivalent of Win32 type library CheckSrv.tlb
+// compiler-generated file created 04/06/03 at 19:53:26 - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct __declspec(uuid("f44e9160-faf7-4438-b4d4-bbeb110820e4"))
+/* dual interface */ IUpdateItem;
+struct __declspec(uuid("8b0bb39b-5a1b-4ec6-b065-72a1e12380f0"))
+/* dual interface */ IUpdateItemCollection;
+struct __declspec(uuid("0e2e8cc0-bcc0-477d-86f2-6d540dabb3fe"))
+/* dual interface */ IUpdateChecker;
+struct __declspec(uuid("1c299ca0-a8ab-4512-a052-6faad90e8c43"))
+/* dispinterface */ _IUpdateCheckerEvents;
+struct /* coclass */ UpdateChecker;
+struct /* coclass */ UpdateItem;
+struct /* coclass */ UpdateItemCollection;
+
+//
+// Smart pointer typedef declarations
+//
+
+_COM_SMARTPTR_TYPEDEF(IUpdateItem, __uuidof(IUpdateItem));
+_COM_SMARTPTR_TYPEDEF(IUpdateItemCollection, __uuidof(IUpdateItemCollection));
+_COM_SMARTPTR_TYPEDEF(IUpdateChecker, __uuidof(IUpdateChecker));
+_COM_SMARTPTR_TYPEDEF(_IUpdateCheckerEvents, __uuidof(IDispatch));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("f44e9160-faf7-4438-b4d4-bbeb110820e4"))
+IUpdateItem : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetName,put=PutName))
+    _bstr_t Name;
+    __declspec(property(get=GetOpenUrl,put=PutOpenUrl))
+    _bstr_t OpenUrl;
+    __declspec(property(get=GetStatus,put=PutStatus))
+    long Status;
+    __declspec(property(get=GetLastOpened,put=PutLastOpened))
+    DATE LastOpened;
+    __declspec(property(get=GetLastChecked,put=PutLastChecked))
+    DATE LastChecked;
+    __declspec(property(get=GetLastModified,put=PutLastModified))
+    DATE LastModified;
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    _bstr_t GetName ( );
+    void PutName (
+        _bstr_t pVal );
+    _bstr_t GetOpenUrl ( );
+    void PutOpenUrl (
+        _bstr_t pVal );
+    long GetStatus ( );
+    void PutStatus (
+        long pVal );
+    DATE GetLastOpened ( );
+    void PutLastOpened (
+        DATE pVal );
+    DATE GetLastChecked ( );
+    void PutLastChecked (
+        DATE pVal );
+    DATE GetLastModified ( );
+    void PutLastModified (
+        DATE pVal );
+
+    //
+    // Raw methods provided by interface
+    //
+
+    virtual HRESULT __stdcall get_Name (
+        BSTR * pVal ) = 0;
+    virtual HRESULT __stdcall put_Name (
+        BSTR pVal ) = 0;
+    virtual HRESULT __stdcall get_OpenUrl (
+        BSTR * pVal ) = 0;
+    virtual HRESULT __stdcall put_OpenUrl (
+        BSTR pVal ) = 0;
+    virtual HRESULT __stdcall get_Status (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall put_Status (
+        long pVal ) = 0;
+    virtual HRESULT __stdcall get_LastOpened (
+        DATE * pVal ) = 0;
+    virtual HRESULT __stdcall put_LastOpened (
+        DATE pVal ) = 0;
+    virtual HRESULT __stdcall get_LastChecked (
+        DATE * pVal ) = 0;
+    virtual HRESULT __stdcall put_LastChecked (
+        DATE pVal ) = 0;
+    virtual HRESULT __stdcall get_LastModified (
+        DATE * pVal ) = 0;
+    virtual HRESULT __stdcall put_LastModified (
+        DATE pVal ) = 0;
+};
+
+struct __declspec(uuid("8b0bb39b-5a1b-4ec6-b065-72a1e12380f0"))
+IUpdateItemCollection : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetCount))
+    long Count;
+    __declspec(property(get=GetItem))
+    IUpdateItemPtr Item[];
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    long GetCount ( );
+    IUpdateItemPtr GetItem (
+        long index );
+    HRESULT Add (
+        struct IUpdateItem * pItem );
+    HRESULT Sort (
+        long howto );
+
+    //
+    // Raw methods provided by interface
+    //
+
+    virtual HRESULT __stdcall get_Count (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall get_Item (
+        long index,
+        struct IUpdateItem * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_Add (
+        struct IUpdateItem * pItem ) = 0;
+    virtual HRESULT __stdcall raw_Sort (
+        long howto ) = 0;
+};
+
+struct __declspec(uuid("0e2e8cc0-bcc0-477d-86f2-6d540dabb3fe"))
+IUpdateChecker : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetIsAllChecking))
+    long IsAllChecking;
+    __declspec(property(get=GetIsChecking))
+    long IsChecking;
+    __declspec(property(get=GetUpdateItemCount))
+    long UpdateItemCount;
+    __declspec(property(get=GetStatusFilePath))
+    _bstr_t StatusFilePath;
+    __declspec(property(get=GetIsShowSettingWnd))
+    long IsShowSettingWnd;
+    __declspec(property(get=GetIsShowPropertySheet))
+    long IsShowPropertySheet;
+    __declspec(property(get=GetUpdateItems))
+    IUpdateItemCollectionPtr UpdateItems;
+    __declspec(property(get=GetItems))
+    IUpdateItemCollectionPtr Items;
+    __declspec(property(get=GetItemOpenUrl))
+    _bstr_t ItemOpenUrl[];
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    HRESULT ShowSettingDlg ( );
+    long GetIsAllChecking ( );
+    HRESULT SendNemuEvent (
+        long id,
+        long param );
+    long IsDenyURL (
+        _bstr_t url );
+    long IsDenyTitle (
+        _bstr_t title );
+    HRESULT AddDenyURL (
+        _bstr_t url );
+    HRESULT ReloadDenyList ( );
+    HRESULT StartAllCheck ( );
+    HRESULT StartCheck ( );
+    HRESULT StopCheck ( );
+    long GetIsChecking ( );
+    long GetUpdateItemCount ( );
+    HRESULT NavigateComplete (
+        _bstr_t url );
+    HRESULT AddDenyTitle (
+        _bstr_t title );
+    _bstr_t GetStatusFilePath ( );
+    long GetIsShowSettingWnd ( );
+    HRESULT AddNewItem (
+        _bstr_t Name,
+        _bstr_t targeturl,
+        _bstr_t OpenUrl );
+    long GetIsShowPropertySheet ( );
+    IUpdateItemCollectionPtr GetUpdateItems ( );
+    IUpdateItemCollectionPtr GetItems ( );
+    _bstr_t GetItemOpenUrl (
+        _bstr_t Name );
+    _bstr_t GetTmpFileName (
+        _bstr_t Extension );
+
+    //
+    // Raw methods provided by interface
+    //
+
+    virtual HRESULT __stdcall raw_ShowSettingDlg ( ) = 0;
+    virtual HRESULT __stdcall get_IsAllChecking (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_SendNemuEvent (
+        long id,
+        long param ) = 0;
+    virtual HRESULT __stdcall raw_IsDenyURL (
+        BSTR url,
+        long * ret ) = 0;
+    virtual HRESULT __stdcall raw_IsDenyTitle (
+        BSTR title,
+        long * ret ) = 0;
+    virtual HRESULT __stdcall raw_AddDenyURL (
+        BSTR url ) = 0;
+    virtual HRESULT __stdcall raw_ReloadDenyList ( ) = 0;
+    virtual HRESULT __stdcall raw_StartAllCheck ( ) = 0;
+    virtual HRESULT __stdcall raw_StartCheck ( ) = 0;
+    virtual HRESULT __stdcall raw_StopCheck ( ) = 0;
+    virtual HRESULT __stdcall get_IsChecking (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall get_UpdateItemCount (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_NavigateComplete (
+        BSTR url ) = 0;
+    virtual HRESULT __stdcall raw_AddDenyTitle (
+        BSTR title ) = 0;
+    virtual HRESULT __stdcall get_StatusFilePath (
+        BSTR * pVal ) = 0;
+    virtual HRESULT __stdcall get_IsShowSettingWnd (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_AddNewItem (
+        BSTR Name,
+        BSTR targeturl,
+        BSTR OpenUrl ) = 0;
+    virtual HRESULT __stdcall get_IsShowPropertySheet (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall get_UpdateItems (
+        struct IUpdateItemCollection * * pVal ) = 0;
+    virtual HRESULT __stdcall get_Items (
+        struct IUpdateItemCollection * * pVal ) = 0;
+    virtual HRESULT __stdcall get_ItemOpenUrl (
+        BSTR Name,
+        BSTR * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetTmpFileName (
+        BSTR Extension,
+        BSTR * FileName ) = 0;
+};
+
+struct __declspec(uuid("1c299ca0-a8ab-4512-a052-6faad90e8c43"))
+_IUpdateCheckerEvents : IDispatch
+{
+    //
+    // Wrapper methods for error-handling
+    //
+
+    // Methods:
+    HRESULT OnHpUpdate (
+        struct IUpdateChecker * checker );
+    HRESULT OnNemuEvent (
+        long id,
+        long param );
+};
+
+struct __declspec(uuid("e15fb912-dd8a-422a-816d-2abed691c47f"))
+UpdateChecker;
+    // [ default ] interface IUpdateChecker
+    // [ default, source ] dispinterface _IUpdateCheckerEvents
+
+struct __declspec(uuid("1a2fb17f-99f3-42eb-ae5e-02912d1d8824"))
+UpdateItem;
+    // [ default ] interface IUpdateItem
+
+struct __declspec(uuid("49c8d0d0-5754-4869-aa59-f3d23c140f16"))
+UpdateItemCollection;
+    // [ default ] interface IUpdateItemCollection
+
+//
+// Named GUID constants initializations
+//
+
+extern "C" const GUID __declspec(selectany) LIBID_CHECKSRVLib =
+    {0xcaed596b,0x4334,0x40d0,{0x8f,0xdc,0xf6,0x60,0x8f,0xe6,0x5a,0x79}};
+extern "C" const GUID __declspec(selectany) IID_IUpdateItem =
+    {0xf44e9160,0xfaf7,0x4438,{0xb4,0xd4,0xbb,0xeb,0x11,0x08,0x20,0xe4}};
+extern "C" const GUID __declspec(selectany) IID_IUpdateItemCollection =
+    {0x8b0bb39b,0x5a1b,0x4ec6,{0xb0,0x65,0x72,0xa1,0xe1,0x23,0x80,0xf0}};
+extern "C" const GUID __declspec(selectany) IID_IUpdateChecker =
+    {0x0e2e8cc0,0xbcc0,0x477d,{0x86,0xf2,0x6d,0x54,0x0d,0xab,0xb3,0xfe}};
+extern "C" const GUID __declspec(selectany) DIID__IUpdateCheckerEvents =
+    {0x1c299ca0,0xa8ab,0x4512,{0xa0,0x52,0x6f,0xaa,0xd9,0x0e,0x8c,0x43}};
+extern "C" const GUID __declspec(selectany) CLSID_UpdateChecker =
+    {0xe15fb912,0xdd8a,0x422a,{0x81,0x6d,0x2a,0xbe,0xd6,0x91,0xc4,0x7f}};
+extern "C" const GUID __declspec(selectany) CLSID_UpdateItem =
+    {0x1a2fb17f,0x99f3,0x42eb,{0xae,0x5e,0x02,0x91,0x2d,0x1d,0x88,0x24}};
+extern "C" const GUID __declspec(selectany) CLSID_UpdateItemCollection =
+    {0x49c8d0d0,0x5754,0x4869,{0xaa,0x59,0xf3,0xd2,0x3c,0x14,0x0f,0x16}};
+
+//
+// Wrapper method implementations
+//
+
+#include "CheckSrv.tli"
+
+#pragma pack(pop)

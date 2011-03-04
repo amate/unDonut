@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Donut", "Donut8.00.vcproj", "{00E880FB-42A1-414A-9903-9AC14F495544}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Debug-DIET|Win32 = Debug-DIET|Win32
+		Debug-DIET|x64 = Debug-DIET|x64
+		Debug-MB|Win32 = Debug-MB|Win32
+		Debug-MB|x64 = Debug-MB|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+		Release-DIET|Win32 = Release-DIET|Win32
+		Release-DIET|x64 = Release-DIET|x64
+		Release-MB|Win32 = Release-MB|Win32
+		Release-MB|x64 = Release-MB|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|Win32.ActiveCfg = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|Win32.Build.0 = Debug|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|x64.ActiveCfg = Debug|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug|x64.Build.0 = Debug|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-DIET|Win32.ActiveCfg = Debug-DIET|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-DIET|Win32.Build.0 = Debug-DIET|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-DIET|x64.ActiveCfg = Debug-DIET|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-DIET|x64.Build.0 = Debug-DIET|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-MB|Win32.ActiveCfg = Debug-MB|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-MB|Win32.Build.0 = Debug-MB|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-MB|x64.ActiveCfg = Debug-MB|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Debug-MB|x64.Build.0 = Debug-MB|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|Win32.ActiveCfg = Release|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|Win32.Build.0 = Release|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|x64.ActiveCfg = Release|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release|x64.Build.0 = Release|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET|Win32.ActiveCfg = Release-DIET|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET|Win32.Build.0 = Release-DIET|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET|x64.ActiveCfg = Release-DIET|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-DIET|x64.Build.0 = Release-DIET|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-MB|Win32.ActiveCfg = Release-MB|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-MB|Win32.Build.0 = Release-MB|Win32
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-MB|x64.ActiveCfg = Release-MB|x64
+		{00E880FB-42A1-414A-9903-9AC14F495544}.Release-MB|x64.Build.0 = Release-MB|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

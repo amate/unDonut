@@ -1,0 +1,128 @@
+// DonutP.idl : IDL source for DonutP.exe
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (DonutP.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+	[
+		object,
+		uuid(1413C5B5-0352-47AA-85C6-9219F243F5E8),
+		dual,
+		helpstring("IAPI Interface"),
+		pointer_default(unique)
+	]
+	interface IAPI : IDispatch
+	{
+		[id(1), helpstring("Ò¿¯ÄÞ Close")] HRESULT Close(int nIndex);
+		[id(2), helpstring("Ò¿¯ÄÞ GetDocumentObject")] HRESULT GetDocumentObject(int nIndex, [out, retval] IDispatch* *pVal);
+		[id(3), helpstring("Ò¿¯ÄÞ GetWindowObject")] HRESULT GetWindowObject(int nIndex, [out, retval] IDispatch* *pVal);
+		[id(4), helpstring("Ò¿¯ÄÞ GetWebBrowserObject")] HRESULT GetWebBrowserObject(int nIndex, [out, retval] IDispatch* *pVal);
+		[propget, id(5), helpstring("ÌßÛÊßÃ¨ TabIndex")] HRESULT TabIndex([out, retval] long *pVal);
+		[propput, id(5), helpstring("ÌßÛÊßÃ¨ TabIndex")] HRESULT TabIndex([in] long newVal);
+		[id(6), helpstring("Ò¿¯ÄÞ GetTabCount")] HRESULT GetTabCount([out, retval] long *pVal);
+		[id(7), helpstring("Ò¿¯ÄÞ MoveTab")] HRESULT MoveToTab(WORD wBefor, WORD wAfter);
+		[id(8), helpstring("Ò¿¯ÄÞ NewWindow")] HRESULT NewWindow(BSTR bstrURL, BOOL bActive, [out, retval] long *pVal);
+		[id(9), helpstring("Ò¿¯ÄÞ MessageBox")] HRESULT MessageBox(BSTR bstrText, BSTR bstrCaption, UINT uType, [out, retval] long *pVal);
+		[id(10), helpstring("Ò¿¯ÄÞ ShowPanelBar")] HRESULT ShowPanelBar();
+		[id(11), helpstring("Ò¿¯ÄÞ GetPanelDocumentObject")] HRESULT GetPanelDocumentObject([out, retval]IDispatch* *pVal);
+		[id(12), helpstring("Ò¿¯ÄÞ GetPanelWindowObject")] HRESULT GetPanelWindowObject([out, retval]IDispatch* * pVal);
+		[id(13), helpstring("Ò¿¯ÄÞ GetPanelWebBrowserObject")] HRESULT GetPanelWebBrowserObject([out, retval]IDispatch* * pVal);
+		[id(14), helpstring("Ò¿¯ÄÞ GetTabState")] HRESULT GetTabState(int nIndex, [out, retval] long *pVal);
+	};
+
+	[
+		object,
+		uuid(A7B5128A-E147-41d2-8155-4B9BAE449DF4),
+		dual,
+		helpstring("IAPI2 Interface"),
+		pointer_default(unique)
+	]
+	interface IAPI2 : IAPI
+	{
+		[id(15), helpstring("Ò¿¯ÄÞ ExecuteCommand")] HRESULT ExecuteCommand(int nCommand);
+		[id(16), helpstring("Ò¿¯ÄÞ GetSearchText")] HRESULT GetSearchText([out, retval]BSTR *pbstrText);
+		[id(17), helpstring("Ò¿¯ÄÞ SetSearchText")] HRESULT SetSearchText(BSTR bstrText);
+		[id(18), helpstring("Ò¿¯ÄÞ GetAddressText")] HRESULT GetAddressText([out, retval]BSTR *pbstrText);
+		[id(19), helpstring("Ò¿¯ÄÞ SetAddressText")] HRESULT SetAddressText(BSTR bstrText);
+		[id(20), helpstring("Ò¿¯ÄÞ GetExtendedTabState")] HRESULT GetExtendedTabState(int nIndex, [out, retval]long *pVal);
+		[id(21), helpstring("Ò¿¯ÄÞ SetExtendedTabState")] HRESULT SetExtendedTabState(int nIndex, long nState);
+		[id(22), helpstring("Ò¿¯ÄÞ GetKeyState")] HRESULT GetKeyState(int nKey, [out, retval]long *pVal);
+		[id(23), helpstring("Ò¿¯ÄÞ GetProfileInt")] HRESULT GetProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nDefault, [out, retval]long *pVal);
+		[id(24), helpstring("Ò¿¯ÄÞ WriteProfileInt")] HRESULT WriteProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nValue);
+		[id(25), helpstring("Ò¿¯ÄÞ GetProfileString")] HRESULT GetProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrDefault, [out, retval]BSTR *pbstrText);
+		[id(26), helpstring("Ò¿¯ÄÞ WriteProfileString")] HRESULT WriteProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrText);
+		[id(27), helpstring("Ò¿¯ÄÞ GetScriptFolder")] HRESULT GetScriptFolder([out, retval]BSTR *pbstrFolder);
+		[id(28), helpstring("Ò¿¯ÄÞ GetCSSFolder")] HRESULT GetCSSFolder([out, retval]BSTR *pbstrFolder);
+		[id(29), helpstring("Ò¿¯ÄÞ GetBaseFolder")] HRESULT GetBaseFolder([out, retval]BSTR *pbstrFolder);
+		[id(30), helpstring("Ò¿¯ÄÞ GetExePath")] HRESULT GetExePath([out, retval]BSTR *pbstrPath);
+		[id(31), helpstring("Ò¿¯ÄÞ SetStyleSheet")] HRESULT SetStyleSheet(int nIndex, BSTR bstrStyleSheet, BOOL bOff);
+	};
+
+	[
+		object,
+		uuid(738A9354-D4E7-4dd9-861B-15D79F2C46F5),
+		dual,
+		helpstring("IAPI3 Interface"),
+		pointer_default(unique)
+	]
+	interface IAPI3 : IAPI2
+	{
+		[id(32), helpstring("Ò¿¯ÄÞ SaveGroup")] HRESULT SaveGroup(BSTR bstrGroupFile);
+		[id(33), helpstring("Ò¿¯ÄÞ LoadGroup")] HRESULT LoadGroup(BSTR bstrGroupFile, BOOL bClose);
+		[id(34), helpstring("Ò¿¯ÄÞ EncryptString")] HRESULT EncryptString(BSTR bstrString, BSTR bstrPass, [out, retval]BSTR *bstrRet);
+		[id(35), helpstring("Ò¿¯ÄÞ DecryptString")] HRESULT DecryptString(BSTR bstrString, [out,retval]BSTR *bstrRet);
+		[id(36), helpstring("Ò¿¯ÄÞ InputBox")] HRESULT InputBox(BSTR bstrTitle, BSTR bstrDescript, BSTR bstrDefault, int nFlag, [out, retval] long *pVal);
+		[id(37), helpstring("Ò¿¯ÄÞ NewWindow3")] HRESULT NewWindow3(BSTR bstrURL, BOOL bActive, long ExStyle, [in] const int *pHistInfo, [out, retval] long *pVal);
+		[id(38), helpstring("Ò¿¯ÄÞ AddGroupItem")] HRESULT AddGroupItem(BSTR bstrGroupFile, int nIndex, [out, retval] long *pVal);
+		[id(39), helpstring("Ò¿¯ÄÞ DeleteGroupItem")] HRESULT DeleteGroupItem(BSTR bstrGroupFile, int nIndex, [out, retval] long *pVal);
+
+	};
+
+	[
+		object,
+		uuid(B437832F-A3A8-4948-9D42-64D1B91C604E),
+		dual,
+		helpstring("IAPI4 Interface"),
+		pointer_default(unique)
+	]
+	interface IAPI4 : IAPI3
+	{
+		[id(40), helpstring("Ò¿¯ÄÞ GetHWND")] HRESULT GetHWND(long nType, [out, retval]LONG_PTR *pVal);
+	}
+[
+	uuid(2BCC2287-AAEF-4F0E-A86B-C206ECABF44D),
+	version(1.0),
+	helpstring("DonutP 1.0 Type Library")
+]
+library DONUTPLib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(CFF8CB23-2580-4BE4-BB49-4A2C1B645164),
+		helpstring("IDonutPEvents Interface"),
+	]
+	dispinterface IDonutPEvents
+	{
+		properties:
+		methods:
+		[id(1), helpstring("method DocumentComplete")]	HRESULT DocumentComplete(long nIndex, IDispatch* pDisp, BSTR bstrURL);
+	};
+
+
+	[
+		uuid(DFA77729-9333-4E33-8D52-7D4684CF9867),
+		helpstring("API Class")
+	]
+	coclass API
+	{
+		interface IAPI;
+		interface IAPI2;
+		interface IAPI3;
+		[default] interface IAPI4;
+		[default, source] dispinterface IDonutPEvents;
+	};
+};

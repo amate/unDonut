@@ -1,0 +1,160 @@
+// Created by Microsoft (R) C/C++ Compiler Version 12.00.8447.0 (b80a7676).
+//
+// DonutP.tlh
+//
+// C++ source equivalent of Win32 type library ..\\Donut\\Debug\\DonutP.exe
+// compiler-generated file created 04/06/03 at 19:53:26 - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct __declspec(uuid("cff8cb23-2580-4be4-bb49-4a2c1b645164"))
+/* dispinterface */ IDonutPEvents;
+struct /* coclass */ API;
+struct __declspec(uuid("1413c5b5-0352-47aa-85c6-9219f243f5e8"))
+/* dual interface */ IAPI;
+
+//
+// Smart pointer typedef declarations
+//
+
+_COM_SMARTPTR_TYPEDEF(IDonutPEvents, __uuidof(IDispatch));
+_COM_SMARTPTR_TYPEDEF(IAPI, __uuidof(IAPI));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("cff8cb23-2580-4be4-bb49-4a2c1b645164"))
+IDonutPEvents : IDispatch
+{
+    //
+    // Wrapper methods for error-handling
+    //
+
+    // Methods:
+    HRESULT DocumentComplete (
+        long nIndex,
+        IDispatch * pDisp,
+        _bstr_t bstrURL );
+};
+
+struct __declspec(uuid("dfa77729-9333-4e33-8d52-7d4684cf9867"))
+API;
+    // [ default ] interface IAPI
+    // [ default, source ] dispinterface IDonutPEvents
+
+struct __declspec(uuid("1413c5b5-0352-47aa-85c6-9219f243f5e8"))
+IAPI : IDispatch
+{
+    //
+    // Property data
+    //
+
+    __declspec(property(get=GetTabIndex,put=PutTabIndex))
+    long TabIndex;
+
+    //
+    // Wrapper methods for error-handling
+    //
+
+    HRESULT Close (
+        int nIndex );
+    IDispatchPtr GetDocumentObject (
+        int nIndex );
+    IDispatchPtr GetWindowObject (
+        int nIndex );
+    IDispatchPtr GetWebBrowserObject (
+        int nIndex );
+    long GetTabIndex ( );
+    void PutTabIndex (
+        long pVal );
+    long GetTabCount ( );
+    HRESULT MoveToTab (
+        unsigned short wBefor,
+        unsigned short wAfter );
+    long NewWindow (
+        _bstr_t bstrURL,
+        long bActive );
+    long MessageBox (
+        _bstr_t bstrText,
+        _bstr_t bstrCaption,
+        unsigned int uType );
+    HRESULT ShowPanelBar ( );
+    IDispatchPtr GetPanelDocumentObject ( );
+    IDispatchPtr GetPanelWindowObject ( );
+    IDispatchPtr GetPanelWebBrowserObject ( );
+    long GetTabState (
+        int nIndex );
+
+    //
+    // Raw methods provided by interface
+    //
+
+    virtual HRESULT __stdcall raw_Close (
+        int nIndex ) = 0;
+    virtual HRESULT __stdcall raw_GetDocumentObject (
+        int nIndex,
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetWindowObject (
+        int nIndex,
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetWebBrowserObject (
+        int nIndex,
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall get_TabIndex (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall put_TabIndex (
+        long pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetTabCount (
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_MoveToTab (
+        unsigned short wBefor,
+        unsigned short wAfter ) = 0;
+    virtual HRESULT __stdcall raw_NewWindow (
+        BSTR bstrURL,
+        long bActive,
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_MessageBox (
+        BSTR bstrText,
+        BSTR bstrCaption,
+        unsigned int uType,
+        long * pVal ) = 0;
+    virtual HRESULT __stdcall raw_ShowPanelBar ( ) = 0;
+    virtual HRESULT __stdcall raw_GetPanelDocumentObject (
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetPanelWindowObject (
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetPanelWebBrowserObject (
+        IDispatch * * pVal ) = 0;
+    virtual HRESULT __stdcall raw_GetTabState (
+        int nIndex,
+        long * pVal ) = 0;
+};
+
+//
+// Named GUID constants initializations
+//
+
+extern "C" const GUID __declspec(selectany) LIBID_DONUTPLib =
+    {0x2bcc2287,0xaaef,0x4f0e,{0xa8,0x6b,0xc2,0x06,0xec,0xab,0xf4,0x4d}};
+extern "C" const GUID __declspec(selectany) DIID_IDonutPEvents =
+    {0xcff8cb23,0x2580,0x4be4,{0xbb,0x49,0x4a,0x2c,0x1b,0x64,0x51,0x64}};
+extern "C" const GUID __declspec(selectany) CLSID_API =
+    {0xdfa77729,0x9333,0x4e33,{0x8d,0x52,0x7d,0x46,0x84,0xcf,0x98,0x67}};
+extern "C" const GUID __declspec(selectany) IID_IAPI =
+    {0x1413c5b5,0x0352,0x47aa,{0x85,0xc6,0x92,0x19,0xf2,0x43,0xf5,0xe8}};
+
+//
+// Wrapper method implementations
+//
+
+#include "DonutP.tli"
+
+#pragma pack(pop)
