@@ -365,6 +365,10 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		ATLASSERT(m_strDLFolder.IsEmpty() == FALSE);	// これ以外で失敗すると困る
 		m_pDLItem->strFileName = Misc::GetFileBaseName(m_pDLItem->strURL);	// [?]がつくかも
 	}
+	// URLデコード
+	if (m_pDLItem->strFileName.Find(_T('%')) != -1)
+		m_pDLItem->strFileName = Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3);
+	//m_pDLItem->strFileName.Replace(_T("%20"), _T(" "));
 
 	// リンク抽出ダイアログより
 	if (m_strDLFolder.IsEmpty() == FALSE) {
@@ -399,7 +403,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		}
 		return true;
 	}
-
+	// 名前を付けて保存ダイアログを出す
 	if (CDLOptions::bUseSaveFileDialog || ::GetKeyState(VK_CONTROL) < 0) {
 		COMDLG_FILTERSPEC filter[] = {
 			{ L"テキスト文書 (*.txt)", L"*.txt" },// ダミー

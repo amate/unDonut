@@ -132,12 +132,19 @@
 #include <queue>
 #include <stack>
 #include <algorithm>
-#include <functional>
+//#include <functional>
+#include <boost/function.hpp>
 #include <utility>
 #include <iterator>
 #include <map>
 #include <memory>
 
+using std::vector;
+using std::pair;
+using std::make_pair;
+using boost::function;
+//using namespace std::placeholders;
+using std::unique_ptr;
 
 #define DBG_M() 		ErrorLogPrintf(_T("%s (%d)\n"), __FILE__, __LINE__)
 

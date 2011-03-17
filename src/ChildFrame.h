@@ -111,7 +111,6 @@ public:
 	void	StyleSheet(CString strSheet, BOOL bOff, CString strSheetPath);
 	CString GetSelectedText();
 	CString GetSelectedTextLine();		//+++
-	bool	HaveSelectedText() const;	//+++
 
 	// Event handlers
 	void	OnSetSecureLockIcon(long nSecureLockIcon) { m_nSecureLockIcon = nSecureLockIcon; }
@@ -135,6 +134,7 @@ public:
 	void	OnStateCompleted();
 	void	OnFileDownload(bool bActiveDocument, bool& bCancel) { }
 	void	OnNewWindow3(IDispatch **ppDisp, bool& Cancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl);
+	void	OnWindowClosing(bool IsChildWindow, bool& bCancel);
 
 	const CString& strStatusBar() const { return m_strStatusBar; }
 
@@ -147,13 +147,8 @@ public:
 	void 	SetSearchWordAutoHilight( const CString& str, bool autoHilightSw );
 	void 	SetArrayHist(std::vector< std::pair<CString, CString> > &	ArrayFore, std::vector< std::pair<CString, CString> > &	ArrayBack );
 	void	SetDfgFileNameSection(const CString &strFileName, const CString &strSection);
-	int		GetJapanCharSet();
 
 	void	SetUrlSecurityExStyle(LPCTSTR lpszFile);
-
-  #if 1 //+++ 強制的に、その場でメッセージをさばく...もう不要かも...
-	int ForceMessageLoop();
-  #endif
 
 	CString GetNowSearchWord(){ return m_strSearchWord; }; //\\+
 	void SetNowSearchWord(const CString& strWord){ m_strSearchWord = strWord; }; //\\+
@@ -241,7 +236,6 @@ public:
 		COMMAND_ID_HANDLER( ID_HTMLZOOM_SUB				, OnHtmlZoomSub				)	//+++
 		COMMAND_ID_HANDLER( ID_HTMLZOOM_100TOGLE		, OnHtmlZoom100Togle		)	//+++
 		COMMAND_RANGE_HANDLER_EX( ID_HTMLZOOM_400 , ID_HTMLZOOM_050 , OnHtmlZoom    )	//+++
-		//COMMAND_RANGE_HANDLER_EX(ID_INSERTPOINT_SEARCHENGINE, ID_INSERTPOINT_SEARCHENGINE_END, OnSearchWeb_engineId)	//+++
 
 		COMMAND_ID_HANDLER_EX( ID_TITLE_COPY			, OnTitleCopy				)
 		COMMAND_ID_HANDLER_EX( ID_URL_COPY				, OnUrlCopy 				)
@@ -265,10 +259,6 @@ public:
 		} catch (...) {
 			ATLASSERT(0);
 		}
-	ALT_MSG_MAP(1)
-		MSG_WM_MOUSEWHEEL( OnIEMouseWheel )
-	ALT_MSG_MAP(7)						// to hook WM_CLOSE from Browser internal window (for script: "window.close()")
-		MSG_WM_CLOSE( OnBrowserClose )
 	END_MSG_MAP()
 
 
@@ -350,11 +340,9 @@ private:
 
 	LRESULT OnCreate(LPCREATESTRUCT lpcreatestruct);
 	void 	_InitDragDropSetting();
-	void 	__CalcDefaultRect(CRect &rc);
 
 	void 	OnDestroy();
 
-	BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt); //\\ 追加
 
 	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -364,7 +352,6 @@ private:
 	void 	OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void  	OnEditFindMax(WORD wNotifyCode, WORD wID, HWND hWndCtl) { _OnEditFindMax(wNotifyCode, wID, hWndCtl); }
 
-	CString _ReplaceCRLF(CString &str, CString &strRep);
 	LRESULT OnHilight(CString strKeyWord);	//+++ , BOOL bToggle = TRUE, BOOL bFlag = FALSE);
 
   #if 1 //def USE_UNDONUT_G_SRC		//+++ gae氏のunDonut_g の処理を反映してみる場合.
@@ -389,14 +376,6 @@ private:
 	// gae _Function_Hilightと引数の意味が違うので注意
 	struct _Function_Hilight2;
   #endif	// KIKE_UNDONUT_G
-
-	struct _Function_OpenSelectedRef;
-
-	// IEServer
-	BOOL OnIEMouseWheel(UINT nFlags, short zDelta, CPoint pt);
-
-
-	void OnBrowserClose();
 	
 
   #if 1
@@ -450,8 +429,6 @@ private:
 	void 	_SaveFocus() { m_hWndFocus = ::GetFocus(); }
 	void 	_RestoreFocus();
 	void 	_SetPageFocus();
-	void 	_SetupWindowCloseHook();
-	static BOOL CALLBACK _EnumProc(HWND hWnd, LPARAM lParam);
 
 	// Update Command UI Handlers
 	void 	OnStyleSheetBaseUI(CCmdUI *pCmdUI);
@@ -480,8 +457,6 @@ private:
 
 	MTL::CMDITabCtrl&							m_MDITab;
 	CDonutAddressBar&							m_AddressBar;
-	CContainedWindow							m_wndBrowser;
-	CContainedWindow							m_wndIEServer;
 //	CChildFavoriteMenu<CChildFrame> 			m_FavMenu;		// タブ右クリックのお気に入り用？
 	CString 									m_strStatusBar;
 	HWND										m_hWndFocus;
@@ -512,7 +487,6 @@ private:
 	int											m_nImgScl;					//+++ zoom,imgサイズ自動設定での設定値.
 	int											m_nImgSclSav;				//+++ zoom,imgサイズの100%とのトグル切り替え用
 	int											m_nImgSclSw;				//+++ zoom,imgサイズの100%とのトグル切り替え用
-	int											m_japanCharSet;				//+++ -1:未調査 0:不明 1:sjis 2:euc 3:utf8  CSearchBar::ECharEncode に同じ.
 
 	BYTE/*bool BOOL*/							m_bNavigateBack;
 	BYTE/*bool BOOL*/							m_bNavigateForward;

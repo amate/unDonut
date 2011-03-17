@@ -31,6 +31,7 @@
 #include "dialog/OpenURLDialog.h"
 #include "api.h"
 #include "PluginEventImpl.h"
+#include "Thumbnail.h"
 
 #ifdef _DEBUG
 	const bool _Donut_MainFrame_traceOn = false;
@@ -2147,7 +2148,6 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 			//pChild->Navigate2(strUrl);
 
 
-//\\ 削除			pChild->ForceMessageLoop(); 		//+++ 無理やり、この場でメッセージをさばく. もう不要のはずだが、あっても問題ないのなら、念のため残しておく...
 		} else {
 			m_OnUserOpenFile_nCmdShow = pChild->ActivateFrame(nCmdShow);	//\\ タブに追加
 		}
@@ -4268,15 +4268,15 @@ void	CMainFrame::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 	auto funcGetUrl = [](CComQIPtr<IDispatch> spDisp) -> LPCTSTR {
 		CComBSTR strUrl;
 		CComQIPtr<IHTMLImgElement>	spImage =  spDisp;
-		if (spImage) {
+		if (spImage != NULL) {
 			spImage->get_href(&strUrl);
 		} else {
 			CComQIPtr<IHTMLInputElement>	spInput = spDisp;
-			if (spInput) {
+			if (spInput != NULL) {
 				spInput->get_src(&strUrl);
 			} else {
 				CComQIPtr<IHTMLAreaElement>	spArea = spDisp;
-				if (spArea) {
+				if (spArea != NULL) {
 					spArea->get_href(&strUrl);
 				}
 			}
@@ -4849,18 +4849,31 @@ LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 	}
 	CChildFrame* pChild = GetActiveChildFrame();
 	if (pChild) {
-		pChild->SetFocus();
+		CComPtr<IDispatch>	spDisp;
+		pChild->m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
+		ATLASSERT(spDocument);
+		CComPtr<IHTMLWindow2>	spWindow;
+		spDocument->get_parentWindow(&spWindow);
+		ATLASSERT(spWindow);
+		if (wID == ID_SPECIAL_HOME)
+			spWindow->scrollBy(0, -300000);
+		else if (wID == ID_SPECIAL_END)
+			spWindow->scrollBy(0, 300000);
+		else {
+			pChild->SetFocus();
 
-		INPUT	inputs[2] = { 0 };
-		inputs[0].type		= INPUT_KEYBOARD;
-		inputs[0].ki.wVk	= nCode;
-		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[0].ki.dwFlags= 0;
-		inputs[1].type		= INPUT_KEYBOARD;
-		inputs[1].ki.wVk	= nCode;
-		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
-		SendInput(2, inputs, sizeof(INPUT));
+			INPUT	inputs[2] = { 0 };
+			inputs[0].type		= INPUT_KEYBOARD;
+			inputs[0].ki.wVk	= nCode;
+			inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
+			inputs[0].ki.dwFlags= 0;
+			inputs[1].type		= INPUT_KEYBOARD;
+			inputs[1].ki.wVk	= nCode;
+			inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
+			inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
+			SendInput(2, inputs, sizeof(INPUT));
+		}
 	}
 	//PostMessage(WM_KEYDOWN, nCode, 0);
 	return S_OK;
@@ -4887,7 +4900,6 @@ LRESULT CMainFrame::OnSecurityReport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 }
 
 
-#ifdef USE_THUMBNAIL
 //+++ ウィンドウ・サムネール表示(ページ選択)
 LRESULT CMainFrame::OnWindowThumbnail(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
@@ -4902,7 +4914,6 @@ LRESULT CMainFrame::OnWindowThumbnail(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
   #endif
 	return S_OK;
 }
-#endif
 
 
 LRESULT CMainFrame::_OnMDIActivate(HWND hWndActive)
@@ -5978,7 +5989,6 @@ int CMainFrame::ApiNewWindow(BSTR bstrURL, BOOL bActive)
 
 	pChild->SetWaitBeforeNavigate2Flag();			//+++ 無理やり、BeforeNavigate2()が実行されるまでの間アドレスバーを更新しないようにするフラグをon
 	pChild->Navigate2(strURL);
-//\\ 削除 pChild->ForceMessageLoop();								//+++ 無理やり... すでに不要だろうがとりあえず残す...
 	return m_MDITab.GetTabIndex(pChild->m_hWnd);
 }
 
@@ -6321,7 +6331,6 @@ int CMainFrame::ApiNewWindow3(BSTR bstrURL, BOOL bActive, long ExStyle, void *pE
 
 	pChild->SetWaitBeforeNavigate2Flag();			//+++ 無理やり、BeforeNavigate2()が実行されるまでの間アドレスバーを更新しないようにするフラグをon
 	pChild->Navigate2(strURL);
-//\\ 削除	pChild->ForceMessageLoop();						//+++ 無理やり... すでに不要だろうがとりあえず残す....
 
 	return m_MDITab.GetTabIndex(pChild->m_hWnd);
 }

@@ -264,10 +264,6 @@ inline DWORD DonutGetDLContrlFlags(HWND hWnd, bool bFromView)
 ///+++	  include の依存関係が面倒なので...
 extern CString Donut_GetActiveSelectedText();
 
-///+++ 現在のアクティブ頁で選択中のテキストがあるかどうかを返す.
-///+++ ※リンクに対するコンテキストメニューで、かつ文字列選択中かどうかの判定のため.
-extern bool	Donut_HaveActiveSelectedText();
-
 ///+++ 手抜きで現在のアクティブ頁でのステータス文字列を返す.
 ///+++ ※ カスタムメニュー側で、メニューが開かれたときにある文字列を取得するため.
 extern CString Donut_GetActiveStatusStr();

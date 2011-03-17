@@ -20,45 +20,56 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 
-
+// Constants
+enum {
+	#if 1	//+++ xp未満ではフラットスクロールバーを設定、xp以後ではthemeを適用.
+	DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
+	DOCHOSTUIFLAG_THEME_VIEW    = (DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
+	DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
+	#elif 1	// unDonut+
+	DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
+	DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
+	#else
+	//docHostUIFlagDEFAULT		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE |DOCHOSTUIFLAG_THEME),
+	//docHostUIFlagNotFlatView	= (docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),		// UDT DGSTR ( added by dai
+	// DonutRAPT(1.26)の値.
+	//docHostUIFlagDEFAULT 		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
+	//docHostUIFlagNotFlatScrBar= (docHostUIFlagNO3DBORDER     | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
+	#endif
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // CDonutView
 
-// Constructor
+/// Constructor
 CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
 	: m_ViewOption(this, dwExStyleFlags)						//+++ dwExStyleFlags追加.
 	, m_dwDefaultDLControlFlags(dwDefaultDLControlFlags)
+	, m_dwDLControlFlags(dwDefaultDLControlFlags)
 	//, m_dwDefaultExtendedStyleFlags(dwExStyleFlags)			//+++
 	, m_nDDCommand(0)
-  #if 1 //+++	抜け対策でかいとく.
-	, m_spAxAmbient()
    #if _ATL_VER >= 0x700
 	, m_ExternalUIDispatch(this)
    #endif
    #if defined USE_ATL3_BASE_HOSTEX == 0 /*_ATL_VER >= 0x700*/	//+++
 	//, m_ExternalAmbientDispatch()
    #endif
-  #endif
 	, m_bUseCustomDropTarget(false)
-	, m_dwDLControlFlags(dwDefaultDLControlFlags)
-{
-}
+	, m_bLightRefresh(false)
+{ }
 
 
-
-DWORD CDonutView::GetDLControlFlags()
-{
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-	get_DLControlFlags(&dwDLControlFlags);
-	return dwDLControlFlags;
-}
-
-
-
+/// DLコントロールを設定する
 void CDonutView::PutDLControlFlags(DWORD dwDLControlFlags)
 {
-	put_DLControlFlags(dwDLControlFlags);
+	m_dwDLControlFlags	= dwDLControlFlags;
+
+	CComQIPtr<IDispatch>	spDisp = m_spHost;
+	if (spDisp) {
+		VARIANT 		   varResult;
+		DISPPARAMS		   params = { 0 };
+		HRESULT hr = spDisp->Invoke(DISPID_AMBIENT_DLCONTROL, IID_NULL, 1041 /*JP*/, DISPATCH_PROPERTYPUT, &params, &varResult, NULL, NULL);
+	}
 }
 
 
@@ -78,8 +89,7 @@ void CDonutView::SetIeMenuNoCstm(int nStatus)
 void CDonutView::SetOperateDragDrop(BOOL bOn, int nCommand)
 {
 	CComPtr<IAxWinHostWindow> spAxWindow;
-	HRESULT 				  hr = QueryHost(&spAxWindow);
-
+	HRESULT hr = QueryHost(&spAxWindow);
 	if ( FAILED(hr) )
 		return;
 
@@ -111,21 +121,6 @@ BOOL CDonutView::PreTranslateMessage(MSG *pMsg)
 
 	// give HTML page a chance to translate this message
 	return SendMessage(WM_FORWARDMSG, 0, (LPARAM) pMsg) != 0;
-}
-
-
-void	CDonutView::put_DLControlFlags(DWORD dwFlags)
-{
-	m_dwDefaultDLControlFlags = dwFlags;
-	m_dwDLControlFlags	= dwFlags;
-	VARIANT 		   varResult;
-	DISPPARAMS		   params = { 0 };
-	HRESULT hr = m_spAxAmbient->Invoke(DISPID_AMBIENT_DLCONTROL, IID_NULL, 1041 /*JP*/, DISPATCH_PROPERTYPUT, &params, &varResult, NULL, NULL);
-}
-
-void	CDonutView::get_DLControlFlags(DWORD* pdwFlags)
-{
-	*pdwFlags = m_dwDLControlFlags;
 }
 
 
@@ -245,15 +240,29 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 
 
 // IDispatch
-STDMETHODIMP CDonutView::Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr)
+STDMETHODIMP	CDonutView::Invoke(
+		DISPID			dispidMember,
+		REFIID			riid,
+		LCID			lcid,
+		WORD			wFlags,
+		DISPPARAMS *	pdispparams,
+		VARIANT *		pvarResult,
+		EXCEPINFO * 	pexcepinfo,
+		UINT *			puArgErr)
 {
-	if (dispIdMember == DISPID_AMBIENT_DLCONTROL) {
-		pVarResult->vt	 = VT_I4;
-		pVarResult->lVal = m_dwDLControlFlags;
-		return S_OK;
+	if (!pvarResult) {
+		return E_INVALIDARG;
 	}
 
-	return E_NOTIMPL;
+	HRESULT hr = E_NOTIMPL;
+
+	if (dispidMember == DISPID_AMBIENT_DLCONTROL) {
+		pvarResult->vt	 = VT_I4;
+		pvarResult->lVal = m_dwDLControlFlags;
+		hr				 = S_OK;
+	}
+
+	return hr;
 }
 
 
@@ -269,7 +278,7 @@ void CDonutView::OnMultiChg(WORD, WORD, HWND)
 }
 
 
-
+/// 現在のDLコントロールを反転させる
 void CDonutView::OnSecuChg(WORD, WORD, HWND)
 {
 	_ToggleFlag(ID_DLCTL_SCRIPTS		, DLCTL_NO_SCRIPTS			, TRUE);
@@ -280,15 +289,15 @@ void CDonutView::OnSecuChg(WORD, WORD, HWND)
 }
 
 
-
+/// 全部のDLコントロールのオン/オフ切り替え
 void CDonutView::OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 {
 	switch (wID) {
 	case ID_DLCTL_ON_OFF_MULTI:
 		if ( ( GetDLControlFlags() & (DLCTL_DLIMAGES | DLCTL_BGSOUNDS | DLCTL_VIDEOS) ) == (DLCTL_DLIMAGES | DLCTL_BGSOUNDS | DLCTL_VIDEOS) )
-			_OffFlag(DLCTL_BGSOUNDS | DLCTL_VIDEOS | DLCTL_DLIMAGES);
+			_RemoveFlag(DLCTL_BGSOUNDS | DLCTL_VIDEOS | DLCTL_DLIMAGES);
 		else
-			_OnFlag(DLCTL_BGSOUNDS | DLCTL_VIDEOS | DLCTL_DLIMAGES);
+			_AddFlag(DLCTL_BGSOUNDS | DLCTL_VIDEOS | DLCTL_DLIMAGES);
 		break;
 
 	case ID_DLCTL_ON_OFF_SECU:
@@ -296,11 +305,9 @@ void CDonutView::OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 		if ( ( ( GetDLControlFlags() & (DLCTL_NO_RUNACTIVEXCTLS | DLCTL_NO_DLACTIVEXCTLS | DLCTL_NO_SCRIPTS | DLCTL_NO_JAVA) ) == 0 ) ) {
 			//チェックは全部ついている
 			_AddFlag(DLCTL_NO_SCRIPTS | DLCTL_NO_JAVA | DLCTL_NO_DLACTIVEXCTLS | DLCTL_NO_RUNACTIVEXCTLS);
-			//_OnFlag(DLCTL_NO_SCRIPTS|DLCTL_NO_JAVA|DLCTL_NO_DLACTIVEXCTLS|DLCTL_NO_RUNACTIVEXCTLS);
 		} else {
 			//チェックされていない項目がある
 			_RemoveFlag(DLCTL_NO_SCRIPTS | DLCTL_NO_JAVA | DLCTL_NO_DLACTIVEXCTLS | DLCTL_NO_RUNACTIVEXCTLS);
-			//_OffFlag(DLCTL_NO_SCRIPTS|DLCTL_NO_JAVA|DLCTL_NO_DLACTIVEXCTLS|DLCTL_NO_RUNACTIVEXCTLS);
 		}
 
 		break;
@@ -310,15 +317,14 @@ void CDonutView::OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 }
 
 
-
-LRESULT CDonutView::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &)
+/// ウィンドウの初期化
+int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	// Let me initialize itself
-	LRESULT lRet = DefWindowProc(uMsg, wParam, lParam);
+	LRESULT lRet = DefWindowProc();
 	try {
 		HRESULT hr = QueryControl(IID_IWebBrowser2, (void**)&m_spBrowser);
-		if (FAILED(hr))
-			AtlThrow(hr);
+		ATLASSERT(m_spBrowser);
 
 		BOOL	bCheck	= GetRegisterAsDropTarget();
 
@@ -356,14 +362,16 @@ LRESULT CDonutView::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &)
 
 		// 外部AmbientIDispatchインターフェイスを設定する
 		CComQIPtr<IAxWinAmbientDispatchEx> pAmbient 	   = spAxHostWindow;
+		m_spHost = spAxHostWindow;
 		//m_ExternalAmbientDispatch.SetHostWindow(spAxWindow);
 		pAmbient->SetAmbientDispatch((IDispatch*)this);//(&m_ExternalAmbientDispatch);
 
+		// DLMnager用にIServiceProviderを登録する
 		CComQIPtr<IObjectWithSite>	spObjectWithSite = spAxHostWindow;
 		ATLASSERT(spObjectWithSite);
 		hr = spObjectWithSite->SetSite((IUnknown*)(IServiceProvider*)this);
 
-		InitDLControlFlags();
+		_InitDLControlFlags();
 
 	  #if 1	//+++
 		if (m_ViewOption.m_dwExStyle == (DWORD)-1)
@@ -461,20 +469,9 @@ void CDonutView::OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 
 
 
-void CDonutView::InitDLControlFlags()
-{
-	put_DLControlFlags(m_dwDefaultDLControlFlags);
-}
-
-
 DWORD CDonutView::_GetDLControlFlags()
 {
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	if (m_spAxAmbient) {
-		get_DLControlFlags(&dwDLControlFlags);
-	}
-
+	DWORD dwDLControlFlags = m_dwDLControlFlags;
 	return dwDLControlFlags;
 }
 
@@ -487,89 +484,6 @@ DWORD	CDonutView::_GetExtendedStypeFlags()
 }
 
 
-// Implementation
-void CDonutView::_OnFlag(DWORD dwFlag)
-{
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	get_DLControlFlags(&dwDLControlFlags);
-
-	if ( (dwDLControlFlags & dwFlag) != dwFlag )
-		dwDLControlFlags |= dwFlag;
-
-	put_DLControlFlags(dwDLControlFlags);
-}
-
-
-
-void CDonutView::_OffFlag(DWORD dwFlag)
-{
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	get_DLControlFlags(&dwDLControlFlags);
-
-	if ( (dwDLControlFlags & dwFlag) == dwFlag )
-		dwDLControlFlags &= ~dwFlag;
-
-	put_DLControlFlags(dwDLControlFlags);
-}
-
-
-
-bool CDonutView::_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse)
-{
-	bool  bRet			   = false;
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	get_DLControlFlags(&dwDLControlFlags);
-
-	if (dwDLControlFlags & dwFlag) {
-		dwDLControlFlags &= ~dwFlag;
-	} else {
-		dwDLControlFlags |= dwFlag;
-		bRet			  = true;
-	}
-
-	put_DLControlFlags(dwDLControlFlags);
-	return bRet;
-}
-
-
-
-void CDonutView::_LightRefresh()
-{
-	if (::GetKeyState(VK_CONTROL) < 0)
-		return;
-
-	CString strURL = GetLocationURL();
-	Navigate2(strURL);
-}
-
-
-
-void CDonutView::_AddFlag(DWORD dwFlag) 	//minit
-{
-	DWORD	dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	get_DLControlFlags(&dwDLControlFlags);
-
-	dwDLControlFlags |= dwFlag;
-
-	put_DLControlFlags(dwDLControlFlags);
-}
-
-
-
-void CDonutView::_RemoveFlag(DWORD dwFlag)	//minit
-{
-	DWORD dwDLControlFlags = CDLControlOption::DLCTL_DEFAULT;
-
-	get_DLControlFlags(&dwDLControlFlags);
-
-	dwDLControlFlags &= ~dwFlag;
-
-	put_DLControlFlags(dwDLControlFlags);
-}
 
 
 
@@ -638,26 +552,52 @@ void CDonutView::OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI)
 	pCmdUI->SetCheck((dwDocHostFlags & docHostUIFlagOPENNEWWIN) != 0 /*? 1 : 0*/);
 }
 
+// Implementation
 
-#if 0
-bool CDonutView::OnScroll(UINT nScrollCode, UINT nPos, bool bDoScroll)
+
+/// DLフラグをトグルする
+bool CDonutView::_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse)
 {
-	return false;
-}
-#endif
+	bool  bRet			   = false;
+	DWORD dwDLControlFlags = m_dwDLControlFlags;
+	if (dwDLControlFlags & dwFlag) {
+		dwDLControlFlags &= ~dwFlag;
+	} else {
+		dwDLControlFlags |= dwFlag;
+		bRet			  = true;
+	}
 
-
-void CDonutView::_DrawDragEffect(bool bRemove)
-{
-	CClientDC dc(m_hWnd);
-
-	CRect	  rect;
-	GetClientRect(rect);
-
-	if (bRemove)
-		MtlDrawDragRectFixed(dc.m_hDC, &rect, CSize(0, 0), &rect, CSize(2, 2), NULL, NULL);
-	else
-		MtlDrawDragRectFixed(dc.m_hDC, &rect, CSize(2, 2), NULL , CSize(2, 2), NULL, NULL);
+	PutDLControlFlags(dwDLControlFlags);
+	return bRet;
 }
 
 
+/// DLコントロールの変更を有効にするために更新する
+void CDonutView::_LightRefresh()
+{
+	if (::GetKeyState(VK_CONTROL) < 0)
+		return;
+
+	m_bLightRefresh = true;
+	CString strURL = GetLocationURL();
+	Navigate2(strURL);
+}
+
+
+/// DLフラグを追加する
+void CDonutView::_AddFlag(DWORD dwFlag) 	//minit
+{
+	DWORD	dwDLControlFlags = m_dwDLControlFlags;
+	dwDLControlFlags |= dwFlag;
+
+	PutDLControlFlags(dwDLControlFlags);
+}
+
+/// DLフラグを取り除く
+void CDonutView::_RemoveFlag(DWORD dwFlag)	//minit
+{
+	DWORD dwDLControlFlags = m_dwDLControlFlags;
+	dwDLControlFlags &= ~dwFlag;
+
+	PutDLControlFlags(dwDLControlFlags);
+}

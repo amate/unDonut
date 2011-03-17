@@ -655,15 +655,6 @@ CString Donut_GetActiveSelectedText()
 
 
 ///+++
-bool	Donut_HaveActiveSelectedText()
-{
-	CChildFrame *pChild = g_pMainWnd->GetActiveChildFrame();
-	return pChild->HaveSelectedText();
-}
-
-
-
-///+++
 CString Donut_GetActiveStatusStr()
 {
 	return g_pMainWnd->GetActiveChildFrame()->strStatusBar();

@@ -109,6 +109,16 @@ STDMETHODIMP CDownloadManager::Download(
 				pCBSCB->SetBindCtx(pbc);
 			}
 		}
+	} else {
+		// pbscbPrev‚ªNULL‚¾‚Á‚½‚Æ‚«‚Ìê‡
+		LPOLESTR strUrl;
+		hr = pmk->GetDisplayName(pbc, NULL, &strUrl);
+		if (SUCCEEDED(hr)) {
+			DownloadStart(strUrl);
+			::CoTaskMemFree(strUrl);
+			return S_OK;
+		}
+
 	}
 	if (SUCCEEDED(hr)) {
 		CComPtr<IStream>	spStream;

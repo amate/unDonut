@@ -10,13 +10,14 @@
 #define __THUMBNAIL_H_
 
 #define USE_THUMBNAIL
+#include <boost/thread.hpp>
+#include "resource.h"
 
 
-class CThumbnailDlg : public CDialogImpl<CThumbnailDlg> /*, public CMessageFilter*/ {
+class CThumbnailDlg : public CDialogImpl<CThumbnailDlg> /*, public CMessageFilter*/ 
+{
 public:
-	enum {
-		IDD 			= IDD_DIALOG_THUMBNAIL,
-	};
+	enum { IDD = IDD_DIALOG_THUMBNAIL };
 
 private:
 	enum {
@@ -89,9 +90,15 @@ private:
 		m_List = GetDlgItem(IDC_LIST_THUMBNAIL);
 		m_ImageList.Create(m_nPictWidth, m_nPictHeight, ILC_COLOR24, 8, 8);
 
-		MtlForEachMDIChild( m_hParent, _Function_EnumChild_MakeThumbnail(m_ImageList, m_nPictWidth, m_nPictHeight) );
-		m_List.SetImageList(m_ImageList.m_hImageList, LVSIL_NORMAL);
-		MtlForEachMDIChild( m_hParent, _Function_EnumChild_MakeListView(m_List) );
+		_Function_EnumChild_MakeThumbnail makeThum(m_ImageList, m_nPictWidth, m_nPictHeight);
+		_Function_EnumChild_MakeListView makeList(m_List);
+		//auto funcThread = [this, makeThum, makeList] () {
+			MtlForEachMDIChild( m_hParent, makeThum);
+			m_List.SetImageList(m_ImageList.m_hImageList, LVSIL_NORMAL);
+			MtlForEachMDIChild( m_hParent, makeList);
+		//};
+		//boost::thread th(funcThread);
+		//funcThread;
 
 		MoveWindow(m_rcDialog, TRUE);
 

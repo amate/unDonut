@@ -20,38 +20,17 @@ class CDonutView :
 	public IServiceProvider,
 	public IDropTarget,
 	public IScriptErrorCommandTargetImpl<CDonutView>,
-	public IDispatchImpl<IDispatch>
+	public IDispatch
 {
 public:
 	// Declaration
 	DECLARE_WND_SUPERCLASS( NULL, CAxWindow::GetWndClassName() )
-
-	// Constants
-	enum {
-	  #if 1	//+++ xp未満ではフラットスクロールバーを設定、xp以後ではthemeを適用.
-		DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-		DOCHOSTUIFLAG_THEME_VIEW    = (DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-		DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
-	  #elif 1	// unDonut+
-		DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-		DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
-	  #else
-		//docHostUIFlagDEFAULT		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE |DOCHOSTUIFLAG_THEME),
-		//docHostUIFlagNotFlatView	= (docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),		// UDT DGSTR ( added by dai
-		// DonutRAPT(1.26)の値.
-		//docHostUIFlagDEFAULT 		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-		//docHostUIFlagNotFlatScrBar= (docHostUIFlagNO3DBORDER     | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	  #endif
-	};
-	CDonutViewOption<CDonutView>		m_ViewOption;
 	
-
-public:
 	// Constructor
 	CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags);
 
 	// Methods
-	DWORD	GetDLControlFlags();
+	DWORD	GetDLControlFlags() const { return m_dwDLControlFlags; }
 	void	PutDLControlFlags(DWORD dwDLControlFlags);
 	void	SetIeMenuNoCstm(int nStatus);
 
@@ -64,13 +43,6 @@ public:
 
 	DWORD	_GetDLControlFlags();
 	DWORD	_GetExtendedStypeFlags();
-
-	//bool	OnScroll(UINT nScrollCode, UINT nPos, bool bDoScroll = true);
-
-	void	InitDLControlFlags();
-
-	void	put_DLControlFlags(DWORD dwFlags);
-	void	get_DLControlFlags(DWORD* pdwFlags);
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject);
@@ -87,13 +59,25 @@ public:
     STDMETHODIMP Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect);
 
 	// IDispatch
-    STDMETHODIMP Invoke(DISPID dispIdMember, REFIID riid, LCID lcid, WORD wFlags, DISPPARAMS *pDispParams, VARIANT *pVarResult, EXCEPINFO *pExcepInfo, UINT *puArgErr);
+	STDMETHODIMP	GetTypeInfoCount(UINT * pctinfo) { return E_NOTIMPL; }
+	STDMETHODIMP	GetTypeInfo(UINT itinfo, LCID lcid, ITypeInfo * *pptinfo) { return E_NOTIMPL; }
+	STDMETHODIMP	GetIDsOfNames(REFIID riid, LPOLESTR * rgszNames, UINT cNames, LCID lcid, DISPID * rgdispid) { return E_NOTIMPL; }
+
+	STDMETHODIMP	Invoke(
+			DISPID			dispidMember,
+			REFIID			riid,
+			LCID			lcid,
+			WORD			wFlags,
+			DISPPARAMS *	pdispparams,
+			VARIANT *		pvarResult,
+			EXCEPINFO * 	pexcepinfo,
+			UINT *			puArgErr);
 
 
 	// Message map and handlers
 	BEGIN_MSG_MAP( CDonutView )
-		MESSAGE_HANDLER( WM_CREATE, OnCreate )
-		MSG_WM_DESTROY( OnDestroy )
+		MSG_WM_CREATE	( OnCreate )
+		MSG_WM_DESTROY	( OnDestroy )
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_BGSOUNDS		, OnMultiBgsounds		)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_VIDEOS			, OnMultiVideos 		)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_DLIMAGES		, OnMultiDlImages		)
@@ -141,7 +125,7 @@ private:
 	void	OnMultiChg(WORD, WORD, HWND);
 	void	OnSecuChg(WORD, WORD, HWND);
 	void	OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-	LRESULT OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &);
+	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void	OnDestroy();
 
 	void	OnMultiBgsounds(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -152,28 +136,22 @@ private:
 	void	OnSecurScritps(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-	// Implementation
-	//protected:
-	void	_OnFlag(DWORD dwFlag);
-	void	_OffFlag(DWORD dwFlag);
-	bool	_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse = FALSE);
-	void	_AddFlag(DWORD dwFlag);
-	void	_RemoveFlag(DWORD dwFlag);
-	void	_LightRefresh();
-
 	void		OnUpdateDLCTL_ChgMulti(CCmdUI *pCmdUI);
 	void		OnUpdateDLCTL_ChgSecu(CCmdUI *pCmdUI);
 	void		OnUpdateDLCTL_DLIMAGES(CCmdUI *pCmdUI);
 	void		OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI);
 	void		OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI);
 
-	// Overrides
-	//STDMETHOD	(GetHostInfo) (DWORD  * pdwFlags, DWORD  * pdwDoubleClick);
-	//STDMETHOD	(GetDropTarget) (IUnknown	* pDropTarget, IUnknown  * *ppDropTarget);
-	void		_DrawDragEffect(bool bRemove);
 
 private:
+	void	_InitDLControlFlags() { PutDLControlFlags(m_dwDefaultDLControlFlags); }
+	bool	_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse = FALSE);
+	void	_AddFlag(DWORD dwFlag);
+	void	_RemoveFlag(DWORD dwFlag);
+	void	_LightRefresh();
+
 	// Data members
+	CComQIPtr<IAxWinHostWindow>					m_spHost;
 	CComQIPtr<IAxWinAmbientDispatchEx>			m_spAxAmbient;
 
 	DWORD						m_dwDefaultDLControlFlags;
@@ -189,6 +167,9 @@ private:
 
 	DWORD						m_dwDLControlFlags;
 
+public:
+	CDonutViewOption<CDonutView>		m_ViewOption;
+	bool	m_bLightRefresh;
 };
 
 

@@ -876,6 +876,7 @@ public:
 	static _ATL_FUNC_INFO	PrivacyImpactedStateChange;
 	static _ATL_FUNC_INFO	FileDownloadInfo;
 	static _ATL_FUNC_INFO	NewWindow3Info;
+	static _ATL_FUNC_INFO	WindowClosingInfo;
 };
 
 
@@ -892,7 +893,7 @@ __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::OnSecureLockIcon			
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::PrivacyImpactedStateChange = { CC_STDCALL, VT_EMPTY, 1, { VT_BOOL } };
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::FileDownloadInfo			= { CC_STDCALL, VT_EMPTY, 2, { VT_BOOL, VT_BYREF | VT_BOOL} };
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::NewWindow3Info 			= { CC_STDCALL, VT_EMPTY, 5, { VT_BYREF | VT_DISPATCH, VT_BYREF | VT_BOOL, VT_VARIANT, VT_BSTR, VT_BSTR } };
-
+__declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::WindowClosingInfo			= { CC_STDCALL, VT_EMPTY, 2, { VT_BOOL, VT_BYREF | VT_BOOL} };
 
 template <class T, UINT nID>
 class IWebBrowserEvents2Impl
@@ -986,7 +987,7 @@ private:
 	void OnPrivacyImpactedStateChange(bool bPrivacyImpacted) { }
 	void OnFileDownload(bool bActiveDocument, bool& bCancel) { }
 	void OnNewWindow3(IDispatch **ppDisp, bool& Cancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl) { }
-
+	void OnWindowClosing(bool IsChildWindow, bool& bCancel) { }
 
 public:
 	// For downloading state
@@ -1025,6 +1026,7 @@ public:
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_PRIVACYIMPACTEDSTATECHANGE, &__OnPrivacyImpactedStateChange, &PrivacyImpactedStateChange)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_FILEDOWNLOAD		, &__OnFileDownload		, &FileDownloadInfo)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_NEWWINDOW3			, &__OnNewWindow3		, &NewWindow3Info)
+		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_WINDOWCLOSING		, &__OnWindowClosing	, &WindowClosingInfo)
 	END_SINK_MAP()
 
 
@@ -1278,6 +1280,13 @@ m_bBeforeNavigate2 = 0; //+++ ŽÀŒ±.
 		*Cancel = bCancel ? VARIANT_TRUE : VARIANT_FALSE;
 	}
 
+	void __stdcall __OnWindowClosing( /*[in]*/ VARIANT_BOOL IsChildWindow, /*[out]*/ VARIANT_BOOL* Cancel)
+	{
+		T *pT = static_cast<T *>(this);
+		bool bCancel = false;
+		pT->OnWindowClosing(IsChildWindow == VARIANT_TRUE ? true : false, bCancel);
+		*Cancel = bCancel ? VARIANT_TRUE : VARIANT_FALSE;
+	}
 
 };
 

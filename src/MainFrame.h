@@ -322,9 +322,9 @@ public:
 		USER_MEG_WM_MENU_REFRESH_SCRIPT 	( OnMenuRefreshScript	)
 		USER_MSG_WM_MENU_RESTRICT_MESSAGE	( OnRestrictMessage 	)
 		USER_MSG_WM_GET_FAVORITEFILEPATH	( OnGetFavoriteFilePath )
-	  #ifdef USE_THUMBNAIL
+
 		COMMAND_ID_HANDLER( ID_WINDOW_THUMBNAIL 		  , OnWindowThumbnail			)
-	  #endif
+
 		COMMAND_ID_HANDLER( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine) 	//’·‚¢‚È‚Ÿ
 		COMMAND_ID_HANDLER( ID_RECENT_DOCUMENT			  , OnMenuRecentLast			)
 
@@ -809,9 +809,8 @@ private:
 	BOOL 		TranslateMessageToBHO(MSG *pMsg);
 	void 		_RemoveTmpDirectory();
 
-  #ifdef USE_THUMBNAIL
 	LRESULT 	OnWindowThumbnail	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-  #endif
+
 	LRESULT 	OnSpecialRefreshSearchEngine(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	BOOL 		_Load_OptionalData(CChildFrame *pChild, const CString &strFileName, CString &strSection);
 	BOOL 		_Load_OptionalData2(CChildFrame *pChild,
