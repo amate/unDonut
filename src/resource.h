@@ -525,6 +525,7 @@
 #define IDC_BUTTON_IMGFOLDERSELECT		1391
 #define IDC_RADIO_OVERWRITEPROMPT		1392
 #define IDC_RADIO_USEUNIQUENUMBER		1393
+#define IDC_EDIT_SHORTCUTCODE			1394
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -871,7 +872,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        315
 #define _APS_NEXT_COMMAND_VALUE         33187
-#define _APS_NEXT_CONTROL_VALUE         1394
+#define _APS_NEXT_CONTROL_VALUE         1395
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

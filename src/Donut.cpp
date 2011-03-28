@@ -453,6 +453,7 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 
 
 
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // _tWinMain : EntryPoint
 
@@ -518,6 +519,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	hRes	= _Module.Init(ObjectMap, hInstance, &LIBID_ATLLib);
 	//hRes	= _Module.Init(NULL, hInstance);
 	ATLASSERT( SUCCEEDED(hRes) );
+
 
 	int 	nRet		 = 0;
 	bool	bRun		 = true;

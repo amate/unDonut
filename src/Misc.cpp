@@ -893,6 +893,34 @@ bool IsEnableUnicodeToSJIS(LPCWSTR pStr)
 	return flag == 0;
 }
 
+#include <MLang.h>
+/// 文字コード不明な文字列をCStringにして返す
+CString	UnknownToCString(const std::vector<char>& src)
+{
+	CString str;
+	UINT nCodePage = CP_UTF8;
+	CComPtr<IMultiLanguage2>	spMultiLang;
+	HRESULT hr = spMultiLang.CoCreateInstance(CLSID_CMultiLanguage);
+	if (SUCCEEDED(hr)) {
+		int Scores = 5; // 取得する候補の数
+		DetectEncodingInfo Encoding[5] = { 0 };
+		int nSize = (int)src.size();
+		hr = spMultiLang->DetectInputCodepage(MLDETECTCP_NONE, 0, (char*)src.data(), &nSize, Encoding, &Scores);
+		if (SUCCEEDED(hr)) {
+			DWORD dwMode = 0;
+			UINT nSrcSize = static_cast<UINT>(nSize);
+			UINT nDestSize = 0;
+			hr = spMultiLang->ConvertStringToUnicode(&dwMode, Encoding[0].nCodePage, (char*)src.data(), &nSrcSize, str.GetBuffer(0), &nDestSize);
+			if (SUCCEEDED(hr)) {
+				hr = spMultiLang->ConvertStringToUnicode(&dwMode, Encoding[0].nCodePage, (char*)src.data(), &nSrcSize, str.GetBuffer(nDestSize), &nDestSize);
+				str.ReleaseBuffer();
+				return str;
+			}
+		}
+	}
+	ATLASSERT(FALSE);
+	return str;
+}
 
 
 // ==========================================================================

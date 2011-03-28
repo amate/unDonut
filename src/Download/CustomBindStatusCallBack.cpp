@@ -302,6 +302,7 @@ HRESULT CCustomBindStatusCallBack::OnResponse(
 		std::wsmatch	smatch;
 		if (std::regex_search(strRespons, smatch, regex)) {
 			CString strBuffer = smatch[1].str().c_str();
+#if 0
 			// WideChar(UTF-8)異常 -> MultiByte(UTF-8)正常
 			int nMultiSize = ::WideCharToMultiByte(CP_OEMCP, 0, strBuffer, -1, 0, 0, NULL, NULL);
 			std::unique_ptr<char> strMultiByte(new char[nMultiSize + 1]);
@@ -320,13 +321,17 @@ HRESULT CCustomBindStatusCallBack::OnResponse(
 					}
 				}
 			}
+#endif
+			vector<char> filename = Misc::urlstr_decode(strBuffer);
+			m_pDLItem->strFileName = Misc::UnknownToCString(filename);
+#if 0
 			// MultiByte(UTF-8)正常 -> WideChar(UTF-16)(wchar_t)正常
 			int nWideSize = ::MultiByteToWideChar(nCodePage, 0, strMultiByte.get(), -1, 0, 0);
 			std::unique_ptr<WCHAR> strWideChar(new WCHAR[nWideSize + 1]);
 			::MultiByteToWideChar(nCodePage, 0, strMultiByte.get(), -1, strWideChar.get(), nWideSize);
 
 			m_pDLItem->strFileName = strWideChar.get();
-			
+#endif
 		} else {
 			m_pDLItem->strFileName = m_pDLItem->strURL;
 			m_pDLItem->strFileName = Misc::GetFileBaseName(m_pDLItem->strFileName);
@@ -366,8 +371,10 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		m_pDLItem->strFileName = Misc::GetFileBaseName(m_pDLItem->strURL);	// [?]がつくかも
 	}
 	// URLデコード
-	if (m_pDLItem->strFileName.Find(_T('%')) != -1)
-		m_pDLItem->strFileName = Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3);
+	if (m_pDLItem->strFileName.Find(_T('%')) != -1) {
+		vector<char> filename = Misc::urlstr_decode(m_pDLItem->strFileName);
+		m_pDLItem->strFileName = Misc::UnknownToCString(filename);
+	}
 	//m_pDLItem->strFileName.Replace(_T("%20"), _T(" "));
 
 	// リンク抽出ダイアログより

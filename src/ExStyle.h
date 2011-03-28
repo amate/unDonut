@@ -241,54 +241,17 @@ public:
 
 
 
-//拡張プロパティデータ設定用ダイアログ
+/// 拡張プロパティデータ設定用ダイアログ
 template<int IDD_DLG>					//+++ 通常のダイアログとは別に、URLセキュリティ向けに別ダイアログを用意するためにテンプレート化... だったが、やっぱりやめ
-class CExPropertyDialogT : public CDialogImpl<CExPropertyDialogT<IDD_DLG> > , public CWinDataExchange<CExPropertyDialogT<IDD_DLG> > {
+class CExPropertyDialogT : 
+	public CDialogImpl<CExPropertyDialogT<IDD_DLG> > , 
+	public CWinDataExchange<CExPropertyDialogT<IDD_DLG> >
+{
 public:
 	enum { IDD = IDD_DLG/*IDD_DIALOG_EXPROPERTY*/ };
 
-private:
-	DWORD		m_dwExProp;
-	DWORD		m_dwExPropOpt;		//+++
-	BOOL		m_bEnabled;
-
-	CString 	m_strUrlFile;
-	CString 	m_strSection;
-
-	CString 	m_strTitle;
-
-	int 		m_nDLActiveX;
-	int 		m_nImage;
-	int 		m_nJava;
-	int 		m_nNaviLock;
-	int 		m_nRunActiveX;
-	int 		m_nScript;
-	int 		m_nScrollBar;
-	int 		m_nSound;
-	int 		m_nVideo;
-	int 		m_nBlockMailTo;
-	int 		m_nGesture;
-	int 		m_nFilter;
-	int 		m_nReload;
-	int			m_nFlatView;				//+++
-
-  #if 1 //+++ サーチ関係追加
-	CString 	m_exs_frontURL;
-	CString 	m_exs_backURL;
-	CString 	m_exs_frontKeyword;
-	CString 	m_exs_backKeyword;
-	int 		m_exs_adrBar;
-	int 		m_exs_encode;
-	bool		m_exs_bUsePost;
-  #endif
-  #if 1	//+++ url編集
-	int			m_urlMode;				//+++ 0:url無  1:url有.
-	int			m_urlEditBtnSw;			//+++ url編集のon,off
-	CString		m_strUrlBase;			//+++ エディットチェック用
-  #endif
-
-public:
-	CExPropertyDialogT(const CString &strUrlFile, const CString strSection = DONUT_SECTION, int urlMode=1)
+	/// コンストラクタ
+	CExPropertyDialogT(const CString &strUrlFile, const CString strSection = DONUT_SECTION, int urlMode = 1)
 		: m_strUrlFile(strUrlFile)
 		, m_strSection(strSection)
 		, m_urlMode(urlMode)			//+++ 追加
@@ -339,14 +302,13 @@ public:
 			m_exs_backKeyword  = pr.GetString( _T("BackKeyWord")	);
 			m_exs_encode	   = pr.GetValue ( _T("Encode") 		);
 			m_exs_bUsePost	   = pr.GetValue ( _T("UsePost")		) != 0;
+			m_exs_ShortcutCode = pr.GetString( _T("ShortcutCode")   );
 		}
 	  #endif
 	}
 
-
-	void SetTitle(CString strTitle) {
-		m_strTitle = strTitle;
-	}
+	/// ダイログに表示するタイトルを設定
+	void SetTitle(CString strTitle) { m_strTitle = strTitle; }
 
 
 	BEGIN_DDX_MAP(CExPropertyDialogT<IDD_DLG> )
@@ -373,6 +335,7 @@ public:
 			DDX_CHECK( IDC_CHECK_EXSEARCH_ADDRESSBAR, m_exs_adrBar		)
 			DDX_RADIO( IDC_RADIO_EXSEARCH_NONE		, m_exs_encode		)
 			DDX_CHECK( IDC_CHECK_USEPOST			, m_exs_bUsePost	)
+			DDX_TEXT ( IDC_EDIT_SHORTCUTCODE		, m_exs_ShortcutCode)
 		}
 	END_DDX_MAP()
 
@@ -447,7 +410,7 @@ private:
 
 	void OnOK(UINT uNotifyCode, int nID, HWND hWndCtl)
 	{
-		DoDataExchange(TRUE);
+		DoDataExchange(DDX_SAVE);
 
 		// TODO: この位置にその他の検証用のコードを追加してください
 		DWORD		dwExProp  = 0;
@@ -506,6 +469,7 @@ private:
 				pr.SetValue(m_exs_encode	, _T("Encode")		);
 
 			pr.SetValue(m_exs_bUsePost, _T("UsePost"));
+			pr.SetString(m_exs_ShortcutCode, _T("ShortCutCode"));
 		}
 
 		//+++ URL の編集を行った場合
@@ -523,12 +487,9 @@ private:
 	}
 
 
-	void OnCancel(UINT uNotifyCode, int nID, HWND hWndCtl)
-	{
-		EndDialog(nID);
-	}
+	void OnCancel(UINT uNotifyCode, int nID, HWND hWndCtl) { EndDialog(nID); }
 
-
+	/// 消去
 	void OnDelete(UINT uNotifyCode, int nID, HWND hWndCtl)
 	{
 		m_nImage		= 0;
@@ -558,17 +519,18 @@ private:
 		m_bEnabled	= FALSE;
 
 		//+++ 検索関係追加.
-		m_exs_frontURL	   = "";
-		m_exs_backURL	   = "";
-		m_exs_frontKeyword = "";
-		m_exs_backKeyword  = "";
+		m_exs_frontURL.Empty();
+		m_exs_backURL.Empty();
+		m_exs_frontKeyword.Empty();
+		m_exs_backKeyword.Empty();
 		m_exs_adrBar	   = 0;
 		m_exs_encode	   = 0;
+		m_exs_ShortcutCode.Empty();
 
-		DoDataExchange(FALSE);
+		DoDataExchange(DDX_LOAD);
 	}
 
-
+	/// 現在の標準設定
 	void OnDefault(UINT uNotifyCode, int nID, HWND hWndCtl)
 	{
 		DWORD 	dwDLFlag	= CDLControlOption::s_dwDLControlFlags;
@@ -590,10 +552,10 @@ private:
 		m_nGesture	   =  (dwExStyle & DVS_EX_MOUSE_GESTURE  )	!= 0;	//+++	? 1 : 0;
 		m_nBlockMailTo =  (dwExStyle & DVS_EX_BLOCK_MAILTO	 )	!= 0;	//+++	? 1 : 0;
 
-		DoDataExchange(FALSE);
+		DoDataExchange(DDX_LOAD);
 	}
 
-
+	/// 標準設定任せ
 	void OnDfltBase(UINT uNotifyCode, int nID, HWND hWndCtl)
 	{
 		m_nReload	    = 0;
@@ -611,7 +573,7 @@ private:
 		m_nGesture		= BST_INDETERMINATE;
 		m_nBlockMailTo	= BST_INDETERMINATE;
 
-		DoDataExchange(FALSE);
+		DoDataExchange(DDX_LOAD);
 	}
 
 
@@ -624,6 +586,47 @@ private:
 	}
   #endif
 
+
+private:
+	DWORD		m_dwExProp;
+	DWORD		m_dwExPropOpt;		//+++
+	BOOL		m_bEnabled;
+
+	CString 	m_strUrlFile;
+	CString 	m_strSection;
+
+	CString 	m_strTitle;
+
+	int 		m_nDLActiveX;
+	int 		m_nImage;
+	int 		m_nJava;
+	int 		m_nNaviLock;
+	int 		m_nRunActiveX;
+	int 		m_nScript;
+	int 		m_nScrollBar;
+	int 		m_nSound;
+	int 		m_nVideo;
+	int 		m_nBlockMailTo;
+	int 		m_nGesture;
+	int 		m_nFilter;
+	int 		m_nReload;
+	int			m_nFlatView;				//+++
+
+  #if 1 //+++ サーチ関係追加
+	CString 	m_exs_frontURL;
+	CString 	m_exs_backURL;
+	CString 	m_exs_frontKeyword;
+	CString 	m_exs_backKeyword;
+	int 		m_exs_adrBar;
+	int 		m_exs_encode;
+	bool		m_exs_bUsePost;
+	CString		m_exs_ShortcutCode;
+  #endif
+  #if 1	//+++ url編集
+	int			m_urlMode;				//+++ 0:url無  1:url有.
+	int			m_urlEditBtnSw;			//+++ url編集のon,off
+	CString		m_strUrlBase;			//+++ エディットチェック用
+  #endif
 };
 
 typedef CExPropertyDialogT<IDD_DIALOG_EXPROPERTY>		CExPropertyDialog;

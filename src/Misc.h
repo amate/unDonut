@@ -91,6 +91,7 @@ __inline const CString utf8_to_CString(const std::vector<char>& utf8)   { return
 __inline const CString eucjp_to_CString(const std::vector<char>& eucjp) { return CString(& eucjp_to_tcs(&eucjp[0])[0]); }
 
 
+CString	UnknownToCString(const std::vector<char>& src);
 
 // ==========================================================================
 

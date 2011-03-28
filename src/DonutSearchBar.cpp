@@ -502,11 +502,14 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 					strKey.Format(_T("%02d"), i);
 					CString 	strskEngine = pr.GetStringUW( strKey );
 					// ショートカットコードを取得
-					pr.ChangeSectionName(strEngine);
+					pr.ChangeSectionName(strskEngine);
 					CString strShortcutWord = pr.GetString(_T("ShortCutCode"));
 					// 比較
-					if (strShort == strShortcutWord)
+					if (strShort == strShortcutWord) {
 						strEngine = strskEngine;	// 見つかった
+						break;
+					}
+					pr.ChangeSectionName(_T("Search-List"));
 				}
 			}
 
