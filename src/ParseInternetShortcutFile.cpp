@@ -18,7 +18,7 @@
 #include "FlatComboBox.h"
 #include "DonutFavoritesMenu.h"
 #include "ExStyle.h"
-#include "SearchBar.h"
+#include "DonutSearchBar.h"
 #include "MtlBrowser.h"
 #include "DonutAddressBar.h"
 #include "Donut.h"		// CString Donut_GetActiveSelectedText() のため
@@ -70,12 +70,12 @@ int ParseInternetShortcutFile_SearchMode(CString &strFilePath, const CString& st
   #endif
 
 	//+++ 非常にばっちぃ...が、とにかく動くこと優先...
-	CDonutSearchBar *pSearch = dynamic_cast<CDonutSearchBar*>( CDonutSearchBar::GetInstance() );
+	CDonutSearchBar* pSearch = CDonutSearchBar::GetInstance();
   #if 1 //ndef NDEBUG
 	if (pSearch) {
-		CDonutSearchBar *pSearch0 = pSearch;
-		pSearch = (CDonutSearchBar *) ::SendMessage(pSearch->GetTopLevelParent(), WM_GET_SEARCHBAR, 0, 0);
-		ATLASSERT( pSearch == pSearch0 );
+	//	CDonutSearchBar *pSearch0 = pSearch;
+	//	pSearch = (CDonutSearchBar *) ::SendMessage(pSearch->GetTopLevelParent(), WM_GET_SEARCHBAR, 0, 0);
+	//	ATLASSERT( pSearch == pSearch0 );
 	}
   #endif
 	if (pSearch) {
@@ -103,7 +103,8 @@ int ParseInternetShortcutFile_SearchMode(CString &strFilePath, const CString& st
 				bUrlSearch = true;
 			}
 			if (strWord.IsEmpty()) {	// まだ検索文字列が設定されていない場合は、検索バーのテキストを取得.
-				strWord    = pSearch->RemoveShortcutWord( MtlGetWindowText( pSearch->GetEditCtrl() ) );
+				strWord    = MtlGetWindowText(pSearch->GetEditCtrl());
+				             //pSearch->RemoveShortcutWord( MtlGetWindowText( pSearch->GetEditCtrl() ) );
 				bUrlSearch = false;
 			}
 		  #if 0
@@ -113,7 +114,9 @@ int ParseInternetShortcutFile_SearchMode(CString &strFilePath, const CString& st
 		  #endif
 		}
 		strFilePath   = strUrl;
-		if (strWord.IsEmpty() == 0) {	// 検索文字列が設定されていたら、そのようにUrlを作成.
+		return 2;	//\\test
+#if 0
+		if (strWord.IsEmpty() == FALSE) {	// 検索文字列が設定されていたら、そのようにUrlを作成.
 			CIniFileI	pr(strIniFile, DONUT_SECTION/*_T("unDonut")*/);
 			bool rc = pSearch->GetOpenURLstr(strFilePath, strWord, pr, CString()/*strUrl*/);
 			pr.Close();
@@ -122,6 +125,7 @@ int ParseInternetShortcutFile_SearchMode(CString &strFilePath, const CString& st
 			}
 			return 2;
 		}
+#endif
 	} else {
 		strFilePath = strUrl;
 	}

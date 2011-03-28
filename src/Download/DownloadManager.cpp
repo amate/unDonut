@@ -47,6 +47,12 @@ void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND h
 
 }
 
+/// 現在ダウンロード中のアイテムの数を返す
+int		CDownloadManager::GetDownloadingCount() const
+{
+	return m_wndDownload.GetDownloadingCount();
+}
+
 void	CDownloadManager::_DLStart(CString* pstrURL, IBindStatusCallback* bscb)
 {
 	::CoInitialize(NULL);

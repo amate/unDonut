@@ -17,6 +17,7 @@
 #include "MDIChildUserMessenger.h"
 
 #include "option/AddressBarPropertyPage.h"
+#include "option/SearchPropertyPage.h"
 #include "option/DLControlOption.h"
 #include "option/StartUpOption.h"
 #include "option/DonutConfirmOption.h"
@@ -127,6 +128,7 @@ CChildFrame::CChildFrame(  CMDITabCtrl &MDITab
 	, m_bImg(0)
   #endif
 	, m_bNowNavigate(false)
+	, m_bReload(false)
 	, m_bAllowNewWindow(false)
 {
   #if 1	//+++
@@ -210,10 +212,6 @@ void CChildFrame::OnNewWindow2(IDispatch **ppDisp, bool &bCancel)
 
 void CChildFrame::OnNewWindow3(IDispatch **ppDisp, bool& Cancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl)
 {
-	if (dwFlags & NWMF_SUGGESTWINDOW) {	// ウィンドウで開くように提案してくるが
-		Cancel = true;					
-		return;
-	}
 	if (::GetKeyState(VK_SHIFT) < 0)
 		return;
 
@@ -512,9 +510,9 @@ void CChildFrame::OnBeforeNavigate2(
 			//+++	が、バグっても反映されることのほうが意味ありそうなので利用
 		if (CUrlSecurityOption::s_bValid) {
 			if (exopts != 0xFFFFFFFF && CUrlSecurityOption::activePageToo()) {
-				this->view().PutDLControlFlags( dlCtlFlg );
-				this->view().m_ViewOption.SetAutoRefreshStyle( autoRefresh );
-				this->SetViewExStyle( exstyle );	//+++メモ: マウス中ボタンクリックでの、リンク別タブ表示の場合、まだタブ位置未決定のため設定できない...
+				m_view.PutDLControlFlags( dlCtlFlg );
+				m_view.m_ViewOption.SetAutoRefreshStyle( autoRefresh );
+				SetViewExStyle( exstyle );	//+++メモ: マウス中ボタンクリックでの、リンク別タブ表示の場合、まだタブ位置未決定のため設定できない...
 			//} else {
 			}
 		}
@@ -656,8 +654,7 @@ void CChildFrame::OnDocumentComplete(IDispatch *pDisp, const CString &strURL)
 				pSearch->SetSearchStr(m_strSearchWord);	// 選択検索用
 			}
 			CString strWords = m_strSearchWord;
-			pSearch->DeleteMinimumLengthWord(strWords);
-			pSearch->checkToolBarWords();
+			DeleteMinimumLengthWord(strWords);
 			m_bNowHilight = TRUE;
 			OnHilightOnce(pDisp, strWords);
 		}
@@ -816,6 +813,13 @@ void CChildFrame::OnStateCompleted()
 
 	if (m_hWndF)
 		::SetFocus(m_hWndF);
+
+	if (m_bReload) {
+		CString strUrl = GetLocationURL();
+		CComQIPtr<IDispatch>	spDisp = m_spBrowser;
+		OnDocumentComplete(spDisp, strUrl);
+		m_bReload = false;
+	}
 }
 
 
@@ -1235,16 +1239,17 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 		_RestoreFocus();
 		if (CSearchBarOption::s_bSaveSearchWord) {
 			pSearchBar->SetSearchStr(m_strSearchWord); //\\ 保存しておいた文字列を検索バーに戻す
-			pSearchBar->checkToolBarWords(); //\\ 単語ボタンを設定
-			pSearchBar->SetEmptyStrEngine(); //\\ 検索バーに文字列がないときエンジン名を表示する
+			pSearchBar->ForceSetHilightBtnOn(m_bNowHilight != 0);
 		}
+
 		return;
 	}
 
 	if (hwndChildDeact == m_hWnd) { 	// I'm deactivated タブが切り替わった
 		_SaveFocus();
-		if( m_bSaveSearchWordflg == true ){
-			m_strSearchWord = pSearchBar->GetSearchStr(); //\\ 現在、検索バーにある文字列を取っておく
+		if( m_bSaveSearchWordflg == true ){	//\\ 現在、検索バーにある文字列を取っておく
+			pSearchBar->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);
+			m_strSearchWord.ReleaseBuffer();
 		} else {
 			m_bSaveSearchWordflg = true;
 		}
@@ -1346,7 +1351,7 @@ void CChildFrame::OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 		m_hWndA = ::GetActiveWindow();
 		m_hWndF = ::GetFocus();
 	}
-
+	m_bReload = true;
 	if (::GetAsyncKeyState(VK_CONTROL) < 0) 	// Inspired by DOGSTORE, Thanks
 		Refresh2(REFRESH_COMPLETELY);
 	else
@@ -3471,7 +3476,7 @@ LRESULT CChildFrame::OnHilight(CString strKeyWord)	//+++ 未使用な引数を削除. , B
 		m_bNowHilight	= bHilightSw;
 		if (bHilightSw) {
 			m_strSearchWord = strKeyWord;
-			CDonutSearchBar::GetInstance()->DeleteMinimumLengthWord(strKeyWord);
+			DeleteMinimumLengthWord(strKeyWord);
 		} else {
 			m_strSearchWord.Empty();
 		}

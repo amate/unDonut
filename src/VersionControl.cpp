@@ -22,10 +22,11 @@ void	CVersionControl::Run()
 		switch (dwVersion) {
 		case 0:	_0to1();
 		case 1: _1to2();
+		case 2: _2to3();
 			break;
 		}
 	}
-
+	// 最新バージョンを書き込む
 	pr.SetValue(LATESTVERSION, _T("IniVersion"));
 	pr.Close();
 }
@@ -94,6 +95,11 @@ void	CVersionControl::_1to2()
 	
 }
 
+void	CVersionControl::_2to3()
+{
+	CIniFileIO	pr(g_szIniFileName, _T("SEARCH"));
+	pr.DeleteValue(_T("Show_ToolBarIcon"));
+}
 
 
 

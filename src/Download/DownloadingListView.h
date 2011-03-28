@@ -85,6 +85,8 @@ public:
 
 	DLItem*	CreateDLItem();
 
+	int		GetDownloadingCount() const { return (int)m_vecpDLItem.size(); }
+
 	// Overrides
 	void	DoPaint(CDCHandle dc);
 

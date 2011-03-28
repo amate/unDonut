@@ -212,7 +212,7 @@ void _PrivateTerm()
 	// don't forget
 	CHlinkDataObject::Term();
 
-
+	ATLTRACE(_T("İ’è‚Ì•Û‘¶Š®—¹!\n"));
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	::DeleteFile(strPath);
 }

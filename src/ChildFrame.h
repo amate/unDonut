@@ -505,7 +505,7 @@ private:
 	BYTE/*bool*/								m_bImgAuto_NouseLClk;		//+++ 画像自動リサイズで左クリックを使わない.
 
 	bool										m_bNowNavigate;				// for Javascirpt:void(0)
-
+	bool										m_bReload;
 	static bool 								s_bMainframeClose;			//+++ mainfrmがcloseするときonにされる.
 };
 

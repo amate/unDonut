@@ -289,8 +289,6 @@ HWND	CMainFrame::init_searchBar()
 	HWND	hWndSearchBar  = m_SearchBar.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndSearchBar) );
 
-	m_SearchBar.SetDlgCtrlID(IDC_SEARCHBAR);
-	m_SearchBar.SetComboStyle(CSkinOption::s_nComboStyle);
 	return	hWndSearchBar;
 }
 
@@ -727,7 +725,7 @@ void CMainFrame::OnDestroy()
 
 	RevokeDragDrop();
 
-
+	ATLTRACE(_T("メインフレームの終了中\n"));
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	HANDLE hHandle = ::CreateFile(strPath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hHandle != INVALID_HANDLE_VALUE) {
@@ -775,6 +773,13 @@ void CMainFrame::_RemoveTmpDirectory()
 
 void CMainFrame::OnClose()
 {
+	int nDLCount = m_DownloadManager.GetDownloadingCount();
+	if (nDLCount > 0) {
+		CString msg;
+		msg.Format(_T("ダウンロード中のアイテムが %d個あります。\n終了しますか？"), nDLCount);
+		if (MessageBox(msg, _T("確認"), MB_ICONQUESTION | MB_OKCANCEL | MB_DEFBUTTON2) == IDCANCEL)
+			return;
+	}
 	SetMsgHandled(FALSE);
 
 	if ( !CDonutConfirmOption::OnDonutExit(m_hWnd) ) {
@@ -981,7 +986,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	int	bFocus = false;
 	if (m_AddressBar.IsWindow())
 		bFocus	|= (::GetFocus() == m_AddressBar.GetEditCtrl());
-	if (::IsWindow(m_SearchBar.m_hWnd))
+	if (::IsWindow(m_SearchBar.GetEditCtrl()/*m_SearchBar.m_hWnd*/))
 		bFocus	|= (::GetFocus() == m_SearchBar.GetEditCtrl());
 #ifdef _DEBUG
 	if (::IsWindow(m_wndDebug.m_hWnd)) {
@@ -1466,7 +1471,7 @@ BOOL CMainFrame::OnRButtonHook(MSG *pMsg)
 	if (bInner && strSearchEngine.IsEmpty() == FALSE) {
 		::SetWindowText(m_hWndStatusBar, _T(""));
 		CString str = GetActiveSelectedText();
-		m_SearchBar.SearchWeb_str_engine(str, strSearchEngine);
+		m_SearchBar.SearchWebWithEngine(str, strSearchEngine);
 		bNoting = FALSE;
 	}
 	if (bInner == -1) {
@@ -1993,7 +1998,7 @@ HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 			if (strKeyword.IsEmpty())
 				return NULL;
 			CString strEngine  = rt.str(1).c_str();
-			m_SearchBar.SearchWeb_str_engine(strKeyword, strEngine);
+			m_SearchBar.SearchWebWithEngine(strKeyword, strEngine);
 			return NULL;
 		}
 		return NULL;
@@ -2188,8 +2193,8 @@ LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 		CString str = pArgs->strSearchWord;
 
 		// 「全角を半角に置換」がチェックされてたら変換して子ウィンドウに文字列を渡す。
-		if (CSearchBarOption::s_bFiltering) 
-			m_SearchBar.FilterString(str);
+		//if (CSearchBarOption::s_bFiltering) 
+		//	m_SearchBar.FilterString(str);
 
 	  	//+++ 子窓に検索設定を反映 (関数化)
 	   #if 1 //defined USE_UNDONUT_G_SRC
@@ -5815,14 +5820,6 @@ LRESULT CMainFrame::OnViewSearchBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 }
 
 
-//minit
-LRESULT CMainFrame::OnViewSearchButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	m_SearchBar.ShowToolBarIcon( !m_SearchBar.GetToolIconState() );
-	return 0;
-}
-
-
 LRESULT CMainFrame::OnSearchHistory(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	MtlSendCommand(m_ExplorerBar.m_FavBar.m_hWnd, ID_SEARCH_HISTORY);
@@ -5848,13 +5845,12 @@ LRESULT CMainFrame::OnSpecialRefreshSearchEngine(WORD /*wNotifyCode*/, WORD /*wI
 	return 0;
 }
 
-
+/// 範囲選択されたテキストで検索する？
 HRESULT CMainFrame::OnSearchWebSelText(LPCTSTR lpstrText, LPCTSTR lpstrEngine)
 {
-	int 	nLoopCnt = 0;
-	BOOL	bFirst	 = (DonutGetStdOpenCreateFlag() & D_OPENFILE_ACTIVATE) != 0;	//+++ ? TRUE : FALSE;
+	//BOOL	bFirst	 = (DonutGetStdOpenCreateFlag() & D_OPENFILE_ACTIVATE) != 0;	//+++ ? TRUE : FALSE;
 
-	m_SearchBar.OpenSearch(lpstrText, lpstrEngine, nLoopCnt, bFirst);
+	m_SearchBar.SearchWebWithEngine(lpstrText, lpstrEngine);
 
 	return S_OK;
 }
@@ -5864,14 +5860,16 @@ HRESULT CMainFrame::OnSearchWebSelText(LPCTSTR lpstrText, LPCTSTR lpstrEngine)
 void CMainFrame::OnSearchWeb_engineId(UINT code, int id, HWND hWnd)
 {
 	ATLASSERT(ID_INSERTPOINT_SEARCHENGINE <= id && id <= ID_INSERTPOINT_SEARCHENGINE_END);
-	MtlSendCommand(m_SearchBar.m_hWnd, WORD(id));
+//	MtlSendCommand(m_SearchBar.m_hWnd, WORD(id));
+	ATLASSERT(FALSE);
 }
 
 
 //+++
 HRESULT	CMainFrame::OnSearchEngineMenu(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	MtlSendCommand(m_SearchBar.m_hWnd, WORD(ID_SEARCHENGINE_MENU));
+//	MtlSendCommand(m_SearchBar.m_hWnd, WORD(ID_SEARCHENGINE_MENU));
+	ATLASSERT(FALSE);
 	return 0;
 }
 

@@ -3,10 +3,11 @@
 #include "stdafx.h"
 #include "DonutAddressBar.h"
 #include "HlinkDataObject.h"
-#include "SearchBar.h"
+#include "DonutSearchBar.h"
 #include "Donut.h"
 #include "MtlBrowser.h"
 #include "option/AddressBarPropertyPage.h"
+#include "FlatComboBox.h"
 
 //////////////////////////////////////////////////////////////
 // CDonutAddressBar::Impl

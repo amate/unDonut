@@ -29,6 +29,10 @@ public:
 	void	EnableVisible() { m_bVisible = true; }
 	CCustomBindStatusCallBack*	StartBinding();
 
+	int		GetDownloadingCount() const { 
+		return m_wndDownloadingListView.GetDownloadingCount();
+	}
+
 	// Message map and Handler
 	BEGIN_MSG_MAP(CDownloadFrame)
 		MESSAGE_HANDLER(WM_CREATE, OnCreate)

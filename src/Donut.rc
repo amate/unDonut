@@ -162,7 +162,6 @@ BEGIN
             MENUITEM "移動ボタン(&G)",                   ID_VIEW_GOBUTTON
             MENUITEM "メニューバー(&M)",                  ID_VIEW_COMMANDBAR
             MENUITEM "検索バー(&F)",                    ID_VIEW_SEARCHBAR
-            MENUITEM "検索バーのボタン(&B)",                ID_VIEW_SEARCHBUTTON
             MENUITEM SEPARATOR
             MENUITEM "タブの複数列表示(&M)",                ID_VIEW_TABBAR_MULTI
             MENUITEM SEPARATOR
@@ -795,14 +794,6 @@ BEGIN
     BEGIN
         MENUITEM "日付順",                         ID_VIEW_HISTORY_DAY
         MENUITEM "今日表示したページ順",                  ID_VIEW_HISTORY_RECENT
-    END
-END
-
-IDR_SEARCHENGINE_MENU MENU
-BEGIN
-    POPUP "p"
-    BEGIN
-        MENUITEM "(empty)",                     ID_INSERTPOINT_SEARCHENGINE
     END
 END
 

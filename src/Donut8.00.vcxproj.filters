@@ -200,9 +200,6 @@
     <ClCompile Include="MDITabCtrl.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="SearchBar.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
     <ClCompile Include="TabCtrl.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
@@ -256,6 +253,9 @@
     </ClCompile>
     <ClCompile Include="RecentDocumentListFixed.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutSearchBar.cpp">
+      <Filter>Source Files\Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -631,9 +631,6 @@
     <ClInclude Include="MDITabCtrl.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="SearchBar.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="TabCtrl.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
@@ -711,6 +708,9 @@
     </ClInclude>
     <ClInclude Include="Thumbnail.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutSearchBar.h">
+      <Filter>Source Files\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

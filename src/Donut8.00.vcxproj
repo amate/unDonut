@@ -896,6 +896,7 @@
     <ClCompile Include="DonutClipboardBar.cpp" />
     <ClCompile Include="DonutOption.cpp" />
     <ClCompile Include="DonutPFunc.cpp" />
+    <ClCompile Include="DonutSearchBar.cpp" />
     <ClCompile Include="DonutSecurityZone.cpp" />
     <ClCompile Include="DonutStatusBarCtrl.cpp" />
     <ClCompile Include="DonutToolBar.cpp" />
@@ -920,7 +921,6 @@
     <ClCompile Include="ParseInternetShortcutFile.cpp" />
     <ClCompile Include="PluginManager.cpp" />
     <ClCompile Include="RecentDocumentListFixed.cpp" />
-    <ClCompile Include="SearchBar.cpp" />
     <ClCompile Include="stdafx.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">Disabled</Optimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1075,6 +1075,7 @@
     <ClInclude Include="DonutPCP.h" />
     <ClInclude Include="DonutPFunc.h" />
     <ClInclude Include="DonutRebarCtrl.h" />
+    <ClInclude Include="DonutSearchBar.h" />
     <ClInclude Include="DonutSecurityZone.h" />
     <ClInclude Include="DonutSimpleEventManager.h" />
     <ClInclude Include="DonutStatusBarCtrl.h" />
@@ -1125,7 +1126,6 @@
     <ClInclude Include="RecentDocumentListFixed.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
-    <ClInclude Include="SearchBar.h" />
     <ClInclude Include="SearchHistoryDialog.h" />
     <ClInclude Include="SimpleTree.h" />
     <ClInclude Include="stdafx.h" />

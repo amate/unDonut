@@ -33,7 +33,7 @@ enum {
 	DEFAULT_SEARCHLISTWIDTH = 170,
 };
 
-#include "SearchBar.h"
+#include "DonutSearchBar.h"
 
 
 /////////////////////////////////////////////////////////////

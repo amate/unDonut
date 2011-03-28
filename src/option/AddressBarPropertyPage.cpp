@@ -3,7 +3,7 @@
 #include "stdafx.h"
 #include "AddressBarPropertyPage.h"
 #include "../DonutAddressBar.h"
-#include "../SearchBar.h"
+#include "../DonutSearchBar.h"
 
 ///////////////////////////////////////////////////////////////
 // CAddressBarOption
@@ -169,12 +169,14 @@ void	CDonutAddressBarPropertyPage::_InitComboBox()
 	CComboBox cmbCtrl  = GetDlgItem(IDC_COMBO_CTRL_ENTER);
 	CComboBox cmbShift = GetDlgItem(IDC_COMBO_SHIFT_ENTER);
 
-	#if 1	//+++
+	#if 0//\\+	//+++
 	m_SearchBar.InitComboBox_for_AddressBarPropertyPage(cmbCtrl, cmbShift);
 	#else
-	int nCount		   = m_SearchBar.m_cmbEngine.GetCount();
+	CString strBuf;
+	CMenu menu = m_SearchBar.GetSearchEngineMenuHandle();
+	int nCount = menu.GetMenuItemCount();
 	for (int i = 0; i < nCount; i++) {
-		m_SearchBar.m_cmbEngine.GetLBText(i, strBuf);
+		menu.GetMenuString(i, strBuf, MF_BYPOSITION);
 		cmbCtrl.AddString(strBuf);
 		cmbShift.AddString(strBuf);
 	}

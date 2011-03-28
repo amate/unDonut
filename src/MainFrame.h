@@ -21,7 +21,7 @@
 #include "DonutLinksBarCtrl.h"
 #include "DonutToolBar.h"
 #include "DonutStatusBarCtrl.h"
-#include "SearchBar.h"
+#include "DonutSearchBar.h"
 #include "MDITabCtrl.h"
 #include "DonutP.h"
 //#include "DonutP_i.c"
@@ -38,7 +38,7 @@
 #include "MenuDropTargetWindow.h"
 #include "Download/DownloadManager.h"
 #include "option/AddressBarPropertyPage.h"
-
+#include "option/SearchPropertyPage.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -251,7 +251,6 @@ public:
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TABBAR_MULTI 	, OnViewTabBarMulti 	)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_ADDBAR_DROPDOWN	, OnViewAddBarDropDown	)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TOOLBAR_LOCK 	, OnViewToolBarLock 	)	// minit
-		COMMAND_ID_HANDLER	 ( ID_VIEW_SEARCHBUTTON 	, OnViewSearchButton	)	// minit
 		COMMAND_ID_HANDLER_EX( ID_EXPLORERBAR_AUTOSHOW	, OnExplorerBarAutoShow )
 
 		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut 	)
@@ -471,7 +470,6 @@ public:
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_MDITAB 		) )
 		UPDATE_COMMAND_UI_SETCHECK_FLAG ( ID_VIEW_TABBAR_MULTI, MTB_EX_MULTILINE, m_MDITab.GetMDITabExtendedStyle() )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TOOLBAR_LOCK,  _IsRebarBandLocked()					)
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_SEARCHBUTTON,  m_SearchBar.GetToolIconState() 		)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_CLIPBOARDBAR,  m_ExplorerBar.IsClipboardBarVisible()	)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PANELBAR, 	 m_ExplorerBar.IsPanelBarVisible()		)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PLUGINBAR,	 m_ExplorerBar.IsPluginBarVisible() 	)
@@ -687,7 +685,6 @@ private:
 
 	BOOL 		_IsRebarBandLocked();
 	LRESULT 	OnViewToolBarLock	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT 	OnViewSearchButton	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	void 		OnExplorerBarAutoShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	LRESULT 	OnMouseWheel		(UINT fwKeys, short zDelta, CPoint point);
 	LRESULT 	OnFileRecent		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);

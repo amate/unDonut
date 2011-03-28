@@ -6,7 +6,7 @@
 #include "../ToolTipManager.h"
 #include "MainOption.h"
 #include "RightClickMenuDialog.h"
-#include "SearchBar.h"
+#include "DonutSearchBar.h"
 
 ///////////////////////////////////////////////////////////
 // CCustomContextMenuOption

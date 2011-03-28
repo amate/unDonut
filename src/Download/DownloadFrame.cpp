@@ -36,7 +36,7 @@ LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 
 	// DownloadingListViewçÏê¨
 	m_wndDownloadingListView.Create(m_wndSplitter, rcDefault, 0
-		, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN
+		, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_BORDER
 		| LVS_REPORT | LVS_OWNERDRAWFIXED | LVS_NOCOLUMNHEADER| LVS_SINGLESEL/*| LVS_SHOWSELALWAYS*/);
 	//m_wndDownloadingListView.SetView(LV_VIEW_TILE);
 
@@ -44,6 +44,7 @@ LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 
 	// DownloadedListViewçÏê¨
 	m_wndDownloadedListView.Create(m_wndSplitter);
+	m_wndDownloadedListView.ModifyStyle(0, WS_BORDER);
 
 	m_wndSplitter.SetSplitterPane(SPLIT_PANE_BOTTOM, m_wndDownloadedListView);
 

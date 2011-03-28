@@ -28,6 +28,7 @@ public:
 	static CDownloadManager* GetInstance() { return s_pThis; }
 	static bool UseDownloadManager();
 	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = DLO_OVERWRITEPROMPT );
+	int		GetDownloadingCount() const;
 
 	// IUnknown
 	STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject);

@@ -10,7 +10,7 @@
 
 #if 1	//+++
 #include <FlatComboBox.h>
-#include "SearchBar.h"		//+++ GetSearchEngineMenu‚Ì‚½‚ß
+#include "DonutSearchBar.h"		//+++ GetSearchEngineMenu‚Ì‚½‚ß
 #include "Donut.h"			//+++ Donut_GetActiveStatusStr()‚Ì‚½‚ß
 #endif
 
