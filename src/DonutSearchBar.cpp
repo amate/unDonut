@@ -171,6 +171,8 @@ public:
 		MSG_WM_KEYDOWN	( OnKeywordKeyDown )
 		MSG_WM_KILLFOCUS( OnKeywordKillFocus )
 		MSG_WM_CHAR 	( OnChar 		 )
+	ALT_MSG_MAP(2)	// SearchEnginComboBox
+		MSG_WM_KEYDOWN	( OnEngineKeyDown  )
 	END_MSG_MAP()
 
 
@@ -198,6 +200,9 @@ public:
 	void	OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	void	OnKeywordKillFocus(CWindow wndFocus);
 	void	OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+
+	// SearchEngineComboBox
+	void	OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 
 private:
@@ -251,6 +256,7 @@ private:
 	CPoint			 m_ptDragEnd;
 
 	CContainedWindow m_wndKeyword;		// ComboBox内のエディットコントロール
+	CContainedWindow m_wndEngine;
 
 	int 			 m_cxBtnsBtn;					///< 旧 横幅調整用
 	int 			 m_has; 						//+++
@@ -269,13 +275,13 @@ private:
 	boost::thread	 m_threadInitComboBox;
 	SearchPostData	 m_PostData;
 	bool			 m_bWordLock;
-	boost::thread	 m_threadSaveHistory;
 
 };
 
 /// コンストラクタ
 CDonutSearchBar::Impl::Impl()
 	: m_wndKeyword(this, 1)
+	, m_wndEngine(this, 2)
 	, m_cxBtnsBtn(0)			//+++ 旧横幅調整用
 	, m_has(0)					//+++
 	, m_nEngineWidth(0)			//+++
@@ -448,6 +454,7 @@ void	CDonutSearchBar::Impl::SearchWeb(CString str)
 /// 検索エンジンを指定しての検索
 void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 {
+	CString strOrg = str;
   #if 1
 	bool bUrlSearch = false;
 	if (::GetFocus() != m_wndKeyword.m_hWnd) {	// フォーカスが当たっていない場合
@@ -634,7 +641,7 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 		m_PostData.nPostBytes	= 0;
 
 		if (bUrlSearch == false)		//+++ url検索だった場合は、履歴に入れないで置く.
-			_AddToSearchBoxUnique(str);
+			_AddToSearchBoxUnique(strOrg);
 	}
 }
 
@@ -667,11 +674,16 @@ void	CDonutSearchBar::Impl::SearchPage(bool bForward, int nNum /*= -1*/)
 			_RemoveShortcutWord(str);
 			if (s_bFiltering)
 				FilterString(str);
+
+			_AddToolBarIcon(str);
+
 			std::vector<CString> strs;
 			strs.reserve(10);
 			Misc::SeptTextToWords(strs, str);
 			if (size_t(nNum) < strs.size())
 				str = strs[nNum];
+			else
+				str = strs[0];	//\\+
 		}
 
 		CString strExcept = _T(" \t\"\r\n　");
@@ -711,7 +723,7 @@ void CDonutSearchBar::Impl::SetFocusToEngine()
 	m_cmbEngine.ShowDropDown(TRUE);
 }
 
-
+/// メッセージフィルタ
 BOOL	CDonutSearchBar::Impl::PreTranslateMessage(MSG *pMsg)
 {
   #if 1	//+++ 手抜きな、描画更新チェック
@@ -901,7 +913,7 @@ int		CDonutSearchBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	/// サブクラス化
 	m_wndKeyword.SubclassWindow( m_editKeyword );
-
+	m_wndEngine.SubclassWindow( m_cmbEngine );
 
 	//ツールバー初期化
 	{
@@ -995,6 +1007,7 @@ void	CDonutSearchBar::Impl::OnDestroy()
 
 	// サブクラス化解除
 	m_wndKeyword.UnsubclassWindow();
+	m_wndEngine.UnsubclassWindow();
 
 	// Drag&Drop登録解除
 	RevokeDragDrop();
@@ -1443,8 +1456,7 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 				funcDeleteKeywordHistory();
 					//SetMsgHandled(FALSE);
 			} else {
-				m_wndKeyword.DefWindowProc();
-				OnChar(VK_DELETE, 0, 0);
+				OnChar(0, 0, 0);
 			}
 		} else if (nChar == VK_TAB) {
 			m_cmbEngine.SetFocus();
@@ -1465,8 +1477,7 @@ void CDonutSearchBar::Impl::OnKeywordKillFocus(CWindow wndFocus)
 /// リアルタイムに単語ボタンに反映していく
 void CDonutSearchBar::Impl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	if (nChar != VK_DELETE)
-		m_wndKeyword.DefWindowProc();
+	m_wndKeyword.DefWindowProc();
 
 	if (s_bNoWordButton == false) {
 		//SetMsgHandled(false);
@@ -1507,6 +1518,17 @@ void CDonutSearchBar::Impl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 	
 	}
 }
+
+
+// SearchEngineComboBox
+/// 検索エンジンComboBoxでEnterキーを押した場合検索する
+void	CDonutSearchBar::Impl::OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	m_wndEngine.DefWindowProc();
+	if (nChar == VK_RETURN)
+		_OnEnterKeyDown();
+}
+
 
 
 
@@ -1867,7 +1889,7 @@ void CDonutSearchBar::Impl::_AddToSearchBoxUnique(const CString& str)
 	m_cmbKeyword.InsertString(0, str);
 	m_cmbKeyword.SetCurSel(0);
 
-	m_threadSaveHistory = boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
+	boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
 	//_SaveHistory();	// 追加のたびに保存してみる
 }
 
