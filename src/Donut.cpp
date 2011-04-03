@@ -236,7 +236,8 @@ static bool	HaveEnvFiles()
 	return false;
 }
 
-
+// --------------------------------------------
+/// メッセージループ開始
 static int Run(LPTSTR lpstrCmdLine = NULL, int nCmdShow = SW_SHOWDEFAULT, bool bTray=false)
 {
 	CMessageLoop theLoop;
@@ -580,7 +581,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		::Sleep(_Module.m_dwPause);
 	}
 
-	_PrivateTerm();
+	//_PrivateTerm();
 
 END_APP:
 	_Module.Term();

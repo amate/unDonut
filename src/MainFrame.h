@@ -327,7 +327,6 @@ public:
 		COMMAND_ID_HANDLER( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine) 	//’·‚¢‚È‚Ÿ
 		COMMAND_ID_HANDLER( ID_RECENT_DOCUMENT			  , OnMenuRecentLast			)
 
-		COMMAND_ID_HANDLER( ID_SEARCHENGINE_MENU		  , OnSearchEngineMenu 			)	//+++
 		COMMAND_RANGE_HANDLER_EX(ID_INSERTPOINT_SEARCHENGINE, ID_INSERTPOINT_SEARCHENGINE_END, OnSearchWeb_engineId)	//+++
 
 
@@ -854,8 +853,7 @@ private:
 	HRESULT 		OnSearchWebSelText(LPCTSTR lpstrText, LPCTSTR lpstrEngine);
 	//+++
 	void 			OnSearchWeb_engineId(UINT code, int id, HWND hWnd);
-	//+++
-	HRESULT			OnSearchEngineMenu(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
 	LRESULT 		OnSetExProperty(LPCTSTR lpstrUrlFile);
 
 

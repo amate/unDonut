@@ -130,6 +130,7 @@ public:
 
 	void	SearchWeb(CString str = CString());
 	void	SearchWebWithEngine(CString str, CString strEngine);
+	void	SearchWebWithIndex(CString str, int nIndex);
 	void	SearchPage(bool bForward, int nNum = -1);
 	void	SearchHilight();
 
@@ -643,6 +644,17 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 		if (bUrlSearch == false)		//+++ url検索だった場合は、履歴に入れないで置く.
 			_AddToSearchBoxUnique(strOrg);
 	}
+}
+
+/// 検索エンジンのインデックスを指定しての検索
+void	CDonutSearchBar::Impl::SearchWebWithIndex(CString str, int nIndex)
+{
+	ATLASSERT(0 <= nIndex && nIndex < m_cmbEngine.GetCount());
+
+	CString strEngine;
+	m_cmbEngine.GetLBText(nIndex, strEngine);
+
+	SearchWebWithEngine(str, strEngine);
 }
 
 /// ページ内検索
@@ -2032,6 +2044,11 @@ void	CDonutSearchBar::SearchWeb(CString str)
 void	CDonutSearchBar::SearchWebWithEngine(CString str, CString strEngine)
 {
 	pImpl->SearchWebWithEngine(str, strEngine);
+}
+
+void	CDonutSearchBar::SearchWebWithIndex(CString str, int nIndex)
+{
+	pImpl->SearchWebWithIndex(str, nIndex);
 }
 
 void	CDonutSearchBar::SearchPage(bool bForward)

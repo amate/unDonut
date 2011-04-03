@@ -42,6 +42,7 @@ public:
 
 	void	SearchWeb(CString str = CString());
 	void	SearchWebWithEngine(CString str, CString strEngine);
+	void	SearchWebWithIndex(CString str, int nIndex);
 	void	SearchPage(bool bForward);
 	void	SearchHilight();
 

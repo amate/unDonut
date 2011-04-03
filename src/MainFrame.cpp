@@ -733,6 +733,8 @@ void CMainFrame::OnDestroy()
 	} else {
 		ATLASSERT(FALSE);
 	}
+
+	_PrivateTerm();
 }
 
 
@@ -5857,21 +5859,14 @@ HRESULT CMainFrame::OnSearchWebSelText(LPCTSTR lpstrText, LPCTSTR lpstrEngine)
 
 
 //+++
+/// グループ・メニューの検索エンジン指定での検索
 void CMainFrame::OnSearchWeb_engineId(UINT code, int id, HWND hWnd)
 {
 	ATLASSERT(ID_INSERTPOINT_SEARCHENGINE <= id && id <= ID_INSERTPOINT_SEARCHENGINE_END);
-//	MtlSendCommand(m_SearchBar.m_hWnd, WORD(id));
-	ATLASSERT(FALSE);
+
+	m_SearchBar.SearchWebWithIndex(GetActiveSelectedText(), id - ID_INSERTPOINT_SEARCHENGINE);
 }
 
-
-//+++
-HRESULT	CMainFrame::OnSearchEngineMenu(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-//	MtlSendCommand(m_SearchBar.m_hWnd, WORD(ID_SEARCHENGINE_MENU));
-	ATLASSERT(FALSE);
-	return 0;
-}
 
 // ページで選択されたテキストを検索バーに設定して、フォーカスをあてる
 void	CMainFrame::SetFocusToSearchBarWithSelectedText()
