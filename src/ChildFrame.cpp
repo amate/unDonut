@@ -383,6 +383,8 @@ void CChildFrame::OnBeforeNavigate2(
 	}
   #endif
 
+	m_view.InitDLControlFlags();	//\\+
+
 	{
 		//プラグインイベント - ナビゲート前
 		DEVTS_TAB_NAVIGATE stn;

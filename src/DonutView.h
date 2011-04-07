@@ -33,6 +33,7 @@ public:
 	DWORD	GetDLControlFlags() const { return m_dwDLControlFlags; }
 	void	PutDLControlFlags(DWORD dwDLControlFlags);
 	void	SetIeMenuNoCstm(int nStatus);
+	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか
 	void	SetOperateDragDrop(BOOL bOn, int nCommand);
