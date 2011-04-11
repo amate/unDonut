@@ -56,12 +56,12 @@ public:
 
 		secTRACE( _T("IScriptErrorCommandTargetImpl::Exec\n") );
 
-		//T * 	pT		  = static_cast<T *>(this);
-		//CWindow wndFrame  = pT->GetTopLevelParent();
-		//CWindow wndStatus = wndFrame.GetDlgItem(ATL_IDW_STATUS_BAR);
-		//wndStatus.SetWindowText( _T("スクリプトエラーが発生しました") );
+		T * 	pT		  = static_cast<T *>(this);
+		CWindow wndFrame  = pT->GetTopLevelParent();
+		CWindow wndStatus = wndFrame.GetDlgItem(ATL_IDW_STATUS_BAR);
+		wndStatus.SetWindowText( _T("スクリプトエラーが発生しました") );
 		pvaOut->vt	   = VT_BOOL;
-		V_BOOL(pvaOut) = VARIANT_FALSE;//VARIANT_TRUE;
+		V_BOOL(pvaOut) = VARIANT_TRUE;
 
 		return S_OK;
 	}

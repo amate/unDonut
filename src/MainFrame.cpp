@@ -34,7 +34,7 @@
 #include "Thumbnail.h"
 
 #ifdef _DEBUG
-	const bool _Donut_MainFrame_traceOn = false;
+	const bool _Donut_MainFrame_traceOn = true;
 	#define dmfTRACE	if (_Donut_MainFrame_traceOn)  ATLTRACE
 #else
 	#define dmfTRACE
@@ -987,12 +987,12 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	//+++ アドレスバーorサーチバーにフォーカスが当たっている時、他の処理で余計なこと(キー入力)させないようにガードしてみる.
 	int	bFocus = false;
 	if (m_AddressBar.IsWindow())
-		bFocus	|= (::GetFocus() == m_AddressBar.GetEditCtrl());
+		bFocus	|= (::GetFocus() == m_AddressBar.GetEditCtrl().m_hWnd);
 	if (::IsWindow(m_SearchBar.GetEditCtrl()/*m_SearchBar.m_hWnd*/))
-		bFocus	|= (::GetFocus() == m_SearchBar.GetEditCtrl());
+		bFocus	|= (::GetFocus() == m_SearchBar.GetEditCtrl().m_hWnd);
 #ifdef _DEBUG
 	if (::IsWindow(m_wndDebug.m_hWnd)) {
-		bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl());
+		bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl().m_hWnd);
 	}
 #endif
   #endif

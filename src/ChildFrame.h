@@ -126,6 +126,7 @@ public:
 						   bool &				bCancel );
 	void	OnProgressChange(long progress, long progressMax);
 	void	OnCommandStateChange(long Command, bool bEnable);
+	void	OnDownloadBegin() { }
 	void	OnDownloadComplete();
 	void	OnTitleChange(const CString &strTitle);
 	void	OnNewWindow2(IDispatch **ppDisp, bool &bCancel);

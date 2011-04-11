@@ -19,7 +19,6 @@ class CDonutView :
 	public CWebBrowser2,
 	public IServiceProvider,
 	public IDropTarget,
-	public IScriptErrorCommandTargetImpl<CDonutView>,
 	public IDispatch
 {
 public:
@@ -165,6 +164,8 @@ private:
 	CComPtr<IDropTarget>		m_spDefaultDropTarget;
 	bool						m_bUseCustomDropTarget;
 	bool						m_bTempUseDefaultDropTarget;
+	bool						m_bExternalDrag;
+	CComPtr<IDropTargetHelper>	m_spDropTargetHelper;
 
 	DWORD						m_dwDLControlFlags;
 

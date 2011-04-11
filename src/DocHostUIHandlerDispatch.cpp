@@ -14,53 +14,6 @@ CDocHostUIHandlerDispatch::CDocHostUIHandlerDispatch(CDonutView* pView)
 { }
 
 
-STDMETHODIMP	CDocHostUIHandlerDispatch::QueryInterface (REFIID riid, void **ppvObject)
-{
-	if (riid == IID_IOleCommandTarget) {
-		*ppvObject = (IOleCommandTarget*)this;
-		return S_OK;
-	}
-	return E_NOINTERFACE;
-}
-
-#if 0
-// IDocHostUIHandler
-STDMETHODIMP CDocHostUIHandlerDispatch::ShowContextMenu( 
-    /* [in] */ DWORD dwID,
-    /* [in] */ POINT *ppt,
-    /* [in] */ IUnknown *pcmdtReserved,
-    /* [in] */ IDispatch *pdispReserved)
-{
-	if ( m_bNoIECustom && (GetKeyState(VK_LBUTTON) >= 0) )								//カスタム&左クリックされているかどうか
-		return S_FALSE;
-	HRESULT hr = CCustomContextMenu().Show(dwID, ppt->x, ppt->y, pcmdtReserved, pdispReserved);					//丸投げ
-	return hr;
-}
-        
-STDMETHODIMP CDocHostUIHandlerDispatch::GetHostInfo( 
-    /* [out][in] */ DOCHOSTUIINFO *pInfo)
-{
-	HRESULT hr	= m_pDefaultHandler->GetHostInfo(pInfo);	//デフォルト動作
-	return hr;
-}
-
-
-STDMETHODIMP CDocHostUIHandlerDispatch::GetDropTarget( 
-    /* [in] */ IDropTarget *pDropTarget,
-    /* [out] */ IDropTarget **ppDropTarget) 
-{
-	m_pView->SetDefaultDropTarget(pDropTarget);
-	*ppDropTarget = (IDropTarget*)m_pView;
-	return S_OK;
-	//if (m_pExternalDropTarget) {
-	//if (SUCCEEDED(hr))
-	//	return S_OK;
-	//}
-	return E_NOTIMPL; 
-}
-
-#endif
-
 STDMETHODIMP CDocHostUIHandlerDispatch::ShowContextMenu(
 	/* [in] */ DWORD				dwID,
 	/* [in] */ DWORD				x,

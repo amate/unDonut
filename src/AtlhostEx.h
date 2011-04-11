@@ -2130,7 +2130,7 @@ GetClientRect(&rect);
 		if (   strMessage.Find(_T("ウィンドウは、表示中の Web ページにより閉じられようとしています。")) != -1
 			|| strMessage.Find(_T("次のいずれかの理由により 1 つまたはそれ以上の ActiveX コントロールを表示できませんでした")) != -1)
 		{
-			*plResult = IDYES;
+			*plResult = IDOK;
 			return S_OK;
 		}
 

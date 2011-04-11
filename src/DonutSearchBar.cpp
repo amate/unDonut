@@ -467,8 +467,10 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 		}
 	   #endif
 	   #if 1 //+++ v1.48c で変更.
-		if (strEngine.IsEmpty())	//サーチエンジン名がカラなら検索しない.
+		if (strEngine.IsEmpty()) {	// エンジンが空なら
+			SearchWebWithIndex(str, 0);	// とりあえず一番上のエンジンで検索
 			return;
+		}
 		//+++ addressbarの文字列を使う？
 		CIniFileI		pr(GetSearchIniPath(), strEngine);
 		DWORD			exPropOpt = pr.GetValue(_T("ExPropOpt"), 0);

@@ -383,7 +383,7 @@ void CChildFrame::OnBeforeNavigate2(
 	}
   #endif
 
-	m_view.InitDLControlFlags();	//\\+
+	//m_view.InitDLControlFlags();	//\\+
 
 	{
 		//プラグインイベント - ナビゲート前
@@ -687,7 +687,6 @@ void CChildFrame::OnDocumentComplete(IDispatch *pDisp, const CString &strURL)
 		//}
 	}
 }
-
 
 
 void CChildFrame::OnDownloadComplete()

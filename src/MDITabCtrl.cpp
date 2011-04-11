@@ -414,8 +414,10 @@ LRESULT CMDITabCtrl::OnTcnSelChange(LPNMHDR lpnhmdr)
 #if 1	//+++ ÉÅÉÇ:unDonut+
 	CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
 	wndMDI.SetRedraw(FALSE);
+
 	HWND	hWndActive = GetTabHwnd(nIndex);
 	m_wndMDIChildPopuping.MDIActivate(hWndActive);
+
 	wndMDI.SetRedraw(TRUE);
 	wndMDI.RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 #else	//+++ ÉÅÉÇ:r13test	//*Ç®ééÇµ

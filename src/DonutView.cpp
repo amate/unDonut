@@ -12,13 +12,7 @@
 #include "ScriptErrorCommandTargetImpl.h"
 #include "Download/DownloadManager.h"
 #include "AtlHostEx.h"
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
+#include "ParseInternetShortcutFile.h"
 
 // Constants
 enum {
@@ -55,6 +49,7 @@ CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
 	//, m_ExternalAmbientDispatch()
    #endif
 	, m_bUseCustomDropTarget(false)
+	, m_bExternalDrag(false)
 	, m_bLightRefresh(false)
 { }
 
@@ -63,6 +58,7 @@ CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
 void CDonutView::PutDLControlFlags(DWORD dwDLControlFlags)
 {
 	m_dwDLControlFlags	= dwDLControlFlags;
+	m_dwDefaultDLControlFlags = dwDLControlFlags;
 
 	CComQIPtr<IDispatch>	spDisp = m_spHost;
 	if (spDisp) {
@@ -70,6 +66,20 @@ void CDonutView::PutDLControlFlags(DWORD dwDLControlFlags)
 		DISPPARAMS		   params = { 0 };
 		HRESULT hr = spDisp->Invoke(DISPID_AMBIENT_DLCONTROL, IID_NULL, 1041 /*JP*/, DISPATCH_PROPERTYPUT, &params, &varResult, NULL, NULL);
 	}
+#if 0
+	HRESULT	hr;
+	CComQIPtr<IOleObject>	spOleObject = m_spBrowser;
+	ATLASSERT(spOleObject);
+	CComPtr<IOleClientSite>	spOleOrgSite;
+	hr = spOleObject->GetClientSite(&spOleOrgSite);	// 現在のサイトを保存
+
+	hr = spOleObject->SetClientSite((IOleClientSite*)this);
+	CComQIPtr<IOleControl>	spOleControl = m_spBrowser;
+	ATLASSERT(spOleControl);
+	hr = spOleControl->OnAmbientPropertyChange(DISPID_AMBIENT_DLCONTROL);
+
+	spOleObject->SetClientSite(spOleOrgSite);
+#endif
 }
 
 
@@ -138,7 +148,7 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 // IID_IDropTarget
 	} else if (iid == IID_IDropTarget) {
 		*ppvObject = (IDropTarget*)this;
-// IID_IUnknown
+// IID_IUnknown	IDropTargetのため？
 	} else if (iid == IID_IUnknown) {
 		*ppvObject = (IUnknown*)(IDropTarget*)this;
 	}
@@ -166,13 +176,18 @@ STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** p
 // IDropTarget
 STDMETHODIMP CDonutView::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	m_spDropTargetHelper->DragEnter(m_hWnd, pDataObj, (LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
+	m_bExternalDrag = MtlIsDataAvailable(pDataObj, ::RegisterClipboardFormat(CFSTR_FILENAME));
+	if (m_bExternalDrag)
+		*pdwEffect |= DROPEFFECT_LINK;
 	//*pdwEffect |= DROPEFFECT_LINK;// | DROPEFFECT_COPY | DROPEFFECT_MOVE;
 	return hr;
 }
 
 STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	m_spDropTargetHelper->DragOver((LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->DragOver(grfKeyState, pt, pdwEffect);
 	
 	if (m_bUseCustomDropTarget) {
@@ -184,17 +199,20 @@ STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect
 		hr = S_OK;
 		*pdwEffect = DROPEFFECT_COPY | DROPEFFECT_LINK;
 	}
-	//*pdwEffect |= DROPEFFECT_LINK;
+	if (m_bExternalDrag)
+		*pdwEffect |= DROPEFFECT_LINK;
 	return hr;
 }
 
 STDMETHODIMP CDonutView::DragLeave()
 {
+	m_spDropTargetHelper->DragLeave();
 	return m_spDefaultDropTarget->DragLeave();
 }
 
 STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
 
 	if (m_bUseCustomDropTarget && m_bTempUseDefaultDropTarget == false) {
@@ -217,23 +235,14 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 				*pdwEffect = DROPEFFECT_NONE;
 			}
 		}
+	} else {	// 外部から
+		CString strURL;
+		MtlGetHGlobalText(pDataObj, strURL, ::RegisterClipboardFormat(CFSTR_FILENAME));
+		if (strURL.IsEmpty() == FALSE) {
+			MTL::ParseInternetShortcutFile(strURL);	// ファイルパス->URL
+			Navigate2(strURL);
+		}
 	}
-	//} else {
-	//	CString strURL;
-	//	FORMATETC formatetc = { ::RegisterClipboardFormat(CFSTR_SHELLURL), NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-	//	STGMEDIUM stgmedium = { 0 };
-	//	/*HRESULT   */hr		= pDataObj->GetData(&formatetc, &stgmedium);
-	//	if ( SUCCEEDED(hr) ) {
-	//		if (stgmedium.hGlobal != NULL) {
-	//			HGLOBAL hText = stgmedium.hGlobal;
-	//			strURL = reinterpret_cast<LPSTR>( ::GlobalLock(hText) );
-	//			::GlobalUnlock(hText);
-	//		}
-	//		::ReleaseStgMedium(&stgmedium);
-	//	}
-	//	if (strURL.IsEmpty() == FALSE)
-	//		Navigate2(strURL);
-	//}
 
 	return hr;
 }
@@ -254,15 +263,13 @@ STDMETHODIMP	CDonutView::Invoke(
 		return E_INVALIDARG;
 	}
 
-	HRESULT hr = E_NOTIMPL;
-
 	if (dispidMember == DISPID_AMBIENT_DLCONTROL) {
 		pvarResult->vt	 = VT_I4;
 		pvarResult->lVal = m_dwDLControlFlags;
-		hr				 = S_OK;
+		return S_OK;
 	}
 
-	return hr;
+	return DISP_E_MEMBERNOTFOUND;
 }
 
 
@@ -327,6 +334,9 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ATLASSERT(m_spBrowser);
 
 		BOOL	bCheck	= GetRegisterAsDropTarget();
+		hr = CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
+                     IID_IDropTargetHelper, (LPVOID*)&m_spDropTargetHelper);
+		ATLASSERT(hr == S_OK);
 
 		// Set flat scrollbar style
 		CComPtr<IAxWinHostWindow>	spAxHostWindow;
@@ -383,6 +393,7 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 	catch (const CAtlException& e) {
 		e;
+		MessageBox(_T("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
 	}
 	return lRet;
 }

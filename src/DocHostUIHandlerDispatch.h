@@ -11,7 +11,6 @@
 
 #include "MtlDragDrop.h"
 #include "CustomContextMenu.h"
-#include "ScriptErrorCommandTargetImpl.h"
 
 // 前方宣言
 class CDonutView;
@@ -35,9 +34,7 @@ class CDonutView;
 	そうでない幾つかのメソッドに対応するためにデフォルトのUIハンドラを所持し、
 	一時的に当クラスを解除してデフォルト動作を行わせます(GetHostInfo,GetOptionKeyPath等参照)
  */
-class CDocHostUIHandlerDispatch : 
-	public IDocHostUIHandlerDispatch,
-	public IScriptErrorCommandTargetImpl<CDocHostUIHandlerDispatch>
+class CDocHostUIHandlerDispatch : public IDocHostUIHandlerDispatch
 {
 public: 
 	// Constructor
@@ -51,81 +48,11 @@ public:
 
 public: 	
 	// IUnknown atlhost.hを見る限り必要ではない
-	STDMETHODIMP			QueryInterface (REFIID riid, void **ppvObject);
+	STDMETHODIMP			QueryInterface (REFIID riid, void **ppvObject) { return E_NOINTERFACE; }
 	STDMETHODIMP_(ULONG) 	AddRef()	{ return 1; }
 	STDMETHODIMP_(ULONG) 	Release()	{ return 1; }
-#if 0
-	// IDocHostUIHandler
-    STDMETHODIMP ShowContextMenu( 
-        /* [in] */ DWORD dwID,
-        /* [in] */ POINT *ppt,
-        /* [in] */ IUnknown *pcmdtReserved,
-        /* [in] */ IDispatch *pdispReserved);
-        
-    STDMETHODIMP GetHostInfo( 
-        /* [out][in] */ DOCHOSTUIINFO *pInfo);
-        
-    STDMETHODIMP ShowUI( 
-        /* [in] */ DWORD dwID,
-        /* [in] */ IOleInPlaceActiveObject *pActiveObject,
-        /* [in] */ IOleCommandTarget *pCommandTarget,
-        /* [in] */ IOleInPlaceFrame *pFrame,
-        /* [in] */ IOleInPlaceUIWindow *pDoc) { return S_OK; }
-        
-    STDMETHODIMP HideUI( void) { return S_OK; }
-        
-    STDMETHODIMP UpdateUI( void) { return S_OK; }
-        
-    STDMETHODIMP EnableModeless( 
-        /* [in] */ BOOL fEnable) { return E_NOTIMPL; }
-        
-    STDMETHODIMP OnDocWindowActivate( 
-        /* [in] */ BOOL fActivate) { return E_NOTIMPL; }
-        
-    STDMETHODIMP OnFrameWindowActivate( 
-        /* [in] */ BOOL fActivate) { return E_NOTIMPL; }
-        
-    STDMETHODIMP ResizeBorder( 
-        /* [in] */ LPCRECT prcBorder,
-        /* [in] */ IOleInPlaceUIWindow *pUIWindow,
-        /* [in] */ BOOL fRameWindow) { return E_NOTIMPL; }
-        
-    STDMETHODIMP TranslateAccelerator( 
-        /* [in] */ LPMSG lpMsg,
-        /* [in] */ const GUID *pguidCmdGroup,
-        /* [in] */ DWORD nCmdID) { return S_FALSE; }
-        
-    STDMETHODIMP GetOptionKeyPath( 
-        /* [out] */ 
-        __out  LPOLESTR *pchKey,
-        /* [in] */ DWORD dw) { return E_NOTIMPL; }
-        
-    STDMETHODIMP GetDropTarget( 
-        /* [in] */ IDropTarget *pDropTarget,
-        /* [out] */ IDropTarget **ppDropTarget);
-        
-    STDMETHODIMP GetExternal( 
-        /* [out] */ IDispatch **ppDispatch) { return E_NOTIMPL; }
-        
-    STDMETHODIMP TranslateUrl( 
-        /* [in] */ DWORD dwTranslate,
-        /* [in] */ 
-        __in __nullterminated  OLECHAR *pchURLIn,
-        /* [out] */ 
-        __out  OLECHAR **ppchURLOut) { return S_FALSE; }
-        
-    STDMETHODIMP FilterDataObject( 
-        /* [in] */ IDataObject *pDO,
-        /* [out] */ IDataObject **ppDORet) { return S_FALSE; }
-#endif
-private:
-	bool					   m_bNoIECustom;
-	CComPtr<IDocHostUIHandler> m_pDefaultHandler;
-	CDonutView*				   m_pView;
 
-#if 1
-public: 	// IDispatch atlhost.hを見る限り必要ではない
-
+ 	// IDispatch atlhost.hを見る限り必要ではない
 	STDMETHOD	(GetTypeInfoCount) (UINT * pctinfo) { return E_NOTIMPL; }
 	STDMETHOD	(GetTypeInfo) (UINT itinfo, LCID lcid, ITypeInfo * *pptinfo) { return E_NOTIMPL; }
 	STDMETHOD	(GetIDsOfNames) (REFIID riid, LPOLESTR * rgszNames, UINT cNames, LCID lcid, DISPID * rgdispid)	{ return E_NOTIMPL; }
@@ -141,7 +68,6 @@ public: 	// IDispatch atlhost.hを見る限り必要ではない
 			UINT *			/*puArgErr*/) { return E_NOTIMPL; }
 
 
-public: 	
 	// IDocHostUIHandlerDispatch
 	//このインターフェイスは既存の動作を置き換える
 
@@ -193,5 +119,9 @@ public:
 	STDMETHOD(FilterDataObject)(
 		/* [in] */ IUnknown  *		pDO,
 		/* [out] */ IUnknown  * *	ppDORet) { return E_NOTIMPL; }
-#endif
+
+private:
+	bool					   m_bNoIECustom;
+	CComPtr<IDocHostUIHandler> m_pDefaultHandler;
+	CDonutView*				   m_pView;
 };
