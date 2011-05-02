@@ -765,7 +765,9 @@ BOOL	CDonutSearchBar::Impl::PreTranslateMessage(MSG *pMsg)
 
 		// return key have to be passed
 		if (vKey == VK_RETURN) {
-			return _MTL_TRANSLATE_WANT;
+			//\\+return _MTL_TRANSLATE_WANT;
+			OnKeywordKeyDown(VK_RETURN, 0, 0);
+			return _MTL_TRANSLATE_HANDLE;
 		}
 
 		// other key have to be passed
@@ -1414,9 +1416,11 @@ void	CDonutSearchBar::Impl::OnEngineSelChange(UINT uNotifyCode, int nID, CWindow
 
 // KeywordEdit
 
-/// キーワードコンボボックス内のエディットコントロールでキーが押された
+/// キーワードコンボボックス内のエディットコントロールでキーが押された(PretranslateMessageから呼ばれる)
 void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
+	SetMsgHandled(TRUE);
+
 	// if not dropped, eat VK_DOWN
 	if (   m_cmbKeyword.GetDroppedState() == FALSE 
 		&& (nChar == VK_DOWN || nChar == VK_UP) ) {
@@ -1456,7 +1460,7 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 	} else {
 		if (nChar == VK_RETURN) {
 			_OnEnterKeyDown();	// 検索
-			
+
 		} else if (nChar == VK_DELETE) {
 			if ( m_cmbKeyword.GetDroppedState() ) {
 				auto funcDeleteKeywordHistory = [this] () -> bool {
