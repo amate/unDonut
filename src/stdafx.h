@@ -130,6 +130,7 @@
 #include <vector>
 #include <list>
 #include <queue>
+#include <deque>
 #include <stack>
 #include <algorithm>
 //#include <functional>
@@ -140,6 +141,7 @@
 #include <memory>
 
 using std::vector;
+using std::deque;
 using std::pair;
 using std::make_pair;
 using boost::function;

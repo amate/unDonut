@@ -287,13 +287,25 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		// SS_ICON
 		int	nMaxTotalSecondTime = 0;
 		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
-			(*it)->wndProgress.SetRange32(0, (*it)->nProgressMax);
-			(*it)->wndProgress.SetPos((*it)->nProgress);
+			DLItem& item = *(*it);
+			item.wndProgress.SetRange32(0, item.nProgressMax);
+			item.wndProgress.SetPos(item.nProgress);
 
 			// (1.2 MB/sec)
 			CString strTransferRate;
-			int nProgressMargin = (*it)->nProgress - (*it)->nOldProgress;
-			int KbTransferRate = nProgressMargin / dwTimeMargin;	// kbyte / second
+			int nProgressMargin = item.nProgress - item.nOldProgress;
+			
+			if (item.deq.size() >= 10)
+				item.deq.pop_front();
+			item.deq.push_back(make_pair(nProgressMargin, (int)dwTimeMargin));
+			nProgressMargin = 0;
+			int nTotalTime = 0;
+			for (auto itq = item.deq.cbegin(); itq != item.deq.cend(); ++itq) {
+				nProgressMargin += itq->first;
+				nTotalTime		+= itq->second;
+			}
+			
+			int KbTransferRate = nProgressMargin / nTotalTime;	// kbyte / second
 			double MbTransferRate = (double)KbTransferRate / 1000;
 			if (MbTransferRate > 1) {
 				::swprintf(strTransferRate.GetBuffer(30), _T(" (%.1lf MB/sec)"), MbTransferRate);
@@ -302,10 +314,10 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 				::swprintf(strTransferRate.GetBuffer(30), _T(" (%d KB/sec)"), KbTransferRate);
 				strTransferRate.ReleaseBuffer();
 			}
-			(*it)->nOldProgress = (*it)->nProgress;
+			item.nOldProgress = item.nProgress;
 
 			// Žc‚è 4 •ª
-			int nRestByte = (*it)->nProgressMax - (*it)->nProgress;
+			int nRestByte = item.nProgressMax - item.nProgress;
 			if (nRestByte > 0) {
 				if (KbTransferRate > 0) {
 					int nTotalSecondTime = (nRestByte / 1000) / KbTransferRate;	// Žc‚èŽžŠÔ(•b)
@@ -326,18 +338,18 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 
 					// 10.5 / 288 MB
 					CString strDownloaded;
-					int nMByte = (*it)->nProgressMax / (1000 * 1000);
+					int nMByte = item.nProgressMax / (1000 * 1000);
 					if (nMByte > 0) {
-						double DownloadMByte = (double)(*it)->nProgress / (1000 * 1000);
+						double DownloadMByte = (double)item.nProgress / (1000 * 1000);
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %d MB"), DownloadMByte, nMByte);
 						strDownloaded.ReleaseBuffer();
 					} else {
 						int nKByte = (*it)->nProgressMax / 1000;
-						double DownloadKByte = (double)(*it)->nProgress / 1000;
+						double DownloadKByte = (double)item.nProgress / 1000;
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %d KB"), DownloadKByte, nKByte);
 						strDownloaded.ReleaseBuffer();
 					}
-					(*it)->strText += strDownloaded + strTransferRate;
+					item.strText += strDownloaded + strTransferRate;
 				}
 			}
 		}

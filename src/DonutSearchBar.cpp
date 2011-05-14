@@ -174,6 +174,7 @@ public:
 		MSG_WM_CHAR 	( OnChar 		 )
 	ALT_MSG_MAP(2)	// SearchEnginComboBox
 		MSG_WM_KEYDOWN	( OnEngineKeyDown  )
+		MESSAGE_HANDLER_EX( WM_CTLCOLORLISTBOX, OnShowEngineListBox )
 	END_MSG_MAP()
 
 
@@ -204,7 +205,7 @@ public:
 
 	// SearchEngineComboBox
 	void	OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-
+	LRESULT OnShowEngineListBox(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	void	_AddToolBarIcon(CString strWord);
@@ -668,7 +669,7 @@ void	CDonutSearchBar::Impl::SearchPage(bool bForward, int nNum /*= -1*/)
 	CEdit	edit = GetEditCtrl();
 
 	if (m_bWordLock) {	// ロックされている単語を使う
-		m_wndToolBar.GetButtonText(ID_SEARCHBAR_WORD00, str.GetBuffer(1024));
+		m_wndToolBar.GetButtonText(ID_SEARCHBAR_WORD00 + nNum/*ID_SEARCHBAR_WORD00*/, str.GetBuffer(1024));
 		str.ReleaseBuffer();
 	} else {
 
@@ -690,6 +691,8 @@ void	CDonutSearchBar::Impl::SearchPage(bool bForward, int nNum /*= -1*/)
 				FilterString(str);
 
 			_AddToolBarIcon(str);
+			if (str != GetSearchStr())
+				m_bWordLock = true;
 
 			std::vector<CString> strs;
 			strs.reserve(10);
@@ -1373,6 +1376,7 @@ LRESULT CDonutSearchBar::Impl::OnToolBarGetDispInfo(LPNMHDR pnmh)
 	default:	// ID_SEARCH_WORD00..09
 		return 0;
 	}
+	pDispInfo->lpszText = strToolTip.GetBuffer(0);
 	return 0;
 }
 
@@ -1489,7 +1493,7 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 void CDonutSearchBar::Impl::OnKeywordKillFocus(CWindow wndFocus)
 {
 	SetMsgHandled(false);
-	_AddToolBarIcon(GetSearchStr());	/* ツールバーを更新する */
+	//_AddToolBarIcon(GetSearchStr());	/* ツールバーを更新する */
 }
 
 /// リアルタイムに単語ボタンに反映していく
@@ -1547,7 +1551,26 @@ void	CDonutSearchBar::Impl::OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlag
 		_OnEnterKeyDown();
 }
 
+/// 検索エンジンリストボックスを隠れないように移動する
+LRESULT CDonutSearchBar::Impl::OnShowEngineListBox(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	SetMsgHandled(FALSE);
 
+	HWND hWndListBox = (HWND)lParam;
+	HMONITOR hMoni = MonitorFromWindow(hWndListBox, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO info = { sizeof (info) };
+	GetMonitorInfo(hMoni, &info);
+
+	CRect rcList;
+	::GetWindowRect(hWndListBox, &rcList);
+	if (info.rcWork.right <= rcList.right) {
+		int nDiff = rcList.right - info.rcWork.right;
+		rcList.left -= nDiff;
+		rcList.right-= nDiff;
+		::MoveWindow(hWndListBox, rcList.left, rcList.top, rcList.Width(), rcList.Height(), FALSE);
+	}
+	return 0;
+}
 
 
 // private:

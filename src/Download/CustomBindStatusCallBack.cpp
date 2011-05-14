@@ -30,8 +30,10 @@ CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, CDownloading
 // Destructor
 CCustomBindStatusCallBack::~CCustomBindStatusCallBack()
 {
+#if 0
 	if (::PathFileExists(m_pDLItem->strFilePath  + _T(".incomplete")))
 		::DeleteFile(m_pDLItem->strFilePath  + _T(".incomplete"));
+#endif
 }
 
 
@@ -167,6 +169,10 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
 
 	m_pDownloadingListView->PostMessage(WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem, (LPARAM)this);
 
+	// お片付け
+	if (::PathFileExists(m_pDLItem->strFilePath  + _T(".incomplete")))
+		::DeleteFile(m_pDLItem->strFilePath  + _T(".incomplete"));
+
 	return S_OK;
 }
     
@@ -201,6 +207,11 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 				Cancel();
 				return E_ABORT;
 			}
+
+			// フォルダが存在しなければ作成
+			CString strDir = MtlGetDirectoryPath(m_pDLItem->strFilePath);
+			if (::PathIsDirectory(strDir) == FALSE)
+				::SHCreateDirectory(NULL, strDir);
 
 			m_hFile = ::CreateFile(m_pDLItem->strFilePath + _T(".incomplete"), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (m_hFile == INVALID_HANDLE_VALUE) {

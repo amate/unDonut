@@ -54,7 +54,6 @@ extern const UINT	g_uDropDownWholeCommandID[] = {
 extern const int	g_uDropDownCommandCount 	 = sizeof (g_uDropDownCommandID 	) / sizeof (UINT);
 extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandID) / sizeof (UINT);
 
-bool				g_bNoReposition 		  = FALSE;
 
 CServerAppModule	_Module;
 CMainFrame *		g_pMainWnd				  = NULL;
@@ -462,7 +461,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 {
 	// DLL攻撃対策
 	SetDllDirectory(_T(""));
-
+	ATLASSERT(sizeof(int)==sizeof(long));
+	long long l = sizeof (size_t);
 #if 0
 //  #if defined (_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 	//メモリリーク検出用

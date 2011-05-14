@@ -169,10 +169,32 @@ void CDownloadManager::OnShowDLManager(UINT uNotifyCode, int nID, CWindow wndCtl
 	} else {
 		if (m_wndDownload.IsWindowVisible() == FALSE) 
 			m_wndDownload.SetParent(NULL);
-		m_wndDownload.ShowWindow(TRUE);
+		if (m_wndDownload.IsZoomed() == FALSE)
+			m_wndDownload.ShowWindow(SW_RESTORE);
 		m_wndDownload.SetActiveWindow();
 	}
 	m_wndDownload.EnableVisible();
+
+	if (m_wndDownload.IsZoomed() == FALSE) {	// ウィンドウから出ていたら元に戻す
+		CRect rcWnd;
+		m_wndDownload.GetWindowRect(rcWnd);
+		HMONITOR	hMonitor = ::MonitorFromWindow(m_wndDownload, MONITOR_DEFAULTTONEAREST);
+		MONITORINFO moniInfo = { sizeof (MONITORINFO) };
+		::GetMonitorInfo(hMonitor, &moniInfo);
+		if (   ::PtInRect(&moniInfo.rcWork, rcWnd.TopLeft()) == FALSE
+			|| ::PtInRect(&moniInfo.rcWork, rcWnd.BottomRight()) == FALSE)
+		{
+			if (moniInfo.rcWork.top > rcWnd.top) 
+				rcWnd.MoveToY(moniInfo.rcWork.top);
+			if (moniInfo.rcWork.left > rcWnd.left)
+				rcWnd.MoveToX(moniInfo.rcWork.left);
+			if (moniInfo.rcWork.right < rcWnd.right)
+				rcWnd.MoveToX(moniInfo.rcWork.right - rcWnd.Width());
+			if (moniInfo.rcWork.bottom < rcWnd.bottom)
+				rcWnd.MoveToY(moniInfo.rcWork.bottom - rcWnd.Height());
+			m_wndDownload.MoveWindow(rcWnd);
+		}
+	}
 }
 
 LRESULT CDownloadManager::OnDefaultDLFolder(UINT uMsg, WPARAM wParam, LPARAM lParam)

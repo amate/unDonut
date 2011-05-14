@@ -3442,7 +3442,7 @@ BOOL CMainFrame::OnIdle()
 	CmdUIUpdateStatusBar	(m_hWndStatusBar, ID_PRIVACY_PANE	);
 	CmdUIUpdateChildWindow	(m_hWndStatusBar, IDC_PROGRESS		);
 	m_mcCmdBar.UpdateMDIMenuControl();
-	_FocusChecker();
+	//\\?_FocusChecker();
 #if 0
 	if ( _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle) )
 		CDialogKiller2::KillDialog();

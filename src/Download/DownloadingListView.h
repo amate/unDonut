@@ -32,7 +32,7 @@ struct DLItem
 	int		nProgress;
 	int		nProgressMax;
 	int		nOldProgress;
-
+	deque<pair<int, int> > deq;
 	bool	bAbort;
 
 	DLItem()
