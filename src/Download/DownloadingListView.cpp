@@ -157,7 +157,7 @@ int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ModifyStyle(WS_HSCROLL, 0);
 
 	// 画面更新用のタイマーを起動
-	SetTimer(1, 400);
+	SetTimer(1, 1000);
 
 	static bool bInit = false;
 	if (bInit)

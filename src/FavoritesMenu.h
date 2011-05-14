@@ -160,6 +160,7 @@ struct CMenuItem {
 	HWND		m_hItemWnd;
 	BOOL		m_bIcon;		//minit
 	HMENU		m_hMenu;		//minit
+	CIconHandle	m_Icon;
 
 	// Constructor
 	CMenuItem()

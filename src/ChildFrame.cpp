@@ -283,6 +283,31 @@ void CChildFrame::OnWindowClosing(bool IsChildWindow, bool& bCancel)
 	PostMessage(WM_CLOSE);
 }
 
+#if 0
+void	_threadChildFrame(CChildFrame* pChild, HWND hWndMDIClient, bool* pbCreated)
+{
+	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	ATLASSERT( SUCCEEDED(hRes) );
+	// If you are running on NT 4.0 or higher you can use the following call instead to
+	// make the EXE free threaded. This means that calls come in on a random RPC thread
+	//	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
+
+	hRes		 = ::OleInitialize(NULL);
+	ATLASSERT( SUCCEEDED(hRes) );
+
+	CMessageLoop theLoop;
+
+	if (pChild) 
+		pChild->CreateEx(hWndMDIClient);
+	*pbCreated = true;
+	theLoop.Run();	//
+
+
+	::OleUninitialize();
+	::CoUninitialize();
+}
+#endif
+
 CChildFrame *CChildFrame::NewWindow(
 		HWND				hWndMDIClient,
 		CMDITabCtrl &		tabMDI,
@@ -302,11 +327,26 @@ CChildFrame *CChildFrame::NewWindow(
 		dwESFlags = CDLControlOption::s_dwExtendedStyleFlags;	//+++
 
 	CChildFrame *pChild = new CChildFrame(tabMDI, adBar, bNewWindow2, dwDLFlags, dwESFlags);
-
+	//bool bCreated = false;
+	//boost::thread th(boost::bind(&_threadChildFrame, pChild, hWndMDIClient, &bCreated));
 	//んー?
 	if (pChild) 
 		pChild->CreateEx(hWndMDIClient);
-
+#if 0
+	int 	ret;
+	MSG 	msg 	= { 0 };
+	int 	n		= 0;
+	HWND hWndTop = CWindow(hWndMDIClient).GetTopLevelWindow();
+	while ((ret = ::PeekMessage(&msg, hWndTop, 0, 0, PM_NOREMOVE)) != 0) {
+		if (!GetMessage (&msg, hWndTop, 0, 0))	/* メッセージ処理. QUITだったら、速攻かえる*/
+			return pChild;	//x return msg.wParam ;
+		//if (OnForwardMsg(&msg, 0) == 0) {
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+		//}
+		++n;
+	}
+#endif
 	return pChild;
 }
 
@@ -2694,13 +2734,14 @@ void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 			CComPtr<IHTMLElementCollection> spAllClct;
 			hr = pDocument->get_all(&spAllClct);
 			if ( SUCCEEDED(hr) ) {
-				CComPtr<IHTMLElementCollection> spBaseClct;
-				CComVariant 					val = _T("BASE");
-				hr = spAllClct->tags(val, (IDispatch **) &spBaseClct);
-
-				if ( SUCCEEDED(hr) ) {
+				CComQIPtr<IHTMLElementCollection> spBaseClct;
+				CComVariant 		val = _T("BASE");
+				CComPtr<IDispatch>	spDisp;
+				hr = spAllClct->tags(val, &spDisp);
+				spBaseClct	= spDisp;
+				if ( SUCCEEDED(hr) && spBaseClct ) {
 					long	length;
-					spBaseClct->get_length(&length);
+					hr = spBaseClct->get_length(&length);
 					if (length > 0) {
 						CComPtr<IHTMLElement> spElem;
 						CComVariant 		  val1( (int) 0 ), val2( (int) 0 );

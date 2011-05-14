@@ -461,8 +461,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 {
 	// DLL攻撃対策
 	SetDllDirectory(_T(""));
-	ATLASSERT(sizeof(int)==sizeof(long));
-	long long l = sizeof (size_t);
+
 #if 0
 //  #if defined (_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 	//メモリリーク検出用

@@ -148,6 +148,7 @@ private:
 	int 						 m_nScrollCount;
 
 	CBitmap						 m_bmpPageIcon;
+	CIcon						 m_iconPageIcon;
 
 	DWORD						 m_dwStyle;
 
@@ -226,9 +227,8 @@ void	CExplorerMenu::Impl::Init(
 		ATLASSERT(m_pSHDesktopFolder);
 	}
 
-	HICON	hIcon;
-	::ExtractIconEx(_T("url.dll"), 0, NULL, &hIcon, 1);
-	m_bmpPageIcon = CreateBitmapFromHICON(hIcon);
+	::ExtractIconEx(_T("url.dll"), 0, NULL, &m_iconPageIcon.m_hIcon, 1);
+	m_bmpPageIcon = CreateBitmapFromHICON(m_iconPageIcon);
 }
 
 
@@ -473,8 +473,8 @@ LRESULT	CExplorerMenu::Impl::OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM 
 	}
 
 	if (m_dwStyle & EMS_DRAW_FAVICON) {
-		lpMeasureItemStruct->itemHeight = 16;
-		lpMeasureItemStruct->itemWidth	= 16;
+		bHandled = FALSE;
+		lpMeasureItemStruct->itemWidth = 200;
 		return TRUE;
 	}
 
@@ -540,15 +540,15 @@ LRESULT	CExplorerMenu::Impl::OnDrawItem(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 		return TRUE;
 	}
 
-	CDCHandle		dc 			= lpDrawItemStruct->hDC;
-	const RECT &	rcItem 		= lpDrawItemStruct->rcItem;
+	CDCHandle	dc 			= lpDrawItemStruct->hDC;
+	const RECT&	rcItem 		= lpDrawItemStruct->rcItem;
 
-	CMenuHandle		menu		= (HMENU) lpDrawItemStruct->hwndItem;
+	CMenuHandle	menu		= (HMENU) lpDrawItemStruct->hwndItem;
 
-	CString 		strCmd;
-	CMenuItem *		pMenuData	= (CMenuItem *) lpDrawItemStruct->itemData;
+	CString 	strCmd;
+	CMenuItem*	pMenuData	= (CMenuItem *) lpDrawItemStruct->itemData;
 
-	int 			nIndex 		= 0;
+	int			nIndex 		= 0;
 
 	if (pMenuData && pMenuData->m_bIcon) {
 		if (pMenuData->m_bDir) {
@@ -565,12 +565,12 @@ LRESULT	CExplorerMenu::Impl::OnDrawItem(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 			strExt.MakeUpper();
 
 			if ( strExt == _T("EXE") || strExt == _T("LNK") ) {
+				
 				CItemIDList idlURL(pMenuData->m_strPath);
 				//					nIndex = MtlGetSystemIconIndex(idlURL);
 				nIndex = MtlGetNormalIconIndex(idlURL);
 			} else {
-				//int nIcon = m_mapIcon.Lookup(strExt);
-				int nIcon = 0;	//\\+
+				int nIcon = m_mapIcon.Lookup(strExt);
 				if (nIcon == 0) {
 					CItemIDList idlURL(pMenuData->m_strPath);
 					//						nIcon = MtlGetSystemIconIndex(idlURL);
@@ -592,8 +592,16 @@ LRESULT	CExplorerMenu::Impl::OnDrawItem(HWND hWnd, UINT uMsg, WPARAM wParam, LPA
 	pMenuData->m_bSelected = bSelected;
 	pMenuData->m_hItemWnd  = lpDrawItemStruct->hwndItem;
 
-	// draw pushed-in or popped-out edge
-	::ImageList_Draw(m_hImgList, nIndex, dc, rcItem.left + 1, rcItem.top + 1, ILD_TRANSPARENT);
+	if (m_dwStyle & EMS_DRAW_FAVICON) {
+		if (pMenuData->m_Icon.IsNull() == false) {
+			pMenuData->m_Icon.DrawIconEx(dc, rcItem.left + 1, rcItem.top + 1, 16, 16, 0, (HBRUSH) LongToPtr( bSelected ? (COLOR_HIGHLIGHT + 1) : (COLOR_MENU + 1) ) );
+		} else {
+			m_iconPageIcon.DrawIconEx(dc, rcItem.left + 1, rcItem.top + 1, 16, 16, 0, (HBRUSH) LongToPtr( bSelected ? (COLOR_HIGHLIGHT + 1) : (COLOR_MENU + 1) ) );
+		}
+	} else {
+		// draw pushed-in or popped-out edge
+		::ImageList_Draw(m_hImgList, nIndex, dc, rcItem.left + 1, rcItem.top + 1, ILD_TRANSPARENT);
+	}
 
 	RECT	rcText	= rcItem;
 	rcText.left 	+= 18;
@@ -1067,7 +1075,7 @@ void	CExplorerMenu::Impl::_thread_SetMenuIcon(CMenuHandle menu)
 		HICON hIcon = CreateIconFromIDList(CItemIDList(pItem->m_strPath));
 		if (hIcon) {
 			miib.hbmpChecked	= CreateBitmapFromHICON(hIcon);
-			::DestroyIcon(hIcon);
+			pItem->m_Icon	= hIcon;
 		} else {
 			miib.hbmpChecked	= m_bmpPageIcon;
 		}

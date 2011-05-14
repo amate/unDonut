@@ -447,9 +447,11 @@ CString CDonutSearchBar::Impl::GetSearchEngineStr() const
 /// 検索
 void	CDonutSearchBar::Impl::SearchWeb(CString str)
 {
-	if (str.IsEmpty())
-		str = GetSearchStr();
-
+	if (str.IsEmpty()) {
+		str = Donut_GetActiveSelectedText();
+		if (str.IsEmpty())
+			str = GetSearchStr();
+	}
 	SearchWebWithEngine(str, GetSearchEngineStr());
 }
 
@@ -883,6 +885,7 @@ int		CDonutSearchBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	COMBOBOXINFO info = { sizeof(COMBOBOXINFO) };
 	m_cmbKeyword.GetComboBoxInfo(&info);
 	m_editKeyword = info.hwndItem;
+	m_KeywordListBox = info.hwndList;
 
 	m_cmbEngine.Create(m_hWnd);		// 検索エンジンコンボボックス作成
 	m_cmbEngine.SetDlgCtrlID(IDC_CMB_ENGIN);

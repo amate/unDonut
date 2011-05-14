@@ -186,10 +186,12 @@ CString CDonutFavoritesMenuPropertyPage::_BrowseForFolder()
 	return idl.GetPath();
 }
 
-
+////////////////////////////////////////////////////////
+/// チェックボックスの有効無効の切り替え
 void	CDonutFavoritesMenuPropertyPage::_SwitchEnable(int nID)
 {
 	BOOL	bEnable = FALSE;
+	return;	//\\+
 
 	switch (nID) {
 	case IDC_CHECK_DRAW_ICON:
