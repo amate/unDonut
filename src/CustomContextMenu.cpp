@@ -318,14 +318,6 @@ HRESULT CCustomContextMenu::ShowContextMenu(DWORD dwID, POINT* pptPosition, IUnk
 void CCustomContextMenu::_RestoreSpecialMenu(DWORD dwCmd)
 {
 	switch (dwCmd) {
-	case ID_FAVORITES_DROPDOWN:
-		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_FAV      , (WPARAM) FALSE, 0);
-		break;
-
-	case ID_FAVORITES_GROUP_DROPDOWN:
-		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_FAV_GROUP, (WPARAM) FALSE, 0);
-		break;
-
 	case ID_SCRIPT:
 		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_SCRIPT   , (WPARAM) FALSE, 0);
 		break;
@@ -337,14 +329,6 @@ void CCustomContextMenu::_RestoreSpecialMenu(DWORD dwCmd)
 void CCustomContextMenu::_BeforeInitSpecialMenu(DWORD dwCmd)
 {
 	switch (dwCmd) {
-	case ID_FAVORITES_DROPDOWN:
-		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_FAV      , (WPARAM) TRUE, 0);
-		break;
-
-	case ID_FAVORITES_GROUP_DROPDOWN:
-		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_FAV_GROUP, (WPARAM) TRUE, 0);
-		break;
-
 	case ID_SCRIPT:
 		::SendMessage(m_hWndTopLevel, WM_MENU_REFRESH_SCRIPT   , (WPARAM) TRUE, 0);
 		break;

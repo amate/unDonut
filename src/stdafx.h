@@ -26,14 +26,14 @@
 // Change these values to use different versions
 #ifdef WIN64	//+++ 64ビット版win は winXp64以降のみに対応.
 #define WINVER					0x0502
-#define _WIN32_WINNT			0x0502
+#define _WIN32_WINNT			0x0600
 #define _WIN32_IE				0x0603					//+++ _WIN32_IE_IE60SP2
 #define _RICHEDIT_VER			0x0100					//+++ 0x200以上(3?)で十分だが、なんとなく
 #define DONUT_NAME				_T("64unDonut")
 #define DONUT_WND_CLASS_NAME	_T("WTL:") DONUT_NAME	//+++ 名前かえるとプラグインとかスクリプトでマズイ?
 #else		   //+++ 一応、win9xの範囲 //\\2000以降に変更
 #define WINVER					0x0502
-#define _WIN32_WINNT			0x0502
+#define _WIN32_WINNT			0x0600	// vista
 #define _WIN32_IE				0x0603
 #define _RICHEDIT_VER			0x0100
 #define DONUT_NAME				_T("unDonut")
@@ -210,6 +210,7 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 #ifndef  WM_THEMECHANGED
  #define WM_THEMECHANGED	0x031A
 #endif
+
 //非XPでも動作するように動的リンクするようにした改造版ヘッダ
 #if _MSC_VER >= 1500	//+++ メモ:undonutで使うWTL80側を改造したのでこちらを使ってもok.
 						//+++ だが、ヘッダがそろってないとダメなようなんで、手抜きでコンパイラバージョンで切り替え

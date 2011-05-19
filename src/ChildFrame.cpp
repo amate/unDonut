@@ -2373,50 +2373,70 @@ void CChildFrame::OnHtmlZoom(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 ///+++ htmlÇägëÂèkè¨
 void CChildFrame::SetBodyStyleZoom(int addSub, int scl)
 {
-	CComPtr<IHTMLDocument2> 			pDoc;
-	if ( FAILED( m_spBrowser->get_Document( (IDispatch **) &pDoc ) ) )
-		return;
+	if (Misc::getIEMejourVersion() >= 7) {
+		CComVariant vZoom;
+		if (addSub) {
+			m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, NULL, &vZoom);
+			scl =  static_cast<int>(vZoom.lVal);
+			scl += addSub;
+		}
+		if (scl < 5)
+			scl = 5;
+		else if (scl > 500)
+			scl = 500;
 
-	CComPtr<IHTMLElement>	spHTMLElement;
-	if ( FAILED( pDoc->get_body(&spHTMLElement) ) )
-		return;
-	if (!spHTMLElement)
-		return;
-	CComPtr<IHTMLElement2>  spHTMLElement2;
-	if ( FAILED( spHTMLElement->QueryInterface(&spHTMLElement2)) )
-		return;
-	if (!spHTMLElement2)
-		return;
+		m_nImgScl = scl;
+		
+		vZoom.lVal = scl;
+		m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoom, NULL); 
 
-	CComPtr<IHTMLStyle>		pHtmlStyle;
-	if ( FAILED(spHTMLElement2->get_runtimeStyle(&pHtmlStyle)) )
-		return;
-	if (!pHtmlStyle)
-		return;
 
-	wchar_t		wbuf[128];
-	wbuf[0] = 0;
-	CComVariant variantVal; //(wbuf);
-	CComBSTR	bstrZoom( L"zoom" );
-	if (addSub) {
-		if ( FAILED(pHtmlStyle->getAttribute(bstrZoom, 1, &variantVal)) )
+	} else {
+		CComPtr<IHTMLDocument2> 			pDoc;
+		if ( FAILED( m_spBrowser->get_Document( (IDispatch **) &pDoc ) ) )
 			return;
-		CComBSTR	bstrTmp(variantVal.bstrVal);
-		scl =  !bstrTmp.m_str ? 100 : wcstol((wchar_t*)LPCWSTR(bstrTmp.m_str), 0, 10);
-		scl += addSub;
+
+		CComPtr<IHTMLElement>	spHTMLElement;
+		if ( FAILED( pDoc->get_body(&spHTMLElement) ) )
+			return;
+		if (!spHTMLElement)
+			return;
+		CComPtr<IHTMLElement2>  spHTMLElement2;
+		if ( FAILED( spHTMLElement->QueryInterface(&spHTMLElement2)) )
+			return;
+		if (!spHTMLElement2)
+			return;
+
+		CComPtr<IHTMLStyle>		pHtmlStyle;
+		if ( FAILED(spHTMLElement2->get_runtimeStyle(&pHtmlStyle)) )
+			return;
+		if (!pHtmlStyle)
+			return;
+
+		wchar_t		wbuf[128];
+		wbuf[0] = 0;
+		CComVariant variantVal; //(wbuf);
+		CComBSTR	bstrZoom( L"zoom" );
+		if (addSub) {
+			if ( FAILED(pHtmlStyle->getAttribute(bstrZoom, 1, &variantVal)) )
+				return;
+			CComBSTR	bstrTmp(variantVal.bstrVal);
+			scl =  !bstrTmp.m_str ? 100 : wcstol((wchar_t*)LPCWSTR(bstrTmp.m_str), 0, 10);
+			scl += addSub;
+		}
+		if (scl < 5)
+			scl = 5;
+		else if (scl > 500)
+			scl = 500;
+
+		m_nImgScl = scl;
+
+		//swprintf(wbuf, 128, L"%d%%", int(scl));
+		wsprintfW(wbuf, L"%d%%", int(scl));
+		variantVal = CComVariant(wbuf);
+
+		pHtmlStyle->setAttribute(bstrZoom, variantVal, 1);
 	}
-	if (scl < 5)
-		scl = 5;
-	else if (scl > 500)
-		scl = 500;
-
-	m_nImgScl = scl;
-
-	//swprintf(wbuf, 128, L"%d%%", int(scl));
-	wsprintfW(wbuf, L"%d%%", int(scl));
-	variantVal = CComVariant(wbuf);
-
-	pHtmlStyle->setAttribute(bstrZoom, variantVal, 1);
 }
 
 

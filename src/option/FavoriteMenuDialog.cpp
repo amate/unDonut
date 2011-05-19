@@ -159,8 +159,6 @@ BOOL CDonutFavoritesMenuPropertyPage::OnApply()
 		SetMaxMenuBreakCount(m_nMaxMenuBreakCount);
 		CFavoritesMenuOption::SetUserDirectory(m_strFolder);
 
-		CFavoritesMenuOption::CallBack();
-
 		CFavoritesMenuOption::WriteProfile();
 
 		return TRUE;
@@ -235,3 +233,12 @@ void	CDonutFavoritesMenuPropertyPage::_SwitchEnable(int nID)
 		break;
 	}
 }
+
+//----------------------------
+/// お気に入りメニューの表示を更新する
+void	CDonutFavoritesMenuPropertyPage::OnDestroy()
+{
+	CFavoritesMenuOption::CallBack();
+}
+
+

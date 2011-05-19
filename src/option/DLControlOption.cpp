@@ -29,7 +29,8 @@ DWORD CDLControlOption::s_dwDLControlFlags	   = DLCTL_DEFAULT/*DLCTL_BGSOUNDS | 
 DWORD CDLControlOption::s_dwExtendedStyleFlags = DVS_EX_FLATVIEW | DVS_EX_MOUSE_GESTURE ;							//+++ 0以外の値に変更.
 
 
-
+//--------------------------------
+/// 設定を復元
 void CDLControlOption::GetProfile()
 {
 	CIniFileI	pr( g_szIniFileName, _T("Browser") );
@@ -42,11 +43,10 @@ void CDLControlOption::GetProfile()
 	if (!tmp.IsEmpty())
 		::lstrcpyn( s_szUserAgent, tmp, MAX_PATH );
 
-	char	szDefUserAgent[MAX_PATH*2];
-	szDefUserAgent[0]	= 0;	//+++
+	char	szDefUserAgent[MAX_PATH] = "\0";
 	DWORD	size = MAX_PATH;
 	::ObtainUserAgentString( 0 , szDefUserAgent , &size);
-	::lstrcpyn(s_szUserAgent_cur, LPCTSTR(CString(szDefUserAgent)), MAX_PATH);
+	::lstrcpyn(s_szUserAgent_cur, CString(szDefUserAgent), size);
   #else
 	// UDT DGSTR
 	DWORD		dwCount = MAX_PATH;
@@ -62,8 +62,8 @@ void CDLControlOption::GetProfile()
 	s_bUseDLManager = pr.GetValue(_T("UseDLManager")) != 0;
 }
 
-
-
+//---------------------------------
+/// 設定を保存
 void CDLControlOption::WriteProfile()
 {
 	CIniFileO	pr( g_szIniFileName, _T("Browser") );
@@ -79,11 +79,18 @@ void CDLControlOption::WriteProfile()
 
 
 
-const TCHAR*	CDLControlOption::userAgent()
+//--------------------------------------
+/// ユーザーエージェントを設定
+void	CDLControlOption::SetUserAgent()
 {
-	return (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_USER_AGENT_FLAG) ? s_szUserAgent : s_szUserAgent_cur;
+	if (CMainOption::s_dwMainExtendedStyle2) {
+		std::vector<char>	userAgent = Misc::tcs_to_sjis( s_szUserAgent );
+		::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void*)userAgent.data(), userAgent.size(), 0);
+	} else {
+		std::vector<char>	userAgent = Misc::tcs_to_sjis( s_szUserAgent_cur );
+		::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void*)userAgent.data(), userAgent.size(), 0);
+	}
 }
-
 
 
 
@@ -94,6 +101,7 @@ const TCHAR*	CDLControlOption::userAgent()
 
 // Constructor
 CDLControlPropertyPage::CDLControlPropertyPage(HWND hMainWnd)
+	: m_bInit(false)
 {
 	m_hMainWnd = hMainWnd;
 	_SetData();
@@ -105,27 +113,31 @@ CDLControlPropertyPage::CDLControlPropertyPage(HWND hMainWnd)
 BOOL CDLControlPropertyPage::OnSetActive()
 {
 	SetModified(TRUE);
+	if (m_bInit == false) {
+		m_bInit = true;
+		// UDT DGSTR
+		if (m_edit.m_hWnd == NULL)
+			m_edit.Attach( GetDlgItem(IDC_EDIT_USER_AGENT) );
+		// ENDE
+		GetDlgItem(IDC_EDIT_DEFAULT_USER_AGENT).SetWindowText(s_szUserAgent_cur);
 
-	// UDT DGSTR
-	if (m_edit.m_hWnd == NULL)
-		m_edit.Attach( GetDlgItem(IDC_EDIT_USER_AGENT) );
-	// ENDE
-
-	return DoDataExchange(FALSE);
+		DoDataExchange(DDX_LOAD);
+	}
+	return TRUE;
 }
 
 
 
 BOOL CDLControlPropertyPage::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 
 BOOL CDLControlPropertyPage::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
+	if ( DoDataExchange(DDX_SAVE) ) {
 		_GetData();
 		return TRUE;
 	} else {
@@ -133,8 +145,8 @@ BOOL CDLControlPropertyPage::OnApply()
 	}
 }
 
-
-
+//----------------------------------
+/// ダイアログから設定を保存
 void CDLControlPropertyPage::_GetData()
 {
 	// update dl control flags
@@ -167,10 +179,12 @@ void CDLControlPropertyPage::_GetData()
 
 	SendMessage(m_hMainWnd, WM_COMMAND, ID_RESIZED, 0);
 	m_edit.GetWindowText(CDLControlOption::s_szUserAgent, MAX_PATH);	// UDT DGSTR
+
+	SetUserAgent();	// ユーザーエージェント変更
 }
 
-
-
+//-------------------------------------------
+/// ダイアログにオプションを設定
 void CDLControlPropertyPage::_SetData()
 {
 	m_nBGSounds 	  = (CDLControlOption::s_dwDLControlFlags & DLCTL_BGSOUNDS) != 0;		//+++ ? 1 : 0;

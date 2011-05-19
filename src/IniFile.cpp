@@ -91,13 +91,20 @@ LONG CIniFileI::QueryString(LPTSTR szValue, LPCTSTR lpszValueName, DWORD *pdwCou
 
 
 #if 1	//+++ エラーを返す意味がない場合も多いので、エラー時用デフォルト指定ありで、値そのものを返すバージョンを用意.
-DWORD CIniFileI::GetValue(LPCTSTR lpszValueName, DWORD defalutValue)
+DWORD CIniFileI::GetValue(LPCTSTR lpszValueName, DWORD defaultValue)
 {
 	ATLASSERT( IsOpen() );
 	ATLASSERT( !m_strSectionName.IsEmpty() );
-	return ::GetPrivateProfileInt(m_strSectionName, lpszValueName, defalutValue, m_strFileName);
+	return ::GetPrivateProfileInt(m_strSectionName, lpszValueName, defaultValue, m_strFileName);
 }
 #endif
+
+int	CIniFileI::GetValuei(LPCTSTR lpszValueName, int defaultValue/* = 0*/)
+{
+	ATLASSERT( IsOpen() );
+	ATLASSERT( !m_strSectionName.IsEmpty() );
+	return (int)::GetPrivateProfileInt(m_strSectionName, lpszValueName, defaultValue, m_strFileName);
+}
 
 
 #if 1	//+++ エラーを返す意味がない場合も多いので、エラー時用デフォルト指定ありで、値そのものを返すバージョンを用意.

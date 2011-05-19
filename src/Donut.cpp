@@ -136,7 +136,7 @@ static bool CheckOneInstance(HINSTANCE hInstance, LPTSTR lpstrCmdLine)
 static bool _PrivateInit()
 {
 	MtlIniFileNameInit(g_szIniFileName, _MAX_PATH);
-
+#if 0
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	do {
 		if (::PathFileExists(strPath)) {
@@ -157,7 +157,7 @@ static bool _PrivateInit()
 		break;
 
 	} while(1);
-
+#endif
 
 	CVersionControl().Run();
 
@@ -212,8 +212,10 @@ void _PrivateTerm()
 	CHlinkDataObject::Term();
 
 	ATLTRACE(_T("ê›íËÇÃï€ë∂äÆóπ!\n"));
+#if 0
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	::DeleteFile(strPath);
+#endif
 }
 
 
@@ -581,7 +583,7 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	}
 
 	//_PrivateTerm();
-
+	ATLTRACE(_T("ê≥èÌèIóπÇµÇ‹ÇµÇΩÅB\n"));
 END_APP:
 	_Module.Term();
 

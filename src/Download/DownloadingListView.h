@@ -136,6 +136,7 @@ private:
 	CDownloadedListView*	m_pDownloadedListView;
 
 	CToolTipCtrl			m_ToolTip;
+	bool					m_bTimer;
 
 };
 

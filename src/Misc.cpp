@@ -1323,10 +1323,11 @@ const CString GetFullPath_ForExe(const CString& strFileName)
 
 // ==========================================================================
 
+//-------------------------------------------
 //+++ エラーログ出力.
 void ErrorLogPrintf(const TCHAR* fmt, ...)
 {
-	FILE* fp = _tfopen(_T("errorlog.txt"), _T("a"));
+	FILE* fp = _tfopen(GetExeDirectory() + _T("errorlog.txt"), _T("a"));
 	if (fp) {
 		va_list app;
 		va_start(app, fmt);
@@ -1345,7 +1346,7 @@ void ErrorLogPrintf(const TCHAR* fmt, ...)
 
 // ==========================================================================
 
-#if 1 //+++ 追加.
+//-----------------------------------------------------
 /// Wow64(Win64での32ビットモード)で動いているかどうか
 BOOL IsWow64()
 {
@@ -1360,7 +1361,6 @@ BOOL IsWow64()
 
 	return bIsWow64;
 }
-#endif
 
 
 

@@ -39,7 +39,8 @@ public:
 	//LONG	QueryValue(LPTSTR szValue, LPCTSTR lpszValueName, DWORD *pdwCount);
 	LONG	QueryString(LPTSTR szValue, LPCTSTR lpszValueName, DWORD *pdwCount);
 
-	DWORD	GetValue(LPCTSTR lpszValueName, DWORD defalutValue=0);
+	DWORD	GetValue(LPCTSTR lpszValueName, DWORD defaultValue = 0);
+	int		GetValuei(LPCTSTR lpszValueName, int defaultValue = 0);
 	const CString GetString(LPCTSTR lpszValueName, const TCHAR* pszDefult=0, DWORD dwBufSize = 0);
 	const CString GetStringUW(LPCTSTR lpszValueName, const TCHAR* pszDefult=0, DWORD dwBufSize = 0);
 

@@ -27,14 +27,13 @@
 #include "option/UrlSecurityOption.h"		//+++
 #include "option/RightClickMenuDialog.h"
 
-#include "DialogHook.h"
 #include "dialog/OpenURLDialog.h"
 #include "api.h"
 #include "PluginEventImpl.h"
 #include "Thumbnail.h"
 
 #ifdef _DEBUG
-	const bool _Donut_MainFrame_traceOn = true;
+	const bool _Donut_MainFrame_traceOn = false;
 	#define dmfTRACE	if (_Donut_MainFrame_traceOn)  ATLTRACE
 #else
 	#define dmfTRACE
@@ -70,7 +69,7 @@ void	CMainFrame::OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 // ===========================================================================
 // 初期化
-#if 1
+
 CMainFrame::CMainFrame()
 	: m_FavoriteMenu(this, ID_INSERTPOINT_FAVORITEMENU)
 	, m_FavGroupMenu(this, ID_INSERTPOINT_GROUPMENU)
@@ -108,11 +107,11 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 {
 	bHandled = FALSE;
 
+	// オプションでお気に入りメニューの表示変更時、お気に入りメニュー更新
 	CFavoritesMenuOption::SetFuncRefreshFav(std::bind(&CMainFrame::_RefreshFavMenu, this));
 
- 	init_font();									// フォント初期化
 #ifdef _DEBUG
-	m_wndDebug.Create(m_hWnd);							// デバッグウィンドウの作成
+	m_wndDebug.Create(m_hWnd);						// デバッグウィンドウの作成
 #endif
 	init_menus_infomation();						// メニュー情報の初期化
 
@@ -125,7 +124,6 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 
 	init_rebar();									// リバーの初期化
 	init_statusBar();								// ステータスバーの初期化
-	init_progressBar();								// プログレスバーの初期化
 	init_pluginManager();							// プラグインマネージャの初期化
 
 	// 各種バーの配置
@@ -141,14 +139,14 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	//CmdUIAddToolBar(m_SearchBar.m_wndToolBar);	// set up UI
 	CmdUIAddToolBar(m_SearchBar.GetHWndToolBar());	// set up UI
 
-	init_setUserAgent();							// ユーザーエージェントの設定
+	CDLControlOption::SetUserAgent();				// ユーザーエージェントの設定
 	init_message_loop();							// メッセージループの準備
 
 	init_mdiTab();									// タブに関する設定
 	//SetAutoBackUp();//OnBackUpOptionChanged(0,0,0);// OnCreate後の処理で別途呼び出すようにした.
 	RegisterDragDrop();	//DragAcceptFiles();		// ドラッグ＆ドロップ準備
 
-	CCriticalIdleTimer::InstallCriticalIdleTimer(m_hWnd, ID_VIEW_IDLE);
+	//\\?CCriticalIdleTimer::InstallCriticalIdleTimer(m_hWnd, ID_VIEW_IDLE);
 
 	init_sysMenu();									// システムメニューに追加
 
@@ -157,7 +155,7 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	InitSkin();										//スキンを初期化
 
 	CDonutSimpleEventManager::RaiseEvent(EVENT_INITIALIZE_COMPLETE);	// イベント関係の準備
-	CDialogHook::InstallHook(m_hWnd);				// ダイアログ関係の準備
+	//CDialogHook::InstallHook(m_hWnd);				// ダイアログ関係の準備
 
 	m_DownloadManager.SetParent(m_hWnd);
 
@@ -168,40 +166,24 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	return 0;	//return lRet;
 }
 
-
-/// フォント
-void CMainFrame::init_font()
-{
-	CIniFileI		prFont( g_szIniFileName, _T("Main") );
-	MTL::CLogFont	lf;
-	lf.InitDefault();
-	if ( lf.GetProfile(prFont) ) {
-		CFontHandle 	font;
-		MTLVERIFY( font.CreateFontIndirect(&lf) );
-		if (font.m_hFont) {
-			if (m_font.m_hFont != NULL)
-				m_font.DeleteObject();
-			m_font.Attach(font.m_hFont);
-			SetFont(m_font);
-		}
-	}
-}
-
-
+//-------------------------------------
 /// initialize menus' infomation
 void CMainFrame::init_menus_infomation()
 {
+	/* お気に入りメニュー設定 */
 	CMenuHandle 	   menu 		  = m_hMenu;
 	CMenuHandle 	   menuFav		  = menu.GetSubMenu(_nPosFavoriteMenu);
 	m_FavoriteMenu.InstallExplorerMenu(menuFav);
 	m_FavoriteMenu.SetTargetWindow(m_hWnd);
 	m_FavoriteMenu.RefreshMenu();
 
+	/* お気に入りグループ設定 */
 	CMenuHandle 	   menuGroup	  = menuFav.GetSubMenu(_nPosFavGroupMenu);
 	m_FavGroupMenu.InstallExplorerMenu(menuGroup);
 	m_FavGroupMenu.SetTargetWindow(m_hWnd);
 	m_FavGroupMenu.RefreshMenu();
 
+	/* スタイルシートメニュー設定 */
 	CMenuHandle 	   menuCss		  = menu.GetSubMenu(_nPosCssMenu);
 	CMenuHandle 	   menuCssSub	  = menuCss.GetSubMenu(_nPosSubCssMenu);
 	m_styleSheetMenu.SetRootDirectoryPath( Misc::GetExeDirectory() + _T("CSS") );
@@ -209,16 +191,17 @@ void CMainFrame::init_menus_infomation()
 	m_styleSheetMenu.InstallExplorerMenu(menuCssSub);
 	m_styleSheetMenu.RefreshMenu();
 
+	/* スクリプトメニュー設定 */
 	m_ScriptMenuMst.LoadMenu(IDR_SCRIPT);
 	m_ScriptMenu.SetRootDirectoryPath( Misc::GetExeDirectory() + _T("Script") );
 	m_ScriptMenu.SetTargetWindow(m_hWnd);
 	m_ScriptMenu.InstallExplorerMenu(m_ScriptMenuMst);
 	m_ScriptMenu.RefreshMenu();
 
-	OnMenuGetFav(); 	//initialize custom context dropdown
-	OnMenuGetFavGroup();
+	/* DropDownメニューの方のユーザースクリプトメニューを設定 */
 	OnMenuGetScript();
 
+	/* エンコードメニュー設定 */
 	CMenuHandle 	   menuEncode	  = menu.GetSubMenu(_nPosEncodeMenu);
 	m_MenuEncode.Init(menuEncode, m_hWnd, _nPosEncodeMenuSub);
 
@@ -230,16 +213,24 @@ void CMainFrame::init_menus_infomation()
 	m_wndMenuDropTarget.SetTargetMenu(menu);
 }
 
-
+//-------------------------------------
 /// create command bar window
 HWND	CMainFrame::init_commandBarWindow()
 {
 	SetMenu(NULL);		// remove menu
 	HWND	hWndCmdBar	  = m_CmdBar.Create(m_hWnd,rcDefault,NULL,MTL_SIMPLE_CMDBAR2_PANE_STYLE,0,ATL_IDW_COMMAND_BAR);
-	if (m_font.m_hFont) {
-		LOGFONT lf;
-		m_font.GetLogFont(lf);
+	ATLASSERT( ::IsWindow(hWndCmdBar) );
+
+	CIniFileI		prFont( g_szIniFileName, _T("Main") );
+	MTL::CLogFont	lf;
+	lf.InitDefault();
+	if ( lf.GetProfile(prFont) ) {
 		m_CmdBar.SetMenuLogFont(lf);
+
+		CFont 	font;	//\\ SetFontもここでするように
+		MTLVERIFY( font.CreateFontIndirect(&lf) );
+		if (font.m_hFont) 
+			SetFont(font);
 	}
 
 	m_CmdBar.AttachMenu(m_hMenu);
@@ -247,7 +238,7 @@ HWND	CMainFrame::init_commandBarWindow()
 	return hWndCmdBar;
 }
 
-
+//-------------------------------------
 /// create toolbar
 HWND	CMainFrame::init_toolBar()
 {
@@ -264,13 +255,13 @@ HWND	CMainFrame::init_toolBar()
 
 	m_ToolBar.DonutToolBar_SetFavoritesMenu(menuFav, menuGroup, menuCssSub);
 
-	if (m_CmdBar.m_fontMenu.m_hFont)
+	if (m_CmdBar.m_fontMenu.m_hFont)	// コマンドバーのフォント設定と同じに
 		m_ToolBar.SetFont(m_CmdBar.m_fontMenu.m_hFont);
 
 	return hWndToolBar;
 }
 
-
+//-------------------------------------
 /// create addressbar
 HWND	CMainFrame::init_addressBar()
 {
@@ -282,7 +273,7 @@ HWND	CMainFrame::init_addressBar()
 	return hWndAddressBar;
 }
 
-
+//-------------------------------------
 /// create searchbar
 HWND	CMainFrame::init_searchBar()
 {
@@ -292,18 +283,20 @@ HWND	CMainFrame::init_searchBar()
 	return	hWndSearchBar;
 }
 
-
+//-------------------------------------
 /// create tabctrl
 HWND	CMainFrame::init_tabCtrl()
 {
 	HWND	hWndMDITab	  = m_MDITab.Create(m_hWnd, CRect(0, 0, 200, 20), _T("Donut MDITab"),
 												WS_CHILD | WS_VISIBLE, NULL, IDC_MDITAB);
+	ATLASSERT( ::IsWindow(hWndMDITab) );
+
 	m_MDITab.LoadMenu(IDR_MENU_TAB);
 	m_MDITab.LoadConnectingAndDownloadingImageList( IDB_MDITAB, 6, 6, RGB(255, 0, 255) );
 	return hWndMDITab;
 }
 
-
+//------------------------------------
 /// create link bar
 HWND	CMainFrame::init_linkBar()
 {
@@ -318,59 +311,43 @@ HWND	CMainFrame::init_linkBar()
 	return 	hWndLinkBar;
 }
 
-
+//------------------------------------
 /// create rebar
 void	CMainFrame::init_rebar()
 {
-	enum {
-		MTL_SIMPLE_REBAR_STYLE	=	ATL_SIMPLE_REBAR_STYLE | CCS_NOPARENTALIGN | CCS_NODIVIDER,
-	};
-
-	DWORD		dwRebarStyle   	= MTL_SIMPLE_REBAR_STYLE | RBS_DBLCLKTOGGLE;
-
+	DWORD	dwRebarStyle = ATL_SIMPLE_REBAR_STYLE | CCS_NOPARENTALIGN | CCS_NODIVIDER | RBS_DBLCLKTOGGLE;
 	{
 		CIniFileI	pr( g_szIniFileName, _T("ReBar") );
 		DWORD		dwNoBoader 		= pr.GetValue( _T("NoBoader") );
 		if (dwNoBoader)
-			dwRebarStyle &= ~RBS_BANDBORDERS;
+			dwRebarStyle &= ~RBS_BANDBORDERS;	// ボーダーを消す
 	}
 
 	CreateSimpleReBar(dwRebarStyle);
 	m_ReBar.SubclassWindow(m_hWndToolBar);
 
 	//CreateSimpleReBar(MTL_SIMPLE_REBAR_STYLE | RBS_DBLCLKTOGGLE);
-
-	if (m_CmdBar.m_fontMenu.m_hFont) {
-		::SendMessage( m_hWndToolBar, WM_SETFONT, (WPARAM) m_CmdBar.m_fontMenu.m_hFont, MAKELPARAM(TRUE, 0) );
-	}
 }
 
-
+//------------------------------------
 /// create statusbar
 void	CMainFrame::init_statusBar()
 {
 	//CreateSimpleStatusBar();
 	m_wndStatusBar.Create(m_hWnd, ATL_IDS_IDLEMESSAGE,
 							 WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SBARS_SIZEGRIP | SBT_TOOLTIPS);
-
+	ATLASSERT( ::IsWindow(m_wndStatusBar) );
 	m_hWndStatusBar = m_wndStatusBar.m_hWnd;
 	//		int nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_COMBOBOX_PANE};
-	static const int   nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_PRIVACY_PANE, ID_SECURE_PANE, ID_COMBOBOX_PANE };
-	m_wndStatusBar.SetPanes( (int *) nPanes, 5, false );
+	static int   nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_PRIVACY_PANE, ID_SECURE_PANE, ID_COMBOBOX_PANE };
+	m_wndStatusBar.SetPanes( nPanes, _countof(nPanes), false );
 	m_wndStatusBar.SetCommand( ID_PRIVACY_PANE, ID_PRIVACYREPORT );
 	m_wndStatusBar.SetCommand( ID_SECURE_PANE, ID_SECURITYREPORT);
 	m_wndStatusBar.SetIcon( ID_PRIVACY_PANE, 1 );				//minit
 	m_wndStatusBar.SetIcon( ID_SECURE_PANE , 0 );				//minit
 	m_wndStatusBar.SetOwnerDraw( m_wndStatusBar.IsValidBmp() );
 
-	// UH
-	InitStatusBar();
-}
 
-
-// UH
-void CMainFrame::InitStatusBar()
-{
 	enum {	//+++ IDはデフォルトの名前になっているが、交換した場合にややこしいので、第一領域、第二領域として扱う.
 		ID_PAIN_1	= ID_PROGRESS_PANE,
 		ID_PAIN_2	= ID_COMBOBOX_PANE,
@@ -391,7 +368,7 @@ void CMainFrame::InitStatusBar()
 	}
 
 	//+++ 位置交換の修正.
-	if (g_bSwapProxy == 0) {
+	if (g_bSwapProxy == FALSE) {
 		g_dwProgressPainWidth = dwSzPain1;					//+++ 手抜きでプログレスペインの横幅をグローバル変数に控える.
 		m_wndStatusBar.SetPaneWidth(ID_PAIN_1, 0);			//dwSzPain1); //起動時はペインサイズが0
 		if (m_wndStatusBar.GetProxyComboBox().IsUseIE())
@@ -409,33 +386,11 @@ void CMainFrame::InitStatusBar()
 	m_wndStatusBar.SetPaneWidth(ID_PRIVACY_PANE , 25);
 }
 
-
-/// create prgress bar
-void CMainFrame::init_progressBar()
-{
-#if 0	// DonutStatusBarCtrlに移動
-	RECT			   rect;
-	m_wndProgress.Create(m_hWndStatusBar, NULL, NULL, WS_CHILD | WS_CLIPSIBLINGS | PBS_SMOOTH, 0, IDC_PROGRESS);
-	m_wndProgress.ModifyStyleEx(WS_EX_STATICEDGE, 0);
-
-	// Proxyコンボボックス
-	// IEのProxyを使う場合、コンボボックスとステータスバーのProxyペインを削除
-	m_cmbBox.Create(m_hWndStatusBar, rect, NULL,
-					 WS_CHILD | WS_CLIPSIBLINGS | PBS_SMOOTH | CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP, 0, IDC_COMBBOX);
-
-	m_cmbBox.SetFont( m_wndStatusBar.GetFont() );
-	m_cmbBox.SetDrawStyle(CSkinOption::s_nComboStyle);
-	m_cmbBox.IsUseIE() ? m_cmbBox.ShowWindow(SW_HIDE)
-					   : m_cmbBox.ShowWindow(SW_SHOWNORMAL);
-	m_cmbBox.ResetProxyList();
-#endif
-}
-
-
+//---------------------------------------------
 /// Plugin Toolbar Load
 void CMainFrame::init_pluginManager()
 {
-	CPluginManager::Init();
+	CPluginManager::Init();	//\\いらないけどとりあえず読んどく
 	CPluginManager::ReadPluginData(PLT_TOOLBAR, m_hWnd);
 	CPluginManager::LoadAllPlugin(PLT_TOOLBAR, m_hWnd, true);	//ツールバープラグインを全部ロード
 
@@ -451,7 +406,7 @@ void CMainFrame::init_pluginManager()
 	//LoadPluginToolbars();
 }
 
-
+//-------------------------------------
 /// load band position
 void CMainFrame::init_band_position(
 	HWND 	hWndCmdBar,
@@ -469,12 +424,10 @@ void CMainFrame::init_band_position(
 	aryHWnd.Add( hWndLinkBar	);		// リンクバー
 	aryHWnd.Add( hWndSearchBar	);		// 検索バー
 
-	int 			   nToolbarPluginCount = CPluginManager::GetCount(PLT_TOOLBAR);
-	CReBarBandInfo *   pRbis			   = new CReBarBandInfo[STDBAR_COUNT + nToolbarPluginCount];
+	int nToolbarPluginCount = CPluginManager::GetCount(PLT_TOOLBAR);
+	CReBarBandInfo*   pRbis	= new CReBarBandInfo[STDBAR_COUNT + nToolbarPluginCount];
 
-	int 			   nIndex;
-
-	for (nIndex = 0; nIndex < aryHWnd.GetSize(); nIndex++) {
+	for (int nIndex = 0; nIndex < aryHWnd.GetSize(); nIndex++) {
 		pRbis[nIndex].nIndex	= nIndex;
 		pRbis[nIndex].hWnd		= aryHWnd	  [ nIndex ];
 		pRbis[nIndex].nID		= STDBAR_ID   [ nIndex ];
@@ -483,7 +436,7 @@ void CMainFrame::init_band_position(
 		pRbis[nIndex].cx		= 0;
 	}
 
-	for (nIndex = 0; nIndex < nToolbarPluginCount; nIndex++) {
+	for (int nIndex = 0; nIndex < nToolbarPluginCount; nIndex++) {
 		pRbis[STDBAR_COUNT + nIndex].nIndex   = STDBAR_COUNT + nIndex;
 		pRbis[STDBAR_COUNT + nIndex].hWnd	  = CPluginManager::GetHWND(PLT_TOOLBAR, nIndex);
 		pRbis[STDBAR_COUNT + nIndex].nID	  = IDC_PLUGIN_TOOLBAR + nIndex;
@@ -504,18 +457,16 @@ void CMainFrame::init_band_position(
 	ShowLinkText(CAddressBarOption::s_bTextVisible);
 }
 
-
+//-------------------------------------
 /// load status bar state
 void CMainFrame::init_loadStatusBarState()
 {
 	CIniFileI pr( g_szIniFileName, _T("Main") );
 	BOOL	bStatusBarVisible = TRUE;
 	MtlGetProfileStatusBarState(pr, m_hWndStatusBar, bStatusBarVisible);
-	m_bStatusBarVisibleUnlessFullScreen = bStatusBarVisible;
-	//x pr.Close();
 }
 
-
+//-------------------------------------
 /// create mdi client window
 void CMainFrame::init_mdiClientWindow()
 {
@@ -529,15 +480,16 @@ void CMainFrame::init_mdiClientWindow()
 		m_wndMDIClient.ModifyStyle(WS_CLIPCHILDREN, 0); 		// to avoid flicker, but scary
 }
 
-
+//-------------------------------------
 /// splitter window
 void CMainFrame::init_splitterWindow()
 {
 	m_hWndClient	= m_wndSplit.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
+	ATLASSERT( ::IsWindow(m_hWndClient) );
 	m_wndSplit.SetSplitterExtendedStyle(0);
 }
 
-
+//------------------------------------
 /// pane container
 void CMainFrame::init_explorerBar()
 {
@@ -545,7 +497,7 @@ void CMainFrame::init_explorerBar()
 	m_ExplorerBar.Init(m_hWndMDIClient);
 }
 
-
+//------------------------------------
 /// MDIClient misc
 void CMainFrame::init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar)
 {
@@ -553,32 +505,11 @@ void CMainFrame::init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar)
 	m_mcToolBar.InstallAsStandard(hWndToolBar, m_hWnd, true, ID_VIEW_FULLSCREEN);
 
 	m_mcCmdBar.ShowButton(!CMenuOption::s_bDontShowButton);	// メニューの閉じるボタンを表示しない
-	//m_mcToolBar.ShowButton(!bNoButton);
 	m_MDITab.SetMDIClient(m_hWndMDIClient);
 }
 
-
-//	// set up UI
-//	CmdUIAddToolBar(hWndToolBar);
-//	CmdUIAddToolBar(m_SearchBar.m_wndToolBar);
-
-
-void CMainFrame::init_setUserAgent()
-{
-  #ifdef UNICODE	//+++ UNICODE対策
-	// std::vector<char>	userAgent = Misc::tcs_to_sjis( CDLControlOption::s_szUserAgent );
-	std::vector<char>	userAgent = Misc::tcs_to_sjis( CDLControlOption::userAgent() );
-	::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void *) &userAgent[0], strlen(&userAgent[0]), 0);
-  #else
-	// UDT DGSTR ( set User Agent )
-	//::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void *) CDLControlOption::s_szUserAgent , lstrlen(CDLControlOption::s_szUserAgent) , 0);
-	WTL::CString	userAgent = CDLControlOption::userAgent();
-	::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void *) LPCTSTR(userAgent), userAgent.GetLength(), 0);
-	// ENDE
-  #endif
-}
-
-
+//-----------------------------------
+/// メッセージフィルタとアイドルハンドラを登録
 void CMainFrame::init_message_loop()
 {
 	// message loop
@@ -587,7 +518,7 @@ void CMainFrame::init_message_loop()
 	pLoop->AddIdleHandler(this);
 }
 
-
+//-----------------------------------
 /// mdiタブに関する情報の読み込み
 void CMainFrame::init_mdiTab()
 {
@@ -596,22 +527,15 @@ void CMainFrame::init_mdiTab()
 	pr.Close();
 }
 
-
-//	// for dragging files
-//	RegisterDragDrop(); 										//DragAcceptFiles();
-//	CCriticalIdleTimer::InstallCriticalIdleTimer(m_hWnd, ID_VIEW_IDLE);
-
-// システムメニューに追加
+//--------------------------------------
+/// システムメニューに「メニューを表示]を追加
 void CMainFrame::init_sysMenu()
 {
-	// システムメニューに追加
 	HMENU		hSysMenu = ::GetSystemMenu(m_hWnd, FALSE);
 	//		::AppendMenu(hSysMenu, MF_ENABLED|MF_STRING, ID_VIEW_COMMANDBAR, _T("メニューを表示"));
 
 	TCHAR		cText[]	 = _T("メニューを表示");
-	MENUITEMINFO  menuInfo;
-	memset( &menuInfo, 0, sizeof (MENUITEMINFO) );
-	menuInfo.cbSize 	= sizeof (MENUITEMINFO);
+	MENUITEMINFO  menuInfo = { sizeof(MENUITEMINFO) };
 	menuInfo.fMask		= MIIM_ID | MIIM_TYPE;
 	menuInfo.fType		= MFT_STRING;
 	menuInfo.wID		= ID_VIEW_COMMANDBAR;
@@ -620,20 +544,11 @@ void CMainFrame::init_sysMenu()
 	::InsertMenuItem(hSysMenu, 0, MF_BYPOSITION, &menuInfo);
 }
 
-
-//	::SetTimer(m_hWnd, ENT_READ_ACCEL, 200, NULL);
-//	//スキンを初期化
-//	InitSkin();
-
-//	CDonutSimpleEventManager::RaiseEvent(EVENT_INITIALIZE_COMPLETE);
-//	//Hook InputDialogMessage (javascript prompt())
-//	CDialogHook::InstallHook(m_hWnd);
-//	//CSearchBoxHook::InstallSearchHook(m_hWnd);
-
-
+//--------------------------------------
+/// プラグインを読み込む
 void CMainFrame::init_loadPlugins()
 {
-	//プラグインのアーリーローディング
+	// エクスプローラーバープラグイン読み込み
 	CPluginManager::LoadAllPlugin(PLT_EXPLORERBAR, m_ExplorerBar.m_PluginBar);
 
 	//オペレーションプラグインのロード
@@ -645,7 +560,7 @@ void CMainFrame::init_loadPlugins()
 	CPluginManager::LoadAllPlugin(PLT_DOCKINGBAR, m_hWnd);
   #endif
 }
-#endif	// init
+
 
 
 // ===========================================================================
@@ -653,29 +568,29 @@ void CMainFrame::init_loadPlugins()
 #if 1
 CMainFrame::~CMainFrame()
 {
-	if ( m_wndMDIClient.IsWindow() )
-		m_wndMDIClient.UnsubclassWindow();
 	m_hWnd = NULL;
 }
 
-
-
+//---------------------------------------
+/// システムが終了する時
 void CMainFrame::OnEndSession(BOOL wParam, UINT lParam) 						//　ShutDown minit
 {
-	if (wParam == TRUE) {
+	if (wParam == TRUE)
 		OnDestroy();
-		_PrivateTerm();
-	}
 }
 
-
+//---------------------------------------
+/// ウィンドウ終了時
 void CMainFrame::OnDestroy()
 {
 	SetMsgHandled(FALSE);
-	MtlSendCommand(m_hWnd, ID_VIEW_STOP_ALL);									// added by DOGSTORE
+
+	_PrivateTerm();		// 設定の保存
+
+	//\\MtlSendCommand(m_hWnd, ID_VIEW_STOP_ALL);									// added by DOGSTORE
 
 	//CSearchBoxHook::UninstallSearchHook();
-	CDialogHook::UninstallHook();
+	//CDialogHook::UninstallHook();
 #ifdef _DEBUG
 	//デバッグウィンドウ削除
 	m_wndDebug.Destroy();
@@ -683,6 +598,7 @@ void CMainFrame::OnDestroy()
 	//全プラグイン解放
 	CPluginManager::Term();
 
+	m_wndMDIClient.UnsubclassWindow();
 	m_ReBar.UnsubclassWindow();
 
 	//バックアップスレッドの開放
@@ -696,36 +612,22 @@ void CMainFrame::OnDestroy()
 
 		CloseHandle(m_hGroupThread);
 		m_hGroupThread = NULL;			//+++ 最後とはいえ、一応 NULLしとく.
-	}
+	}	
 
-	// Note. The script error dialog makes the app hung up.
-	//		 I can't find the reason, but I can avoid it by closing
-	//		 windows explicitly.
-	//MtlCloseAllMDIChildren(m_hWndMDIClient);
-#if 0	//\\ 終了時強制終了するらしいのでやめ
-	struct _Function_CloseAllChild {
-		void operator ()(HWND hWnd) { ::SendMessage(hWnd, WM_CLOSE, 0, 0); }
-	};
-	try {
-		m_MDITab.ForEachWindow(_Function_CloseAllChild());
-	} catch (...) {
-		MessageBox(_T("例外が発生しました！"));
-	}
-#endif
-	
-
-	CCriticalIdleTimer::UninstallCriticalIdleTimer();
+	//\\?CCriticalIdleTimer::UninstallCriticalIdleTimer();
 
 	// what can I trust?
 	ATLASSERT( ::IsMenu(m_hMenu) );
 	::DestroyMenu(m_hMenu);
 
-	_RemoveTmpDirectory();
-	DestroyCustomDropDownMenu();
+	_RemoveShortcutTmpDirectory();
+
+	OnMenuRefreshScript(FALSE);
 
 	RevokeDragDrop();
 
-	ATLTRACE(_T("メインフレームの終了中\n"));
+	ATLTRACE(_T("メインフレームの終了中...\n"));
+#if 0
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	HANDLE hHandle = ::CreateFile(strPath, GENERIC_WRITE, 0, NULL, CREATE_NEW, FILE_ATTRIBUTE_NORMAL, NULL);
 	if (hHandle != INVALID_HANDLE_VALUE) {
@@ -733,46 +635,26 @@ void CMainFrame::OnDestroy()
 	} else {
 		ATLASSERT(FALSE);
 	}
-
-	_PrivateTerm();
+#endif
 }
 
-
-
-void CMainFrame::DestroyCustomDropDownMenu()
-{
-	OnMenuRefreshFav(FALSE);
-	OnMenuRefreshFavGroup(FALSE);
-	OnMenuRefreshScript(FALSE);
-}
-
-
-struct CMainFrame::_Function_DeleteFile {
-	int m_dummy;
-	_Function_DeleteFile(int ndummy) : m_dummy(ndummy)
-	{
-	}
-
-
-	void operator ()(const CString &strFile)
-	{
-		if ( MtlIsExt( strFile, _T(".tmp") ) )
-			::DeleteFile(strFile);
-	}
-};
-
-
-void CMainFrame::_RemoveTmpDirectory()
+//------------------------------------
+/// ShortcutTmpフォルダの".tmp"ファイルを削除してフォルダを削除する
+void CMainFrame::_RemoveShortcutTmpDirectory()
 {
 	CString 	strTempPath = Misc::GetExeDirectory() + _T("ShortcutTmp\\");
-	if (::GetFileAttributes(strTempPath) != 0xFFFFFFFF) {
-		MtlForEachFile( strTempPath, CMainFrame::_Function_DeleteFile(0) );
+	if (::PathIsDirectory(strTempPath)) {
+		MtlForEachFile( strTempPath, [](const CString& strFile) {
+			if ( MtlIsExt( strFile, _T(".tmp") ) )
+				::DeleteFile(strFile);
+		});
 		::RemoveDirectory(strTempPath);
 	}
 }
 
 
-
+//----------------------------------
+/// メインフレームのＸボタンを押したとき
 void CMainFrame::OnClose()
 {
 	int nDLCount = m_DownloadManager.GetDownloadingCount();
@@ -828,7 +710,8 @@ void CMainFrame::OnClose()
 }
 
 
-
+//------------------------------------
+/// キャッシュ(htmlなど)を削除する
 void CMainFrame::DelTempFiles()
 {
 	bool						bDelCash	 = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_CASH  ) != 0;	//+++ ? TRUE : FALSE;
@@ -908,19 +791,18 @@ void CMainFrame::DelTempFiles()
 	} while (!bDone);
 }
 
-
+//-------------------------------
+/// 履歴を削除する
 void CMainFrame::DelHistory()
 {
 	bool	bDelHistory  = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_HISTORY) != 0;	//+++ ? TRUE : FALSE;
 	if (bDelHistory == false)
 		return;
 
-	IUrlHistoryStg2*	pUrlHistoryStg2 = NULL;
-	HRESULT 	hr = CoCreateInstance(CLSID_CUrlHistory, NULL, CLSCTX_INPROC, IID_IUrlHistoryStg2, (void **) &pUrlHistoryStg2);
-	if ( SUCCEEDED(hr) ) {
-		hr = pUrlHistoryStg2->ClearHistory();
-		pUrlHistoryStg2->Release();
-	}
+	CComPtr<IUrlHistoryStg2>	spUrlHistoryStg2;
+	HRESULT hr = spUrlHistoryStg2.CoCreateInstance(CLSID_CUrlHistory);
+	if ( SUCCEEDED(hr) )
+		hr = spUrlHistoryStg2->ClearHistory();
 }
 #endif	// term
 
@@ -944,25 +826,12 @@ void CMainFrame::DelHistory()
 //各ウィンドウへ(主にキー)メッセージを転送する
 BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 {
-  #if 0	//+++ 実験
-	if (g_pMainWnd && g_pMainWnd->m_hWnd) {
-		static CString sav;
-		CString tmp = MtlGetWindowText(g_pMainWnd->m_hWnd);
-		//if (sav != tmp && tmp != "")
-		{
-			ErrorLogPrintf(_T("%s\n"), LPCTSTR(tmp));
-			sav = tmp;
-			MtlSetWindowText(g_pMainWnd->m_hWnd, tmp+"@");
-		}
-	}
-  #endif
-
 	//コマンドバー(メニュー)
 	if ( m_CmdBar.PreTranslateMessage(pMsg) )
 		return TRUE;
 
 	//アドレスバー
-	BOOL ptFlag 	= m_AddressBar.PreTranslateMessage(pMsg);
+	BOOL ptFlag = m_AddressBar.PreTranslateMessage(pMsg);
 	if (ptFlag == _MTL_TRANSLATE_HANDLE)
 		return TRUE;
 	else if (ptFlag == _MTL_TRANSLATE_WANT)
@@ -1001,7 +870,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	if (/*bFocus == 0 &&*/ baseClass::PreTranslateMessage(pMsg) )
 		return TRUE;
 
-	//アクティブ・チャイルド・ウィンドウ
+	// アクティブ・チャイルド・ウィンドウ
 	HWND hWnd = 0;
 	if (m_hWndMDIClient && ::IsWindow(m_hWndMDIClient))
 		hWnd = MDIGetActive();
@@ -1022,11 +891,11 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 		return TRUE;
 	}
 
-	//マウスジェスチャーへ
+	// マウスジェスチャーへ
 	if ( pMsg->message == WM_RBUTTONDOWN && OnRButtonHook(pMsg) )
 		return TRUE;
 
-	//サイドボタン
+	// サイドボタン
 	if (pMsg->message == WM_XBUTTONUP) {
 		if ( OnXButtonUp( GET_KEYSTATE_WPARAM(pMsg->wParam), GET_XBUTTON_WPARAM(pMsg->wParam),
 						 CPoint( GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam) ) ) )
@@ -1037,11 +906,9 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_AUTOSHOW) == MAIN_EXPLORER_AUTOSHOW )
 		ExplorerBarAutoShow(pMsg);
 
-	//BHO
+	// BHO プラグインへ
 	if (bFocus == 0 && TranslateMessageToBHO(pMsg) )											//+++ bFocusチェック
 		return TRUE;
-
-	// hWnd = MDIGetActive();	//+++ 意味ないと思うが、念のため取り直す...やめ
 
 	if (bFocus == 0 && hWnd != NULL && ::SendMessage(hWnd, WM_FORWARDMSG, 0, (LPARAM) pMsg) )	//+++ bFocusチェック
 		return TRUE;
@@ -1049,7 +916,8 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	return FALSE; // IsDialogMessage(pMsg);
 }
 
-
+//---------------------------------------------
+/// コントロールの配置更新
 void CMainFrame::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 {
 	CRect	  rc;
@@ -1100,8 +968,8 @@ BOOL CMainFrame::OnXButtonUp(WORD wKeys, WORD wButton, CPoint point)
 	return TRUE;
 }
 
-
-
+//----------------------------------------
+/// カーソルがウィンドウの左端にあるとエクスプローラーバーを表示する
 void CMainFrame::ExplorerBarAutoShow(MSG *pMsg)
 {
 	if (pMsg->message != WM_MOUSEMOVE)
@@ -1144,7 +1012,8 @@ void CMainFrame::ExplorerBarAutoShow(MSG *pMsg)
 	}
 }
 
-
+//-----------------------------------------
+/// リンク上をミドルクリックで新規タブを開く
 BOOL CMainFrame::OnMButtonHook(MSG* pMsg)
 {
 	DWORD	dwLinkOpenBtnM;
@@ -1233,8 +1102,8 @@ BOOL CMainFrame::OnMButtonHook(MSG* pMsg)
   #endif
 }
 
-
-// Mouse Gesture
+//----------------------------------------------
+/// Mouse Gesture
 BOOL CMainFrame::OnRButtonHook(MSG *pMsg)
 {
 	HWND		hChildWnd = MDIGetActive();
@@ -1539,8 +1408,8 @@ DWORD CMainFrame::GetMouseButtonUpCmd(UINT uMsg, UINT nXButton/* = 0*/)
 	return dwCommand;
 }
 
-
-
+//------------------------------------
+/// プラグインにメッセージをフィルタする機会を与える
 BOOL CMainFrame::TranslateMessageToBHO(MSG *pMsg)
 {
   #if 1	//+++ お試しで、そもそもif文をやめる...やめれない?
@@ -1942,7 +1811,7 @@ void	CMainFrame::OpenBingTranslator(const CString& strText)
 		strtemp.Format(_T("SourceText=%s&from=en&to=ja"), strText);
 		std::vector<char>	vecStr = Misc::tcs_to_sjis(strtemp);
 		pChild->Navigate2(_T("http://www.microsofttranslator.com/Default.aspx"), 0, NULL, 
-			_T("Content-Type: application/x-www-form-urlencoded"), (LPVOID)&*vecStr.begin(), vecStr.size() - 1);
+			_T("Content-Type: application/x-www-form-urlencoded"), (LPVOID)vecStr.data(), vecStr.size() - 1);
 	}
 }
 
@@ -3435,6 +3304,7 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent, TIMERPROC dmy /*= 0*/)
 
 BOOL CMainFrame::OnIdle()
 {
+	//return FALSE;
 	// Note. under 0.01 sec (in dbg-mode on 330mhz cpu)
 	CmdUIUpdateToolBars();
 	CmdUIUpdateStatusBar	(m_hWndStatusBar, ID_DEFAULT_PANE	);
@@ -3550,18 +3420,22 @@ LRESULT CMainFrame::UpdateTitleBar(LPCTSTR lpszStatusBar, DWORD /*dwReserved*/)
 
 
 // UH -  minit
+//------------------------
+/// お気に入りのメニューハンドルを返す
 LRESULT CMainFrame::OnMenuGetFav()
 {
 	return (LRESULT)m_FavoriteMenu.GetMenu().m_hMenu;
 }
 
-
+//-------------------------
+/// お気に入りグループのメニューハンドルを返す
 LRESULT CMainFrame::OnMenuGetFavGroup()
 {
 	return (LRESULT)m_FavGroupMenu.GetMenu().m_hMenu;
 }
 
-
+//-------------------------
+/// ユーザースクリプトのメニューハンドルを返す
 LRESULT CMainFrame::OnMenuGetScript()
 {
 	if ( !m_DropScriptMenu.GetMenu().IsMenu() ) {
@@ -3595,21 +3469,6 @@ LRESULT CMainFrame::OnMenuGoForward(HMENU hMenu)
 LRESULT	CMainFrame::OnMenuGetBingTranslate()
 {
 	return (LRESULT)m_TranslateMenu.GetMenu().m_hMenu;
-}
-
-
-LRESULT CMainFrame::OnMenuRefreshFav(BOOL bInit)
-{
-	ATLTRACE("menu refreshed\n");
-
-	return S_OK;
-}
-
-
-LRESULT CMainFrame::OnMenuRefreshFavGroup(BOOL bInit)
-{
-
-	return S_OK;
 }
 
 
@@ -3997,6 +3856,11 @@ LRESULT CMainFrame::OnSysCommand(UINT nID, CPoint point)
 			OnGetOut(0,0,0);
 			SetMsgHandled(TRUE);
 			break;
+		}
+		{
+			CChildFrame* pChild = GetActiveChildFrame();
+			if (pChild)	//最小化するときにビューにフォーカスを当てる(そうするとCPU使用率がなぜか下がるようなので)
+				pChild->SetFocus();
 		}
 		SetMsgHandled(FALSE);
 		break;
@@ -4480,7 +4344,6 @@ LRESULT CMainFrame::OnViewStatusBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 
 	UpdateTitleBar(_T(""), 0);		//+++		statusオフからオンにしたときに、タイトルバーに出してしたステータス文字列を消すため.
 
-	m_bStatusBarVisibleUnlessFullScreen = bNew; // save
 	::ShowWindow(m_hWndStatusBar, bNew ? SW_SHOWNOACTIVATE : SW_HIDE);
 
 	UpdateLayout();

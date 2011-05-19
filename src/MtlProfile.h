@@ -717,7 +717,7 @@ bool MtlGetProfileStatusBarState(
 // app.exe -> APP.INI
 // App.exe -> App.ini
 
-inline void MtlIniFileNameInit( LPTSTR lpszIniFileName, DWORD nSize, LPCTSTR lpszExtText = _T(".INI") )
+inline void MtlIniFileNameInit( LPTSTR lpszIniFileName, DWORD nSize, LPCTSTR lpszExtText = _T(".ini") )
 {
 	// cf.ATL::AtlModuleLoadTypeLib (we can't use _tsplitpath that requires CRT)
 	::GetModuleFileName(_Module.GetModuleInstance(), lpszIniFileName, nSize);

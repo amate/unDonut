@@ -316,8 +316,6 @@ public:
 		COMMAND_ID_HANDLER( ID_SECURITYREPORT	, OnSecurityReport )
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE, OnSetFocusSearchBarEngine )
 
-		USER_MEG_WM_MENU_REFRESH_FAV		( OnMenuRefreshFav		)
-		USER_MEG_WM_MENU_REFRESH_FAV_GROUP	( OnMenuRefreshFavGroup )
 		USER_MEG_WM_MENU_REFRESH_SCRIPT 	( OnMenuRefreshScript	)
 		USER_MSG_WM_MENU_RESTRICT_MESSAGE	( OnRestrictMessage 	)
 		USER_MSG_WM_GET_FAVORITEFILEPATH	( OnGetFavoriteFilePath )
@@ -613,12 +611,9 @@ private:
 	LRESULT 	OnMenuGoBack(HMENU hMenu);
 	LRESULT 	OnMenuGoForward(HMENU hMenu);
 	LRESULT		OnMenuGetBingTranslate();
-	LRESULT 	OnMenuRefreshFav(BOOL bInit);
-	LRESULT 	OnMenuRefreshFavGroup(BOOL bInit);
 	LRESULT 	OnMenuRefreshScript(BOOL bInit);
 	LRESULT 	OnRestrictMessage(BOOL bOn);
 	LRESULT		OnGetFavoriteFilePath(int nID);
-	void 		DestroyCustomDropDownMenu();
 	void		IfTrayRestoreWindow() {	if (m_bTray) OnGetOut(0, 0, 0); }	//+++ トレイ状態だったら窓を復活.
 	void 		OnGetOut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	LRESULT 	OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/);
@@ -658,7 +653,6 @@ private:
 	LRESULT 	OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/);
 	void		OnPaint(CDCHandle /*dc*/);
 
-	void 		init_font();
 	void 		init_menus_infomation();
 	HWND		init_commandBarWindow();
 	HWND		init_toolBar();
@@ -668,7 +662,6 @@ private:
 	HWND		init_linkBar();
 	void		init_rebar();
 	void		init_statusBar();
-	void 		init_progressBar();
 	void 		init_pluginManager();
 	void 		init_band_position( HWND cmdBar, HWND toolBar, HWND addressBar, HWND mdiTab, HWND linkBar, HWND searchBar );
 	void 		init_loadStatusBarState();
@@ -676,7 +669,6 @@ private:
 	void 		init_splitterWindow();
 	void 		init_explorerBar();
 	void		init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar);
-	void 		init_setUserAgent();
 	void 		init_message_loop();
 	void 		init_mdiTab();
 	void 		init_sysMenu();
@@ -799,11 +791,9 @@ private:
 	void 		OnUpdateStautsIcon(CCmdUI *pCmdUI);
 	bool 		_IsClipboardAvailable();
 	void 		_FocusChecker();
-	void 		InitStatusBar();
 	LRESULT 	OnSpecialKeys		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnSecurityReport	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	BOOL 		TranslateMessageToBHO(MSG *pMsg);
-	void 		_RemoveTmpDirectory();
 
 	LRESULT 	OnWindowThumbnail	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
@@ -874,7 +864,6 @@ private:
 	};
 
 	struct 			_Function_EnumChildSaveOption;
-	struct 			_Function_DeleteFile;
 	struct 			_ExtendProfileInfo;
 
 	///////////////////////////////////////////////////////////
@@ -905,6 +894,7 @@ private:
 
 	bool	_IsSelectedTextInner();
 	void	_RefreshFavMenu();
+	void 	_RemoveShortcutTmpDirectory();
 
 
 	// Daba members
@@ -945,7 +935,6 @@ private:
 	CMenuControl						m_mcToolBar;
 
 	CContainedWindow					m_wndMDIClient;
-	CFont								m_font;
 
 	UINT_PTR							m_nBackUpTimerID;
 	CMenuHandle 						m_menuWindow;
@@ -976,7 +965,6 @@ private:
 	BYTE/*bool*/						m_bOldMaximized;				//+++ 最大化していたかどうか
 	BYTE/*bool*/						m_bFullScreen;					//+++ トレイからの復帰用に窓がフルスクリーンかどうかを保持
 
-	BYTE/*BOOL*/						m_bStatusBarVisibleUnlessFullScreen;	// FullScreen support
 	BYTE/*BOOL*/						m_bShow;
 	bool								m_bCancelRButtonUp;
 

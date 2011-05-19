@@ -6,7 +6,7 @@
 
 //プラグインのデータ型・定数の定義
 #include "./include/PluginInfo.h"
-
+#include <boost/array.hpp>
 
 //+++ GetProcAddressはTCHAR未対応なので、_Tは削除.
 
@@ -20,8 +20,11 @@
 	}
 
 
+/////////////////////////////////////////////////
+/// プラグインに関するクラス
 
-class CPluginManager {
+class CPluginManager 
+{
 public:
 	typedef int  (WINAPI* LPFPLUGINEVENT)(UINT, FPARAM, SPARAM);
 	typedef void (WINAPI* LPFGETPLUGININFO)(PLUGININFO *);
@@ -44,14 +47,8 @@ public:
 		int 		   nStyle;
 		//int		   flags;	//+++	無理やりな処理で使う...やっぱやめ.
 
-		PluginData()
-		{
-			this->hInstDLL 	= NULL;
-			this->hWnd	 	= NULL;
-			this->fpEvent	= NULL;
-			this->nStyle	= PLUGIN_STYLE_DERAYLOADING;
-			//this->flags	= 0;		//+++
-		}
+		PluginData() : hInstDLL(NULL), hWnd(NULL), fpEvent(NULL), nStyle(PLUGIN_STYLE_DERAYLOADING)
+		{	}
 	};
 
 	static CString PluginDir(); 	//+++ プラグインフォルダを返す. 最後は\つき.
@@ -59,7 +56,7 @@ public:
 private:
 	//メンバ変数
 	typedef std::vector<PluginData> 	PluginArray;
-	static PluginArray *	m_avecData; 	//プラグインタイプ毎のデータの配列(vector)
+	static boost::array<PluginArray, PLUGIN_TYPECNT + 1> m_arrPluginData;	//プラグインタイプ毎のデータの配列(vector)
 
   #ifdef _DEBUG
 	static int				m_nLoadCount;
@@ -105,22 +102,22 @@ public:
 
 	//プラグインのウィンドウハンドルを取得する
 	//失敗したとき、もしくは作成されていない場合はNULLを返す
-	static HWND 		GetHWND(int nKind, int nIndex);
+	static HWND 		GetHWND(PLUGIN_TYPE nKind, int nIndex);
 
-	bool				IsEarlyLoading(int nKind, int nIndex);
+	bool				IsEarlyLoading(PLUGIN_TYPE nKind, int nIndex);
 
-	static int			GetCount(int nKind);
+	static int			GetCount(PLUGIN_TYPE nKind);
 
 
 	//DLLのロード及びプラグイン情報の読み込みを行う
-	static BOOL 		ReadPluginData(int nKind, HWND hWnd = NULL);
+	static BOOL 		ReadPluginData(PLUGIN_TYPE nKind, HWND hWnd = NULL);
 
 
 	//プラグインのロードを行う
 	//引数はプラグインの種類と番号と、組み込む親ウィンドウのハンドル
-	static BOOL 		LoadPlugin(int nKind, int nIndex, HWND hWndParent, bool Force = true);
+	static BOOL 		LoadPlugin(PLUGIN_TYPE nKind, int nIndex, HWND hWndParent, bool Force = true);
 
-	static BOOL 		LoadAllPlugin(int nKind, HWND hWndParent, bool bForce = false);
+	static BOOL 		LoadAllPlugin(PLUGIN_TYPE nKind, HWND hWndParent, bool bForce = false);
 
 	static void 		DeleteAllPlugin(int nKind = -1);
 

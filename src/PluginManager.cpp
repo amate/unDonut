@@ -22,10 +22,11 @@ static char THIS_FILE[] = __FILE__;
 //using namespace 	std;
 //using namespace 	MTL;
 
+//////////////////////////////////////////////////////////
+// CPluginManager
 
-
-std::vector<CPluginManager::PluginData> *	CPluginManager::m_avecData = NULL;
-
+// 定義
+boost::array<CPluginManager::PluginArray, PLUGIN_TYPECNT + 1>	CPluginManager::m_arrPluginData;
 
 /*
 	nKind は 1 Origin 1toPLUGIN_TYPECNT
@@ -33,16 +34,14 @@ std::vector<CPluginManager::PluginData> *	CPluginManager::m_avecData = NULL;
  */
 
 
-
+//--------------------------------------------
 /// プラグイン情報をもつ構造体のポインタを取得する
 CPluginManager::PluginData *CPluginManager::GetDataPtr(int nKind, int nIndex)
 {
-	ATLASSERT(m_avecData != NULL);
-
 	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return NULL;
 
-	PluginArray *pary = &m_avecData[nKind];
+	PluginArray *pary = &m_arrPluginData[nKind];
 
 	if (nIndex < 0 || (int) pary->size() <= nIndex)
 		return NULL;
@@ -51,14 +50,14 @@ CPluginManager::PluginData *CPluginManager::GetDataPtr(int nKind, int nIndex)
 }
 
 
-
+//--------------------------------------------
 /// ロードに失敗したプラグインを片付ける
 void CPluginManager::SettleBadPlugin(int nKind, int nIndex, PluginData &data, HWND hWnd)
 {
-	TCHAR 	szBuf[MAX_PATH];
-	szBuf[0]	= 0;	//+++
+	TCHAR 	szBuf[MAX_PATH] = _T("\0");
 	::GetModuleFileName( data.hInstDLL, szBuf, MAX_PATH );
 	ErrMsg_FailLoad(data.strCaption, szBuf, hWnd);
+
 	RemovePlugin(nKind, nIndex);
 }
 
@@ -72,8 +71,7 @@ BOOL CPluginManager::ReleasePluginData(PluginData &data)
 			data.hWnd = NULL;
 		} catch (...) {
 		  #ifdef _DEBUG
-			FILE *fp = fopen("errlog.txt", "a");
-
+			FILE *fp = _wfopen(Misc::GetExeDirectory() + L"errlog.txt", L"a");
 			if (fp) {
 				fprintf(fp, "プラグイン\"%s\"の終了時にエラーが発生しました。\n", data.strCaption);
 				fclose(fp);
@@ -91,16 +89,14 @@ BOOL CPluginManager::ReleasePluginData(PluginData &data)
 }
 
 
-
+//----------------------------------------------
 /// プラグイン情報を配列から削除する（ウィンドウ等の開放も行う）
 BOOL CPluginManager::RemovePlugin(int nKind, int nIndex)
 {
-	ATLASSERT(m_avecData != NULL);
-
 	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return FALSE;
 
-	PluginArray *pary = &m_avecData[nKind];
+	PluginArray *pary = &m_arrPluginData[nKind];
 
 	if (nIndex < 0 || (int) pary->size() <= nIndex)
 		return FALSE;
@@ -132,14 +128,12 @@ CPluginManager::CPluginManager()
 
 CPluginManager::~CPluginManager()
 {
-	ATLASSERT(m_avecData == NULL);
 }
 
 
 
 void CPluginManager::Init()
 {
-	m_avecData = new PluginArray[PLUGIN_TYPECNT + 1];
 }
 
 
@@ -147,12 +141,10 @@ void CPluginManager::Init()
 void CPluginManager::Term()
 {
 	DeleteAllPlugin();
-	delete[] m_avecData;
-	m_avecData = NULL;
 }
 
 
-
+//---------------------------------------------
 /// プラグインのタイトルを取得する
 /// BOOL型の領域へのポインタが指定されれば成功・失敗をそこに返す
 CString CPluginManager::GetCaption(int nKind, int nIndex, BOOL *pbRet)
@@ -173,10 +165,10 @@ CString CPluginManager::GetCaption(int nKind, int nIndex, BOOL *pbRet)
 }
 
 
-
+//----------------------------------------------
 /// プラグインのウィンドウハンドルを取得する
 /// 失敗したとき、もしくは作成されていない場合はNULLを返す
-HWND CPluginManager::GetHWND(int nKind, int nIndex)
+HWND CPluginManager::GetHWND(PLUGIN_TYPE nKind, int nIndex)
 {
 	PluginData *pdata = GetDataPtr(nKind, nIndex);
 
@@ -186,19 +178,19 @@ HWND CPluginManager::GetHWND(int nKind, int nIndex)
 	return pdata->hWnd;
 }
 
-
-
-int CPluginManager::GetCount(int nKind)
+//--------------------------------------
+/// 指定された種類のプラグイン数を返す
+int CPluginManager::GetCount(PLUGIN_TYPE nKind)
 {
-	if (nKind <= 0 || PLUGIN_TYPECNT < nKind || m_avecData == 0)
+	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return -1;
 
-	return m_avecData[nKind].size();
+	return m_arrPluginData[nKind].size();
 }
 
 
 
-bool CPluginManager::IsEarlyLoading(int nKind, int nIndex)
+bool CPluginManager::IsEarlyLoading(PLUGIN_TYPE nKind, int nIndex)
 {
 	PluginData *pdata = GetDataPtr(nKind, nIndex);
 	if (!pdata)
@@ -208,9 +200,9 @@ bool CPluginManager::IsEarlyLoading(int nKind, int nIndex)
 }
 
 
-
+//----------------------------------------
 /// DLLのロード及びプラグイン情報の読み込みを行う
-BOOL CPluginManager::ReadPluginData(int nKind, HWND hWnd)
+BOOL CPluginManager::ReadPluginData(PLUGIN_TYPE nKind, HWND hWnd)
 {
 	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return FALSE;
@@ -220,12 +212,9 @@ BOOL CPluginManager::ReadPluginData(int nKind, HWND hWnd)
 
 	CIniFileIO	pr(g_szIniFileName, strKey);
 
-	DWORD		dwCount    = 0;
-	pr.QueryValue( dwCount, _T("Count") );
-
 	CString 	strDLLPath = Misc::GetExeDirectory() + PluginDir();
-
-	for (int nIndex = 0; nIndex < (int) dwCount; ++nIndex) {
+	int	nCount = pr.GetValuei(_T("Count"));
+	for (int nIndex = 0; nIndex < nCount; ++nIndex) {
 		try {	//+++
 			strKey.Format(_T("%02d"), nIndex);
 			//DLLのロード
@@ -243,7 +232,7 @@ BOOL CPluginManager::ReadPluginData(int nKind, HWND hWnd)
 				LPFGETPLUGININFO	pfGetPluginInfo = GetPtr_GetPluginInfo(hInstDLL);
 				if (pfGetPluginInfo) {
 					PLUGININFO *	ppi = new PLUGININFO;
-					pfGetPluginInfo(ppi);
+					pfGetPluginInfo(ppi);	// 取得
 					data.strCaption 	= ppi->name;
 					data.nStyle 		= ppi->type & 0xFFFFFFF0;
 					delete 		ppi;
@@ -256,7 +245,7 @@ BOOL CPluginManager::ReadPluginData(int nKind, HWND hWnd)
 				}
 
 				//データを登録
-				m_avecData[nKind].push_back(data);
+				m_arrPluginData[nKind].push_back(data);
 			} else {
 				//ロードに失敗したので登録を取り消す
 				ErrMsg_FailLoad(_T("N/A"), strDLLFile, hWnd);
@@ -271,11 +260,10 @@ BOOL CPluginManager::ReadPluginData(int nKind, HWND hWnd)
 }
 
 
-
-
+//-------------------------------------------------------------------
 /// プラグインのロードを行う
 /// 引数はプラグインの種類と番号と、組み込む親ウィンドウのハンドル
-BOOL CPluginManager::LoadPlugin(int nKind, int nIndex, HWND hWndParent, bool bForce)
+BOOL CPluginManager::LoadPlugin(PLUGIN_TYPE nKind, int nIndex, HWND hWndParent, bool bForce)
 {
 	PluginData *pdata	 = GetDataPtr(nKind, nIndex);
 
@@ -377,9 +365,9 @@ BOOL CPluginManager::LoadPlugin(int nKind, int nIndex, HWND hWndParent, bool bFo
 	return TRUE;
 }
 
-
-
-BOOL CPluginManager::LoadAllPlugin(int nKind, HWND hWndParent, bool bForce)
+//----------------------------------------
+/// 全てのプラグインを読み込む
+BOOL CPluginManager::LoadAllPlugin(PLUGIN_TYPE nKind, HWND hWndParent, bool bForce)
 {
 	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return FALSE;
@@ -396,13 +384,10 @@ BOOL CPluginManager::LoadAllPlugin(int nKind, HWND hWndParent, bool bForce)
 	return TRUE;
 }
 
-
-
+//---------------------------------------------
+/// 指定された種類のプラグインをすべて解放する(-1ですべての種類を解放)
 void CPluginManager::DeleteAllPlugin(int nKind)
 {
-	if (!m_avecData)
-		return;
-
 	int 	nStart;
 	int		nEnd;
 
@@ -410,14 +395,14 @@ void CPluginManager::DeleteAllPlugin(int nKind)
 		nStart = 1;
 		nEnd   = PLUGIN_TYPECNT;
 	} else if (1 <= nKind && nKind <= PLUGIN_TYPECNT) {
-		nStart =
-		nEnd   = nKind;
+		nStart = nEnd = nKind;
 	} else {
+		ATLASSERT(FALSE);
 		return;
 	}
 
 	for (int i = nStart; i <= nEnd; i++) {
-		PluginArray *		  pary = &m_avecData[i];
+		PluginArray *		  pary = &m_arrPluginData[i];
 
 		for (PluginArray::iterator it = pary->begin(); it != pary->end(); ++it)
 			ReleasePluginData(*it);
@@ -428,7 +413,8 @@ void CPluginManager::DeleteAllPlugin(int nKind)
 
 
 
-/// プラグインの関数呼び出しルーチン
+// プラグインの関数呼び出しルーチン
+
 void CPluginManager::Call_ShowExplorerMenu(int nIndex, int x, int y)	//エクスプローラバーのみサポート
 {
 	PluginData *		pdata			   = GetDataPtr(PLT_EXPLORERBAR, nIndex);
@@ -535,15 +521,12 @@ void CPluginManager::Call_ShowToolBarMenu(int nKind, int nIndex, UINT uID)						
 }
 
 
-
+//-----------------------------------
 /// 全てのプラグインに対してイベント発生を送る
 void CPluginManager::BroadCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam)
 {
-	if (!m_avecData)
-		return;
-
 	for (int nKind = 1; nKind <= PLUGIN_TYPECNT; nKind++) {
-		int nCount = m_avecData[nKind].size();
+		int nCount = m_arrPluginData[nKind].size();
 
 		for (int i = 0; i < nCount; i++) {
 			Call_PluginEvent(nKind, i, uMsg, fParam, sParam);
@@ -552,15 +535,12 @@ void CPluginManager::BroadCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sPar
 }
 
 
-
+//------------------------------------
 /// 全てのプラグインに対してイベント発生を順に送り、非0の値が返された時点で終了する
 int CPluginManager::ChainCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam)
 {
-	if (!m_avecData)
-		return 0;
-
 	for (int nKind = 1; nKind <= PLUGIN_TYPECNT; nKind++) {
-		int nCount = m_avecData[nKind].size();
+		int nCount = m_arrPluginData[nKind].size();
 
 		for (int i = 0; i < nCount; i++) {
 			int nRet = Call_PluginEvent(nKind, i, uMsg, fParam, sParam);
@@ -573,7 +553,7 @@ int CPluginManager::ChainCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sPara
 }
 
 
-
+//--------------------------------------
 ///+++ "Plugin"フォルダ名を返す. まず Plugin32\ (64ビット版は Plugin64\) が存在すればそれを返し無ければ"Plugin"を返す.
 CString CPluginManager::PluginDir()
 {
@@ -582,7 +562,7 @@ CString CPluginManager::PluginDir()
   #else
 	const TCHAR* dir = _T("Plugin32");
   #endif
-	if (Misc::IsExistFile(Misc::GetExeDirectory() + dir) == 0)
+	if (::PathFileExists(Misc::GetExeDirectory() + dir) == FALSE)
 		dir = _T("Plugin");
 	return CString(dir) + _T('\\');
 }

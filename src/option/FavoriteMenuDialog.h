@@ -163,6 +163,7 @@ public:
 
 	// Message map and handlers
 	BEGIN_MSG_MAP( COpenURLDlg )
+		MSG_WM_DESTROY( OnDestroy )
 		COMMAND_ID_HANDLER( IDC_BUTTON_FAVMENU_USER, OnBtnFavMenuUser )
 		COMMAND_ID_HANDLER_EX( IDC_CHECK_DRAW_ICON		, OnCommandSwitch	)
 		COMMAND_ID_HANDLER_EX( IDC_CHECK_DRAW_FAVICON	, OnCommandSwitch	)
@@ -171,7 +172,7 @@ public:
 		CHAIN_MSG_MAP( CPropertyPageImpl<CDonutFavoritesMenuPropertyPage> )
 	END_MSG_MAP()
 
-
+	void	OnDestroy();
 	LRESULT OnBtnFavMenuUser(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	void	OnCommandSwitch(UINT uNotifyCode, int nID, CWindow wndCtl);
 };

@@ -25,9 +25,8 @@ public:
 	static DWORD	s_dwExtendedStyleFlags; 								//+++ ref by DonutView.cpp
 	static bool		s_bUseDLManager;
 
-	static const TCHAR*	userAgent();					//+++ ’Ç‰Á
+	static void		SetUserAgent();
 
-private:
 	static TCHAR	s_szUserAgent[MAX_PATH];			// UDT DGSTR			//+++ ref by MainFrame.cpp
 	static TCHAR	s_szUserAgent_cur[MAX_PATH];		//+++
 
@@ -46,6 +45,7 @@ public:
 class CDLControlPropertyPage
 	: public CPropertyPageImpl<CDLControlPropertyPage>
 	, public CWinDataExchange<CDLControlPropertyPage>
+	, protected CDLControlOption
 {
 public:
 	// Constants
@@ -73,6 +73,8 @@ private:
 	BOOL		m_bMouseGesture;
 	BOOL		m_bBlockMailto;
 	BOOL		m_bUseDLManager;
+
+	bool		m_bInit;
 public:
 
 	// DDX map

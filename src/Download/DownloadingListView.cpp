@@ -10,6 +10,7 @@
 // Constructor/Destructor
 CDownloadingListView::CDownloadingListView(CDownloadedListView* pDLed)
 	: m_pDownloadedListView(pDLed)
+	, m_bTimer(false)
 { }
 
 CDownloadingListView::~CDownloadingListView()
@@ -157,7 +158,7 @@ int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	ModifyStyle(WS_HSCROLL, 0);
 
 	// 画面更新用のタイマーを起動
-	SetTimer(1, 1000);
+	//SetTimer(1, 1000);
 
 	static bool bInit = false;
 	if (bInit)
@@ -400,9 +401,11 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	// DLedViewに追加
 	m_pDownloadedListView->AddDownloadedItem(pItem);
 
-	if (m_vecpDLItem.size() == 0 && CDLOptions::bCloseAfterAllDL) {
-		 //全てのDLが終わったので閉じる
-		::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
+	if (m_vecpDLItem.size() == 0) {
+		KillTimer(1);
+		m_bTimer = false;
+		if (CDLOptions::bCloseAfterAllDL)	 //全てのDLが終わったので閉じる
+			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
 	}
 
 	return 0;
@@ -410,6 +413,8 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 
 LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	if (m_bTimer == false)
+		SetTimer(1, 1000);
 	_AddItemToList((DLItem*)wParam);
 	return 0;
 }
