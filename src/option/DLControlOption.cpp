@@ -83,7 +83,7 @@ void CDLControlOption::WriteProfile()
 /// ユーザーエージェントを設定
 void	CDLControlOption::SetUserAgent()
 {
-	if (CMainOption::s_dwMainExtendedStyle2) {
+	if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_USER_AGENT_FLAG) {
 		std::vector<char>	userAgent = Misc::tcs_to_sjis( s_szUserAgent );
 		::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT , (void*)userAgent.data(), userAgent.size(), 0);
 	} else {

@@ -413,8 +413,10 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 
 LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (m_bTimer == false)
+	if (m_bTimer == false) {
 		SetTimer(1, 1000);
+		m_bTimer = true;
+	}
 	_AddItemToList((DLItem*)wParam);
 	return 0;
 }
