@@ -3304,6 +3304,8 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent, TIMERPROC dmy /*= 0*/)
 
 BOOL CMainFrame::OnIdle()
 {
+	if (IsIconic())
+		return TRUE;
 	//return FALSE;
 	// Note. under 0.01 sec (in dbg-mode on 330mhz cpu)
 	CmdUIUpdateToolBars();
