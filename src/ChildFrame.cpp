@@ -1215,9 +1215,9 @@ LRESULT CChildFrame::OnForwardMsg(LPMSG pMsg, DWORD)
 		// ƒy[ƒW‚ðŠg‘å‚·‚é
 		if ( ::GetKeyState(VK_MENU) & 0x80 ){
 			if ( zDelta > 0 ){
-				SetBodyStyleZoom(10, 0);
+				SetBodyStyleZoom(10, 0, true);
 			} else {
-				SetBodyStyleZoom(-10, 0);
+				SetBodyStyleZoom(-10, 0, true);
 			}
 			return TRUE;
 		}
@@ -2197,10 +2197,11 @@ void CChildFrame::CheckImageAutoSize(const CString* pStrURL, BOOL bFirst)
 		m_nImgScl	= 100;		//+++
 
 	  #if 1	//+++ ‚¿‚å‚Á‚Æ‚â‚è•û‚ð‚©‚¦‚Ä‚Ý‚é...
-		CComPtr<IHTMLDocument2> 			pDoc;
-		if ( FAILED( m_spBrowser->get_Document( (IDispatch **) &pDoc ) ) )
+		CComPtr<IDispatch>	spDisp;
+		CComQIPtr<IHTMLDocument2> 			pDoc;
+		if ( FAILED( m_spBrowser->get_Document( &spDisp ) ) )
 			return;
-
+		pDoc = spDisp;
 		CComPtr<IHTMLElementCollection> 	pElemClct;
 		if ( FAILED( pDoc->get_images(&pElemClct) ) )
 			return;
@@ -2371,9 +2372,9 @@ void CChildFrame::OnHtmlZoom(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 
 
 ///+++ html‚ðŠg‘åk¬
-void CChildFrame::SetBodyStyleZoom(int addSub, int scl)
+void CChildFrame::SetBodyStyleZoom(int addSub, int scl, bool bWheel/* = false*/)
 {
-	if (Misc::getIEMejourVersion() >= 7) {
+	if (Misc::getIEMejourVersion() >= 7 && bWheel) {
 		CComVariant vZoom;
 		if (addSub) {
 			m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, NULL, &vZoom);
@@ -2385,8 +2386,6 @@ void CChildFrame::SetBodyStyleZoom(int addSub, int scl)
 		else if (scl > 500)
 			scl = 500;
 
-		m_nImgScl = scl;
-		
 		vZoom.lVal = scl;
 		m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoom, NULL); 
 

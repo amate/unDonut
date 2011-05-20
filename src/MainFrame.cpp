@@ -27,6 +27,7 @@
 #include "option/UrlSecurityOption.h"		//+++
 #include "option/RightClickMenuDialog.h"
 
+#include "DialogHook.h"
 #include "dialog/OpenURLDialog.h"
 #include "api.h"
 #include "PluginEventImpl.h"
@@ -94,6 +95,7 @@ CMainFrame::CMainFrame()
 	, m_TranslateMenu(this)
 	, m_bCancelRButtonUp(false)
 	, m_styleSheetMenu(m_hWnd)
+	, m_bWM_TIMER(false)
 {
 	g_pMainWnd = this;			//+++ CreateEx()中にプラグイン初期化とかで参照されるので、呼び元でなく CMainFreameで設定するように変更.
 }
@@ -155,7 +157,7 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	InitSkin();										//スキンを初期化
 
 	CDonutSimpleEventManager::RaiseEvent(EVENT_INITIALIZE_COMPLETE);	// イベント関係の準備
-	//CDialogHook::InstallHook(m_hWnd);				// ダイアログ関係の準備
+	CDialogHook::InstallHook(m_hWnd);				// ダイアログ関係の準備
 
 	m_DownloadManager.SetParent(m_hWnd);
 
@@ -590,7 +592,7 @@ void CMainFrame::OnDestroy()
 	//\\MtlSendCommand(m_hWnd, ID_VIEW_STOP_ALL);									// added by DOGSTORE
 
 	//CSearchBoxHook::UninstallSearchHook();
-	//CDialogHook::UninstallHook();
+	CDialogHook::UninstallHook();
 #ifdef _DEBUG
 	//デバッグウィンドウ削除
 	m_wndDebug.Destroy();
@@ -826,6 +828,8 @@ void CMainFrame::DelHistory()
 //各ウィンドウへ(主にキー)メッセージを転送する
 BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 {
+	m_bWM_TIMER = pMsg->message == WM_TIMER;
+
 	//コマンドバー(メニュー)
 	if ( m_CmdBar.PreTranslateMessage(pMsg) )
 		return TRUE;
@@ -3304,7 +3308,7 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent, TIMERPROC dmy /*= 0*/)
 
 BOOL CMainFrame::OnIdle()
 {
-	if (IsIconic())
+	if (m_bWM_TIMER/*IsIconic()*/)
 		return TRUE;
 	//return FALSE;
 	// Note. under 0.01 sec (in dbg-mode on 330mhz cpu)

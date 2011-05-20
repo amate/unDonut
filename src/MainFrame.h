@@ -967,6 +967,7 @@ private:
 
 	BYTE/*BOOL*/						m_bShow;
 	bool								m_bCancelRButtonUp;
+	bool								m_bWM_TIMER;
 
 	static const UINT					STDBAR_ID[];
 	static const UINT					STDBAR_STYLE[];

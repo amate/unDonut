@@ -419,7 +419,7 @@ private:
 	///+++ 100% とその他の比率をトグル切替.
 	LRESULT OnHtmlZoom100Togle(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL &);
 	void 	OnHtmlZoom(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-	void 	SetBodyStyleZoom(int addSub, int scl);
+	void 	SetBodyStyleZoom(int addSub, int scl, bool bWheel = false);
 
 	//プログレスペインの幅を設定
 	BOOL 	SetProgressPaneWidth(int cxWidth);
