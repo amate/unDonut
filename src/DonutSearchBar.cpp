@@ -135,7 +135,7 @@ public:
 	void	SearchHilight();
 
 	void	SetFocusToEngine();
-	void	RefreshEngine() { m_cmbEngine.SetCurSel(0); _SetCmbKeywordEmptyStr(); }
+	void	RefreshEngine() { _threadInitComboBox(); _SetCmbKeywordEmptyStr(); }
 
 	BOOL	PreTranslateMessage(MSG *pMsg);
 
@@ -448,9 +448,9 @@ CString CDonutSearchBar::Impl::GetSearchEngineStr() const
 void	CDonutSearchBar::Impl::SearchWeb(CString str)
 {
 	if (str.IsEmpty()) {
-		str = Donut_GetActiveSelectedText();
+		str = GetSearchStr();
 		if (str.IsEmpty())
-			str = GetSearchStr();
+			str = Donut_GetActiveSelectedText();
 	}
 	SearchWebWithEngine(str, GetSearchEngineStr());
 }
@@ -1753,7 +1753,7 @@ void CDonutSearchBar::Impl::_threadInitComboBox()
 		CComboBox	cmb = m_cmbKeyword;
 	
 		CIniFileI	pr( _GetFilePath( _T("WordHistory.ini") ), _T("SEARCH_HISTORY") );
-		int	nHistoryCnt = (int)pr.GetValue(_T("HistorySaveCnt"));
+		int	nHistoryCnt = pr.GetValuei(_T("HistorySaveCnt"));
 
 		for (int ii = 0; ii < nHistoryCnt; ii++) {
 			CString 	strKey;

@@ -190,8 +190,8 @@ BOOL _CheckOsVersion_VistaLater()
 	return (osi.dwMajorVersion >= 6);
 }
 
-
-
+//---------------------------
+/// 設定されたスキンフォルダのパスを返す(最後に'\\'がつく)
 CString _GetSkinDir()
 {
 	CString 	strPath    = Misc::GetExeDirectory() + _T("Skin\\");
@@ -206,8 +206,8 @@ CString _GetSkinDir()
 	else
 		strSkinPath = strPath + strSkinPath;
 
-	if (::GetFileAttributes(strSkinPath) == 0xFFFFFFFF) {
-		if (GetFileAttributes(strDefPath) == 0xFFFFFFFF) {
+	if (::PathFileExists(strSkinPath) == FALSE) {
+		if (PathFileExists(strDefPath) == FALSE) {
 			strSkinPath = strPath;
 		} else {
 			strSkinPath = strDefPath;

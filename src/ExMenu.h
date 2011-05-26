@@ -658,8 +658,9 @@ public:
 		CExMenuItem *	pItem  = pTree->GetData(hNode);
 		if (!pItem)
 			return FALSE;
-
-		::ShellExecute(NULL, NULL, pItem->strCommand, pItem->strArg, Misc::GetExeDirectory(), SW_SHOWNORMAL);
+		if (pItem->strCommand.Left(6).CompareNoCase(_T("script")) == 0) 
+			pItem->strCommand.Insert(0, Misc::GetExeDirectory());	//\\+
+		::ShellExecute(NULL, _T("open"), pItem->strCommand, pItem->strArg, Misc::GetExeDirectory(), SW_SHOWNORMAL);
 		return TRUE;
 	}
 };

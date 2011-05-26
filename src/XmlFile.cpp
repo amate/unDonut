@@ -57,7 +57,10 @@ CString	CXmlFileRead::GetValue()
 	return CString(strValue);
 }
 
-
+int		CXmlFileRead::GetValuei()
+{
+	return _wtoi(GetValue());
+}
 
 // externalElementÇÃì‡ë§ÇÃóvëfÇstrElementÇ≈ï‘Ç∑
 bool	CXmlFileRead::GetInternalElement(LPCWSTR externalElement, CString &strElement)
@@ -75,6 +78,22 @@ bool	CXmlFileRead::GetInternalElement(LPCWSTR externalElement, CString &strEleme
 	}
 	throw _T("GetInternalElementé∏îs");
 	return false;
+}
+
+
+//////////////////////////////////////////////////////////////////////
+// CXmlFileRead2
+
+void	CXmlFileRead2::MoveToFirstAttribute()
+{
+	if (__super::MoveToFirstAttribute() == false)
+		throw _T("MoveToFirstAttributeé∏îs");
+}
+
+void	CXmlFileRead2::MoveToNextAttribute()
+{
+	if (__super::MoveToNextAttribute() == false)
+		throw _T("MoveToNextAttributeé∏îs");
 }
 
 
@@ -145,6 +164,16 @@ void	CXmlFileWrite::WriteStartElement(LPCWSTR Element)
 void	CXmlFileWrite::WriteElementString(LPCWSTR LocalName, LPCWSTR Value)
 {
 	if (FAILED(m_pWriter->WriteElementString(NULL, LocalName, NULL, Value))){
+        throw _T("WriteElementStringé∏îs");
+    }
+}
+
+//	<LocalName>Value</LocalName>
+void	CXmlFileWrite::WriteElementValue(LPCWSTR LocalName, DWORD Value)
+{
+	CString temp;
+	temp.Format(_T("%d"), Value);
+	if (FAILED(m_pWriter->WriteElementString(NULL, LocalName, NULL, temp))){
         throw _T("WriteElementStringé∏îs");
     }
 }

@@ -152,7 +152,7 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 
 	init_sysMenu();									// システムメニューに追加
 
-	::SetTimer(m_hWnd, ENT_READ_ACCEL, 200, NULL);	// アクセラキー読み込み. 遅延させるためにWM_TIMERで処理.
+	SetTimer(ENT_READ_ACCEL, 200);					// アクセラキー読み込み. 遅延させるためにWM_TIMERで処理.
 
 	InitSkin();										//スキンを初期化
 
@@ -252,10 +252,10 @@ HWND	CMainFrame::init_toolBar()
 	CMenuHandle 	   menuCssSub	  = menuCss.GetSubMenu(_nPosSubCssMenu);
   #endif
 
-	HWND	hWndToolBar   = m_ToolBar.DonutToolBar_Create(m_hWnd);
+	HWND	hWndToolBar   = m_ToolBar.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndToolBar) );
 
-	m_ToolBar.DonutToolBar_SetFavoritesMenu(menuFav, menuGroup, menuCssSub);
+	//m_ToolBar.DonutToolBar_SetFavoritesMenu(menuFav, menuGroup, menuCssSub);
 
 	if (m_CmdBar.m_fontMenu.m_hFont)	// コマンドバーのフォント設定と同じに
 		m_ToolBar.SetFont(m_CmdBar.m_fontMenu.m_hFont);
@@ -829,6 +829,11 @@ void CMainFrame::DelHistory()
 BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 {
 	m_bWM_TIMER = pMsg->message == WM_TIMER;
+	if (m_bWM_TIMER) {
+		if (pMsg->hwnd == NULL && pMsg->lParam == 0)
+			return FALSE;
+		return FALSE;
+	}
 
 	//コマンドバー(メニュー)
 	if ( m_CmdBar.PreTranslateMessage(pMsg) )
@@ -1568,6 +1573,8 @@ void CMainFrame::InitSkin()
 	m_ReBar.RefreshSkinState(); 								//ReBar
 	m_MDITab.ReloadSkin(CSkinOption::s_nTabStyle);				//タブ
 	m_ToolBar.ReloadSkin(); 									//ツールバー
+	CToolBarOption::GetProfile();
+	m_ToolBar.GetInitButtonfunction()();	//\\+
 	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
 	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
 	m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
@@ -1587,16 +1594,13 @@ void CMainFrame::InitSkin()
 // [Donutのオプション]-[スキン]の[適用]が押されたとき
 HRESULT CMainFrame::OnSkinChange()
 {
-	InvalidateRect(NULL, TRUE);
-
 	//メッセージをブロードキャストするべきか
 	CSkinOption::GetProfile();
 
 	InitSkin();
 
 	//リフレッシュ
-	InvalidateRect(NULL, TRUE);
-
+	RedrawWindow(NULL, NULL, RDW_INTERNALPAINT | RDW_UPDATENOW | RDW_ALLCHILDREN);;
 	return 0;
 }
 
@@ -4356,10 +4360,11 @@ LRESULT CMainFrame::OnViewStatusBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 	return 0;
 }
 
-
+//---------------------------------------
+/// [ユーザー定義] : ツールバーのカスタマイズダイアログを表示する
 LRESULT CMainFrame::OnViewToolBarCust(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	m_ToolBar.StdToolBar_Customize();
+	m_ToolBar.Customize();
 	return 0;
 }
 
@@ -4411,7 +4416,7 @@ void CMainFrame::ShowNewStyleDonutOption()
 	CStartUpPropertyPage			pageStartUp;
 	CProxyPropertyPage				pageProxy;
 	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu);
-	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &m_ToolBar.m_arrStdBtn, &bSkinChange);
+	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, m_ToolBar.GetInitButtonfunction());
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);
 	CSearchPropertyPage 			pageSearch;
@@ -5326,8 +5331,9 @@ void CMainFrame::_FullScreen(BOOL bOn)
 	}
 	SetRedraw(TRUE);
 	RedrawWindow(NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-	if (::IsThemeActive() == FALSE)
-		::InvalidateRect(NULL, NULL, TRUE);
+	if (::IsThemeActive() == FALSE) {
+		::RedrawWindow(NULL, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	}
 }
 
 

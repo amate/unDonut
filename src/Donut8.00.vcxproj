@@ -847,6 +847,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AccelManager.cpp" />
+    <ClCompile Include="APIHook.cpp" />
     <ClCompile Include="appconst.cpp" />
     <ClCompile Include="BingTranslatorMenu.cpp" />
     <ClCompile Include="ChildFrame.cpp" />
@@ -1054,6 +1055,7 @@
     <ClInclude Include="AccelManager.h" />
     <ClInclude Include="AmbientDispatch.h" />
     <ClInclude Include="API.h" />
+    <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />
@@ -1129,7 +1131,6 @@
     <ClInclude Include="SearchHistoryDialog.h" />
     <ClInclude Include="SimpleTree.h" />
     <ClInclude Include="stdafx.h" />
-    <ClInclude Include="StdToolBarCtrl.h" />
     <ClInclude Include="StyleSheetOption.h" />
     <ClInclude Include="TabCtrl.h" />
     <ClInclude Include="Thumbnail.h" />

@@ -1067,9 +1067,9 @@ void	StrToNormalUrl(CString& strUrl)
 void	MoveToBackupFile(const CString& strFileName)
 {
 	CString 	strBakName = strFileName + ".bak";
-	if (::GetFileAttributes(strBakName) != 0xFFFFFFFF)
+	if (::PathFileExists(strBakName))
 		::DeleteFile(strBakName);					// 古いバックアップファイルを削除.
-	if (::GetFileAttributes(strFileName) != 0xFFFFFFFF)
+	if (::PathFileExists(strFileName))
 		::MoveFile(strFileName, strBakName);		// 既存のファイルをバックアップファイルにする.
 }
 

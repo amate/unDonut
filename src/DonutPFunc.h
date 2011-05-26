@@ -42,7 +42,10 @@ BOOL	_CheckOsVersion_VistaLater();
 /// undonut.exeと同じディレクトリに strFile があるものとしてフルパスを返す.
 __inline CString _GetFilePath(const CString& strFile) { return Misc::GetExeDirectory() + strFile; }
 
+//---------------------------
+/// 設定されたスキンフォルダのパスを返す(最後に'\\'がつく)
 CString _GetSkinDir();
+
 CString _GetRecentCloseFile();
 bool	_LoadToolTipText(int nCmdID, CString &strText);
 

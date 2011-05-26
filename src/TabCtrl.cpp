@@ -160,11 +160,6 @@ CTabSkinDefault::CTabSkinDefault()
 
 void	CTabSkinDefault::_LoadBitmap()
 {
-	// もしロードされていたなら消しておく（前のやつを消す）
-	if (m_TabSkinCur.m_hBitmap)		m_TabSkinCur.DeleteObject();
-	if (m_TabSkinNone.m_hBitmap)	m_TabSkinNone.DeleteObject();
-	if (m_TabSkinSel.m_hBitmap)		m_TabSkinSel.DeleteObject();
-
 	CString	strTabSkinDir = _GetSkinDir();	// スキンを置いているフォルダを取得
 	CString strTabSkinCur;
 	CString strTabSkinNone;
@@ -174,14 +169,25 @@ void	CTabSkinDefault::_LoadBitmap()
 	strTabSkinNone.Format(_T("%sTabSkinNone.bmp")	, strTabSkinDir);
 	strTabSkinSel.Format (_T("%sTabSkinSel.bmp")	, strTabSkinDir);
 
+	if (::PathFileExists(strTabSkinCur) == FALSE || ::PathFileExists(strTabSkinNone) == FALSE || ::PathFileExists(strTabSkinSel) == FALSE) {
+		strTabSkinDir = Misc::GetExeDirectory() + _T("skin\\default\\");	// スキンフォルダにファイルがなかった
+		strTabSkinCur.Format (_T("%sTabSkinCur.bmp")	, strTabSkinDir);
+		strTabSkinNone.Format(_T("%sTabSkinNone.bmp")	, strTabSkinDir);
+		strTabSkinSel.Format (_T("%sTabSkinSel.bmp")	, strTabSkinDir);
+	}
 	// タブ・スキン
 	m_TabSkinCur.Attach	( AtlLoadBitmapImage(strTabSkinCur.GetBuffer(0)	, LR_LOADFROMFILE) );
 	m_TabSkinNone.Attach( AtlLoadBitmapImage(strTabSkinNone.GetBuffer(0), LR_LOADFROMFILE) );
 	m_TabSkinSel.Attach	( AtlLoadBitmapImage(strTabSkinSel.GetBuffer(0)	, LR_LOADFROMFILE) );
 
+	try {
 	if (m_TabSkinCur.m_hBitmap	== NULL) throw strTabSkinCur;
 	if (m_TabSkinNone.m_hBitmap == NULL) throw strTabSkinNone;
 	if (m_TabSkinSel.m_hBitmap	== NULL) throw strTabSkinSel;
+	} catch (const CString& file) {
+		ATLASSERT(FALSE);
+		MessageBox(NULL, file + _T("が存在しません"), NULL, NULL);
+	}
 }
 
 

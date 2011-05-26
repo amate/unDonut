@@ -59,8 +59,8 @@ struct CDonutAddressBar::Impl :
 	void	ShowAddresText(CReBarCtrl rebar, BOOL bShow);
 	void	ShowGoButton(bool bShow);
 	CString GetAddressBarText();
+	CEdit	GetEditCtrl() { return m_edit; }
 
-	void	OnGetDispInfo(COMBOBOXEXITEM &item);
 	void	OnItemSelected(const CString &str);
 	void	OnItemSelectedEx(const CString &str);
 	void	OnGetItem(const CString &str, COMBOBOXEXITEM &item);
@@ -159,6 +159,7 @@ public:
 	CContainedWindow			m_wndCombo;
 	CContainedWindowT<CEdit>	m_wndEdit;
 	CContainedWindow			m_wndGoButton;
+	CEdit						m_edit;
 
 	CFont		m_font;
 	HWND		m_hWndParent;		//+++
@@ -379,41 +380,6 @@ void	CDonutAddressBar::Impl::OnGetItem(const CString &str, COMBOBOXEXITEM &item)
 }
 
 
-void	CDonutAddressBar::Impl::OnGetDispInfo(COMBOBOXEXITEM &item)
-{
-	if ( !_check_flag(CBEIF_IMAGE, item.mask) && !_check_flag(CBEIF_SELECTEDIMAGE, item.mask) )
-		return;
-
-	CString 	str;
-	if ( GetDroppedState() ) {
-		MtlGetLBTextFixed(GetComboCtrl(), (int) item.iItem, str);
-	} else {
-		str = GetAddressBarText();
-	}
-
-	if ( str.IsEmpty() )
-		return;
-
-	CItemIDList idl = str;
-
-	if ( idl.IsNull() ) {		// invalid idl
-		int iImage = MtlGetSystemIconIndex(m_idlHtml);
-
-		item.iImage 		= iImage;
-		item.iSelectedImage = iImage;
-		return;
-	}
-
-	if (item.mask & CBEIF_IMAGE) {
-		item.iImage = MtlGetNormalIconIndex(idl, m_idlHtml);
-	}
-
-	if (item.mask & CBEIF_SELECTEDIMAGE) {
-		item.iSelectedImage = MtlGetSelectedIconIndex(idl, true, m_idlHtml);
-	}
-}
-
-
 CString CDonutAddressBar::Impl::GetAddressBarText()
 {
 	return MtlGetWindowText(GetEditCtrl());
@@ -599,8 +565,9 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 	else 
 		ShowGoButton(false);
 
+	m_edit = __super::GetEditCtrl();
 	m_wndCombo.SubclassWindow( GetComboCtrl() );
-	m_wndEdit.SubclassWindow( GetEditCtrl() );
+	m_wndEdit.SubclassWindow( m_edit );
 	m_comboFlat.FlatComboBox_Install( GetComboCtrl() );
 	m_wndGoButton.SubclassWindow(m_wndGo);
 
@@ -714,7 +681,36 @@ LRESULT	CDonutAddressBar::Impl::OnSetText(LPCTSTR lpszText)
 LRESULT	CDonutAddressBar::Impl::OnCbenGetDispInfo(LPNMHDR lpnmhdr)
 {
 	PNMCOMBOBOXEX pDispInfo = (PNMCOMBOBOXEX) lpnmhdr;
-	OnGetDispInfo(pDispInfo->ceItem);
+	COMBOBOXEXITEM&	item = pDispInfo->ceItem;
+	if ( !_check_flag(CBEIF_IMAGE, item.mask) && !_check_flag(CBEIF_SELECTEDIMAGE, item.mask) )
+		return 0;
+
+	CString 	str;
+	if ( GetDroppedState() && item.iItem != -1) {
+		GetComboCtrl().GetLBText((int)item.iItem, str);
+	} else {
+		str = GetAddressBarText();
+	}
+
+	if ( str.IsEmpty() )
+		return 0;
+	
+	CItemIDList idl = str;
+	if ( idl.IsNull() ) {		// invalid idl
+		int iImage = MtlGetSystemIconIndex(m_idlHtml);
+
+		item.iImage 		= iImage;
+		item.iSelectedImage = iImage;
+		return 0;
+	}
+
+	if (item.mask & CBEIF_IMAGE) {
+		item.iImage = MtlGetNormalIconIndex(idl, m_idlHtml);
+	}
+
+	if (item.mask & CBEIF_SELECTEDIMAGE) {
+		item.iSelectedImage = MtlGetSelectedIconIndex(idl, true, m_idlHtml);
+	}
 
 	return 0;
 }

@@ -527,6 +527,7 @@
 #define IDC_RADIO_USEUNIQUENUMBER		1393
 #define IDC_EDIT_SHORTCUTCODE			1394
 #define IDC_EDIT_DEFAULT_USER_AGENT		1395
+#define IDC_BTN_CHANGE_COMMAND			1396
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002

@@ -7,16 +7,275 @@
 #include "ToolBarDialog.h"
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
-
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
+#include "../XmlFile.h"
+#include "../ToolTipManager.h"
+#include "../MtlWin.h"
 
 using namespace MTL;
+
+
+//----------------------------
+/// デフォルトのツールバーボタンを設定
+void	SetDefaultToolBarButton(bool bLoadOnlyIndex = false)
+{
+	if (bLoadOnlyIndex == false) {
+		static const STD_TBBUTTON btns[] = {
+			{ ID_FILE_NEW,					BTNS_BUTTON | BTNS_DROPDOWN 											 },	//  1
+			{ ID_VIEW_BACK, 				BTNS_BUTTON | BTNS_STD_LIST | BTNS_DROPDOWN 							 },	//  2
+			{ ID_VIEW_FORWARD,				BTNS_BUTTON | BTNS_STD_LIST | BTNS_DROPDOWN 							 }, //	3
+			{ ID_VIEW_STOP, 				BTNS_BUTTON 															 },	//	4
+			{ ID_VIEW_REFRESH,				BTNS_BUTTON 															 },	//  5
+			{ ID_VIEW_HOME, 				BTNS_BUTTON 															 },	//	6
+			{ ID_FILE_NEW_CLIPBOARD2,		BTNS_BUTTON | BTNS_DROPDOWN 											 },	//	7
+
+			{ ID_VIEW_STOP_ALL, 			BTNS_BUTTON 															 },	//	8
+			{ ID_VIEW_REFRESH_ALL,			BTNS_BUTTON 															 },	//	9
+
+			{ ID_VIEW_FAVEXPBAR,			BTNS_BUTTON | BTNS_STD_LIST 											 }, //BTNS_DROPDOWN},
+			{ ID_VIEW_FAVEXPBAR_HIST,		BTNS_BUTTON | BTNS_STD_LIST 											 },	// 10
+			{ ID_VIEW_CLIPBOARDBAR, 		BTNS_BUTTON | BTNS_STD_LIST 											 },	// 11
+
+			{ ID_FILE_PRINT,				BTNS_BUTTON 															 },	// 12
+
+			{ ID_VIEW_FULLSCREEN,			BTNS_BUTTON 															 },	// 13
+			{ ID_WINDOW_CASCADE,			BTNS_BUTTON 															 },	// 14
+			{ ID_WINDOW_TILE_HORZ,			BTNS_BUTTON 															 },	// 15
+			{ ID_WINDOW_TILE_VERT,			BTNS_BUTTON 															 },	// 16
+
+			{ ID_VIEW_TABBAR_MULTI, 		BTNS_BUTTON 															 },	// 17
+			{ ID_TAB_LEFT,					BTNS_BUTTON 															 },	// 18
+			{ ID_TAB_RIGHT, 				BTNS_BUTTON 															 },	// 19
+
+			{ ID_EDIT_CUT,					BTNS_BUTTON 															 },	// 20
+			{ ID_EDIT_COPY, 				BTNS_BUTTON 															 },	// 21
+			{ ID_EDIT_PASTE,				BTNS_BUTTON 															 },	// 22
+
+			{ ID_VIEW_FONT_SIZE,			BTNS_BUTTON | BTNS_DROPDOWN | BTNS_WHOLEDROPDOWN						 },	// 23
+			{ ID_DOCHOSTUI_OPENNEWWIN,		BTNS_BUTTON 															 },	// 24
+
+			{ ID_DLCTL_DLIMAGES,			BTNS_BUTTON 															 },	// 25
+			{ ID_DLCTL_SCRIPTS, 			BTNS_BUTTON 															 },	// 26
+			{ ID_DLCTL_JAVA,				BTNS_BUTTON 															 },	// 27
+			{ ID_DLCTL_RUNACTIVEXCTLS,		BTNS_BUTTON 															 },	// 28
+			{ ID_DLCTL_DLACTIVEXCTLS,		BTNS_BUTTON 															 },	// 29
+			{ ID_DLCTL_BGSOUNDS,			BTNS_BUTTON 															 },	// 30
+			{ ID_DLCTL_VIDEOS,				BTNS_BUTTON 															 },	// 31
+
+			{ ID_FILE_CLOSE,				BTNS_BUTTON 															 },	// 32
+			{ ID_WINDOW_CLOSE_ALL,			BTNS_BUTTON 															 },	// 33
+			{ ID_WINDOW_CLOSE_EXCEPT,		BTNS_BUTTON 															 },	// 34
+
+			{ ID_MAIN_EX_NEWWINDOW, 		BTNS_BUTTON 															 },	// 35
+			{ ID_MAIN_EX_NOACTIVATE,		BTNS_BUTTON 															 },	// 36
+			{ ID_MAIN_EX_NOACTIVATE_NEWWIN, BTNS_BUTTON 															 },	// 37
+			{ ID_REGISTER_AS_BROWSER,		BTNS_BUTTON 															 },	// 38
+			{ ID_FAVORITES_DROPDOWN,		BTNS_BUTTON | BTNS_STD_LIST | BTNS_DROPDOWN | BTNS_WHOLEDROPDOWN		 },	// 39
+			{ ID_EDIT_OPEN_SELECTED_REF,	BTNS_BUTTON 															 },	// 40
+			{ ID_EDIT_OPEN_SELECTED_TEXT,	BTNS_BUTTON 															 },	// 41
+
+			// U.H
+			{ ID_WINDOW_REFRESH_EXCEPT, 	BTNS_BUTTON 															 },	// 42
+
+			//+++
+			{ ID_VIEW_UP				,	BTNS_BUTTON 															 },	// 43
+			{ ID_VIEW_FAVEXPBAR_GROUP	,	BTNS_BUTTON 															 },	// 44
+			{ ID_VIEW_SOURCE			,	BTNS_BUTTON 															 },	// 45
+			{ ID_VIEW_SOURCE_SELECTED	,	BTNS_BUTTON 															 },	// 46
+			{ 57609						,	BTNS_BUTTON 															 },	// 47	//+++ "印刷プレビュー(&V)..."
+			{ 57636						,	BTNS_BUTTON 															 },	// 48	//+++ "このページの検索(&F)..."
+			{ ID_EDIT_FIND_MAX			,	BTNS_BUTTON 															 },	// 49
+			{ ID_VIEW_SEARCHBAR			,	BTNS_BUTTON 															 },	// 50
+			{ ID_RECENT_DOCUMENT		,	BTNS_BUTTON | BTNS_DROPDOWN												 },	// 51
+			{ ID_DLCTL_CHG_SECU			,	BTNS_BUTTON | BTNS_DROPDOWN												 },	// 52
+			{ ID_DLCTL_CHG_MULTI		,	BTNS_BUTTON | BTNS_DROPDOWN												 },	// 53
+			{ ID_URLACTION_COOKIES_CHG	,	BTNS_BUTTON | BTNS_DROPDOWN												 },	// 54
+			{ ID_VIEW_FAVEXPBAR_USER	,	BTNS_BUTTON 															 },	// 55
+			{ ID_URLACTION_COOKIES		,	BTNS_BUTTON 															 },	// 56
+			{ ID_URLACTION_COOKIES_SESSION,	BTNS_BUTTON 															 },	// 57
+			{ ID_FAVORITES_GROUP_DROPDOWN,	BTNS_BUTTON | BTNS_DROPDOWN | BTNS_WHOLEDROPDOWN						 },	// 58
+			{ ID_AUTO_REFRESH			,	BTNS_BUTTON | BTNS_DROPDOWN | BTNS_WHOLEDROPDOWN						 },	// 59
+			{ ID_VIEW_OPTION_DONUT		,	BTNS_BUTTON 															 },	// 60
+			{ ID_VIEW_OPTION			,	BTNS_BUTTON 															 },	// 61
+			{ ID_APP_HELP				,	BTNS_BUTTON 															 },	// 62
+			{ ID_LEFT_CLOSE				,	BTNS_BUTTON 															 },	// 63
+			{ ID_RIGHT_CLOSE			,	BTNS_BUTTON 															 },	// 64
+			//{ 0						,	BTNS_BUTTON 															 },
+			//{ 0						,	BTNS_BUTTON 															 },
+		};
+		CToolBarOption::s_vecTBbtns.insert(CToolBarOption::s_vecTBbtns.begin(), btns, btns + _countof(btns));
+	}
+
+	static const int defaultBtns[] = { 0, 1, 2, 3, 4, 5, 51, 60, -1, 9, 10, -1, 12 };
+	CToolBarOption::s_vecShowBtn.insert(CToolBarOption::s_vecShowBtn.begin(), defaultBtns, defaultBtns + _countof(defaultBtns));
+
+}
+
+
+/////////////////////////////////////////////////
+// CToolBarOption
+
+// 定義
+vector<STD_TBBUTTON>	CToolBarOption::s_vecTBbtns;
+vector<int>				CToolBarOption::s_vecShowBtn;
+DWORD					CToolBarOption::s_dwToolbarStyle = STD_TBSTYLE_DEFAULT;
+
+
+/// 設定を取得する
+void CToolBarOption::GetProfile()
+{
+	s_vecTBbtns.clear();
+	s_vecShowBtn.clear();
+	bool bSucceeded = false;
+
+	CString strToolbarxmlPath = _GetSkinDir() + _T("Toolbar.xml");	// 新形式
+	CString strToolbarShowButtonPath = _GetSkinDir() + _T("ToolbarShowButton.xml");
+	if (::PathFileExists(strToolbarxmlPath)) {
+		try {
+		CXmlFileRead2 xmlRead(strToolbarxmlPath);
+		XmlNodeType 	nodeType;
+		while (xmlRead.Read(&nodeType)) {
+			if (nodeType == XmlNodeType_Element
+				&& xmlRead.GetLocalName() == _T("DonutToolBar")) 
+			{
+				CString strElement;
+				while (xmlRead.GetInternalElement(_T("DonutToolBar"), strElement)) {
+					if (strElement == _T("item")) {
+						STD_TBBUTTON tbbtn;
+						xmlRead.MoveToFirstAttribute();
+						tbbtn.idCommand = xmlRead.GetValuei();
+						xmlRead.MoveToNextAttribute();
+						tbbtn.fsStyle = xmlRead.GetValuei();
+						s_vecTBbtns.push_back(tbbtn);
+					}
+				}
+			}
+		}
+		
+		bSucceeded = true;
+
+		} catch (LPCTSTR strError) {
+			MessageBox(NULL, strError, NULL, NULL);
+		}
+	}
+	if (::PathFileExists(strToolbarShowButtonPath) && bSucceeded) {
+		try {
+		CXmlFileRead2	xmlReadShowBtn(strToolbarShowButtonPath);
+		XmlNodeType	nodeType;
+		while (xmlReadShowBtn.Read(&nodeType)) {
+			if (nodeType == XmlNodeType_Element
+				&& xmlReadShowBtn.GetLocalName() == _T("ToolBarShowButton")) 
+			{
+				xmlReadShowBtn.MoveToFirstAttribute();
+				if (xmlReadShowBtn.GetLocalName() == _T("ToolbarStyle"))
+					s_dwToolbarStyle = _wtol(xmlReadShowBtn.GetValue());
+				else
+					s_dwToolbarStyle = STD_TBSTYLE_DEFAULT;
+				CString Element;
+				while (xmlReadShowBtn.GetInternalElement(_T("ToolBarShowButton"), Element)) {
+					if (Element == _T("button")) {
+						xmlReadShowBtn.MoveToFirstAttribute();
+						s_vecShowBtn.push_back(xmlReadShowBtn.GetValuei());
+					}
+				}
+			}
+		}
+		} catch (LPCTSTR strError) {
+			MessageBox(NULL, strError, NULL, NULL);
+		}
+	} else if (::PathFileExists(strToolbarShowButtonPath) == FALSE && bSucceeded) {	// ToolBarShowButton.xmlのみなかった
+		SetDefaultToolBarButton(true);	// デフォルトを使用
+		bSucceeded = true;
+	}
+
+	if (bSucceeded == false) {	// 旧型式
+		CString strToolbarIniPath = _GetSkinDir() + _T("Toolbar.ini");
+		if (::PathFileExists(strToolbarIniPath)) {
+			CIniFileI	pr(strToolbarIniPath, _T("TOOLBAR"));
+			int nCount = pr.GetValuei(_T("TOOLBAR_CNT"));
+			for (int i = 0; i < nCount; ++i) {
+				STD_TBBUTTON tbbtn;
+				CString strID = _T("ID_");
+				CString strStyle = _T("STYLE_");
+				strID.Append(i);
+				strStyle.Append(i);
+				tbbtn.idCommand = pr.GetValuei(strID);
+				tbbtn.fsStyle	= pr.GetValuei(strStyle);
+				s_vecTBbtns.push_back(tbbtn);
+			}
+			nCount = pr.GetValuei(_T("button.count"));
+			for (int i = 0; i < nCount; ++i) {
+				CString strtemp;
+				strtemp.Format(_T("button%d.iBitmap"), i);
+				s_vecShowBtn.push_back(pr.GetValuei(strtemp));
+			}
+			s_dwToolbarStyle = pr.GetValue(_T("Std_ToolBar_Style"), STD_TBSTYLE_DEFAULT);
+			bSucceeded = true;
+		}
+	}
+
+	if (bSucceeded == false) {	// デフォルト
+		SetDefaultToolBarButton();
+		bSucceeded = true;
+	}
+	ATLASSERT(s_vecTBbtns.size() > 0);
+	ATLASSERT(s_vecShowBtn.size() > 0);
+}
+
+
+//-----------------------------
+/// Toolbar.xmlを保存
+void CToolBarOption::WriteProfileToolbar()
+{
+	CString strToolbarOldPath = _GetSkinDir() + _T("Toolbar.ini");
+	if (::PathFileExists(strToolbarOldPath)) {
+		WriteProfileToolbarShowButton();
+		Misc::MoveToBackupFile(strToolbarOldPath);	// 旧型式はbakに
+	}
+	CString strToolbarxmlPath = _GetSkinDir() + _T("Toolbar.xml");
+
+	try {
+		CXmlFileWrite	xmlWrite(strToolbarxmlPath);
+		xmlWrite.WriteStartElement(L"DonutToolBar");
+		for (auto it = s_vecTBbtns.cbegin(); it != s_vecTBbtns.cend(); ++it) {
+			xmlWrite.WriteStartElement(L"item");
+			xmlWrite.WriteAttributeValue(L"command", it->idCommand);
+			xmlWrite.WriteAttributeValue(L"style", it->fsStyle);
+			xmlWrite.WriteFullEndElement();
+		}
+		xmlWrite.WriteFullEndElement();
+	} catch (LPCTSTR strError) {
+		MessageBox(NULL, strError, NULL, NULL);
+	}
+	
+}
+
+//----------------------------
+/// ToolbarShowButton.xmlを保存
+void CToolBarOption::WriteProfileToolbarShowButton()
+{
+	CString strToolbarShowButtonPath = _GetSkinDir() + _T("ToolbarShowButton.xml");
+
+	try {
+		CXmlFileWrite	xmlWrite(strToolbarShowButtonPath);
+		xmlWrite.WriteStartElement(L"ToolBarShowButton");
+		xmlWrite.WriteAttributeValue(L"ToolbarStyle", s_dwToolbarStyle);
+		for (auto it = s_vecShowBtn.cbegin(); it != s_vecShowBtn.cend(); ++it) {
+			xmlWrite.WriteStartElement(L"button");
+			xmlWrite.WriteAttributeValue(L"index", *it);
+			xmlWrite.WriteFullEndElement();
+		}
+		xmlWrite.WriteFullEndElement();
+	} catch (LPCTSTR strError) {
+		MessageBox(NULL, strError, NULL, NULL);
+	}
+}
+
+
+
+
+
+
+
 
 
 
@@ -26,53 +285,73 @@ extern const int	g_uDropDownCommandCount;
 extern const int	g_uDropDownWholeCommandCount;
 
 
+namespace {
 
-CToolBarPropertyPage::CToolBarPropertyPage(HMENU hMenu, CSimpleArray<STD_TBBUTTON>*	pAryStdBtn, BOOL *pbSkinChange)
+CString GetBigFilePath()
+{
+	CString strPath = _GetSkinDir();
+
+	strPath += _T("BigHot.bmp");
+	return strPath;
+}
+
+
+
+CString GetSmallFilePath()
+{
+	CString strPath = _GetSkinDir();
+
+	strPath += _T("SmallHot.bmp");
+	return strPath;
+}
+
+};
+
+
+/////////////////////////////////////////////////////////
+// CToolBarPropertyPage
+
+CToolBarPropertyPage::CToolBarPropertyPage(HMENU hMenu, BOOL *pbSkinChange, function<void ()> funcInitButton)
+	: m_bInit(false), m_bChanged(false), m_funcInitButton(funcInitButton)
 {
 	m_hMenu 		 = hMenu;
-	m_pAryStdBtnBase = pAryStdBtn;
 	m_bExistSkin	 = FALSE;
 	m_pbSkinChanged  = pbSkinChange;
-
-	// コピーが無い(;^_^A ｱｾｱｾ･･･
-	//m_arrStdBtn.Copy(*pAryStdBtn);
-	for (int ii = 0; ii < pAryStdBtn->GetSize(); ii++)
-		m_aryStdBtn.Add( (*pAryStdBtn)[ii] );
 }
 
 
 // Overrides
 
-
+//------------------------------
+/// ダイアログが表示されたとき
 BOOL CToolBarPropertyPage::OnSetActive()
 {
 	SetModified(TRUE);
 
-	if (m_cmbCategory.m_hWnd == NULL)
-		m_cmbCategory.Attach( GetDlgItem(IDC_CMB_CATEGORY) );
+	if (m_bInit == false) {
+		m_bInit = true;
+		DoDataExchange(DDX_LOAD);
 
-	if (m_cmbCommand.m_hWnd == NULL)
-		m_cmbCommand.Attach( GetDlgItem(IDC_CMB_COMMAND) );
-
-	if (m_ltIcon.m_hWnd == NULL)
-		m_ltIcon.Attach( GetDlgItem(IDC_LIST_ICON) );
-
-	_SetData();
-	return DoDataExchange(FALSE);
+		_SetData();
+	} else {
+		// リストビューだけ初期化
+		InitialListCtrl();
+	}
+	return TRUE;
 }
 
-
-
+//-------------------------------
+/// ダイアログが非表示にされるとき
 BOOL CToolBarPropertyPage::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return DoDataExchange(DDX_SAVE);
 }
 
-
-
+//-------------------------
+/// 適用を押したとき
 BOOL CToolBarPropertyPage::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
+	if ( DoDataExchange(DDX_SAVE) ) {
 		_GetData();
 		return TRUE;
 	} else {
@@ -81,9 +360,76 @@ BOOL CToolBarPropertyPage::OnApply()
 }
 
 
+void	CToolBarPropertyPage::DrawItem(LPDRAWITEMSTRUCT lpDrawItemStruct)
+{
+	if (lpDrawItemStruct->CtlID == IDC_LIST_ICON) {
+		CDCHandle dc = lpDrawItemStruct->hDC;
 
-// Constructor
-// データを得る
+		// Save these value to restore them when done drawing.
+		COLORREF crOldTextColor = dc.GetTextColor();
+		COLORREF crOldBkColor = dc.GetBkColor();
+
+		// If this item is selected, set the background color 
+		// and the text color to appropriate values. Also, erase
+		// rect by filling it with the background color.
+		if ((lpDrawItemStruct->itemAction | ODA_SELECT) &&
+			(lpDrawItemStruct->itemState & ODS_SELECTED))
+		{
+			dc.SetTextColor(::GetSysColor(COLOR_HIGHLIGHTTEXT));
+			dc.SetBkColor(::GetSysColor(COLOR_HIGHLIGHT));
+			dc.FillSolidRect(&lpDrawItemStruct->rcItem, 
+				::GetSysColor(COLOR_HIGHLIGHT));
+		} else
+			dc.FillSolidRect(&lpDrawItemStruct->rcItem, crOldBkColor);
+#if 0
+		// If this item has the focus, draw a red frame around the
+		// item's rect.
+		if ((lpDrawItemStruct->itemAction | ODA_FOCUS) &&
+			(lpDrawItemStruct->itemState & ODS_FOCUS))
+		{
+			CBrush br;
+			br.CreateSolidBrush(RGB(255, 0, 0));
+			dc.FrameRect(&lpDrawItemStruct->rcItem, br);
+		}
+#endif
+		IconListData* pData = (IconListData*)lpDrawItemStruct->itemData;
+		if (pData) {
+			CIconHandle icon = m_imgList.GetIcon(pData->nIndex);
+			if (icon.m_hIcon)
+				icon.DrawIconEx(dc, lpDrawItemStruct->rcItem.left + cxMargin, lpDrawItemStruct->rcItem.top + cyMargin, m_iconSize.cx, m_iconSize.cy);
+
+			lpDrawItemStruct->rcItem.left += m_iconSize.cx + cxMargin + IconTextMargin;
+			// Draw the text.
+			dc.DrawText(
+				pData->strText,
+				pData->strText.GetLength(),
+				&lpDrawItemStruct->rcItem,
+				DT_SINGLELINE | DT_VCENTER);
+		}
+
+		// Reset the background color and the text color back to their
+		// original values.
+		dc.SetTextColor(crOldTextColor);
+		dc.SetBkColor(crOldBkColor);
+	}
+}
+
+void	CToolBarPropertyPage::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
+{
+	if (lpMeasureItemStruct->CtlID == IDC_LIST_ICON) {
+		enum { cyMargin = 2 };
+		SIZE size;
+		m_imgList.GetIconSize(size);
+		size.cy += cyMargin*2;
+		lpMeasureItemStruct->itemHeight	= size.cy;
+	}
+}
+
+
+
+
+//-------------------------------
+/// データを得る
 void CToolBarPropertyPage::_SetData()
 {
 	// コンボボックの初期化
@@ -93,46 +439,17 @@ void CToolBarPropertyPage::_SetData()
 }
 
 
-
-// データを保存
+//-------------------------------
+/// データを保存
 void CToolBarPropertyPage::_GetData()
 {
 	if (m_bExistSkin && m_pbSkinChanged) {
-		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		// パス
-		CString 	strFile;
-		strFile = CDonutToolBar::GetToolBarFilePath();
-
-		//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
-		// ツールバー
-		CIniFileO	pr( strFile, _T("TOOLBAR") );
-
-		DWORD		dwToolbarCnt = m_aryStdBtn.GetSize();
-		pr.SetValue( dwToolbarCnt, _T("TOOLBAR_CNT") );
-
-		int 		ii;
-
-		for (ii = 0; ii < m_aryStdBtn.GetSize(); ii++) {
-			CString strKeyID, strKeyStyle;
-			strKeyID.Format(_T("ID_%d"), ii);
-			strKeyStyle.Format(_T("STYLE_%d"), ii);
-
-			pr.SetValue( (DWORD) m_aryStdBtn[ii].idCommand, strKeyID );
-			pr.SetValue( (DWORD) m_aryStdBtn[ii].fsStyle, strKeyStyle );
-		}
-
-		pr.Close();
-		//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-		m_pAryStdBtnBase->RemoveAll();
-
-		for (ii = 0; ii < m_aryStdBtn.GetSize(); ii++)
-			m_pAryStdBtnBase->Add(m_aryStdBtn[ii]);
+		WriteProfileToolbar();
 	}
 }
 
 
-
+//-------------------------------
 // コンボボックスの初期化
 void CToolBarPropertyPage::InitialCombbox()
 {
@@ -146,164 +463,63 @@ void CToolBarPropertyPage::InitialCombbox()
 }
 
 
-
-// カテゴリ変更時
+//----------------------------------
+/// カテゴリ変更時
 void CToolBarPropertyPage::OnSelChangeCate(UINT code, int id, HWND hWnd)
 {
 	int nIndex = m_cmbCategory.GetCurSel();
-
-	// コマンド選択
-	if ( (nIndex + 1) != m_cmbCategory.GetCount() )
-		_PickUpCommand(m_hMenu, nIndex, m_cmbCommand);
-	else
-		PickUpCommandEx();
+	_SetCommandList(nIndex);
 }
 
 
-
-// 拡張コマンド
-void CToolBarPropertyPage::PickUpCommandEx()
-{
-	m_cmbCommand.ResetContent();
-
-	int ii;
-
-	for (ii = 0; ii < g_uDropDownCommandCount; ii++) {
-		CString strMenu;
-		strMenu.LoadString(g_uDropDownCommandID[ii]);
-
-		if (strMenu.Find(_T("\n")) != -1)
-			strMenu = strMenu.Left( strMenu.Find(_T("\n")) );
-
-		int 	nIndex = m_cmbCommand.AddString(strMenu);
-		m_cmbCommand.SetItemData(nIndex, g_uDropDownCommandID[ii]);
-	}
-
-	for (ii = 0; ii < g_uDropDownWholeCommandCount; ii++) {
-		CString strMenu;
-		strMenu.LoadString(g_uDropDownWholeCommandID[ii]);
-
-		if (strMenu.Find(_T("\n")) != -1)
-			strMenu = strMenu.Left( strMenu.Find(_T("\n")) );
-
-		int 	nIndex = m_cmbCommand.AddString(strMenu);
-		m_cmbCommand.SetItemData(nIndex, g_uDropDownWholeCommandID[ii]);
-	}
-}
-
-
-
-CString CToolBarPropertyPage::GetBigFilePath()
-{
-	CString strPath = _GetSkinDir();
-
-	strPath += _T("BigHot.bmp");
-	return strPath;
-}
-
-
-
-CString CToolBarPropertyPage::GetSmallFilePath()
-{
-	CString strPath = _GetSkinDir();
-
-	strPath += _T("SmallHot.bmp");
-	return strPath;
-}
-
-
-
-// リストビューの初期化
+//-------------------------------------
+/// リストビューの初期化
 void CToolBarPropertyPage::InitialListCtrl()
 {
-	BOOL	bBig = TRUE;
+	// イメージリスト準備
+	_InitImageList();
 
-	if (m_pbSkinChanged && *m_pbSkinChanged || !m_pbSkinChanged) {
-		::MessageBox(m_hWnd, _T("スキンが変更されたためツールバーの設定ができない状態です。\n")
-							 _T("一旦このウィンドウを閉じることで設定できるようになります。"), _T("information"), MB_OK);
-		DisableControls();
-		m_pbSkinChanged = NULL;
-		return;
+	CLockRedraw lock(m_ltIcon);
+	int nCount = m_ltIcon.GetCount();
+	for (int i = 0; i < nCount; ++i) {
+		delete (IconListData*)m_ltIcon.GetItemDataPtr(i);
+		m_ltIcon.SetItemDataPtr(i, NULL);
 	}
+	while (m_ltIcon.DeleteString(0) != LB_ERR) ;
 
-	if (m_ltIcon.m_hWnd == NULL)
-		return;
+	int nSize = (int)s_vecTBbtns.size();
+	for (int i = 0; i < nSize; ++i) {
+		UINT	nID = s_vecTBbtns[i].idCommand;
 
-	if (m_imgList.m_hImageList != NULL)
-		return;
+		IconListData* pData = new IconListData;
+		CToolTipManager::LoadToolTipText(nID, pData->strText);
+		pData->nIndex = i;
 
-	CBitmap bmp;
-	bmp.Attach( AtlLoadBitmapImage(GetBigFilePath().GetBuffer(0), LR_LOADFROMFILE) );
-	if (bmp.m_hBitmap == NULL) {
-		//bBig = FALSE; 								//+++ small用の表示がバグってるぽいので、とりあえずbig扱いで対処.
-		bmp.Attach( AtlLoadBitmapImage(GetSmallFilePath().GetBuffer(0), LR_LOADFROMFILE) );
-		if (bmp.m_hBitmap == NULL) {					//+++ 内蔵のbmpを使うようにする...
-			bmp.LoadBitmap(IDB_MAINFRAME_TOOLBAR_HOT);	//+++ 内蔵のbmpを使うようにする...
-			if (bmp.m_hBitmap == NULL) {
-				::MessageBox(m_hWnd, _T("ツールバースキンファイルが見つかりませんでした。\n")
-									 _T("カスタマイズに支障が出るので操作ができないようになっています。\n")
-									 _T("スキンフォルダにBigHot.bmpファイルを準備してください。")			, _T("information"), MB_OK);
-				DisableControls();
-				m_bExistSkin = FALSE;
-				return;
-			}
-		}
+		m_ltIcon.AddString(pData->strText);
+		m_ltIcon.SetItemDataPtr(i, pData);
 	}
-
-	CSize	szImg;
-	bmp.GetSize(szImg);
-
-	int 	nCount	= szImg.cx / szImg.cy;
-	szImg.cx		= szImg.cy;
-
-	MTLVERIFY( m_imgList.Create(szImg.cx, szImg.cy, ILC_COLOR24 | ILC_MASK, nCount, 1) );
-	MTLVERIFY( m_imgList.Add( bmp, RGB(255, 0, 255) ) != -1 );
-
-	int 	nFlag  = (bBig) ? LVSIL_NORMAL : LVSIL_SMALL;
-	m_ltIcon.SetImageList(m_imgList, nFlag);
-
-	for (int ii = 0; ii < m_aryStdBtn.GetSize(); ii++) {
-		UINT	nID = m_aryStdBtn[ii].idCommand;
-
-		CString strCmd;
-		CToolTipManager::LoadToolTipText(nID, strCmd);
-
-		m_ltIcon.InsertItem(ii, strCmd, ii);
-	}
-
-	DisableButtons();
 	m_bExistSkin = TRUE;
 }
 
-
-
-void CToolBarPropertyPage::DisableButtons()
+//------------------------------------
+void	CToolBarPropertyPage::OnDestroy()
 {
-	::EnableWindow(GetDlgItem(IDC_BTN01), FALSE);
-	::EnableWindow(GetDlgItem(IDC_BTN02), FALSE);
-	::EnableWindow(GetDlgItem(IDC_BTN03), FALSE);
-	::EnableWindow(GetDlgItem(IDC_BTN04), FALSE);
-	::EnableWindow(GetDlgItem(IDC_BTN05), FALSE);
+	int nCount = m_ltIcon.GetCount();
+	for (int i = 0; i < nCount; ++i) {
+		delete (IconListData*)m_ltIcon.GetItemDataPtr(i);
+	}
+	if (m_bChanged && m_funcInitButton)
+		m_funcInitButton();
 }
 
 
-
-void CToolBarPropertyPage::DisableControls()
-{
-	DisableButtons();
-	m_cmbCategory.EnableWindow(FALSE);
-	m_cmbCommand.EnableWindow(FALSE);
-	m_ltIcon.EnableWindow(FALSE);
-	::EnableWindow(GetDlgItem(IDC_CHKBTN_TXT), FALSE);
-}
-
-
-
+//-------------------------------------
+/// 右側テキスト表示を切り替え
 LRESULT CToolBarPropertyPage::OnChkBtnText(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	DoDataExchange(TRUE);
 
-	int nIndexLt = m_ltIcon.GetSelectedIndex();
+	int nIndexLt = m_ltIcon.GetCaretIndex();
 
 	if (nIndexLt == -1)
 		return 0;
@@ -311,224 +527,53 @@ LRESULT CToolBarPropertyPage::OnChkBtnText(WORD /*wNotifyCode*/, WORD wID, HWND 
 	int nChk	 = (int) ::SendMessage(GetDlgItem(IDC_CHKBTN_TXT), BM_GETCHECK, 0L, 0L);
 
 	if (nChk == BST_CHECKED)
-		m_aryStdBtn[nIndexLt].fsStyle |= BTNS_STD_LIST;
+		s_vecTBbtns[nIndexLt].fsStyle |= BTNS_STD_LIST;
 	else
-		m_aryStdBtn[nIndexLt].fsStyle &= ~BTNS_STD_LIST;
+		s_vecTBbtns[nIndexLt].fsStyle &= ~BTNS_STD_LIST;
 
 	return 0;
 }
 
 
-
-LRESULT CToolBarPropertyPage::OnItemChgIcon(LPNMHDR pnmh)
+//------------------------------------------
+/// リストビューの選択アイテムが変更された
+void CToolBarPropertyPage::OnSelChangeCommandIcon(UINT code, int id, HWND hWnd)
 {
-	LPNMLISTVIEW pnmv		= (LPNMLISTVIEW) pnmh;
+	int nIndex = m_ltIcon.GetCaretIndex();
+	if (nIndex == -1)
+		return;
 
-	if (pnmv->uNewState != LBN_SELCANCEL)
-		return 0;
-
-	BOOL		 bEnableAdd = FALSE, bEnableDel = FALSE, bEnableIns = FALSE;
-
-	int 		 nIndexCmd	= m_cmbCommand.GetCurSel();
-	bEnableAdd = bEnableIns = CanAddCommand();
-
-	long		 nIndex 	= pnmv->iItem;
-	bEnableDel = TRUE;
-
-	::EnableWindow(GetDlgItem(IDC_BTN03), bEnableAdd);
-	::EnableWindow(GetDlgItem(IDC_BTN04), bEnableDel);
-	::EnableWindow(GetDlgItem(IDC_BTN05), bEnableIns);
-
-	//x UINT nID = m_aryStdBtn[nIndex].idCommand;
-	//x UINT nStyle = m_aryStdBtn[nIndex].fsStyle;
-
-	if (m_aryStdBtn[nIndex].fsStyle & BTNS_STD_LIST)
+	GetDlgItem(IDC_CHKBTN_TXT).EnableWindow(TRUE);
+	if (s_vecTBbtns[nIndex].fsStyle & BTNS_STD_LIST)
 		::SendMessage(GetDlgItem(IDC_CHKBTN_TXT), BM_SETCHECK, BST_CHECKED, 0L);
 	else
 		::SendMessage(GetDlgItem(IDC_CHKBTN_TXT), BM_SETCHECK, BST_UNCHECKED, 0L);
-
-	return 0;
 }
 
 
-
-void CToolBarPropertyPage::EnableMove(int nIndex)
+//----------------------------------
+/// コマンド変更
+void	CToolBarPropertyPage::OnChangeCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	BOOL bEnableL = FALSE, bEnableR = FALSE;
-
-	if (m_aryStdBtn.GetSize() < 2) {
-		bEnableL = FALSE;
-		bEnableR = FALSE;
-	} else if (nIndex == 0) {
-		bEnableL = FALSE;
-		bEnableR = TRUE;
-	} else if ( (nIndex + 1) == m_aryStdBtn.GetSize() ) {
-		bEnableL = TRUE;
-		bEnableR = FALSE;
-	} else {
-		bEnableL = TRUE;
-		bEnableR = TRUE;
-	}
-
-	::EnableWindow(GetDlgItem(IDC_BTN01), bEnableL);
-	::EnableWindow(GetDlgItem(IDC_BTN02), bEnableR);
-}
-
-
-
-// コマンド変更時
-void CToolBarPropertyPage::OnSelChangeCmd(UINT code, int id, HWND hWnd)
-{
-	::EnableWindow( GetDlgItem(IDC_BTN03), CanAddCommand() );
-
-	int nIndexLt = m_ltIcon.GetSelectedIndex();
-
-	if (nIndexLt != -1)
-		::EnableWindow( GetDlgItem(IDC_BTN05), CanAddCommand() );
-	else
-		::EnableWindow(GetDlgItem(IDC_BTN05), FALSE);
-}
-
-
-
-// 追加できる？？
-BOOL CToolBarPropertyPage::CanAddCommand()
-{
-	int 	  nIndex = m_cmbCommand.GetCurSel();
-
-	if (nIndex == -1)
-		return FALSE;
-
-	DWORD_PTR nTarID = m_cmbCommand.GetItemData(nIndex);
-
-	if (nTarID == 0)
-		return FALSE;
-
-	for (int ii = 0; ii < m_aryStdBtn.GetSize(); ii++) {
-		DWORD_PTR nID = m_aryStdBtn[ii].idCommand;
-
-		if (nID == nTarID)
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-
-
-void CToolBarPropertyPage::OnBtnIns(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	int 	nIndexLt  = m_ltIcon.GetSelectedIndex();
-	if (nIndexLt == -1)
+	int nCmdIndex	= m_listCommand.GetCurSel();
+	int nIconIndex	= m_ltIcon.GetCurSel();
+	if (nCmdIndex == -1 || nIconIndex == -1)
 		return;
 
-	int 	nIndexCmb = m_cmbCommand.GetCurSel();
-	if (nIndexCmb == -1)
-		return;
+	UINT nCommand = (UINT)m_listCommand.GetItemData(nCmdIndex);
+	s_vecTBbtns[nIconIndex].idCommand = nCommand;
+	s_vecTBbtns[nIconIndex].fsStyle	  = GetToolButtonStyle(nCommand);
 
-	UINT	nTarID	  = (UINT) m_cmbCommand.GetItemData(nIndexCmb);
-	if (nTarID == 0)
-		return;
+	CString strText;
+	CToolTipManager::LoadToolTipText(nCommand, strText);
+	IconListData* pData = (IconListData*)m_ltIcon.GetItemDataPtr(nIconIndex);
+	pData->strText = strText;
 
-	CString 	 strCmd;
-	CToolTipManager::LoadToolTipText(nTarID, strCmd);
+	CRect rc;
+	m_ltIcon.GetItemRect(nIconIndex, &rc);
+	m_ltIcon.InvalidateRect(&rc);
 
-	int 		 nLtCnt    = m_ltIcon.GetItemCount();
-	m_ltIcon.InsertItem(nLtCnt, strCmd, nLtCnt);
-
-	int 		 ii;
-	for (ii = nLtCnt; ii > nIndexLt; ii--) {
-		TCHAR	cBuff[MAX_PATH];
-		memset( cBuff, 0, sizeof (cBuff) );
-		m_ltIcon.GetItemText(ii - 1, 0, cBuff, MAX_PATH);
-		CString strText(cBuff);
-
-		m_ltIcon.SetItemText(ii, 0, strText);
-	}
-
-	m_ltIcon.SetItemText(nIndexLt, 0, strCmd);
-
-	STD_TBBUTTON stdBtn;
-	stdBtn.idCommand	  = nTarID;
-	stdBtn.fsStyle		  = GetToolButtonStyle(nTarID);
-
-	int 		 nAryCnt   = m_aryStdBtn.GetSize();
-	m_aryStdBtn.Add(stdBtn);
-
-	for (ii = nLtCnt; ii > nIndexLt; ii--)
-		m_aryStdBtn[ii] = m_aryStdBtn[ii - 1];
-
-	m_aryStdBtn[nIndexLt] = stdBtn;
-
-	m_cmbCommand.SetCurSel(nIndexCmb + 1);
-	::EnableWindow( GetDlgItem(IDC_BTN03), CanAddCommand() );
-	::EnableWindow( GetDlgItem(IDC_BTN05), CanAddCommand() );
-	EnableMove(nIndexLt);
-}
-
-
-
-void CToolBarPropertyPage::OnBtnDel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	int nIndex = m_ltIcon.GetSelectedIndex();
-
-	if (nIndex == -1)
-		return;
-
-	m_aryStdBtn.RemoveAt(nIndex);
-
-	int ii;
-	for (ii = nIndex; ii < (m_ltIcon.GetItemCount() - 1); ii++) {
-		TCHAR	cBuff[MAX_PATH];
-		memset( cBuff, 0, sizeof (cBuff) );
-		m_ltIcon.GetItemText(ii + 1, 0, cBuff, MAX_PATH);
-		CString strText(cBuff);
-
-		m_ltIcon.SetItemText(ii, 0, strText);
-	}
-
-	m_ltIcon.DeleteItem(ii);
-	EnableMove(nIndex);
-}
-
-
-
-void CToolBarPropertyPage::OnBtnAdd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	int 	nIndex	= m_cmbCommand.GetCurSel();
-	if (nIndex == -1)
-		return;
-
-	UINT	nTarID	= (UINT) m_cmbCommand.GetItemData(nIndex);
-	if (nTarID == 0)
-		return;
-
-	STD_TBBUTTON	stdBtn;
-	stdBtn.idCommand = nTarID;
-	stdBtn.fsStyle	 = GetToolButtonStyle(nTarID);
-
-	CString 		strCmd;
-	CToolTipManager::LoadToolTipText(nTarID, strCmd);
-
-	int 	nLtCnt	= m_ltIcon.GetItemCount();
-	nLtCnt			= m_ltIcon.InsertItem(nLtCnt, strCmd, nLtCnt);
-
-	// Redrawさせないと、スクロールバーの領域が増えない
-	m_ltIcon.RedrawWindow();
-
-	int 		nMinPos =  999,
-				nMaxPos = -999,
-				nCurPos =	 0;
-	::GetScrollRange(m_ltIcon.m_hWnd, WS_HSCROLL, &nMinPos, &nMaxPos);
-
-	nCurPos 		 = ::GetScrollPos(m_ltIcon.m_hWnd, WS_HSCROLL);
-	m_ltIcon.Scroll( CSize(nMaxPos - nCurPos, 0) );
-
-	m_aryStdBtn.Add(stdBtn);
-	m_cmbCommand.SetCurSel(nIndex + 1);
-
-	::EnableWindow( GetDlgItem(IDC_BTN03), CanAddCommand() );
-	::EnableWindow( GetDlgItem(IDC_BTN05), CanAddCommand() );
+	m_bChanged = true;
 }
 
 
@@ -556,35 +601,156 @@ DWORD CToolBarPropertyPage::GetToolButtonStyle(UINT nTarID)
 
 
 
-void CToolBarPropertyPage::OnBtnMove(UINT /*wNotifyCode*/, int wID, HWND /*hWndCtl*/)
+//---------------------------------
+/// nIndexはカテゴリコンボボボックスの現在選択されているセル
+/// コマンドリストにカテゴリで選択されたメニューを登録する
+void	CToolBarPropertyPage::_SetCommandList(int nIndex)
 {
-	int 	nIndex	  = m_ltIcon.GetSelectedIndex();
-	if (nIndex == -1)
-		return;
+	m_listCommand.ResetContent();
 
-	int 	nAdd	   = 1;
-	if (wID == IDC_BTN01)
-		nAdd = -1;
+	if (nIndex + 1 == m_cmbCategory.GetCount()) {
+		// ドロップダウン・アイコンのとき
+		for (int ii = 0; ii < g_uDropDownCommandCount; ii++) {
+			CString strMenu;
+			strMenu.LoadString(g_uDropDownCommandID[ii]);
 
-	TCHAR	cBuff[MAX_PATH];
-	memset( cBuff, 0, sizeof (cBuff) );
+			if (strMenu.Find(_T("\n")) != -1)
+				strMenu = strMenu.Left( strMenu.Find(_T("\n")) );
 
-	m_ltIcon.GetItemText(nIndex, 0, cBuff, MAX_PATH);
-	CString 	 strTextNow(cBuff);
+			int 	nIndex = m_listCommand.AddString(strMenu);
+			m_listCommand.SetItemData(nIndex, g_uDropDownCommandID[ii]);
+		}
 
-	memset( cBuff, 0, sizeof (cBuff) );
-	m_ltIcon.GetItemText(nIndex + nAdd, 0, cBuff, MAX_PATH);
-	CString 	 strTextTar(cBuff);
+		for (int ii = 0; ii < g_uDropDownWholeCommandCount; ii++) {
+			CString strMenu;
+			strMenu.LoadString(g_uDropDownWholeCommandID[ii]);
 
-	m_ltIcon.SetItemText(nIndex, 0, strTextTar);
-	m_ltIcon.SetItemText(nIndex + nAdd, 0, strTextNow);
+			if (strMenu.Find(_T("\n")) != -1)
+				strMenu = strMenu.Left( strMenu.Find(_T("\n")) );
 
-	STD_TBBUTTON stdBtn    = m_aryStdBtn[nIndex];
-	STD_TBBUTTON stdBtnTar = m_aryStdBtn[nIndex + nAdd];
+			int 	nIndex = m_listCommand.AddString(strMenu);
+			m_listCommand.SetItemData(nIndex, g_uDropDownWholeCommandID[ii]);
+		}
+	} else {
+		CMenuHandle	subMenu = ::GetSubMenu(m_hMenu, nIndex);
+		for (int i = 0; i < subMenu.GetMenuItemCount(); ++i) {
+			HMENU hMenuSub = subMenu.GetSubMenu(i);
+			if (hMenuSub) {
+				_AddCommandtoListFromSubMenu(hMenuSub);
+			}
 
-	m_aryStdBtn.SetAtIndex(nIndex, stdBtnTar);
-	m_aryStdBtn.SetAtIndex(nIndex + nAdd, stdBtn);
+			UINT nCmdID = subMenu.GetMenuItemID(i);
+			if ( _DontUseID(nCmdID) ) break;
 
-	m_ltIcon.SelectItem(nIndex + nAdd);
-	EnableMove(nIndex + nAdd);
+			CString strMenu;
+			CToolTipManager::LoadToolTipText(nCmdID, strMenu);
+			if ( strMenu.IsEmpty() ) continue;
+
+			int nIndex = m_listCommand.AddString(strMenu);
+			m_listCommand.SetItemData(nIndex, nCmdID);
+		}
+	}
+
+	{	// 不要なセパレータの削除
+		int   nCountSep = 0;
+		int   nCountCmb = m_listCommand.GetCount();
+
+		for (int i = 0; i < nCountCmb - 1; i++) {
+			if (m_listCommand.GetItemData(i) == 0) {
+				nCountSep++;
+
+				if (m_listCommand.GetItemData(i + 1) == 0) {
+					m_listCommand.DeleteString(i);
+					nCountCmb--;
+					i--;
+				}
+			}
+		}
+
+		if (nCountSep > 2) {
+			if (m_listCommand.GetItemData(0) == 0) {
+				m_listCommand.DeleteString(0);
+			}
+
+			int nIndexLast = m_listCommand.GetCount() - 1;
+
+			if (m_listCommand.GetItemData(nIndexLast) == 0) {
+				m_listCommand.DeleteString(nIndexLast);
+			}
+		}
+	}
 }
+
+
+void	CToolBarPropertyPage::_AddCommandtoListFromSubMenu(CMenuHandle subMenu)
+{
+	int nAddCnt = 0;
+	int nPopStartIndex = m_listCommand.AddString(g_cSeparater);
+
+	for (int i = 0; i < subMenu.GetMenuItemCount(); ++i) {
+		HMENU hMenuSub = subMenu.GetSubMenu(i);
+		if (hMenuSub) {
+			_AddCommandtoListFromSubMenu(hMenuSub);
+		}
+
+		UINT nCmdID = subMenu.GetMenuItemID(i);
+		if ( _DontUseID(nCmdID) ) break;
+
+		CString strMenu;
+		CToolTipManager::LoadToolTipText(nCmdID, strMenu);
+		if ( strMenu.IsEmpty() ) continue;
+
+		int nIndex = m_listCommand.AddString(strMenu);
+		m_listCommand.SetItemData(nIndex, nCmdID);
+		nAddCnt++;
+	}
+
+	if (nAddCnt != 0) {
+		m_listCommand.AddString(g_cSeparater);
+	} else {
+		m_listCommand.GetItemData(nPopStartIndex);
+		m_listCommand.DeleteString(nPopStartIndex);
+	}
+	
+}
+
+
+//-----------------------
+/// イメージリストを初期化する
+void	CToolBarPropertyPage::_InitImageList()
+{
+	if (m_imgList.m_hImageList)
+		m_imgList.Destroy();
+
+	CBitmap bmp;
+	bmp.Attach( AtlLoadBitmapImage(GetSmallFilePath().GetBuffer(0), LR_LOADFROMFILE) );
+	if (bmp.IsNull()) {
+		//bBig = FALSE; 								//+++ small用の表示がバグってるぽいので、とりあえずbig扱いで対処.
+		bmp.Attach( AtlLoadBitmapImage(GetBigFilePath().GetBuffer(0), LR_LOADFROMFILE) );
+		if (bmp.IsNull()) {					//+++ 内蔵のbmpを使うようにする...
+			bmp.LoadBitmap(IDB_MAINFRAME_TOOLBAR_HOT);	//+++ 内蔵のbmpを使うようにする...
+			if (bmp.IsNull()) {
+			/*	::MessageBox(m_hWnd, _T("ツールバースキンファイルが見つかりませんでした。\n")
+									 _T("カスタマイズに支障が出るので操作ができないようになっています。\n")
+									 _T("スキンフォルダにBigHot.bmpファイルを準備してください。")			, _T("information"), MB_OK);*/
+				ATLASSERT(FALSE);
+				return;
+			}
+		}
+	}
+
+	bmp.GetSize(m_iconSize);
+	int nCount	= m_iconSize.cx / m_iconSize.cy;
+	m_iconSize.cx = m_iconSize.cy;
+	MTLVERIFY( m_imgList.Create(m_iconSize.cx, m_iconSize.cy, ILC_COLOR24 | ILC_MASK, nCount, 1) );
+	MTLVERIFY( m_imgList.Add( bmp, RGB(255, 0, 255) ) != -1 );
+}
+
+
+
+
+
+
+
+
+

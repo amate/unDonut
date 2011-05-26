@@ -257,6 +257,9 @@
     <ClCompile Include="DonutSearchBar.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
+    <ClCompile Include="APIHook.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -694,9 +697,6 @@
     <ClInclude Include="Download\DownloadOptionDialog.h">
       <Filter>Source Files\Download</Filter>
     </ClInclude>
-    <ClInclude Include="StdToolBarCtrl.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="option\UrlSecurityExPropDialog.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
@@ -711,6 +711,9 @@
     </ClInclude>
     <ClInclude Include="DonutSearchBar.h">
       <Filter>Source Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="APIHook.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

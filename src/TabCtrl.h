@@ -314,7 +314,7 @@ private:
 	CSize				m_sizeItem;					// for fixed size
 	bool				m_bLockRefreshBandInfo;		// trueÇ≈ï`é Çó}êßÇ∑ÇÈ
 	int 				m_nDrawStyle;
-	CTabSkin *			m_pTabSkin;
+	unique_ptr<CTabSkin> m_pTabSkin;
 	CToolTipCtrl		m_tip;
 
 	bool				m_bUseTheme;
@@ -490,7 +490,6 @@ CTabCtrl2Impl<T, TBase, TWinTraits>::CTabCtrl2Impl()
 	, m_nPressedIndex(-1)
 	, m_bLockRefreshBandInfo(false)
 	, m_nDrawStyle(SKN_TAB_STYLE_DEFAULT)
-	, m_pTabSkin(NULL)
 	, m_bUseTheme(false)
 {
 	SetThemeClassList(L"TAB");
@@ -501,10 +500,6 @@ CTabCtrl2Impl<T, TBase, TWinTraits>::~CTabCtrl2Impl()
 {
 	if (m_imgs.m_hImageList != NULL && (m_dwTabCtrl2ExtendedStyle & TAB2_EX_SHAREIMGLIST) == 0) {
 		m_imgs.Destroy();
-	}
-
-	if (m_pTabSkin) {
-		delete m_pTabSkin;
 	}
 }
 
@@ -1768,10 +1763,6 @@ void	CTabCtrl2Impl<T, TBase, TWinTraits>::_SetDrawStyle(int nStyle)
 template <class T, class TBase, class TWinTraits>
 void	CTabCtrl2Impl<T, TBase, TWinTraits>::_ReloadSkinData()
 {
-	if (m_pTabSkin) {
-		delete m_pTabSkin;
-	}
-
 	if (::PathFileExists(_GetSkinDir()) == FALSE) {
 		m_nDrawStyle = SKN_TAB_STYLE_CLASSIC;
 	}
@@ -1779,19 +1770,19 @@ void	CTabCtrl2Impl<T, TBase, TWinTraits>::_ReloadSkinData()
 	switch (m_nDrawStyle)
 	{
 	case SKN_TAB_STYLE_DEFAULT:
-		m_pTabSkin = new CTabSkinDefault;
+		m_pTabSkin.reset(new CTabSkinDefault);
 		break;
 
 	case SKN_TAB_STYLE_THEME:
-		m_pTabSkin = new CTabSkinTheme(static_cast<CTheme&>(*this));
+		m_pTabSkin.reset(new CTabSkinTheme(static_cast<CTheme&>(*this)));
 		break;
 
 	case SKN_TAB_STYLE_CLASSIC:
-		m_pTabSkin = new CTabSkinClassic(m_arrSeparators);
+		m_pTabSkin.reset(new CTabSkinClassic(m_arrSeparators));
 		break;
 
 	default:
-		m_pTabSkin = new CTabSkinClassic(m_arrSeparators);
+		m_pTabSkin.reset(new CTabSkinClassic(m_arrSeparators));
 		ATLASSERT(FALSE);
 	}
 

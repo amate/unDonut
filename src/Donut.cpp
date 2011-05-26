@@ -174,7 +174,7 @@ static bool _PrivateInit()
 	CUrlSecurityOption::GetProfile();
 	CDonutConfirmOption::GetProfile();
 	CStyleSheetOption::GetProfile();
-
+	CToolBarOption::GetProfile();
 	ie_feature_control_setting();
 
 	CFavoritesMenuOption::GetProfile();
@@ -452,8 +452,6 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 
 	return S_OK;
 }
-
-
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////

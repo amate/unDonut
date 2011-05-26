@@ -6,7 +6,7 @@
 #pragma once
 
 #include "../MDITabCtrl.h"
-
+#include "../ToolTipManager.h"
 
 class CMDITabPropertyPage
 	: public CInitPropertyPageImpl< CMDITabPropertyPage >

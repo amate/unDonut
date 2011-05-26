@@ -111,8 +111,6 @@ void  CRecentDocumentListFixed::Impl::SetMenuHandle(HMENU hMenu)
 
 void CRecentDocumentListFixed::Impl::SetMaxEntries(int nMaxEntries)
 {
-	ATLASSERT(m_nMaxEntries_Min < nMaxEntries && nMaxEntries < m_nMaxEntries_Max);
-
 	if (nMaxEntries < m_nMaxEntries_Min)
 		nMaxEntries = m_nMaxEntries_Min;
 	else if (nMaxEntries > m_nMaxEntries_Max)
