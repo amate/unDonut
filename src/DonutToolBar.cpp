@@ -262,7 +262,7 @@ public:
 
 	HWND	Create(HWND hWndParent);
 	void	SetFont(HFONT hFont) { __super::SetFont(hFont); }
-	void	SetFavoritesMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS);
+	void	SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS);
 	void	ReloadSkin();
 	void	Customize();
 	function<void ()> GetInitButtonfunction();
@@ -334,7 +334,7 @@ HWND	CDonutToolBar::Impl::Create(HWND hWndParent)
 
 //-------------------------------
 /// DropDownƒƒjƒ…[‚ÌÝ’è
-void	CDonutToolBar::Impl::SetFavoritesMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS)
+void	CDonutToolBar::Impl::SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS)
 {
 	m_menuFavorites 	= hMenu;
 	m_menuFavoritesUser = hMenuUser;
@@ -995,6 +995,12 @@ HWND	CDonutToolBar::Create(HWND hWndParent)
 void	CDonutToolBar::SetFont(HFONT hFont)
 {
 	pImpl->SetFont(hFont);
+}
+
+//-----------------------------
+void	CDonutToolBar::SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS)
+{
+	pImpl->SetDropDownMenu(hMenu, hMenuUser, hMenuCSS);
 }
 
 //-------------------------------

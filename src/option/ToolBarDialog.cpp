@@ -209,12 +209,14 @@ void CToolBarOption::GetProfile()
 				s_vecShowBtn.push_back(pr.GetValuei(strtemp));
 			}
 			s_dwToolbarStyle = pr.GetValue(_T("Std_ToolBar_Style"), STD_TBSTYLE_DEFAULT);
+			WriteProfileToolbar();	// 新形式にしておく
 			bSucceeded = true;
 		}
 	}
 
 	if (bSucceeded == false) {	// デフォルト
 		SetDefaultToolBarButton();
+		WriteProfileToolbar();	// 新形式にしておく
 		bSucceeded = true;
 	}
 	ATLASSERT(s_vecTBbtns.size() > 0);
@@ -420,6 +422,8 @@ void	CToolBarPropertyPage::MeasureItem(LPMEASUREITEMSTRUCT lpMeasureItemStruct)
 		enum { cyMargin = 2 };
 		SIZE size;
 		m_imgList.GetIconSize(size);
+		if (size.cy < 16)
+			size.cy = 16;	// Notoolbar+とか用
 		size.cy += cyMargin*2;
 		lpMeasureItemStruct->itemHeight	= size.cy;
 	}

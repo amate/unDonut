@@ -17,6 +17,7 @@ public:
 
 	HWND	Create(HWND hWndParent);
 	void	SetFont(HFONT hFont);
+	void	SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS);
 	void	ReloadSkin();
 	void	Customize();
 	function<void ()> GetInitButtonfunction();

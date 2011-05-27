@@ -255,7 +255,7 @@ HWND	CMainFrame::init_toolBar()
 	HWND	hWndToolBar   = m_ToolBar.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndToolBar) );
 
-	//m_ToolBar.DonutToolBar_SetFavoritesMenu(menuFav, menuGroup, menuCssSub);
+	m_ToolBar.SetDropDownMenu(menuFav, menuGroup, menuCssSub);
 
 	if (m_CmdBar.m_fontMenu.m_hFont)	// コマンドバーのフォント設定と同じに
 		m_ToolBar.SetFont(m_CmdBar.m_fontMenu.m_hFont);

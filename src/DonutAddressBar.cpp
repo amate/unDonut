@@ -554,9 +554,6 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 
 	SetExtendedStyle(0, CBES_EX_NOSIZELIMIT);
 
-	if ( s_bAutoComplete )
-		MtlAutoComplete( GetEditCtrl() );
-
 	if ( s_bLoadTypedUrls )
 		_LoadTypedURLs();
 
@@ -570,6 +567,9 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 	m_wndEdit.SubclassWindow( m_edit );
 	m_comboFlat.FlatComboBox_Install( GetComboCtrl() );
 	m_wndGoButton.SubclassWindow(m_wndGo);
+
+	if ( s_bAutoComplete )
+		MtlAutoComplete( m_edit );
 
 	// GetEditCtrl().SetLimitText(0x1000);
 
