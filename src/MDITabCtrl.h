@@ -29,6 +29,7 @@
 #include "OleDragDropTabCtrl.h"
 #include "HlinkDataObject.h"
 #include "dialog/CommandSelectDialog.h"
+#include "FaviconManager.h"
 
 namespace MTL {
 
@@ -94,31 +95,6 @@ class CMDITabCtrl : public COleDragDropTabCtrl<CMDITabCtrl>
 public:
 	DECLARE_WND_CLASS_EX(_T("Mtl_MDI_TabCtrl"), CS_DBLCLKS, COLOR_BTNFACE)
 
-private:
-	// Data members
-	CWindow 	m_wndMDIChildProcessing;		// while message processing
-	CMDIWindow	m_wndMDIChildPopuping;			// while menu popuping (m_bPopup is not enough)
-	DWORD		m_dwExtendedStyle;
-	CString 	m_strInitial;
-
-public:
-	CMenu		m_menuPopup;
-
-	bool		m_bInsertHere;
-	int 		m_nInsertIndex;
-
-	int 		m_nRClickCommand,
-				m_nXClickCommand,
-				m_nDClickCommand;				//minit
-
-private:
-	int 		m_nMaxTabItemTextLength;
-	bool		m_bRedrawLocked;
-	int 		m_nLinkState;
-
-	bool		m_bDragAccept;
-
-public:
 	// Constructor
 	CMDITabCtrl();
 
@@ -140,88 +116,32 @@ public:
 	void	SetCurSelEx(int nIndex, bool bActivate = true);
 	void	LeftTab();
 
-private:
-	int 	AddTabItem(HWND hWndMDIChild, LPCTSTR lpszText = NULL);
-
-	void	_SendSelChange(int nIndex);
-	void	SetInitialText(LPCTSTR lpszInitialText);
+	void	OnMDIChildCreate(HWND hWnd);
+	void	OnMDIChildDestroy(HWND hWnd);
 
 
-public:
-	// Message map and handlers
-	BEGIN_MSG_MAP(CMDITabCtrl)
-		MSG_WM_RBUTTONUP	( OnRButtonUp	  )
-		MSG_WM_LBUTTONDBLCLK( OnLButtonDblClk )
-		MESSAGE_HANDLER 	( WM_MBUTTONUP, OnMButtonUp )
-		REFLECTED_NOTIFY_CODE_HANDLER_EX (TCN_SELCHANGE, OnTcnSelChange)
-		MSG_WM_COMMAND		( OnCommand 	  )
-		MESSAGE_HANDLER 	( WM_MENUSELECT, OnMenuSelect	  )
-		MESSAGE_HANDLER 	( WM_ERASEBKGND, OnEraseBackground) 		// UDT JOBBY
-		CHAIN_MSG_MAP		( COleDragDropTabCtrl<CMDITabCtrl>)
-	ALT_MSG_MAP(1)							// MDI child windows messages
-		m_wndMDIChildProcessing = hWnd;
-		MSG_WM_MDIACTIVATE	( OnMDIActivate )
-		MSG_WM_SETTEXT		( OnSetText 	)
-		m_wndMDIChildProcessing = NULL;
-	END_MSG_MAP()
+	BOOL	LoadConnectingAndDownloadingImageList(
+					UINT		nImageBmpID,
+					int 		cx,
+					int 		cy,
+					COLORREF	clrMask,
+					UINT		nFlags = ILC_COLOR24);
 
+	void	SetConnecting(HWND hWnd);
+	void	SetDownloading(HWND hWnd);
+	void	SetComplete(HWND hWnd);
 
-private:
-	LRESULT 	OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL & bHandled);	// UDT JOBBY
-	LRESULT 	OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL & /*bHandled*/);		//+++ 実際のボタンにあわせてXButtonからMButtonに関数名を改名.
-	void		OnLButtonDblClk(UINT nFlags, CPoint point);
-	void		OnRButtonUp(UINT nFlags, CPoint point);
-	LRESULT 	OnTcnSelChange(LPNMHDR lpnhmdr);
+	int 	ManageClose(HWND m_hWnd);
+	void	NavigateLockTab(HWND hWnd, bool bOn);
+	int 	ShowTabListMenuDefault (int nX, int nY);
+	int 	ShowTabListMenuVisible (int nX, int nY);
+	int 	ShowTabListMenuAlphabet(int nX, int nY);
+	void	ShowTabMenu(int nIndex);
 
-	LRESULT 	OnMenuSelect(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/);
-	void		OnCommand(UINT wNotifyCode, int wID, HWND hwndCtl);
-public:
-	void		OnMDIChildCreate(HWND hWnd);
-private:
-	void		OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct);
-	LRESULT 	OnSetText(LPCTSTR lpszText);
-public:
-	void		OnMDIChildDestroy(HWND hWnd);
-private:
-	// Implementation
-	bool		_SetTabText(int nIndex, LPCTSTR lpszTab);
-	CString 	_GetTabText(int nIndex);
+	void	SetLinkState(int nState);
 
-	void		_UpdateMenu(CMenuHandle &menuSys);
-
-public:
-	BOOL		LoadConnectingAndDownloadingImageList(
-						UINT		nImageBmpID,
-						int 		cx,
-						int 		cy,
-						COLORREF	clrMask,
-						UINT		nFlags = ILC_COLOR24);
-
-	void		SetConnecting(HWND hWnd);
-	void		SetDownloading(HWND hWnd);
-	void		SetComplete(HWND hWnd);
-private:
-	void		_SetImageListIndex(int nItem, int nIndex);
-	bool		IsConnecting(HWND hWnd);
-	bool		IsDownloading(HWND hWnd);
-	bool		IsCompleted(HWND hWnd);
-	int 		_GetImageListIndex(int nItem);
-
-public:
-	int 		ManageClose(HWND m_hWnd);
-	void		NavigateLockTab(HWND hWnd, bool bOn);
-	int 		ShowTabListMenuDefault (int nX, int nY);
-	int 		ShowTabListMenuVisible (int nX, int nY);
-	int 		ShowTabListMenuAlphabet(int nX, int nY);
-	void		ShowTabMenu(int nIndex);
-
-	void		SetLinkState(int nState);
-private:
-	void		_LockRedraw(bool bLock);
-	BOOL		GetLinkState();
 
 	// Overrides
-public:
 	void		OnDropDownButton();
 	CString 	OnGetToolTipText(int nIndex);
 
@@ -237,18 +157,11 @@ public:
 	bool		OnDropTabCtrlItem(int nIndex, IDataObject *pDataObject, DROPEFFECT &dropEffect);
 	HRESULT 	OnGetTabCtrlDataObject(CSimpleArray<int> &arrIndex, IDataObject **ppDataObject);
 
-private:
-	//内部で使う構造体
-	struct _Object_TabSorting;
-	struct _Function_CompareTitle;
 
-
-public:
 	//外部から使う関数オブジェクト
 	//+++	リターン値でなく引数を書き換えて結果を返すように変更.
 	template <class _Function>
-	void	ForEachWindow(_Function& __f)
-	{
+	void	ForEachWindow(_Function& __f) {
 		DWORD_PTR	dwData;
 		UINT		nCount = GetItemCount();
 		for (UINT i = 0; i < nCount; ++i) {
@@ -281,6 +194,85 @@ public:
 		}
 	};
 
+	// Message map and handlers
+	BEGIN_MSG_MAP(CMDITabCtrl)
+		MSG_WM_RBUTTONUP	( OnRButtonUp	  )
+		MSG_WM_LBUTTONDBLCLK( OnLButtonDblClk )
+		MSG_WM_MBUTTONUP	( OnMButtonUp )
+		REFLECTED_NOTIFY_CODE_HANDLER_EX (TCN_SELCHANGE, OnTcnSelChange)
+		MSG_WM_COMMAND		( OnCommand 	  )
+		MESSAGE_HANDLER 	( WM_MENUSELECT, OnMenuSelect	  )
+		USER_MSG_WM_SETFAVICONIMAGE( OnSetFaviconImage )
+		CHAIN_MSG_MAP		( COleDragDropTabCtrl<CMDITabCtrl>)
+	ALT_MSG_MAP(1)							// MDI child windows messages
+		m_wndMDIChildProcessing = hWnd;
+		MSG_WM_MDIACTIVATE	( OnMDIActivate )
+		MSG_WM_SETTEXT		( OnSetText 	)
+		m_wndMDIChildProcessing = NULL;
+	END_MSG_MAP()
+
+
+	void		OnLButtonDblClk(UINT nFlags, CPoint point);
+	void		OnRButtonUp(UINT nFlags, CPoint point);
+	void		OnMButtonUp(UINT nFlags, CPoint point);
+	LRESULT 	OnTcnSelChange(LPNMHDR lpnhmdr);
+
+	LRESULT 	OnMenuSelect(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/);
+	void		OnCommand(UINT wNotifyCode, int wID, HWND hwndCtl);
+	void		OnSetFaviconImage(HWND hWnd, HICON hIcon);
+
+	// CChildFrameから
+	void		OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct);
+	LRESULT 	OnSetText(LPCTSTR lpszText);
+
+
+private:
+	// Implementation
+	bool		_SetTabText(int nIndex, LPCTSTR lpszTab);
+	CString 	_GetTabText(int nIndex);
+
+	void		_UpdateMenu(CMenuHandle &menuSys);
+
+	int 	AddTabItem(HWND hWndMDIChild, LPCTSTR lpszText = NULL);
+
+	void	_SendSelChange(int nIndex);
+	void	SetInitialText(LPCTSTR lpszInitialText);
+
+	void		_SetImageListIndex(int nItem, int nIndex);
+	bool		IsConnecting(HWND hWnd);
+	bool		IsDownloading(HWND hWnd);
+	bool		IsCompleted(HWND hWnd);
+	int 		_GetImageListIndex(int nItem);
+
+	void		_LockRedraw(bool bLock);
+	BOOL		GetLinkState();
+
+
+	// Data members
+	CWindow 	m_wndMDIChildProcessing;		// while message processing
+	CMDIWindow	m_wndMDIChildPopuping;			// while menu popuping (m_bPopup is not enough)
+	DWORD		m_dwExtendedStyle;
+	CString 	m_strInitial;
+
+	int 		m_nMaxTabItemTextLength;
+	bool		m_bRedrawLocked;
+	int 		m_nLinkState;
+
+	bool		m_bDragAccept;
+
+	//内部で使う構造体
+	struct _Object_TabSorting;
+	struct _Function_CompareTitle;
+
+public:
+	CMenu		m_menuPopup;
+
+	bool		m_bInsertHere;
+	int 		m_nInsertIndex;
+
+	int 		m_nRClickCommand;
+	int			m_nXClickCommand;
+	int			m_nDClickCommand;				//minit
 };
 
 

@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include "MenuDefines.h"
 #include "FavoriteOrder.h"
 //#include "DonutExplorerBar.h"		//+++ お気に入りメニューで移動が発生したとき、お気に入りバー側にも反映
 #include "Donut.h"
@@ -68,25 +67,13 @@ public:
 		MENUINFO		info			= { sizeof (MENUINFO) };
 		info.fMask	 = MIM_STYLE | MIM_APPLYTOSUBMENUS;
 		info.dwStyle = MNS_DRAGDROP;
+		::SetMenuInfo(hMenu, &info);
+		HMENU hSubMenu = ::GetSubMenu(hMenu, 2);
 
-		HINSTANCE		hInst			= ::LoadLibrary( _T("user32.dll") );
-
-		if (!hInst)
-			return;
-
-		LPFNSETMENUINFO lpfnSetMenuInfo = (LPFNSETMENUINFO) ::GetProcAddress( hInst, "SetMenuInfo" );
-
-		if (lpfnSetMenuInfo) {
-			lpfnSetMenuInfo(hMenu, &info);
-			HMENU hSubMenu = ::GetSubMenu(hMenu, 2);
-
-			if (hSubMenu) {
-				info.dwStyle = 0;
-				lpfnSetMenuInfo(hSubMenu, &info);
-			}
+		if (hSubMenu) {
+			info.dwStyle = 0;
+			::SetMenuInfo(hSubMenu, &info);
 		}
-
-		::FreeLibrary(hInst);
 	}
 
 

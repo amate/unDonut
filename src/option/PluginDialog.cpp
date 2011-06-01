@@ -8,7 +8,7 @@
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../PluginManager.h"
-
+#include "../MtlMisc.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
@@ -17,8 +17,6 @@ static char THIS_FILE[] = __FILE__;
 #endif
 
 
-
-using namespace MTL;
 
 
 
@@ -164,7 +162,7 @@ void CPluginPropertyPage::_SetData()
 	m_listview.InsertColumn(0, &col);
 
 	// List Item
-	InitListItem();
+	InitListItem(Misc::GetExeDirectory() + CPluginManager::PluginDir());
 	DoCheckListItem();
 
 	::EnableWindow( GetDlgItem( IDC_BTN_SETTING ), FALSE );
@@ -192,7 +190,6 @@ LRESULT CPluginPropertyPage::OnListPluginSelectchange(LPNMHDR)
 		m_listview.GetItemText( nIndex, 0, strItemSelect );
 
 		PLUGININFO *pstPluginInfo = m_mapPlaginInfo.Lookup( strItemSelect );
-
 		if (pstPluginInfo) {
 			m_strPluginName 		= pstPluginInfo->name;
 			static LPCTSTR PluginType[] = { _T("Toolbar"), _T("Explorerbar"), _T("Statusbar"), _T("Operation"), _T("Docking") };
@@ -212,40 +209,39 @@ LRESULT CPluginPropertyPage::OnListPluginSelectchange(LPNMHDR)
 
 
 
-void CPluginPropertyPage::InitListItem()
+void CPluginPropertyPage::InitListItem(const CString& strDirectory)
 {
-	CFindFile finder;
-	CString   strPathMatch = Misc::GetExeDirectory() + CPluginManager::PluginDir() + _T("*.dll");
-
-	if ( finder.FindFile( strPathMatch ) ) {
-		do {
+	MtlForEachObject_OldShell(strDirectory, [this](const CString& strPath, bool bDir) {
+		if (bDir == false && Misc::GetFileExt(strPath).CompareNoCase(_T("dll")) == 0) {
 			PLUGININFO *pstPluginInfo = new PLUGININFO;
 			memset( pstPluginInfo, 0, sizeof (PLUGININFO) );
 
-			CString 	strFile 	  = finder.GetFileName();
-			HINSTANCE	hLib		  = ::LoadLibrary( CPluginManager::PluginDir() + strFile );
-
+			HINSTANCE	hLib = ::LoadLibrary( strPath );
 			if (!hLib) {
 				DWORD errNum = ::GetLastError();
 			}
 
 			void		(WINAPI * __GetPluginInfo)(PLUGININFO * pstPlugin); //+++ = NULL;
 			__GetPluginInfo = ( void (WINAPI *)(PLUGININFO *) )GetProcAddress(hLib, "GetPluginInfo");
-
 			if (__GetPluginInfo) {
 				__GetPluginInfo( pstPluginInfo );
-				m_mapPlaginInfo.Add( strFile, pstPluginInfo );
+				CString strPluginDir = Misc::GetExeDirectory() + CPluginManager::PluginDir();
+				CString strName = strPath.Mid(strPluginDir.GetLength());
+				m_mapPlaginInfo.Add( strName, pstPluginInfo );
 
 				// List Add
-				int nIndex = m_listview.InsertItem( m_listview.GetItemCount(), strFile );
+				int nIndex = m_listview.InsertItem( m_listview.GetItemCount(), strName );
 				m_listview.SetItemData( nIndex, pstPluginInfo->type );
 			} else {
 				delete pstPluginInfo;
 			}
 
 			::FreeLibrary( hLib );
-		} while ( finder.FindNextFile() );
-	}
+		} else if (bDir && Misc::GetDirName(strPath).CompareNoCase(_T("_ignore")) != 0) {
+			InitListItem(strPath);
+		}
+
+	});
 }
 
 

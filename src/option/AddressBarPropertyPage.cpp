@@ -4,6 +4,8 @@
 #include "AddressBarPropertyPage.h"
 #include "../DonutAddressBar.h"
 #include "../DonutSearchBar.h"
+#include "../IniFile.h"
+#include "../MtlBase.h"
 
 ///////////////////////////////////////////////////////////////
 // CAddressBarOption

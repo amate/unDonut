@@ -6,7 +6,6 @@
 #include "DownloadOptionDialog.h"
 
 
-
 // Constructor/Destructor
 CDownloadingListView::CDownloadingListView(CDownloadedListView* pDLed)
 	: m_pDownloadedListView(pDLed)
@@ -25,9 +24,6 @@ CDownloadingListView::~CDownloadingListView()
 DLItem*	CDownloadingListView::CreateDLItem()
 {
 	DLItem* pDLItem = new DLItem;
-	// プログレスバーを作成
-	pDLItem->wndProgress.Create(m_hWnd, rcDefault, 0, WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
-
 	return pDLItem;
 	// リストビューに追加
 	//_AddItemToList(pDLItem);
@@ -78,6 +74,26 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		rcFileName.top += cyFileNameMargin;
 		memDC.DrawText((*it)->strFileName, -1, rcFileName, DT_SINGLELINE);
 
+		// progress
+		CRect rcProgress(cxFileNameMargin, rcItem.top + cyProgressMargin, rcItem.right - cleftProgressMargin, rcItem.top + cyProgressMargin + ProgressHeight);
+		if (IsThemeNull() == false) {
+			if (IsThemeBackgroundPartiallyTransparent(PP_TRANSPARENTBAR, 0))
+				DrawThemeParentBackground(memDC, rcProgress);
+			DrawThemeBackground(memDC, PP_TRANSPARENTBAR, 0, rcProgress);
+			CRect rcContent;
+			GetThemeBackgroundContentRect(memDC, PP_TRANSPARENTBAR, 0, rcProgress, rcContent);
+			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
+			int nPos = (int)((double)rcContent.Width() * Propotion);
+			rcContent.right = rcContent.left + nPos;
+			DrawThemeBackground(memDC, PP_FILL, 0, rcContent);
+		} else {
+			memDC.DrawEdge(rcProgress, EDGE_RAISED, BF_ADJUST | BF_MONO | BF_RECT | BF_MIDDLE);
+			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
+			int nPos = (int)((double)rcProgress.Width() * Propotion);
+			rcProgress.right = rcProgress.left + nPos;
+			memDC.FillSolidRect(rcProgress, RGB(0, 255, 0));
+		}
+
 		// 説明描画
 		CRect rcDiscribe = rcItem;
 		rcDiscribe.top += cyProgressMargin + ProgressHeight;
@@ -106,9 +122,6 @@ void	CDownloadingListView::_AddItemToList(DLItem* pItem)
 {
 	// 先頭にアイテムを追加
 	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(pItem));
-
-	// プログレスバーを表示
-	pItem->wndProgress.ShowWindow(TRUE);
 
 	// アイコンを追加
 	_AddIcon(pItem);
@@ -200,6 +213,8 @@ int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_ToolTip.SetDelayTime(TTDT_AUTOPOP, 30 * 1000);
 	m_ToolTip.SetMaxTipWidth(500);
 
+	OpenThemeData(L"PROGRESS");
+
     return lRet;
 }
 
@@ -221,10 +236,6 @@ void CDownloadingListView::OnSize(UINT nType, CSize size)
 
 		SetScrollSize(sizeWnd, FALSE, false);
 		SetScrollLine(10, 10);
-
-		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
-			(*it)->wndProgress.SetWindowPos(NULL, 0, 0, size.cx - cxFileNameMargin - cleftProgressMargin, 12, SWP_NOMOVE | SWP_NOZORDER);
-		}
 	}
 	
 }
@@ -258,20 +269,7 @@ void CDownloadingListView::OnLButtonDown(UINT nFlags, CPoint point)
 
 	Invalidate(FALSE);
 }
-// プログレスバーをクリックしたときもリストを選択状態にする
-void CDownloadingListView::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
-{
-	if (message == WM_LBUTTONDOWN) {
-		CPoint pt(LOWORD(lParam), HIWORD(lParam));
-		OnLButtonDown(0, pt);
-#if 0
-		int nIndex = HitTest(pt, NULL);
-		if (nIndex != -1) {
-			SetItemState(nIndex, LVIS_SELECTED, LVIS_SELECTED);
-		}
-#endif
-	}
-}
+
 
 void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 {		
@@ -289,8 +287,6 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		int	nMaxTotalSecondTime = 0;
 		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
 			DLItem& item = *(*it);
-			item.wndProgress.SetRange32(0, item.nProgressMax);
-			item.wndProgress.SetPos(item.nProgress);
 
 			// (1.2 MB/sec)
 			CString strTransferRate;
@@ -307,7 +303,7 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			}
 			
 			int KbTransferRate = nProgressMargin / nTotalTime;	// kbyte / second
-			double MbTransferRate = (double)KbTransferRate / 1000;
+			double MbTransferRate = (double)KbTransferRate / 1000.0;
 			if (MbTransferRate > 1) {
 				::swprintf(strTransferRate.GetBuffer(30), _T(" (%.1lf MB/sec)"), MbTransferRate);
 				strTransferRate.ReleaseBuffer();
@@ -372,6 +368,9 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		}
 		Invalidate(FALSE);
 
+	} else if (nIDEvent == 2) {
+		if (m_vecpDLItem.size() == 0)
+			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
 	}
 }
 // リストから削除する
@@ -382,10 +381,6 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	//if (pItem->bAbort == false)
 	//	delete pbscb;
 	//pbscb->Release();
-
-	if (pItem->wndProgress.IsWindow()) {
-		pItem->wndProgress.DestroyWindow();	// プログレスバーを削除
-	}
 	
 	// vectorから削除する
 	for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
@@ -405,7 +400,7 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 		KillTimer(1);
 		m_bTimer = false;
 		if (CDLOptions::bCloseAfterAllDL)	 //全てのDLが終わったので閉じる
-			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
+			SetTimer(2, 3 * 1000);	// 延滞して終了させる
 	}
 
 	return 0;
@@ -473,14 +468,6 @@ void	CDownloadingListView::_RefreshList()
 		cySize += UnderLineHeight;
 
 		(*it)->rcItem.right = ItemMinWidth;
-
-		// プログレスバーの位置を設定
-		CRect rcProgress;
-		rcProgress.top = (*it)->rcItem.top + cyProgressMargin - ptOffset.y;
-		rcProgress.left = cxFileNameMargin;
-		rcProgress.right = rcClient.right - cleftProgressMargin;
-		rcProgress.bottom = rcProgress.top + ProgressHeight;
-		(*it)->wndProgress.MoveWindow(rcProgress);
 	}
 
 	CSize	sizeWnd;

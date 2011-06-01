@@ -131,7 +131,7 @@ public:
 	void	OnTitleChange(const CString &strTitle);
 	void	OnNewWindow2(IDispatch **ppDisp, bool &bCancel);
 	void	OnStateConnecting();
-	void	OnStateDownloading() { m_MDITab.SetDownloading(m_hWnd); }
+	void	OnStateDownloading();
 	void	OnStateCompleted();
 	void	OnFileDownload(bool bActiveDocument, bool& bCancel) { }
 	void	OnNewWindow3(IDispatch **ppDisp, bool& Cancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl);
@@ -450,6 +450,9 @@ private:
 	virtual void PreDocumentComplete( /*[in]*/ IDispatch *pDisp, /*[in]*/ VARIANT *URL);
 
 private:
+
+	void	_SetFavicon(const CString& strURL);
+
 	// Constants
 	enum { _nPosFavoriteMenuOfTab = 10 };
 
@@ -507,6 +510,7 @@ private:
 
 	bool										m_bNowNavigate;				// for Javascirpt:void(0)
 	bool										m_bReload;
+	CString										m_strFaviconURL;			// Adressbar—p
 	static bool 								s_bMainframeClose;			//+++ mainfrm‚ªclose‚·‚é‚Æ‚«on‚É‚³‚ê‚é.
 };
 

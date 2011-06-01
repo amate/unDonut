@@ -407,6 +407,8 @@ struct _EXPROP_ARGS {
 	}
 
 
+
+
 //----------------------------------------------------------------------------
 #define BEGIN_MSG_MAP_EX_decl(theClass) 				\
 public:													\

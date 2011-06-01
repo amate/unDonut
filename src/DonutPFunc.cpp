@@ -11,12 +11,9 @@
 #include "resource.h"
 #include <Shlobj.h>
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
 
+#include "MtlMisc.h"
+#include "IniFile.h"
 
 using namespace ATL;
 using namespace WTL;
@@ -29,8 +26,8 @@ extern const TCHAR	g_cSeparater[]	= _T("────────────────────
 
 
 
-
-// アイテムＩＤリストからアイコンを作る
+//---------------------------------------------------
+/// アイテムＩＤリストからアイコンを作る
 HICON	CreateIconFromIDList(PCIDLIST_ABSOLUTE pidl)
 {
 	HRESULT	hr;
@@ -63,7 +60,8 @@ HICON	CreateIconFromIDList(PCIDLIST_ABSOLUTE pidl)
 	return hIcon;
 }
 
-
+//-----------------------------------------
+/// アイコンからビットマップを作る
 HBITMAP	CreateBitmapFromHICON(HICON hIcon)
 {
 	static UINT	uWidth	= GetSystemMetrics(SM_CXSMICON);
@@ -127,45 +125,6 @@ double _GetAngle(CPoint pt1, CPoint pt2)
 
 
 
-BOOL _CheckOsVersion_98Later()
-{
-	OSVERSIONINFO osi = { sizeof (OSVERSIONINFO) };
-
-	//BOOL bRet =
-	::GetVersionEx(&osi);
-
-	//windows98 == 4.10
-	return ( (osi.dwMajorVersion >= 5) || (osi.dwMajorVersion == 4 && osi.dwMinorVersion >= 10) );
-}
-
-
-
-BOOL _CheckOsVersion_MELater()
-{
-	OSVERSIONINFO osi = { sizeof (OSVERSIONINFO) };
-
-	//BOOL bRet =
-	::GetVersionEx(&osi);
-
-	//windowsME == 4.90
-	return ( (osi.dwMajorVersion >= 5) || (osi.dwMajorVersion == 4 && osi.dwMinorVersion >= 90) );
-}
-
-
-
-BOOL _CheckOsVersion_2000Later()
-{
-	OSVERSIONINFO osi = { sizeof (OSVERSIONINFO) };
-
-	//BOOL bRet =
-	::GetVersionEx(&osi);
-
-	//windows2000 5.0
-	return ( (osi.dwMajorVersion >= 5) );
-}
-
-
-
 BOOL _CheckOsVersion_XPLater()
 {
 	OSVERSIONINFO osi = { sizeof (OSVERSIONINFO) };
@@ -177,8 +136,6 @@ BOOL _CheckOsVersion_XPLater()
 	return ( (osi.dwMajorVersion == 5) && (osi.dwMinorVersion >= 1) || (osi.dwMajorVersion > 5) );
 }
 
-
-
 BOOL _CheckOsVersion_VistaLater()
 {
 	OSVERSIONINFO osi  = { sizeof (OSVERSIONINFO) };
@@ -189,6 +146,7 @@ BOOL _CheckOsVersion_VistaLater()
 	//windowsVista 6.0
 	return (osi.dwMajorVersion >= 6);
 }
+
 
 //---------------------------
 /// 設定されたスキンフォルダのパスを返す(最後に'\\'がつく)
@@ -221,7 +179,8 @@ CString _GetSkinDir()
 }
 
 
-
+//----------------------------------------
+/// コマンドに関連付けられた文字列を取得する
 bool _LoadToolTipText(int nCmdID, CString &strText)
 {
 	enum { SIZE = 1024/*256*/ };
@@ -307,9 +266,9 @@ int RtlMbbNext(LPTSTR &r_lp)
 }
 
 
-
-// strText の nFirst 文字目から、nCount 文字数を取得して返す。マルチバイト文字対応版
-CString RtlMbbStrMid(CString strText, const int &nFirst, const int &nCount)
+//-------------------------------------------
+/// strText の nFirst 文字目から、nCount 文字数を取得して返す。マルチバイト文字対応版
+static CString RtlMbbStrMid(CString strText, int nFirst, int nCount)
 {
 	ATLASSERT( nFirst >= 0 );
 
@@ -331,8 +290,9 @@ CString RtlMbbStrMid(CString strText, const int &nFirst, const int &nCount)
 	return strText.Mid(p1, p2);
 }
 
-
-CString RtlGetSelectedText(const CEdit &edit)
+//-------------------------------------------
+/// エディットコントロールで選択されている文字列を返す
+static CString RtlGetSelectedText(const CEdit &edit)
 {
 	CString str    = MtlGetWindowText(edit);
 
@@ -351,7 +311,7 @@ CString RtlGetSelectedText(const CEdit &edit)
 }
 
 
-#if defined(UNICODE) == 0		//+++ UNICODE コンパイル時は、余計な手間は不要
+#ifndef UNICODE		//+++ UNICODE コンパイル時は、余計な手間は不要
 
 /// EM_GETSELがVisualStyle適用時にUNICODE的動作をする(UNICODEを定義しない場合でも)のでなんとかする関数
 CString _GetSelectTextWtoA(CEdit &edit)
@@ -387,8 +347,9 @@ CString _GetSelectTextWtoA(CEdit &edit)
 
 #endif
 
-
-CString _GetSelectText(CEdit &edit)
+//-------------------------------------------
+/// エディットコントロールで選択されている文字列を返す
+CString _GetSelectText(const CEdit &edit)
 {
 	//VisualStyle が適用されている場合は EM_GETSEL は UNICODE で返す
   #if defined(UNICODE)		//+++ UNICODE コンパイル時は、余計な手間は不要
@@ -425,8 +386,8 @@ static CString GetCurPosWord(const TCHAR* buf, unsigned len, unsigned pos);
 static CString GetCurPosWordB(const TCHAR* buf, unsigned len, unsigned pos);
 
 ///*+++ 実験品: GetSelの返り値の扱いが適当なので、誤動作(違う単語を検索)がありえる.
-///+++ エディットの、選択テキストの取得. 未選択の場合は、カーソル位置の単語を取得.(ページ内検索用)
-CString _GetSelectText_OnCursor(CEdit &edit)
+///+++ エディットの、選択テキストの取得. 未選択の場合は、カーソル位置(キャレットのこと？)の単語を取得.(ページ内検索用)
+CString _GetSelectText_OnCursor(const CEdit &edit)
 {
 	int 	len = ::GetWindowTextLength( edit.m_hWnd ); 	// バイト数. (キャラ数)
 	int 	nStart = -1, nEnd = -1;
@@ -690,22 +651,18 @@ BOOL _AddSimpleReBarBandCtrl(
 	return TRUE;
 }
 
-
-
-bool FileWriteString(const CString& strFile, std::list<CString>* pString)
+//----------------------------------------------
+/// strFile に Stringsを改行しつつ書き込む
+bool FileWriteString(const CString& strFile, const std::list<CString>& Strings)
 {
-	FILE *	fp;
-	if ( ( fp = _tfopen(strFile, _T("w")) ) == NULL ) {
+	FILE*	fp = _tfopen(strFile, _T("w"));
+	if (fp == NULL)
 		return false;
-	}
 
   #if 1	//+++ UNICODE 対応で書き換え
-	for (std::list<CString>::iterator  str = pString->begin();
-		 str != pString->end();
-		 ++str)
-	{
+	for (auto it = Strings.cbegin(); it != Strings.cend(); ++it) {
 	  #ifdef UNICODE
-		fprintf(fp, "%s\n", &Misc::tcs_to_sjis(*str)[0]);
+		fprintf(fp, "%s\n", Misc::tcs_to_sjis(*it).data());
 	  #else
 		fprintf(fp, "%s\n", LPCTSTR(*str));
 	  #endif
@@ -724,27 +681,23 @@ bool FileWriteString(const CString& strFile, std::list<CString>* pString)
 	return true;
 }
 
-
-
-bool FileReadString(const CString& strFile, std::list<CString>* pString)
+//---------------------------------------------
+/// strFile から 1行ごとにStringsに入れていく(※1行につき4096文字以上読み込むと分割される)
+bool FileReadString(const CString& strFile, std::list<CString>& Strings)
 {
-	FILE *	fp;
-
-	if ( ( fp = _tfopen(strFile, _T("r")) ) == NULL ) {
+	FILE*	fp = _tfopen(strFile, _T("r"));
+	if (fp == NULL) 
 		return false;
-	}
 
 	enum { L = 4096 };
-	char		cBuff[L];
-	CString		strBuff;
+	char	cBuff[L];
 
-	while (fgets(cBuff, L, fp) != NULL) {
+	while (fgets(cBuff, L, fp)) {
 		unsigned	nLen = unsigned( strlen(cBuff) );
-
 		if (nLen != 0 && cBuff[nLen - 1] == '\n')
 			cBuff[nLen - 1] = '\0';
 
-		pString->insert(pString->end(), CString(cBuff) );
+		Strings.push_back(CString(cBuff));
 	}
 
 	fclose(fp);
@@ -752,19 +705,18 @@ bool FileReadString(const CString& strFile, std::list<CString>* pString)
 	return true;
 }
 
-
-
+//-----------------------------------------
+/// メニューの文字列を順次コンボボックスに追加する
 BOOL _SetCombboxCategory(CComboBox &cmb, HMENU hMenu)
 {
-	if (cmb.m_hWnd == NULL)
-		return FALSE;
+	ATLASSERT(cmb.IsWindow());
 
 	if (cmb.GetCount() != 0)
 		return FALSE;
 
-	for (int ii = 0; ii < ::GetMenuItemCount(hMenu); ii++) {
-		TCHAR	cBuff[MAX_PATH];
-		cBuff[0]	= 0;
+	int nCount = ::GetMenuItemCount(hMenu);
+	for (int ii = 0; ii < nCount; ++ii) {
+		TCHAR	cBuff[MAX_PATH] = _T("\0");
 		if (::GetMenuString(hMenu, ii, cBuff, MAX_PATH, MF_BYPOSITION) == 0)
 			continue;
 
@@ -789,7 +741,7 @@ BOOL _DontUseID(UINT uID)
 	// UINT uDontUseID[] = {ID_FILE_MRU_FILE1, ID_INSERTPOINT_GROUPMENU, ID_INSERTPOINT_FAVORITEMENU};
 	static const UINT uDontUseID[] = { ID_INSERTPOINT_GROUPMENU, ID_INSERTPOINT_FAVORITEMENU };
 
-	for (int ii = 0; ii < sizeof (uDontUseID) / sizeof (UINT); ii++) {
+	for (int ii = 0; ii < _countof(uDontUseID); ++ii) {
 		if (uID == uDontUseID[ii])
 			return TRUE;
 	}
@@ -797,22 +749,21 @@ BOOL _DontUseID(UINT uID)
 	return FALSE;
 }
 
-
-
+//----------------------------------------------
+/// メニューのコマンドに割り当てられた文字列をコンボボックスに追加する
 void _PickUpCommandSub(HMENU hMenuSub, CComboBox &cmbCmd)
 {
-	CMenu	menuSub(hMenuSub);
+	CMenuHandle	menuSub(hMenuSub);
 	int nPopStartIndex = cmbCmd.AddString(g_cSeparater);
 	int nAddCnt 	   = 0;
 
-	for (int ii = 0; ii < menuSub.GetMenuItemCount(); ii++) {
+	int nCount = menuSub.GetMenuItemCount();
+	for (int ii = 0; ii < nCount; ++ii) {
 		HMENU	hMenuSub2 = menuSub.GetSubMenu(ii);
-
 		if (hMenuSub2)
 			_PickUpCommandSub(hMenuSub2, cmbCmd);
 
 		UINT	nCmdID	  = menuSub.GetMenuItemID(ii);
-
 		if ( _DontUseID(nCmdID) )
 			break;
 
@@ -831,21 +782,19 @@ void _PickUpCommandSub(HMENU hMenuSub, CComboBox &cmbCmd)
 		cmbCmd.AddString(g_cSeparater);
 	else
 		cmbCmd.DeleteString(nPopStartIndex);
-
-	menuSub.Detach();
 }
 
-
-
+//-------------------------------------------------
+/// hMenuのnPopup番目のサブメニューのコマンドに割り当てられた文字列をコンボボックスに追加する
 void _PickUpCommand(HMENU hMenu, int nPopup, CComboBox &cmbCmd)
 {
 	HMENU	hMenuSub = ::GetSubMenu(hMenu, nPopup);
 	CMenu	menu(hMenuSub);
 	cmbCmd.ResetContent();
 
-	for (int ii = 0; ii < ::GetMenuItemCount(hMenuSub); ii++) {
+	int nCount = ::GetMenuItemCount(hMenuSub);
+	for (int ii = 0; ii < nCount; ++ii) {
 		HMENU	hMenuSub = menu.GetSubMenu(ii);
-
 		if (hMenuSub)
 			_PickUpCommandSub(hMenuSub, cmbCmd);
 
@@ -894,21 +843,21 @@ void _PickUpCommand(HMENU hMenu, int nPopup, CComboBox &cmbCmd)
 }
 
 
-
-//minit
-BOOL _ReplaceImageList(CString strBmpFile, CImageList &imgs, DWORD dfltRes)
+//-------------------------------------------------
+/// イメージリストのイメージをstrBmpFileのビットマップで置換する
+BOOL _ReplaceImageList(const CString& strBmpFile, CImageList& imgs, DWORD defaultResID/* = 0*/)
 {
 	CBitmap 	bmp;
-	bmp.Attach( AtlLoadBitmapImage(strBmpFile.GetBuffer(0), LR_LOADFROMFILE) );
+	bmp.Attach( AtlLoadBitmapImage(const_cast<LPTSTR>((LPCTSTR)strBmpFile), LR_LOADFROMFILE) );
   #if 0 //+++
 	return _ReplaceImageList(bmp.m_hBitmap, imgs);
   #else
-	if (bmp.m_hBitmap == 0 && dfltRes) {
-		bmp.LoadBitmap(dfltRes);	//+++	ファイルがなかったとき、デフォルトのリソースを読み込んでみる.
-	}
+	if (bmp.IsNull() && defaultResID)
+		bmp.LoadBitmap(defaultResID);	//+++	ファイルがなかったとき、デフォルトのリソースを読み込んでみる.
+	
 	if (bmp.m_hBitmap) {
 		int nCount = imgs.GetImageCount();
-		for (int i = 0; i < nCount; i++) {
+		for (int i = 0; i < nCount; ++i) {
 			if ( !imgs.Remove(0) )
 				return FALSE;
 		}
@@ -921,40 +870,7 @@ BOOL _ReplaceImageList(CString strBmpFile, CImageList &imgs, DWORD dfltRes)
 
 
 
-static int _Pack(int hi, int low)
-{
-	if ( !( ( ('0' <= low && low <= '9') || ('A' <= low && low <= 'F') || ('a' <= low && low <= 'f') )
-		  && ( ('0' <= hi && hi  <= '9') || ('A' <= hi	&& hi  <= 'F') || ('a' <= hi  && hi  <= 'f') ) ) )
-		return 0;	//数値ではない
 
-	int nlow = ('0' <= low && low <= '9') ? low - '0'
-			 : ('A' <= low && low <= 'F') ? low - 'A' + 0xA
-			 :								low - 'a' + 0xA ;
-	int nhi  = ('0' <= hi  && hi  <= '9') ? hi	- '0'
-			 : ('A' <= hi  && hi  <= 'F') ? hi	- 'A' + 0xA
-			 :								hi	- 'a' + 0xA ;
-
-	return (nhi << 4) + nlow;
-}
-
-
-
-BOOL _QueryColorString(CIniFileI &pr, COLORREF &col, LPCTSTR lpstrKey)
-{
-	CString strCol = pr.GetString(lpstrKey, NULL, 20);
-	//+++ 元々 pr.QueryValue(文字列)でのエラーは、長さが0の時のことなので、文字列が空かどうかのチェックだけで十分.
-	if ( strCol.IsEmpty() )
-		return FALSE;
-
-	strCol.TrimLeft('#');
-
-	col = RGB( _Pack(strCol[0], strCol[1]) ,
-			   _Pack(strCol[2], strCol[3]) ,
-			   _Pack(strCol[4], strCol[5])
-			 );
-
-	return TRUE;
-}
 
 
 
@@ -962,10 +878,10 @@ BOOL _QueryColorString(CIniFileI &pr, COLORREF &col, LPCTSTR lpstrKey)
 //+++ +mod追加
 
 
-
+//------------------------------------------
 #if 1	//+++ 強制的に、その場でメッセージをさばく...
 #include "dbg_wm.h"
-int ForceMessageLoop(HWND hWnd)
+int ForceMessageLoop(HWND hWnd/* = NULL*/)
 {
 #if 1
 	MSG msg = {0};
@@ -979,8 +895,7 @@ wm = (wm_t)msg.message;
 		//	break;
 		if (!GetMessage (&msg,hWnd,0,0))	/* メッセージ処理. QUITだったら、速攻かえる*/
 			return 0;	//x return msg.wParam ;
-		if(pLoop->PreTranslateMessage(&msg) == 0)
-		{
+		if (pLoop->PreTranslateMessage(&msg) == 0) {
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
@@ -1018,17 +933,32 @@ bool  Donut_FakeCaptionLButtonDown(HWND hWnd, HWND hWndTopLevelParent, LPARAM lP
 }
 #endif
 
-
-
-#include "MtlProfile.h"
+//------------------------------------------
+/// フォントの高さを返す
 int GetFontHeight(HFONT hFont)
 {
-	MTL::CLogFont	lf;
-	CFontHandle( hFont ).GetLogFont(&lf);
-	int 	h	= lf.lfHeight;
-	if (h < 0)
-		h = -h;
+	WTL::CLogFont	lf;
+	CFontHandle(hFont).GetLogFont(&lf);
+	CWindowDC	dc(NULL);
+	int h = (int)lf.GetHeight(dc);
 	return h;
+	//if (h < 0)
+	//	h = -h;
+	//return h;
 }
 
 
+//------------------------------------------
+/// エラーコードに対応するエラーメッセージ文字列を返す
+CString	GetLastErrorString(HRESULT hr)
+{
+	if (hr == -1)
+		hr = GetLastError();
+	LPVOID lpMsgBuf;
+	ATLVERIFY(FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL));
+	CString strError;
+	strError.Format(_T("ErrorCode : 0x%08x\n%s"), hr, (LPCTSTR)lpMsgBuf);
+	LocalFree(lpMsgBuf);
+	return strError;
+}

@@ -21,6 +21,7 @@
 
 #include "MtlBase.h"
 #include <shlobj.h>
+#include "MtlMisc.h"
 
 #define HANDLE_MENU_MESSAGE_CONTEXTMENU(x)											 \
 	if (uMsg == WM_INITMENUPOPUP || uMsg == WM_DRAWITEM || uMsg == WM_MEASUREITEM) { \

@@ -9,6 +9,8 @@
 #include <MLang.h>
 #include <atldlgs.h>
 #include "../Misc.h"
+#include "../MtlMisc.h"
+
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // CCustomBindStatusCallBack
@@ -24,7 +26,7 @@ CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, CDownloading
 	, m_cRef(0)
 	, m_hWndNotify(NULL)
 {
-	//AddRef();
+	AddRef();
 }
 
 // Destructor
@@ -92,13 +94,14 @@ HRESULT CCustomBindStatusCallBack::QueryInterface(REFIID riid, void **ppvObject)
 
 STDMETHODIMP_(ULONG) CCustomBindStatusCallBack::AddRef()
 {
-	return ++m_cRef;
+	return ::InterlockedIncrement(&m_cRef);
 }
 
 STDMETHODIMP_(ULONG) CCustomBindStatusCallBack::Release()
 {
-	if (--m_cRef == 0) {
-        //delete this;
+	::InterlockedDecrement(&m_cRef);
+	if (m_cRef == 0) {
+        delete this;
 		return 0;
 	}
 	return m_cRef;

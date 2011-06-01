@@ -35,6 +35,7 @@
 //#include "MainFrame.h"			//+++ debug
 #include "Download/DownloadManager.h"
 #include "AtlHostEx.h"
+#include "FaviconManager.h"
 
 //#include "MDIChildUserMessenger.h"
 #ifdef _DEBUG
@@ -580,6 +581,9 @@ void CChildFrame::OnBeforeNavigate2(
 	m_nPainBookmark = 0;
 	m_strBookmark	= LPCOLESTR(NULL);
 
+	if (IsPageIWebBrowser(pDisp) && strURL.Left(11).CompareNoCase(_T("javascript:")) != 0)
+		m_MDITab.OnSetFaviconImage(m_hWnd, NULL);
+
 	m_bNowNavigate = true;	// Navigate中である
 
 	{
@@ -670,6 +674,7 @@ void CChildFrame::OnDocumentComplete(IDispatch *pDisp, const CString &strURL)
 		if ( MDIGetActive() == m_hWnd && DonutBrowserCanSetFocus(m_hWnd) ) {
 			_SetPageFocus();
 		}
+		_SetFavicon(strURL);
 	}
 
 	//常用スタイルシートを設定する
@@ -829,6 +834,11 @@ void CChildFrame::OnCommandStateChange(long Command, bool bEnable)
 
 void CChildFrame::OnStateConnecting()
 {
+	READYSTATE	state;
+	HRESULT hr = m_spBrowser->get_ReadyState(&state);
+	if (hr == S_OK && state == READYSTATE_COMPLETE)
+		return;
+
 	m_MDITab.SetConnecting(m_hWnd);
 	m_bPrivacyImpacted = TRUE;	// ページ読み込み後もOnStateConnectingが呼ばれるページがあるので
 								// クッキー制限アイコンが表示されないページがある
@@ -836,10 +846,16 @@ void CChildFrame::OnStateConnecting()
 }
 
 
-//void CChildFrame::OnStateDownloading()
-//{
-//	m_MDITab.SetDownloading(m_hWnd);
-//}
+void CChildFrame::OnStateDownloading()
+{
+	READYSTATE	state;
+	HRESULT hr = m_spBrowser->get_ReadyState(&state);
+	if (hr == S_OK && state == READYSTATE_COMPLETE)
+		return;
+
+	m_MDITab.SetDownloading(m_hWnd);
+}
+
 
 
 void CChildFrame::OnStateCompleted()
@@ -1274,6 +1290,8 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 			m_AddressBar.SetWindowText(strURL);
 		}
 	  #else
+		HICON hFavicon = CFaviconManager::GetFavicon(m_strFaviconURL);
+		m_AddressBar.ReplaceIcon(hFavicon);
 		m_AddressBar.SetWindowText( GetLocationURL() );
 	  #endif
 		_SetPageFocus();
@@ -3588,6 +3606,81 @@ LRESULT CChildFrame::OnHilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord)
 	return 1;
 }
 #endif
+
+//-----------------------------
+/// タブなどにFaviconを設定
+void	CChildFrame::_SetFavicon(const CString& strURL)
+{
+	CString strFaviconURL;
+	HRESULT hr = S_OK;
+	CComPtr<IDispatch>	spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	if (spDisp) {
+		CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+		CComPtr<IHTMLElementCollection>	spCol;
+		spDocument->getElementsByTagName(CComBSTR(L"link"), &spCol);
+		if (spCol) {
+			long length = 0;
+			hr = spCol->get_length(&length);
+			if (SUCCEEDED(hr)) {
+				for (long i = 0; i < length; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLLinkElement>	spLink = spDisp2;
+					if (spLink) {
+						CComBSTR strrel;
+						spLink->get_rel(&strrel);
+						CComBSTR strhref;
+						spLink->get_href(&strhref);
+						strrel.ToLower();
+						if (strrel == _T("shortcut icon") || strrel == _T("icon")) {
+							DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
+							hr = UrlCombine(strURL, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
+							strFaviconURL.ReleaseBuffer();
+							if (SUCCEEDED(hr)) {
+								goto FAVICON_FOUND;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	DWORD cchResult = INTERNET_MAX_URL_LENGTH;
+	if (::CoInternetParseUrl(strURL, PARSE_ROOTDOCUMENT, 0, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
+		strFaviconURL.ReleaseBuffer();
+		strFaviconURL += _T("/favicon.ico");
+	}
+FAVICON_FOUND:
+	m_strFaviconURL = strFaviconURL;
+	CFaviconManager::SetFavicon(m_hWnd, strFaviconURL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

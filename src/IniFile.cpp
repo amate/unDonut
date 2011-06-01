@@ -124,7 +124,7 @@ const CString CIniFileI::GetString(LPCTSTR lpszValueName, const TCHAR* pszDefult
 		DWORD dw = ::GetPrivateProfileString(m_strSectionName, lpszValueName, _T(""), buf, dwBufSize, m_strFileName);
 		if (dw == 0 && pszDefult)
 			return CString(pszDefult);
-		buf[dw] = '\0';
+		buf[dw] = _T('\0');
 		return CString(buf);
 	} else {
 		DWORD	dwBufSize	= SIZE;
@@ -142,7 +142,7 @@ const CString CIniFileI::GetString(LPCTSTR lpszValueName, const TCHAR* pszDefult
 			delete[]	buf;
 			return CString(pszDefult);
 		}
-		buf[dw] = '\0';
+		buf[dw] = _T('\0');
 		CString 	str(buf);
 		delete[]	buf;
 		return str;

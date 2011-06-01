@@ -2,11 +2,12 @@
 
 #include "stdafx.h"
 #include "TabCtrl.h"
+#include "MtlMisc.h"
 
 /////////////////////////////////////////////////////////////////////
 // CTabSkin
 
-void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& item, bool bAnchorColor)
+void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, HIMAGELIST hImgFavicon, const CTabCtrlItem& item, bool bAnchorColor)
 {
 	if (item.m_fsState & TCISTATE_HIDDEN)
 		return;
@@ -15,10 +16,16 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& ite
 	int cyIcon			= 0;
 	int	cxIconOffset	= 0;
 
-	if (item.m_nImgIndex != -1) {
-		::ImageList_GetIconSize(hImgList, &cxIcon, &cyIcon);
-		cxIconOffset += cxIcon + s_kcxIconGap + 3;
-	}
+	enum { 
+		cxTabIcon = 4, cyTabIcon = 1, cxIconText = 2, faviconSize = 16, 
+		LoadIconSize = 6, cxTabLoadIcon = 4, cyTabText = 3,
+	};
+	//if (item.m_nImgIndex != -1) {
+	//	::ImageList_GetIconSize(hImgList, &cxIcon, &cyIcon);
+	//	cxIconOffset = 20;//cxIcon + s_kcxIconGap + 3;
+	//} else {
+		cxIconOffset = cxTabIcon + 16 + cxIconText;
+	//}
 
 	bool	bHot		= (item.m_fsState & TCISTATE_HOT) != 0;
 	bool	bPressed	= (item.m_fsState & TCISTATE_PRESSED) != 0;
@@ -29,12 +36,12 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& ite
 		// 選択された
 		_DrawSkinCur(dc, item.m_rcItem);
 //		Update_Selected(dc, pTabSkin, bHot, bPressed);
-		ptOffset += CPoint(2, 2);	// タブに書かれる文字を若干下げる
+		//ptOffset += CPoint(2, 2);	// タブに書かれる文字を若干下げる
 	} else if (item.m_fsState & TCISTATE_MSELECTED) {
 		// 複数選択された
 		_DrawSkinSel(dc, item.m_rcItem);
 //		Update_MultiSel(dc, pTabSkin, bHot, bPressed);
-		ptOffset += CPoint(4, 6);	// タブに書かれる文字を若干下げる
+		//ptOffset += CPoint(4, 6);	// タブに書かれる文字を若干下げる
 	} else {
 		// 選択されていない
 		if (bHot == true && bPressed == false) {
@@ -43,15 +50,20 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& ite
 			_DrawSkinNone(dc, item.m_rcItem);
 		}
 //		Update_NotSel(dc, pTabSkin, bHot, bPressed, ptOffset);
-		ptOffset += CPoint(2, 4);
+		//ptOffset += CPoint(2, 4);
 	}
 
-	_DrawText(dc, ptOffset + CPoint(cxIconOffset, 0), item, bAnchorColor);
+	_DrawText(dc, /*ptOffset + */CPoint(cxIconOffset, cyTabText), item, bAnchorColor);
 
 	if (item.m_nImgIndex != -1) {
 		::ImageList_Draw(hImgList, item.m_nImgIndex, dc, 
-			item.m_rcItem.left + ptOffset.x + s_kcxIconGap,
-			item.m_rcItem.top + ((item.m_rcItem.Height() - cyIcon) / 2) + (ptOffset.y / 2), ILD_TRANSPARENT);
+			item.m_rcItem.left + ptOffset.x + s_kcxIconGap + cxTabLoadIcon,
+			item.m_rcItem.top + ((item.m_rcItem.Height() - LoadIconSize) / 2) /*+ (ptOffset.y / 2)*/ + cyTabIcon, ILD_TRANSPARENT);
+	} else {
+		int nFaviconIndex = (item.m_nFaviconIndex != -1) ? item.m_nFaviconIndex : 0;
+		::ImageList_Draw(hImgFavicon, nFaviconIndex, dc,
+			item.m_rcItem.left + ptOffset.x + cxTabIcon,
+			item.m_rcItem.top + ((item.m_rcItem.Height() - faviconSize) / 2) /*+ (ptOffset.y / 2)*/ + cyTabIcon, ILD_TRANSPARENT);
 	}
 
 #if 0
@@ -64,7 +76,38 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& ite
 }
 
 
+static int _Pack(int hi, int low)
+{
+	if ( !( ( ('0' <= low && low <= '9') || ('A' <= low && low <= 'F') || ('a' <= low && low <= 'f') )
+		  && ( ('0' <= hi && hi  <= '9') || ('A' <= hi	&& hi  <= 'F') || ('a' <= hi  && hi  <= 'f') ) ) )
+		return 0;	//数値ではない
 
+	int nlow = ('0' <= low && low <= '9') ? low - '0'
+			 : ('A' <= low && low <= 'F') ? low - 'A' + 0xA
+			 :								low - 'a' + 0xA ;
+	int nhi  = ('0' <= hi  && hi  <= '9') ? hi	- '0'
+			 : ('A' <= hi  && hi  <= 'F') ? hi	- 'A' + 0xA
+			 :								hi	- 'a' + 0xA ;
+
+	return (nhi << 4) + nlow;
+}
+
+static BOOL _QueryColorString(CIniFileI &pr, COLORREF &col, LPCTSTR lpstrKey)
+{
+	CString strCol = pr.GetString(lpstrKey, NULL, 20);
+	//+++ 元々 pr.QueryValue(文字列)でのエラーは、長さが0の時のことなので、文字列が空かどうかのチェックだけで十分.
+	if ( strCol.IsEmpty() )
+		return FALSE;
+
+	strCol.TrimLeft('#');
+
+	col = RGB( _Pack(strCol[0], strCol[1]) ,
+			   _Pack(strCol[2], strCol[3]) ,
+			   _Pack(strCol[4], strCol[5])
+			 );
+
+	return TRUE;
+}
 
 
 void	CTabSkin::_LoadTabTextSetting()
@@ -133,7 +176,7 @@ void	CTabSkin::_DrawText(CDCHandle dc, CPoint ptOffset, const CTabCtrlItem& item
 	if ( nWidth > rcBtn.Width() ) {
 		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_LEFT | DT_END_ELLIPSIS;
 	} else {
-		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_CENTER | DT_NOCLIP;
+		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | /*DT_CENTER | */DT_NOCLIP;
 	}
 
 	if ( !(item.m_fsState & TCISTATE_ENABLED) ) {

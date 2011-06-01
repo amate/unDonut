@@ -15,7 +15,7 @@
 #include "stdafx.h"
 #include "MtlWeb.h"
 #include "DonutPFunc.h"
-
+#include  "IniFile.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW

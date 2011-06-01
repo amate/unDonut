@@ -20,7 +20,8 @@
 #pragma once
 
 #ifndef __MTLMISC_H__
-#error mtlctrlw.h requires mtlmisc.h to be included first
+#include "MtlMisc.h"
+//#error mtlctrlw.h requires mtlmisc.h to be included first
 #endif
 
 #include "MtlWin.h"

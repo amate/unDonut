@@ -11,22 +11,11 @@
 #include "option/PluginDialog.h"
 
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-
-
-//using namespace 	std;
-//using namespace 	MTL;
-
 //////////////////////////////////////////////////////////
 // CPluginManager
 
 // ’è‹`
-boost::array<CPluginManager::PluginArray, PLUGIN_TYPECNT + 1>	CPluginManager::m_arrPluginData;
+std::array<CPluginManager::PluginArray, PLUGIN_TYPECNT + 1>	CPluginManager::m_arrPluginData;
 
 /*
 	nKind ‚Í 1 Origin 1toPLUGIN_TYPECNT

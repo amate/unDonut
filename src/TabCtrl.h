@@ -130,7 +130,7 @@ protected:
 public:
 	virtual ~CTabSkin() { m_imgLock.Destroy(); }
 
-	void	Update(CDCHandle dc, HIMAGELIST hImgList, const CTabCtrlItem& item, bool bAnchorColor);
+	void	Update(CDCHandle dc, HIMAGELIST hImgList, HIMAGELIST hImgFavicon, const CTabCtrlItem& item, bool bAnchorColor);
 
 private:
 	void	_LoadTabTextSetting();
@@ -229,6 +229,7 @@ public:
 	CRect		m_rcItem;
 	int 		m_nImgIndex;	// image list index
 	DWORD_PTR	m_dwUser;		// user's data 
+	int			m_nFaviconIndex;
 
 private:
 	// Constants
@@ -241,6 +242,7 @@ public:
 		, m_strItem(strBtn)
 		, m_nImgIndex(nImgIndex)
 		, m_dwUser(dwUser)
+		, m_nFaviconIndex(-1)
 	{
 	}
 
@@ -301,6 +303,7 @@ public:
 	typedef std::vector<CTabCtrlItem>	TabItems;
 	TabItems			m_items;
 	CImageList			m_imgs;
+	CImageList			m_FaviconImage;
 
 	CFont				m_font;
 private:
@@ -357,6 +360,8 @@ protected:
 
 	void	_SetDrawStyle(int nStyle);
 	void	_ReloadSkinData();
+
+	void	_ReplaceFavicon(int nIndex, HICON hIcon);
 
 private:
 	// Overridables
@@ -420,7 +425,7 @@ public:
 
 	bool	AddItem(const CTabCtrlItem &item);
 
-	bool	DeleteItem(int nIndex);
+	bool	DeleteItem(int nIndex, bool bMoveNow = false);
 
 	void	GetCurMultiSel(CSimpleArray<int> &arrDest, bool bIncludeCurSel = true);
 	void	GetCurMultiSelEx(CSimpleArray<int>& arrDest, int nIndex);
@@ -872,12 +877,11 @@ template <class T, class TBase, class TWinTraits>
 void	CTabCtrl2Impl<T, TBase, TWinTraits>::_DoPaint(CDCHandle dc, LPCRECT lpRect)
 {
 	HWND	hWnd	= GetParent();
-	CPoint	pt(0, 0);
+	CPoint	pt;
 	MapWindowPoints(hWnd, &pt, 1);
-	pt = ::OffsetWindowOrgEx( (HDC)dc.m_hDC, pt.x, pt.y, NULL );
+	::OffsetWindowOrgEx( (HDC)dc.m_hDC, pt.x, pt.y, NULL );
 	LRESULT lResult = ::SendMessage(hWnd, WM_ERASEBKGND, (WPARAM)dc.m_hDC, 0L);
 	::SetWindowOrgEx((HDC)dc.m_hDC, 0, 0, NULL);
-
 
 	CFontHandle fontOld = dc.SelectFont(m_font);
 	int 		modeOld = dc.SetBkMode(TRANSPARENT);
@@ -892,7 +896,7 @@ void	CTabCtrl2Impl<T, TBase, TWinTraits>::_DoPaint(CDCHandle dc, LPCRECT lpRect)
 	for (; i < GetItemCount(); ++i) {
 		if ( lpRect == NULL || MtlIsCrossRect(m_items[i].m_rcItem, lpRect) ) {
 			// Šeƒ^ƒu‚ð•`ŽÊ‚·‚é
-			m_pTabSkin->Update(dc, m_imgs, GetItem(i), bAnchorColor);
+			m_pTabSkin->Update(dc, m_imgs, m_FaviconImage, GetItem(i), bAnchorColor);
 		}
 	}
 
@@ -1071,7 +1075,7 @@ bool	CTabCtrl2Impl<T, TBase, TWinTraits>::MoveItems(int nDestIndex, CSimpleArray
 			--nDestIndex;
 
 		TCTRACE(_T(" %d"), nIndex);
-		DeleteItem(nIndex);
+		DeleteItem(nIndex, true);
 	}
 
 	TCTRACE( _T("\n") );
@@ -1321,7 +1325,7 @@ bool	CTabCtrl2Impl<T, TBase, TWinTraits>::AddItem(const CTabCtrlItem &item)
 
 
 template <class T, class TBase, class TWinTraits>
-bool	CTabCtrl2Impl<T, TBase, TWinTraits>::DeleteItem(int nIndex)
+bool	CTabCtrl2Impl<T, TBase, TWinTraits>::DeleteItem(int nIndex, bool bMoveNow/* = false*/)
 {
 	if ( !_IsValidIndex(nIndex) )
 		return false;
@@ -1337,6 +1341,16 @@ bool	CTabCtrl2Impl<T, TBase, TWinTraits>::DeleteItem(int nIndex)
 
 		if (m_nFirstIndexOnSingleLine < 0)
 			m_nFirstIndexOnSingleLine = 0;
+	}
+	if (bMoveNow == false) {
+		int nRemovedIndex = m_items[nIndex].m_nFaviconIndex;
+		if (nRemovedIndex != -1) {
+			m_FaviconImage.Remove(nRemovedIndex);
+			for (auto it = m_items.begin(); it != m_items.end(); ++it) {
+				if (nRemovedIndex < it->m_nFaviconIndex)
+					it->m_nFaviconIndex--;
+			}
+		}
 	}
 
 	m_items.erase(m_items.begin() + nIndex);
@@ -1588,6 +1602,10 @@ LRESULT	CTabCtrl2Impl<T, TBase, TWinTraits>::OnCreate(UINT uMsg, WPARAM wParam, 
 	m_wndDropBtn.SetWindowPos(m_wndUpDown.m_hWnd, 0, 0, 0, 0, SWP_NOACTIVATE | SWP_NOMOVE | SWP_NOSIZE);
 	_InitToolTip();
 
+	m_FaviconImage.Create(16, 16, ILC_COLOR32 | ILC_MASK, 100, 50);
+	CIcon	icon = AtlLoadIcon(IDI_GENERIC_DOCUMENT);
+	m_FaviconImage.AddIcon(icon);
+
 	// default size
 	MoveWindow(0, 0, 200, _GetRequiredHeight(), FALSE);
 	return lRet;
@@ -1797,6 +1815,29 @@ void	CTabCtrl2Impl<T, TBase, TWinTraits>::ReloadSkin(int nStyle)
 	_ReplaceImageList(strTabBmp, m_imgs, IDB_MDITAB);
 	_SetDrawStyle(nStyle);
 	_ReloadSkinData();
+}
+
+
+template <class T, class TBase, class TWinTraits>
+void	CTabCtrl2Impl<T, TBase, TWinTraits>::_ReplaceFavicon(int nIndex, HICON hIcon)
+{
+	if ( _IsValidIndex(nIndex) == false)
+		return;
+
+	int& nFaviconIndex = m_items[nIndex].m_nFaviconIndex;
+	if (hIcon == NULL && nFaviconIndex != -1) {
+		m_FaviconImage.Remove(nFaviconIndex);
+		for (auto it = m_items.begin(); it != m_items.end(); ++it) {
+			if (nFaviconIndex < it->m_nFaviconIndex)
+				it->m_nFaviconIndex--;
+		}
+		nFaviconIndex = -1;
+	} else if (nFaviconIndex != -1) {
+		m_FaviconImage.ReplaceIcon(nFaviconIndex, hIcon);
+	} else {
+		nFaviconIndex = m_FaviconImage.AddIcon(hIcon);
+	}
+	InvalidateRect(m_items[nIndex].m_rcItem, FALSE);
 }
 
 

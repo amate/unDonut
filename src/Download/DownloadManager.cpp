@@ -56,9 +56,9 @@ int		CDownloadManager::GetDownloadingCount() const
 void	CDownloadManager::_DLStart(CString* pstrURL, IBindStatusCallback* bscb)
 {
 	::CoInitialize(NULL);
-	bscb->AddRef();
 	HRESULT hr = ::URLOpenStream(NULL, *pstrURL, 0, bscb);
 	delete pstrURL;
+	ATLVERIFY(bscb->Release() == 0);
 	::CoUninitialize();
 }
 	

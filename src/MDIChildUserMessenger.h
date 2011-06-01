@@ -27,14 +27,16 @@ enum EMdiChild_User {
 
 
 #define MSG_WM_USER_MDICHILD(func)							   \
-	if ( uMsg == GET_REGISTERED_MESSAGE(Mtl_MDIChild_User) ) { \
+{															   \
+	static UINT WM_MTL_MDICHILD_USER = GET_REGISTERED_MESSAGE(Mtl_MDIChild_User);	\
+	if ( uMsg == WM_MTL_MDICHILD_USER ) { \
 		SetMsgHandled(TRUE);								   \
 		func( (HWND) wParam, (UINT) lParam );				   \
 		lResult = 0;										   \
 		if ( IsMsgHandled() )								   \
 			return TRUE;									   \
-	}
-
+	}														   \
+}
 
 
 template <class T>

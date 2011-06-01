@@ -200,17 +200,11 @@
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</GenerateManifest>
-    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</EmbedManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)ExecuteEnv\</OutDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</GenerateManifest>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</LinkIncremental>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</GenerateManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)ExecuteEnv\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\$(Configuration)$(Platform)\</IntDir>
-    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GenerateManifest>
-    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</EmbedManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">$(Configuration)\</IntDir>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">true</LinkIncremental>
@@ -264,7 +258,6 @@
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">64unDonut</TargetName>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\$(Configuration)\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\$(Configuration)\</IntDir>
-    <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</EmbedManifest>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Midl>
@@ -400,6 +393,7 @@
       <LargeAddressAware>true</LargeAddressAware>
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
+    <ManifestResourceCompile />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
@@ -910,6 +904,7 @@
     <ClCompile Include="FavoriteOrder.cpp" />
     <ClCompile Include="FavoritesMenu.cpp" />
     <ClCompile Include="FavTreeViewCtrl.cpp" />
+    <ClCompile Include="GdiplusUtil.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="ItemIDList.cpp" />
     <ClCompile Include="MainFrame.cpp" />
@@ -1095,12 +1090,14 @@
     <ClInclude Include="ExplorerToolBarCtrl.h" />
     <ClInclude Include="ExplorerTreeViewCtrl.h" />
     <ClInclude Include="ExStyle.h" />
+    <ClInclude Include="FaviconManager.h" />
     <ClInclude Include="FavoriteOrder.h" />
     <ClInclude Include="FavoritesMenu.h" />
     <ClInclude Include="FavTreeViewCtrl.h" />
     <ClInclude Include="FileNotification.h" />
     <ClInclude Include="FlatComboBox.h" />
     <ClInclude Include="FlatComboBox_SearchKeyword.h" />
+    <ClInclude Include="GdiplusUtil.h" />
     <ClInclude Include="HlinkDataObject.h" />
     <ClInclude Include="ie_feature_control.h" />
     <ClInclude Include="IniFile.h" />
@@ -1110,7 +1107,6 @@
     <ClInclude Include="MDIChildUserMessenger.h" />
     <ClInclude Include="MDITabCtrl.h" />
     <ClInclude Include="MenuControl.h" />
-    <ClInclude Include="MenuDefines.h" />
     <ClInclude Include="MenuDropTargetWindow.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="OleDragDropExpToolBarCtrl.h" />
@@ -1124,7 +1120,6 @@
     <ClInclude Include="Include\PluginInfo.h" />
     <ClInclude Include="PluginManager.h" />
     <ClInclude Include="DonutOption.h" />
-    <ClInclude Include="RebarSupport.h" />
     <ClInclude Include="RecentDocumentListFixed.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
@@ -1209,6 +1204,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="API.rgs" />
+    <ClCompile Include="FaviconManager.cpp">
+      <FileType>Document</FileType>
+    </ClCompile>
     <None Include="res\API.rgs" />
     <None Include="res\DLStop.ico" />
     <None Include="res\DonutDoc.ico" />

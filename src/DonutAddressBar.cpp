@@ -57,9 +57,11 @@ struct CDonutAddressBar::Impl :
 	void	SetFont(HFONT hFont);
 	void	ReloadSkin(int nCmbStyle);
 	void	ShowAddresText(CReBarCtrl rebar, BOOL bShow);
+	void	SetWindowText(LPCTSTR str);
 	void	ShowGoButton(bool bShow);
 	CString GetAddressBarText();
 	CEdit	GetEditCtrl() { return m_edit; }
+	void	ReplaceIcon(HICON hIcon);
 
 	void	OnItemSelected(const CString &str);
 	void	OnItemSelectedEx(const CString &str);
@@ -86,7 +88,8 @@ struct CDonutAddressBar::Impl :
 		MESSAGE_HANDLER ( WM_ERASEBKGND,		OnEraseBackground		)
 		MESSAGE_HANDLER ( WM_WINDOWPOSCHANGING, OnWindowPosChanging 	)
 		NOTIFY_CODE_HANDLER( TTN_GETDISPINFO,	OnToolTipText			)
-		REFLECTED_NOTIFY_CODE_HANDLER_EX( CBEN_GETDISPINFO, OnCbenGetDispInfo )
+		REFLECTED_NOTIFY_CODE_HANDLER_EX( CBEN_GETDISPINFO	, OnCbenGetDispInfo )
+		REFLECTED_COMMAND_CODE_HANDLER_EX( CBN_EDITCHANGE	, OnCbnEditChange )
 	ALT_MSG_MAP(1)	// ComboBox
 		MESSAGE_HANDLER ( WM_WINDOWPOSCHANGING, OnComboWindowPosChanging)
 		MESSAGE_HANDLER ( WM_ERASEBKGND,		OnComboEraseBackground	)
@@ -112,6 +115,7 @@ struct CDonutAddressBar::Impl :
 	LRESULT OnEraseBackground(UINT /*uMsg */ , WPARAM wParam, LPARAM /*lParam */ , BOOL &bHandled);
 	LRESULT OnToolTipText(int idCtrl, LPNMHDR pnmh, BOOL & /*bHandled */ );
 	LRESULT OnCbenGetDispInfo(LPNMHDR pnmh);
+	LRESULT OnCbnEditChange(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// ComboBox
 	LRESULT OnComboEraseBackground(UINT /*uMsg */ , WPARAM wParam, LPARAM /*lParam */ , BOOL &bHandled);
@@ -147,9 +151,9 @@ private:
 	bool	_HitTest(CPoint pt);
 	void	_DoDragDrop(CPoint pt, UINT nFlags, bool bLeftButton);
 	void	_DrawDragEffect(bool bRemove);
-	void	_SetSystemImageList();
 	void	_ComplementURL(CString &strURL);
 	bool	_MtlSaveTypedURLs(HWND hWndComboBoxEx);
+	void	_SetEditIconIndex(int nIndex);
 
 public:
 	// Data members
@@ -172,6 +176,10 @@ public:
 	CItemIDList m_idlHtml;			// used to draw .url icon faster
 	bool		m_bDragAccept;
 	CString		m_strToolTip;
+	CImageList	m_FaviconImage;
+	int			m_nEditFaviconIndex;
+	bool		m_bNowSetWindowText;
+	CString		m_strCurrentURL;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -187,7 +195,9 @@ CDonutAddressBar::Impl::Impl() :
 	m_pGoBtnInfo(0),
 	m_hWndParent(0),
 	m_cxDefaultHeader(0),
-	m_bDragAccept(false)
+	m_bDragAccept(false),
+	m_nEditFaviconIndex(0),
+	m_bNowSetWindowText(false)
 {
 	m_idlHtml = MtlGetHtmlFileIDList();
 }
@@ -263,6 +273,21 @@ void	CDonutAddressBar::Impl::ShowAddresText(CReBarCtrl rebar, BOOL bShow)
 	SetWindowPos(NULL, rect.left, rect.top, rect.right - rect.left, rect.bottom - rect.top, SWP_NOZORDER);							// | SWP_NOACTIVATE);
 }
 
+void	CDonutAddressBar::Impl::SetWindowText(LPCTSTR str)
+{
+	m_bNowSetWindowText = true;
+	m_strCurrentURL = str;
+	CLockRedraw	lock(m_edit);
+	SetImageList(m_FaviconImage);
+	SetCurSel(-1);
+	//__super::SetWindowText(str);
+	m_edit.SetWindowText(str);
+	m_edit.SetSel(0, 0);
+	if (m_strCurrentURL.IsEmpty())
+		_SetEditIconIndex(0);
+	m_bNowSetWindowText = false;
+}
+
 void	CDonutAddressBar::Impl::ShowGoButton(bool bShow)
 {
 	s_bGoBtnVisible = bShow;
@@ -312,6 +337,7 @@ void	CDonutAddressBar::Impl::ReloadSkin(int nCmbStyle)
 		_ReplaceImageList(_GetSkinGoBtnPath(TRUE), imgsHot);
 		m_wndGo.InvalidateRect(NULL, TRUE);
 	}
+	SetImageList(m_FaviconImage);
 
 	Invalidate(TRUE);
 }
@@ -383,6 +409,17 @@ void	CDonutAddressBar::Impl::OnGetItem(const CString &str, COMBOBOXEXITEM &item)
 CString CDonutAddressBar::Impl::GetAddressBarText()
 {
 	return MtlGetWindowText(GetEditCtrl());
+}
+
+void	CDonutAddressBar::Impl::ReplaceIcon(HICON hIcon)
+{
+	m_nEditFaviconIndex = 0;
+	if (hIcon) {
+		m_FaviconImage.ReplaceIcon(1, hIcon);
+		m_nEditFaviconIndex = 1;
+	}
+
+	_SetEditIconIndex(m_nEditFaviconIndex);
 }
 
 HRESULT CDonutAddressBar::Impl::OnGetAddressBarCtrlDataObject(IDataObject **ppDataObject)
@@ -557,10 +594,7 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 	if ( s_bLoadTypedUrls )
 		_LoadTypedURLs();
 
-	if ( s_bGoBtnVisible ) 
-		ShowGoButton(true);
-	else 
-		ShowGoButton(false);
+	ShowGoButton(s_bGoBtnVisible);
 
 	m_edit = __super::GetEditCtrl();
 	m_wndCombo.SubclassWindow( GetComboCtrl() );
@@ -582,15 +616,16 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 		toolTipCtrl.AddTool(toolInfo);
 	}
 	#endif
-	
-	_SetSystemImageList();
 
-	COMBOBOXEXITEM item = { 0 };
-	item.mask			= CBEIF_IMAGE | CBEIF_SELECTEDIMAGE;
-	item.iItem			= -1;												// on edit control
-	item.iImage 		= I_IMAGECALLBACK;
-	item.iSelectedImage = I_IMAGECALLBACK;
-	MTLVERIFY( SetItem(&item) );
+	m_FaviconImage.Create(16, 16, ILC_COLOR32 | ILC_MASK, 2, 1);
+	ATLASSERT(m_FaviconImage.m_hImageList);
+	CIcon	icon = AtlLoadIconImage(IDI_GENERIC_DOCUMENT, LR_DEFAULTCOLOR, 16, 16);
+	ATLASSERT(icon.m_hIcon);
+	m_FaviconImage.AddIcon(icon);
+	m_FaviconImage.AddIcon(icon);
+	SetImageList(m_FaviconImage);
+
+	_SetEditIconIndex(I_IMAGECALLBACK);
 
 	RegisterDragDrop();
 
@@ -684,17 +719,23 @@ LRESULT	CDonutAddressBar::Impl::OnCbenGetDispInfo(LPNMHDR lpnmhdr)
 	COMBOBOXEXITEM&	item = pDispInfo->ceItem;
 	if ( !_check_flag(CBEIF_IMAGE, item.mask) && !_check_flag(CBEIF_SELECTEDIMAGE, item.mask) )
 		return 0;
-
+#if 0
 	CString 	str;
 	if ( GetDroppedState() && item.iItem != -1) {
 		GetComboCtrl().GetLBText((int)item.iItem, str);
 	} else {
 		str = GetAddressBarText();
 	}
-
-	if ( str.IsEmpty() )
-		return 0;
-	
+#endif
+	if (item.iItem == -1) {	// Edit
+		item.iImage 		= m_nEditFaviconIndex;
+		item.iSelectedImage = m_nEditFaviconIndex;
+	} else {
+		item.iImage			= 0;
+		item.iSelectedImage	= 0;
+	}
+	return 0;
+#if 0
 	CItemIDList idl = str;
 	if ( idl.IsNull() ) {		// invalid idl
 		int iImage = MtlGetSystemIconIndex(m_idlHtml);
@@ -712,6 +753,16 @@ LRESULT	CDonutAddressBar::Impl::OnCbenGetDispInfo(LPNMHDR lpnmhdr)
 		item.iSelectedImage = MtlGetSelectedIconIndex(idl, true, m_idlHtml);
 	}
 
+	return 0;
+#endif
+}
+
+
+LRESULT CDonutAddressBar::Impl::OnCbnEditChange(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (m_bNowSetWindowText)
+		return 0;
+	_SetEditIconIndex(0);
 	return 0;
 }
 
@@ -1238,9 +1289,13 @@ void	CDonutAddressBar::Impl::_DoDragDrop(CPoint pt, UINT nFlags, bool bLeftButto
 		}
 	} else {										// canceled
 		if (bLeftButton) {
-		} else {
-			m_wndGo.SendMessage( WM_RBUTTONUP, (WPARAM) nFlags, MAKELPARAM(pt.x, pt.y) );
+			SetWindowText(m_strCurrentURL);	// 現在表示中のURLを復元する
+			if (m_strCurrentURL.IsEmpty() == FALSE)
+				_SetEditIconIndex(m_nEditFaviconIndex);
 		}
+		//} else {	//\\?
+		//	m_wndGo.SendMessage( WM_RBUTTONUP, (WPARAM) nFlags, MAKELPARAM(pt.x, pt.y) );
+		//}
 	}
 }
 
@@ -1259,16 +1314,6 @@ void	CDonutAddressBar::Impl::_DrawDragEffect(bool bRemove)
 	}
 }
 
-void	CDonutAddressBar::Impl::_SetSystemImageList()
-{
-	ATLASSERT( ::IsWindow(m_hWnd) );
-
-	SHFILEINFO	sfi = { 0 };
-	HIMAGELIST	hImgs = (HIMAGELIST) ::SHGetFileInfo(_T("C:\\"), 0, &sfi, sizeof (sfi), SHGFI_SYSICONINDEX | SHGFI_SMALLICON);
-
-	ATLASSERT(hImgs != NULL);
-	SetImageList(hImgs);
-}
 
 bool CDonutAddressBar::Impl::_MtlSaveTypedURLs(HWND hWndComboBoxEx)
 {
@@ -1300,6 +1345,17 @@ bool CDonutAddressBar::Impl::_MtlSaveTypedURLs(HWND hWndComboBoxEx)
 	return true;
 }
 
+//--------------------------------
+/// 左端のアイコンを設定
+void	CDonutAddressBar::Impl::_SetEditIconIndex(int nIndex)
+{
+	COMBOBOXEXITEM     cbi = {0};
+	cbi.mask = CBEIF_IMAGE | CBEIF_SELECTEDIMAGE;
+	cbi.iItem			= -1;
+	cbi.iImage			= nIndex;
+	cbi.iSelectedImage	= nIndex;
+	SetItem(&cbi);
+}
 
 
 
@@ -1364,6 +1420,10 @@ CEdit	CDonutAddressBar::GetEditCtrl()
 	return pImpl->GetEditCtrl();
 }
 
+void	CDonutAddressBar::ReplaceIcon(HICON hIcon)
+{
+	pImpl->ReplaceIcon(hIcon);
+}
 
 BOOL	CDonutAddressBar::IsWindow() const
 {

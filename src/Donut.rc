@@ -92,6 +92,7 @@ IDB_DLOK				  BITMAP				  "res\\DLOK.bmp"
 IDB_DLERROR				  BITMAP				  "res\\DLError.bmp"
 IDB_DLOPTIONS			  BITMAP				  "res\\DLOptions.bmp"
 IDB_DLHELP				  BITMAP				  "res\\DLHelp.bmp"
+IDI_GENERIC_DOCUMENT	  ICON					  "res\\Generic_Document.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //

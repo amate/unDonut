@@ -6,7 +6,7 @@
 
 //プラグインのデータ型・定数の定義
 #include "./include/PluginInfo.h"
-#include <boost/array.hpp>
+#include <array>
 
 //+++ GetProcAddressはTCHAR未対応なので、_Tは削除.
 
@@ -56,7 +56,7 @@ public:
 private:
 	//メンバ変数
 	typedef std::vector<PluginData> 	PluginArray;
-	static boost::array<PluginArray, PLUGIN_TYPECNT + 1> m_arrPluginData;	//プラグインタイプ毎のデータの配列(vector)
+	static std::array<PluginArray, PLUGIN_TYPECNT + 1> m_arrPluginData;	//プラグインタイプ毎のデータの配列(vector)
 
   #ifdef _DEBUG
 	static int				m_nLoadCount;

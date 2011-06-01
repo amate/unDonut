@@ -3,6 +3,7 @@
 #include "stdafx.h"
 #include "resource.h"
 #include "DonutOption.h"
+#include "IniFile.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // CTreeViewPropertySheet

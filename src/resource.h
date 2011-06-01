@@ -127,6 +127,7 @@
 #define IDB_DLOPTIONS					312
 #define IDB_DLHELP						313
 #define IDD_DLOPTION					314
+#define IDI_GENERIC_DOCUMENT			315
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -872,7 +873,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        315
+#define _APS_NEXT_RESOURCE_VALUE        316
 #define _APS_NEXT_COMMAND_VALUE         33187
 #define _APS_NEXT_CONTROL_VALUE         1396
 #define _APS_NEXT_SYMED_VALUE           130

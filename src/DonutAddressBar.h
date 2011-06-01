@@ -23,6 +23,7 @@ public:
 	BOOL	IsWindow() const;
 	bool	GetDroppedStateEx() const;
 	CEdit	GetEditCtrl();
+	void	ReplaceIcon(HICON hIcon);
 
 	// Oparation
 	void	ShowDropDown(BOOL bShow);

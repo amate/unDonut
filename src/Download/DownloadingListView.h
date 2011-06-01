@@ -25,7 +25,6 @@ struct DLItem
 	CString strFileName;	// ファイル名
 	CString strFilePath;	// ファイルパス
 	int		nImgIndex;
-	CProgressBarCtrl	wndProgress;
 	CString strText;
 
 	DWORD	dwState;
@@ -41,9 +40,9 @@ struct DLItem
 		, nProgressMax(0)
 		, nOldProgress(0)
 		, bAbort(false)
-		, strText(_T("　　　　　　　　　　　　　　　　　　　　"))
 	{
-		
+		strText.GetBufferSetLength(512);
+		strText.ReleaseBuffer(512);
 	}
 };
 
@@ -53,6 +52,7 @@ struct DLItem
 
 class CDownloadingListView 
 	: public CScrollWindowImpl<CDownloadingListView>
+	, public CThemeImpl<CDownloadingListView>
 {
 public:
 	//DECLARE_WND_SUPERCLASS(_T("DownloadingListView"), GetWndClassName())
@@ -96,7 +96,6 @@ public:
 		MSG_WM_DESTROY	( OnDestroy )
 		MSG_WM_SIZE		( OnSize	)
 		MSG_WM_LBUTTONDOWN( OnLButtonDown )
-		MSG_WM_PARENTNOTIFY( OnParentNotify	)
 		MSG_WM_ERASEBKGND( OnEraseBkgnd )
 		MSG_WM_TIMER( OnTimer )
 		MESSAGE_HANDLER_EX( WM_USER_ADDTODOWNLOADLIST , OnAddToList	)
@@ -105,6 +104,7 @@ public:
 		MSG_WM_MOUSEMOVE( OnMouseMove )
         CHAIN_MSG_MAP( CScrollWindowImpl<CDownloadingListView> )
         CHAIN_MSG_MAP_ALT( CScrollWindowImpl<CDownloadingListView>, 1)
+		CHAIN_MSG_MAP(CThemeImpl<CDownloadingListView>)
     END_MSG_MAP()
 
 
@@ -112,7 +112,6 @@ public:
 	void	OnDestroy();
 	void	OnSize(UINT nType, CSize size);
 	void	OnLButtonDown(UINT nFlags, CPoint point);
-	void	OnParentNotify(UINT message, UINT nChildID, LPARAM lParam);
 	BOOL	OnEraseBkgnd(CDCHandle dc) { return TRUE; }
 	void	OnTimer(UINT_PTR nIDEvent);
 	LRESULT OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam);

@@ -245,7 +245,6 @@ static int Run(LPTSTR lpstrCmdLine = NULL, int nCmdShow = SW_SHOWDEFAULT, bool b
 	_Module.AddMessageLoop(&theLoop);
 
 	CMainFrame	 wndMain;
-
 	if (wndMain.CreateEx() == NULL) {
 		ATLTRACE( _T("Main window creation failed!\n") );
 		return 0;
@@ -462,8 +461,8 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	// DLL攻撃対策
 	SetDllDirectory(_T(""));
 
-#if 0
-//  #if defined (_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
+#if 1
+	#if defined (_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 	//メモリリーク検出用
 	_CrtSetReportMode(_CRT_WARN, _CRTDBG_MODE_FILE);
 	_CrtSetReportFile(_CRT_WARN, _CRTDBG_FILE_STDOUT);
@@ -471,13 +470,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 				| _CRTDBG_CHECK_ALWAYS_DF
 	);
 	//_CrtSetBreakAlloc(874);
-//  #endif
+	#endif
 
-#ifdef _CRTDBG_MAP_ALLOC
-	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+	#ifdef _CRTDBG_MAP_ALLOC
+	//	_CrtSetDbgFlag( _CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF );
+	#endif
 #endif
 
-#endif
 #if 0
 	DWORD	dwMaxConection = 20;
 	BOOL	b = ::InternetSetOption(NULL, INTERNET_OPTION_MAX_CONNS_PER_SERVER, (LPVOID)&dwMaxConection, sizeof(DWORD));
@@ -565,7 +564,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 				if (HaveEnvFiles() == false)
 					lpstrCmdLine = _T("about:warning");
 			}
-
 			nRet = Run(lpstrCmdLine, nCmdShow, bTray);
 		}
 	  #if 1 //+++ WTLのメイン窓クローズが正常終了時に、終了コードとして1を返す...

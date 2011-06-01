@@ -7,7 +7,7 @@
 #include "IgnoreURLsOption.h"
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
-
+#include "../MtlMisc.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
@@ -41,7 +41,7 @@ void CIgnoredURLsOption::GetProfile()
 
 	s_pIgnoredURLs = new CStringList;
 	//		MtlGetProfileString(pr, std::back_inserter(*s_pIgnoredURLs), _T("url"));
-	::FileReadString(_GetFilePath( _T("CloseURL.ini") ), s_pIgnoredURLs);
+	::FileReadString(_GetFilePath( _T("CloseURL.ini") ), *s_pIgnoredURLs);
 }
 
 
@@ -55,7 +55,7 @@ void CIgnoredURLsOption::WriteProfile()
 	pr.SetValue( s_bValid != 0, _T("IsValid") );
 
 	//		MtlWriteProfileString(s_pIgnoredURLs->begin(), s_pIgnoredURLs->end(), pr, _T("url"));
-	::FileWriteString(_GetFilePath( _T("CloseURL.ini") ), s_pIgnoredURLs);
+	FileWriteString(_GetFilePath( _T("CloseURL.ini") ), *s_pIgnoredURLs);
 
 	delete	s_pIgnoredURLs;
 	s_pIgnoredURLs = NULL;	//+++ delete‚µ‚½‚çƒNƒŠƒA.

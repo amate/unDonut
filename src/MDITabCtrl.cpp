@@ -10,13 +10,7 @@
 #include "Donut.h"
 #include "option/MenuDialog.h"
 #include "option/RightClickMenuDialog.h"
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
+#include "DonutAddressBar.h"
 
 
 namespace MTL {
@@ -256,23 +250,12 @@ void CMDITabCtrl::SetMDIClient(HWND hWndMDIClient)
 
 
 
-// UDT JOBBY
-// タブバーを透明にする (メニューバーのコピー)
-// ダブルバッファの使用で不要に(_DoPaintに移動)
-LRESULT CMDITabCtrl::OnEraseBackground(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL &bHandled)
-{
-	return 1;
-}
-// ENDE
-
-
 
 //*+++ 実際のボタンにあわせてXButtonからMButtonに関数名を改名しとく...
-LRESULT CMDITabCtrl::OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL & /*bHandled*/)
+void	CMDITabCtrl::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	SetMsgHandled(FALSE);
 
-	POINT	point = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
 
 	CSimpleArray<int> arrCurMultiSel;
 	HWND			  hWndChild;
@@ -308,8 +291,6 @@ LRESULT CMDITabCtrl::OnMButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam
 				::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) m_nXClickCommand, 0);
 		}
 	}
-
-	return 0;
 }
 
 
@@ -466,6 +447,16 @@ void CMDITabCtrl::OnCommand(UINT wNotifyCode, int wID, HWND hwndCtl)
 		wnd.SendMessage(WM_SYSCOMMAND, (WPARAM) wID);
 }
 
+//-----------------------------------
+/// タブにFaviconを設定する
+void	CMDITabCtrl::OnSetFaviconImage(HWND hWnd, HICON hIcon)
+{
+	int nIndex = GetTabIndex(hWnd);
+	_ReplaceFavicon(nIndex, hIcon);
+
+	if (nIndex == GetCurSel())
+		CDonutAddressBar::GetInstance()->ReplaceIcon(hIcon);
+}
 
 
 void CMDITabCtrl::OnMDIChildCreate(HWND hWnd)

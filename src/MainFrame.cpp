@@ -15,7 +15,6 @@
 //#include "PropertySheet.h"
 #include "DonutOption.h"
 #include "MenuEncode.h"
-#include "RebarSupport.h"
 #include "StyleSheetOption.h"
 #include "ExStyle.h"
 #include "MenuDropTargetWindow.h"
@@ -32,6 +31,7 @@
 #include "api.h"
 #include "PluginEventImpl.h"
 #include "Thumbnail.h"
+#include "FaviconManager.h"
 
 #ifdef _DEBUG
 	const bool _Donut_MainFrame_traceOn = false;
@@ -292,6 +292,8 @@ HWND	CMainFrame::init_tabCtrl()
 	HWND	hWndMDITab	  = m_MDITab.Create(m_hWnd, CRect(0, 0, 200, 20), _T("Donut MDITab"),
 												WS_CHILD | WS_VISIBLE, NULL, IDC_MDITAB);
 	ATLASSERT( ::IsWindow(hWndMDITab) );
+	
+	CFaviconManager::Init(&m_MDITab);
 
 	m_MDITab.LoadMenu(IDR_MENU_TAB);
 	m_MDITab.LoadConnectingAndDownloadingImageList( IDB_MDITAB, 6, 6, RGB(255, 0, 255) );
@@ -627,6 +629,11 @@ void CMainFrame::OnDestroy()
 	OnMenuRefreshScript(FALSE);
 
 	RevokeDragDrop();
+
+	// メッセージループからメッセージフィルタとアイドルハンドラを削除
+    CMessageLoop* pLoop = _Module.GetMessageLoop();
+    pLoop->RemoveMessageFilter(this);
+    pLoop->RemoveIdleHandler(this);
 
 	ATLTRACE(_T("メインフレームの終了中...\n"));
 #if 0
@@ -3719,9 +3726,10 @@ BOOL CMainFrame::_IsRebarBandLocked()
 // ツールバーなどをロック(固定)する
 LRESULT CMainFrame::OnViewToolBarLock(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	CReBarSupport RebarSup(m_hWndToolBar);
+	m_ReBar.LockBands(!_IsRebarBandLocked());
+	//CReBarSupport RebarSup(m_hWndToolBar);
 
-	RebarSup.SetBandsLock( !_IsRebarBandLocked() );
+	//RebarSup.SetBandsLock( !_IsRebarBandLocked() );
 
 	return 0;
 }
@@ -6236,7 +6244,7 @@ long CMainFrame::ApiDeleteGroupItem(BSTR bstrGroupFile, int nIndex)
 	}
 
 	std::list<CString>	buf;
-	bool bRet = FileReadString(strGroupFile, &buf);
+	bool bRet = FileReadString(strGroupFile, buf);
 	if (!bRet) {
 		MessageBox(_T("Error2: ファイルの読み込みに失敗しました。"));
 		return 0;
@@ -6256,7 +6264,7 @@ long CMainFrame::ApiDeleteGroupItem(BSTR bstrGroupFile, int nIndex)
 		}
 	}
 
-	bRet = FileWriteString(strGroupFile, &buf);
+	bRet = FileWriteString(strGroupFile, buf);
 	if (!bRet) {
 		MessageBox(_T("Error3: ファイルの書き込みに失敗しました。"));
 		return 0;

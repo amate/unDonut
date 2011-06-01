@@ -36,6 +36,9 @@
     <Filter Include="Source Files\Download">
       <UniqueIdentifier>{c62d03f5-8075-47c5-b214-1818866b90e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\plugin">
+      <UniqueIdentifier>{c4c05264-3d85-49a5-b3d0-c6bd865e17d5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccelManager.cpp">
@@ -63,9 +66,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="ParseInternetShortcutFile.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="PluginManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
@@ -257,8 +257,17 @@
     <ClCompile Include="DonutSearchBar.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="APIHook.cpp">
+    <ClCompile Include="FaviconManager.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="APIHook.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="GdiplusUtil.cpp">
+      <Filter>Source Files\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="PluginManager.cpp">
+      <Filter>Source Files\plugin</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -352,9 +361,6 @@
     <ClInclude Include="MenuControl.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="MenuDefines.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="MenuDropTargetWindow.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -370,18 +376,6 @@
     <ClInclude Include="ParseInternetShortcutFile.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="PluginEventImpl.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\PluginInfo.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PluginManager.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="RebarSupport.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="RecentDocumentListFixed.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -392,9 +386,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="stdafx.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="StyleSheetOption.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ToolTipManager.h">
@@ -712,8 +703,26 @@
     <ClInclude Include="DonutSearchBar.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="APIHook.h">
+    <ClInclude Include="FaviconManager.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GdiplusUtil.h">
+      <Filter>Source Files\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="APIHook.h">
+      <Filter>Source Files\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginManager.h">
+      <Filter>Source Files\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\PluginInfo.h">
+      <Filter>Source Files\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="PluginEventImpl.h">
+      <Filter>Source Files\plugin</Filter>
+    </ClInclude>
+    <ClInclude Include="StyleSheetOption.h">
+      <Filter>Source Files\option</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

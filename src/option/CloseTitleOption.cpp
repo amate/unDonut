@@ -38,7 +38,7 @@ void CCloseTitlesOption::GetProfile()
 	CIniFileI	pr( g_szIniFileName, _T("CloseTitles") );
 
 	s_pCloseTitles = new CStringList;
-	FileReadString(_GetFilePath( _T("CloseTitle.ini") ), s_pCloseTitles);
+	FileReadString(_GetFilePath( _T("CloseTitle.ini") ), *s_pCloseTitles);
 
 	DWORD		dwValid = 0;	//+++ = 0.
 	LONG		lRet = pr.QueryValue( dwValid, _T("IsValid") );
@@ -59,7 +59,7 @@ void CCloseTitlesOption::WriteProfile()
 	pr.SetValue( s_bValid != 0, _T("IsValid") );
 	pr.Close();
 
-	FileWriteString(_GetFilePath( _T("CloseTitle.ini") ), s_pCloseTitles);
+	FileWriteString(_GetFilePath( _T("CloseTitle.ini") ), *s_pCloseTitles);
 
 	delete s_pCloseTitles;
 	s_pCloseTitles = NULL;	//+++ delete‚µ‚½‚çƒNƒŠƒA.

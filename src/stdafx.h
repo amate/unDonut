@@ -11,7 +11,6 @@
 
 #if 1	//+++	デバッグ用
  #define USE_ZEROFILL_NEW				//+++ 手抜きで 0 クリアをする new を使う. まだはずさないほうがよさそう...
- //#define USE_DIET
  //#define USE_DLMALLOC
  //#define USE_ORG_UNDONUT_INI			//+++ unDonut+ から変わってしまった .ini や拡張プロパティの値をなるべく、オリジナルのunDonutにあわせる場合に定義.
  //#define USE_MEMORYLOG 				//+++ donutでのnew,deleteログ生成.
@@ -214,6 +213,7 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 //非XPでも動作するように動的リンクするようにした改造版ヘッダ
 #if _MSC_VER >= 1500	//+++ メモ:undonutで使うWTL80側を改造したのでこちらを使ってもok.
 						//+++ だが、ヘッダがそろってないとダメなようなんで、手抜きでコンパイラバージョンで切り替え
+#define _WTL_USE_VSSYM32
 #include <atltheme.h>
 #else					//+++ 古いコンパイラ用...だが、こっちのほうがサイズ小さくなるかも...
 #include "WtlFixed/atltheme_d.h"
@@ -267,10 +267,9 @@ void  operator	delete[](void* p, const char* fname, unsigned line);
 
 #include "dbg_wm.h"
 
-
+#include "DonutPFunc.h"
 #include "DonutDefine.h"
 #include "Misc.h"
-#include "DonutPFunc.h"
 #include "dialog/DebugWindow.h"
 
 #ifdef USE_ATL3_BASE_HOSTEX/*_ATL_VER < 0x700*/ //+++
@@ -281,6 +280,8 @@ void  operator	delete[](void* p, const char* fname, unsigned line);
 
 #undef min
 #undef max
+using std::min;
+using std::max;
 
 #if _ATL_VER < 0x700
 namespace std {

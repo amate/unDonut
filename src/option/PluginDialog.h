@@ -71,7 +71,7 @@ private:
 
 	LRESULT OnListPluginSelectchange(LPNMHDR);
 
-	void	InitListItem();
+	void	InitListItem(const CString& strDirectory);
 	void	DoCheckListItem();
 };
 

@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "ExecutableDialog.h"
 #include "../DonutPFunc.h"
-
+#include "../MtlMisc.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
