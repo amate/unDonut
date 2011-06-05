@@ -197,12 +197,6 @@
     <ClCompile Include="MainFrame.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="MDITabCtrl.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="TabCtrl.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
     <ClCompile Include="DonutClipboardBar.cpp">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClCompile>
@@ -268,6 +262,12 @@
     </ClCompile>
     <ClCompile Include="PluginManager.cpp">
       <Filter>Source Files\plugin</Filter>
+    </ClCompile>
+    <ClCompile Include="option\MDITabDialog.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutTabBar.cpp">
+      <Filter>Source Files\Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -368,9 +368,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OleDragDropTabCtrl.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="ParseInternetShortcutFile.h">
@@ -622,12 +619,6 @@
     <ClInclude Include="MainFrame.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="MDITabCtrl.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="TabCtrl.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="DonutClipboardBar.h">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClInclude>
@@ -723,6 +714,9 @@
     </ClInclude>
     <ClInclude Include="StyleSheetOption.h">
       <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutTabBar.h">
+      <Filter>Source Files\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

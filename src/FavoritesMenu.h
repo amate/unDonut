@@ -271,7 +271,7 @@ void _The_OpenAllFiles(const CString &strFilePath, _MainFrame *__pMainFrame)
 
 	} else if ( strCheck == _T("a ") && MtlIsDirectoryPath(strPath) ) {
 		CLockRedrawMDIClient	 lock(__pMainFrame->m_hWndMDIClient);
-		CMDITabCtrl::CLockRedraw lock2(__pMainFrame->mdiTab());
+		CDonutTabBar::CLockRedraw lock2(__pMainFrame->mdiTab());
 		MtlForEachFile( strPath, [__pMainFrame](const CString &strFileName) {
 			DonutOpenFile(__pMainFrame->m_hWnd, strFileName);
 		});

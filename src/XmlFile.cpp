@@ -22,10 +22,8 @@ CXmlFileRead::CXmlFileRead(const CString &FilePath)
 	// ファイルストリーム作成
     CComPtr<IStream> pStream;
 	HRESULT hr = SHCreateStreamOnFile(FilePath, STGM_READ, &pStream);
-    if (FAILED(hr)){
-		CString strError = _T("SHCreateStreamOnFile失敗\n");
-		strError += GetLastErrorString(hr);
-        throw (LPCTSTR)strError;
+    if (FAILED(hr)) {
+        throw _T("SHCreateStreamOnFile失敗");
     }
 
     if (FAILED(m_pReader->SetInput(pStream))){
@@ -119,8 +117,9 @@ CXmlFileWrite::CXmlFileWrite(const CString &FilePath)
    
 	// ファイルストリーム作成
     CComPtr<IStream> pStream;
-    if (FAILED(SHCreateStreamOnFile(FilePath, STGM_CREATE | STGM_WRITE, &pStream))){
-        throw _T("SHCreateStreamOnFile失敗");
+	HRESULT hr = SHCreateStreamOnFile(FilePath, STGM_CREATE | STGM_WRITE, &pStream);
+    if (FAILED(hr)) {
+        throw _T("SHCreateStreamOnFile失敗\n");
     }
 
     if (FAILED(m_pWriter->SetOutput(pStream))){

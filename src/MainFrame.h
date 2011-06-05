@@ -22,7 +22,7 @@
 #include "DonutToolBar.h"
 #include "DonutStatusBarCtrl.h"
 #include "DonutSearchBar.h"
-#include "MDITabCtrl.h"
+#include "DonutTabBar.h"
 #include "DonutP.h"
 //#include "DonutP_i.c"
 //+++ #include "FileCriticalSection.h"				//+++ 別の方法をとるので、不要になった.
@@ -74,7 +74,7 @@ public:
 	void 			startupMainFrameStayle(int nCmdShow, bool bTray);	//+++ 起動初回の窓サイズ設定.
 
 	bool			IsFullScreen() { return m_bFullScreen != 0;	/*return (GetStyle() & WS_CAPTION) == 0;*/	} //+++
-	CMDITabCtrl& 	mdiTab() { return m_MDITab; }						//+++
+	CDonutTabBar& 	mdiTab() { return m_MDITab; }						//+++
 
 	CChildFrame*	GetChildFrame(HWND hWndChild);
 	CChildFrame*	GetActiveChildFrame();
@@ -465,7 +465,7 @@ public:
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_LINKBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_LINKBAR		) )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_GOBUTTON, 	CAddressBarOption::s_bGoBtnVisible )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_MDITAB 		) )
-		UPDATE_COMMAND_UI_SETCHECK_FLAG ( ID_VIEW_TABBAR_MULTI, MTB_EX_MULTILINE, m_MDITab.GetMDITabExtendedStyle() )
+		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR_MULTI, CTabBarOption::s_bMultiLine )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TOOLBAR_LOCK,  _IsRebarBandLocked()					)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_CLIPBOARDBAR,  m_ExplorerBar.IsClipboardBarVisible()	)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PANELBAR, 	 m_ExplorerBar.IsPanelBarVisible()		)
@@ -670,7 +670,6 @@ private:
 	void 		init_explorerBar();
 	void		init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar);
 	void 		init_message_loop();
-	void 		init_mdiTab();
 	void 		init_sysMenu();
 	void 		init_loadPlugins();
 
@@ -898,7 +897,7 @@ private:
 
 
 	// Daba members
-	CMDITabCtrl 						m_MDITab;
+	CDonutTabBar 						m_MDITab;
 	CCommandBarCtrl2					m_CmdBar;
 	CDonutToolBar						m_ToolBar;
 	CDonutLinksBarCtrl<CMainFrame>		m_LinkBar;

@@ -4,27 +4,26 @@
 
 #include "stdafx.h"
 #include "FaviconManager.h"
-#include "MDITabCtrl.h"
 #include "Misc.h"
 #include <boost/thread.hpp>
 using boost::thread;
 #include "GdiplusUtil.h"
-
+#include <atlsync.h>
 
 
 /////////////////////////////////////////
 // CFaviconManager
 
 // Data members
-CMDITabCtrl*	CFaviconManager::s_pTabCtrl = NULL;
+HWND	CFaviconManager::s_hWndTabBar = NULL;
 unordered_map<std::wstring, CIcon>	CFaviconManager::s_mapIcon;	// key:favicon‚ÌURL ’l:icon
 
 
 //--------------------------
 /// ‰Šú‰»
-void	CFaviconManager::Init(CMDITabCtrl* pTabCtrl)
+void	CFaviconManager::Init(HWND hWndTabBar)
 {
-	s_pTabCtrl = pTabCtrl;
+	s_hWndTabBar = hWndTabBar;
 }
 
 //-------------------------
@@ -88,7 +87,7 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 			}
 		}
 	}
-	s_pTabCtrl->PostMessage(WM_SETFAVICONIMAGE, (WPARAM)hWnd, (LPARAM)hFaviIcon);
+	PostMessage(s_hWndTabBar, WM_SETFAVICONIMAGE, (WPARAM)hWnd, (LPARAM)hFaviIcon);
 	lock.Leave();
 	} catch(...) {
 		ATLASSERT(FALSE);

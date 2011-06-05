@@ -233,8 +233,10 @@ void CToolBarOption::WriteProfileToolbar()
 		WriteProfileToolbarShowButton();
 		Misc::MoveToBackupFile(strToolbarOldPath);	// ‹ŒŒ^Ž®‚Íbak‚É
 	}
-	CString strToolbarxmlPath = _GetSkinDir() + _T("Toolbar.xml");
-
+	CString SkinDir = _GetSkinDir();
+	CString strToolbarxmlPath = SkinDir + _T("Toolbar.xml");
+	if (::PathIsDirectory(SkinDir) == FALSE)
+		::SHCreateDirectory(NULL, SkinDir);
 	try {
 		CXmlFileWrite	xmlWrite(strToolbarxmlPath);
 		xmlWrite.WriteStartElement(L"DonutToolBar");

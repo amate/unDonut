@@ -1331,7 +1331,7 @@ void ErrorLogPrintf(const TCHAR* fmt, ...)
 	if (fp) {
 		va_list app;
 		va_start(app, fmt);
-	  #if 0 //def UNICODE	//+++ unicode‘Îô
+	  #if 1 //def UNICODE	//+++ unicode‘Îô
 		CString str;
 		str.FormatV(fmt, app);
 		fputs(& wcs_to_sjis(str)[0], fp);

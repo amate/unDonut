@@ -175,6 +175,7 @@ static bool _PrivateInit()
 	CDonutConfirmOption::GetProfile();
 	CStyleSheetOption::GetProfile();
 	CToolBarOption::GetProfile();
+	CTabBarOption::GetProfile();
 	ie_feature_control_setting();
 
 	CFavoritesMenuOption::GetProfile();

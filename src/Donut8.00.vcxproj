@@ -908,10 +908,11 @@
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="ItemIDList.cpp" />
     <ClCompile Include="MainFrame.cpp" />
-    <ClCompile Include="MDITabCtrl.cpp" />
+    <ClCompile Include="DonutTabBar.cpp" />
     <ClCompile Include="Misc.cpp" />
     <ClCompile Include="newdelete.cpp" />
     <ClCompile Include="option\AddressBarPropertyPage.cpp" />
+    <ClCompile Include="option\MDITabDialog.cpp" />
     <ClCompile Include="option\RightClickMenuDialog.cpp" />
     <ClCompile Include="option\UrlSecurityExPropDialog.cpp" />
     <ClCompile Include="ParseInternetShortcutFile.cpp" />
@@ -1042,7 +1043,6 @@
     <ClCompile Include="option\StartUpOption.cpp" />
     <ClCompile Include="option\ToolBarDialog.cpp" />
     <ClCompile Include="option\UrlSecurityOption.cpp" />
-    <ClCompile Include="TabCtrl.cpp" />
     <ClCompile Include="VersionControl.cpp" />
     <ClCompile Include="XmlFile.cpp" />
   </ItemGroup>
@@ -1105,13 +1105,12 @@
     <ClInclude Include="MainFrame.h" />
     <ClInclude Include="MainFrameFileDropTarget.h" />
     <ClInclude Include="MDIChildUserMessenger.h" />
-    <ClInclude Include="MDITabCtrl.h" />
+    <ClInclude Include="DonutTabBar.h" />
     <ClInclude Include="MenuControl.h" />
     <ClInclude Include="MenuDropTargetWindow.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="OleDragDropExpToolBarCtrl.h" />
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h" />
-    <ClInclude Include="OleDragDropTabCtrl.h" />
     <ClInclude Include="option\RightClickMenuDialog.h" />
     <ClInclude Include="option\UrlSecurityExPropDialog.h" />
     <ClInclude Include="ParseInternetShortcutFile.h" />
@@ -1127,7 +1126,6 @@
     <ClInclude Include="SimpleTree.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StyleSheetOption.h" />
-    <ClInclude Include="TabCtrl.h" />
     <ClInclude Include="Thumbnail.h" />
     <ClInclude Include="ToolTipManager.h" />
     <ClInclude Include="dialog\aboutdlg.h" />

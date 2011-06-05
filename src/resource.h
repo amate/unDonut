@@ -529,6 +529,7 @@
 #define IDC_EDIT_SHORTCUTCODE			1394
 #define IDC_EDIT_DEFAULT_USER_AGENT		1395
 #define IDC_BTN_CHANGE_COMMAND			1396
+#define IDC_SHOWFAVICON					1397
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -875,7 +876,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        316
 #define _APS_NEXT_COMMAND_VALUE         33187
-#define _APS_NEXT_CONTROL_VALUE         1396
+#define _APS_NEXT_CONTROL_VALUE         1398
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

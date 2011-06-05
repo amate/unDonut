@@ -12,7 +12,7 @@
 #include "FavoritesMenu.h"
 #include "DonutView.h"
 #include "DonutAddressBar.h"
-#include "MDITabCtrl.h"
+#include "DonutTabBar.h"
 
 #include "option/DLControlOption.h"
 #include "option/StartUpOption.h"
@@ -81,7 +81,7 @@ public:
 
 public:
 	// Constructor/Destructor
-	CChildFrame(  CMDITabCtrl &MDITab
+	CChildFrame(  CDonutTabBar &MDITab
 				, CDonutAddressBar &addressbar
 				, bool bNewWindow2
 				, DWORD dwDefaultDLControlFlags
@@ -91,7 +91,7 @@ public:
 
 	static CChildFrame *NewWindow(
 			HWND				hWndMDIClient,
-			CMDITabCtrl &		tabMDI,
+			CDonutTabBar &		tabMDI,
 			CDonutAddressBar &	adBar,
 			bool				bNewWindow2 = false,
 			DWORD				dwDLFlags	= CDLControlOption::s_dwDLControlFlags,
@@ -159,7 +159,7 @@ public:
 	// Message map and handlers
 	BEGIN_MSG_MAP(CChildFrame)
 		try {	//+++
-		PASS_MSG_MAP_MDICHILD_TO_MDITAB  (m_MDITab)
+		PASS_MSG_MAP_MDICHILD_TO_TAB  (m_MDITab)
 //		PASS_MSG_MAP_MENUOWNER_TO_EXPMENU(m_FavMenu)
 
 		MSG_WM_SIZE 		( OnSize			)
@@ -177,7 +177,6 @@ public:
 		// UH
 		USER_MSG_WM_MENU_GOBACK 	( OnMenuGoBack		)
 		USER_MSG_WM_MENU_GOFORWARD	( OnMenuGoForward	)
-		MSG_WM_USER_IS_SELECTED 	( OnIsSelectedTab	)
 		MSG_WM_USER_HILIGHT 		( OnHilight 		)
 		MSG_WM_USER_FIND_KEYWORD	( OnFindKeyWord 	)
 		COMMAND_ID_HANDLER			( ID_WINDOW_TILE_HORZ, OnWindowTile )
@@ -309,7 +308,6 @@ private:
 	LRESULT OnUsedMouseGesture() { return (m_view.m_ViewOption.m_dwExStyle & DVS_EX_MOUSE_GESTURE) != 0; }
 	LRESULT OnSizeChgEx(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled) { m_nCmdType = SC_RESTORE; return 0; }
 	LRESULT OnWindowTile(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/) { m_nCmdType = SC_RESTORE; return 0; }
-	BOOL	OnIsSelectedTab(HWND hWnd) { return (GetTabItemState(hWnd) & TCISTATE_MSELECTED) != 0; }
 	LRESULT OnMenuGoBack(HMENU hMenu) { MenuChgGoBack(hMenu); return 0; }
 	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
 	void 	OnRegisterAsBrowser(WORD wNotifyCode, WORD /*wID*/, HWND /*hWndCtl*/) { SetRegisterAsBrowser(wNotifyCode == NM_ON); }
@@ -445,7 +443,7 @@ private:
 
 	int 	_GetShowCmd();
 
-	BYTE 	GetTabItemState(HWND hTarWnd);
+	DWORD 	GetTabItemState(HWND hTarWnd);
 
 	virtual void PreDocumentComplete( /*[in]*/ IDispatch *pDisp, /*[in]*/ VARIANT *URL);
 
@@ -459,7 +457,7 @@ private:
 	// Data members
 	CDonutView									m_view;
 
-	MTL::CMDITabCtrl&							m_MDITab;
+	CDonutTabBar&								m_MDITab;
 	CDonutAddressBar&							m_AddressBar;
 //	CChildFavoriteMenu<CChildFrame> 			m_FavMenu;		// タブ右クリックのお気に入り用？
 	CString 									m_strStatusBar;

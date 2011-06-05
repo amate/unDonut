@@ -144,7 +144,6 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	CDLControlOption::SetUserAgent();				// ユーザーエージェントの設定
 	init_message_loop();							// メッセージループの準備
 
-	init_mdiTab();									// タブに関する設定
 	//SetAutoBackUp();//OnBackUpOptionChanged(0,0,0);// OnCreate後の処理で別途呼び出すようにした.
 	RegisterDragDrop();	//DragAcceptFiles();		// ドラッグ＆ドロップ準備
 
@@ -289,14 +288,11 @@ HWND	CMainFrame::init_searchBar()
 /// create tabctrl
 HWND	CMainFrame::init_tabCtrl()
 {
-	HWND	hWndMDITab	  = m_MDITab.Create(m_hWnd, CRect(0, 0, 200, 20), _T("Donut MDITab"),
-												WS_CHILD | WS_VISIBLE, NULL, IDC_MDITAB);
+	HWND	hWndMDITab = m_MDITab.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndMDITab) );
 	
-	CFaviconManager::Init(&m_MDITab);
+	CFaviconManager::Init(hWndMDITab);
 
-	m_MDITab.LoadMenu(IDR_MENU_TAB);
-	m_MDITab.LoadConnectingAndDownloadingImageList( IDB_MDITAB, 6, 6, RGB(255, 0, 255) );
 	return hWndMDITab;
 }
 
@@ -522,14 +518,6 @@ void CMainFrame::init_message_loop()
 	pLoop->AddIdleHandler(this);
 }
 
-//-----------------------------------
-/// mdiタブに関する情報の読み込み
-void CMainFrame::init_mdiTab()
-{
-	CIniFileI	pr( g_szIniFileName, _T("MDITab") );
-	MtlGetProfileMDITab(pr, m_MDITab);
-	pr.Close();
-}
 
 //--------------------------------------
 /// システムメニューに「メニューを表示]を追加
@@ -1472,35 +1460,146 @@ bool	CMainFrame::_IsSelectedTextInner()
 			AtlThrow(hr);
 
 		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
+		if (spDocument == NULL)
+			AtlThrow(hr);
 
-		CComPtr<IHTMLElement>	spHitElement;
-		spDocument->elementFromPoint(pt.x, pt.y, &spHitElement);
-		if (spHitElement) {
-			// フレームの可能性
-			CComQIPtr<IHTMLFrameElement3>	spFrame = spHitElement;
-			if (spFrame) {
-				LONG x, y;
-				spHitElement->get_offsetTop(&y);
-				spHitElement->get_offsetLeft(&x);
-				pt.Offset(-x, -y);
-				CComPtr<IDispatch>	spFrameDisp;
-				spFrame->get_contentDocument(&spFrameDisp);
-				CComQIPtr<IHTMLDocument2>	spFrameDocument = spFrameDisp;
-				ATLASSERT(spFrameDocument);
-				spDocument	= spFrameDocument;
-				if (spDocument == NULL)
-					return false;
+		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+			HRESULT hr = S_OK;
+			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
+
+			CComPtr<IHTMLElementCollection>	spCol;
+			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spCol);
+			if (spCol.p) {
+				long length = 0;
+				hr = spCol->get_length(&length);
+				for (long i = 0; i < length; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
+					if (spFrame.p) {
+						CRect rc;
+						spFrame->get_offsetLeft(&rc.left);
+						spFrame->get_offsetTop(&rc.top);
+						long temp;
+						spFrame->get_offsetWidth(&temp);
+						rc.right = rc.left + temp;
+						spFrame->get_offsetHeight(&temp);
+						rc.bottom= rc.top + temp;
+
+						bool b = false;
+						CPoint ptScroll;
+						if (rc.PtInRect(pt) == false) {
+							CComPtr<IHTMLElement>	spBody;
+							spDoc2->get_body(&spBody);
+							CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+							spBody2->get_scrollTop(&ptScroll.y);
+							spBody2->get_scrollLeft(&ptScroll.x);
+
+							if (ptScroll == CPoint(0, 0)) {
+								CComQIPtr<IHTMLElement2>	spFrame2 = spFrame;
+								CRect rcClient;
+								spFrame2->get_clientTop(&rcClient.top);
+								spFrame2->get_clientLeft(&rcClient.left);
+								spFrame2->get_clientWidth(&temp);
+								rcClient.right = rcClient.left + temp;
+								spFrame2->get_clientHeight(&temp);
+								rcClient.bottom= rcClient.top + temp;
+
+								CComPtr<IHTMLElement>	spDocumentElement;
+								pDoc->get_documentElement(&spDocumentElement);
+								CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+								spDocumentElement2->get_scrollTop(&ptScroll.y);
+								spDocumentElement2->get_scrollLeft(&ptScroll.x);
+								b = true;
+							}
+							rc -= ptScroll;
+						}
+						if (rc.PtInRect(pt)) {
+							if (b && ptScroll != CPoint(0, 0))
+								pt -= rc.TopLeft();	//\\+
+							CComQIPtr<IHTMLIFrameElement3>	spIFrameElement3 = spFrame;
+							if (spIFrameElement3 == nullptr)
+								continue;
+							CComPtr<IDispatch>	spDisp3;
+							spIFrameElement3->get_contentDocument(&spDisp3);
+							CComQIPtr<IHTMLDocument2>	spIFrameDocument = spDisp3;
+							CComQIPtr<IHTMLWindow2> spWindow;
+							spIFrameDocument->get_parentWindow(&spWindow);
+							return spWindow;
+						}
+					}
+				}
+			}
+			//CComPtr<IHTMLElementCollection>	spCol;
+			spCol.Release();
+			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spCol);
+			CComPtr<IHTMLFramesCollection2>	spFrames;
+			spDoc2->get_frames(&spFrames);
+			if (spCol.p && spFrames.p) {
+				long length = 0, framelength = 0;
+				hr = spCol->get_length(&length);
+				if (length == 0)
+					return nullptr;
+				hr = spFrames->get_length(&framelength);
+				ATLASSERT(length == framelength);
+				for (long i = 0; i < length; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
+					if (spFrame.p) {
+						CRect rc;
+						spFrame->get_offsetLeft(&rc.left);
+						spFrame->get_offsetTop(&rc.top);
+						long temp;
+						spFrame->get_offsetWidth(&temp);
+						rc.right += rc.left + temp;
+						spFrame->get_offsetHeight(&temp);
+						rc.bottom+= rc.top + temp;
+						if (rc.PtInRect(pt)) {
+							CComVariant vResult;
+							spFrames->item(&vIndex, &vResult);
+							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+							return spWindow;
+						}
+					}
+				}
+			}
+			return nullptr;
+		};
+
+		CComQIPtr<IHTMLDocument3>	spDocument3 = spDocument;
+		CComPtr<IHTMLWindow2> spWindow = funcGetHTMLWindowOnCursorPos(pt, spDocument3);
+		if (spWindow) {
+			spDocument.Release();
+			CComQIPtr<IHTMLDocument2>	spFrameDocument;
+			hr = spWindow->get_document(&spFrameDocument);
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					AtlThrow(hr);
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					AtlThrow(hr);
+				spDocument = spDisp;
+			} else {
+				spDocument = spFrameDocument;
 			}
 		}
 
 		CComPtr<IDispatch>	spTargetDisp;
-		auto funcGetRangeDisp = [&spTargetDisp, &pt](IHTMLDocument2 *pDocument) {
+		auto funcGetRangeDisp = [&spTargetDisp](CPoint pt, IHTMLDocument2 *pDocument) {
 			CComPtr<IHTMLSelectionObject>		spSelection;
 			HRESULT 	hr	= pDocument->get_selection(&spSelection);
-			if ( SUCCEEDED( hr ) ) {
+			if ( SUCCEEDED(hr) ) {
 				CComPtr<IDispatch>				spDisp;
 				hr	   = spSelection->createRange(&spDisp);
-				if ( SUCCEEDED( hr ) ) {
+				if ( SUCCEEDED(hr) ) {
 					CComQIPtr<IHTMLTxtRange>	spTxtRange = spDisp;
 					if (spTxtRange != NULL) {
 						CComBSTR				bstrText;
@@ -1513,7 +1612,7 @@ bool	CMainFrame::_IsSelectedTextInner()
 			}
 		};
 
-		funcGetRangeDisp(spDocument);
+		funcGetRangeDisp(pt, spDocument);
 		if (spTargetDisp == NULL)
 			return false;
 
@@ -1536,15 +1635,10 @@ bool	CMainFrame::_IsSelectedTextInner()
 				CComQIPtr<IHTMLRect>	spRect = vResult.pdispVal;
 				ATLASSERT(spRect);
 				CRect rc;
-				long  lt;
-				spRect->get_top(&lt);
-				rc.top = lt;
-				spRect->get_left(&lt);
-				rc.left = lt;
-				spRect->get_right(&lt);
-				rc.right = lt;
-				spRect->get_bottom(&lt);
-				rc.bottom = lt;
+				spRect->get_top(&rc.top);
+				spRect->get_left(&rc.left);
+				spRect->get_right(&rc.right);
+				spRect->get_bottom(&rc.bottom);
 				if (rc.PtInRect(pt)) {
 					return true;
 				}
@@ -1578,7 +1672,7 @@ void CMainFrame::InitSkin()
 	m_CmdBar.setMenuBarStyle(m_hWndToolBar, false); 			//+++ メニュー (FEVATWHの短名にするか否か)
 	m_CmdBar.InvalidateRect(NULL, TRUE);						//メニューバー
 	m_ReBar.RefreshSkinState(); 								//ReBar
-	m_MDITab.ReloadSkin(CSkinOption::s_nTabStyle);				//タブ
+	m_MDITab.ReloadSkin();										//タブ
 	m_ToolBar.ReloadSkin(); 									//ツールバー
 	CToolBarOption::GetProfile();
 	m_ToolBar.GetInitButtonfunction()();	//\\+
@@ -2858,7 +2952,7 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		// タブを復元する
 
 		CLockRedrawMDIClient	 lock(m_hWndMDIClient);
-		CMDITabCtrl::CLockRedraw lock2(m_MDITab);
+		CDonutTabBar::CLockRedraw lock2(m_MDITab);
 		CWaitCursor 			 cur;
 
 		if (bClose) {
@@ -2868,8 +2962,9 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		DWORD			dwCount 	= 0;
 		bool			bActiveChildExistAlready = (MDIGetActive() != NULL);
 
-		m_MDITab.m_bInsertHere		= true;
-		m_MDITab.m_nInsertIndex 	= m_MDITab.GetItemCount();
+		m_MDITab.InsertHere(true);
+		int nInsertIndex = m_MDITab.GetItemCount();
+		m_MDITab.SetInsertIndex(nInsertIndex);
 
 		CChildFrame *	pChildActive = NULL;
 
@@ -2879,7 +2974,8 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 			if (pChild == NULL)
 				continue;
 
-			++m_MDITab.m_nInsertIndex;
+			++nInsertIndex;
+			m_MDITab.SetInsertIndex(nInsertIndex);
 
 			// if tab mode, no need to load window placement.
 			//pChild->view().m_ViewOption.GetProfile(strFileName, dw, !CMainOption::s_bTabMode);
@@ -2907,8 +3003,8 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 			}
 		}
 
-		m_MDITab.m_bInsertHere	= false;
-		m_MDITab.m_nInsertIndex = -1;
+		m_MDITab.InsertHere(false);
+		m_MDITab.SetInsertIndex(-1);
 
 		if (pChildActive == NULL)
 			return;
@@ -3115,7 +3211,7 @@ void CMainFrame::_LoadGroupOption(const CString &strFileName, bool bClose)
 	//dmfTRACE( _T("CMainFrame::_LoadGroupOption\n") );
 
 	CLockRedrawMDIClient	 lock(m_hWndMDIClient);
-	CMDITabCtrl::CLockRedraw lock2(m_MDITab);
+	CDonutTabBar::CLockRedraw lock2(m_MDITab);
 	CWaitCursor 			 cur;
 
 	if (bClose)
@@ -3139,8 +3235,9 @@ void CMainFrame::_LoadGroupOption(const CString &strFileName, bool bClose)
 
 	bool			bActiveChildExistAlready = (MDIGetActive() != NULL);
 
-	m_MDITab.m_bInsertHere		= true;
-	m_MDITab.m_nInsertIndex 	= m_MDITab.GetItemCount();
+	m_MDITab.InsertHere(true);
+	int nInsertIndex = m_MDITab.GetItemCount();
+	m_MDITab.SetInsertIndex(nInsertIndex);
 
 	CChildFrame *	pChildActive = NULL;
 	for (DWORD dw = 0; dw < dwCount; ++dw) {
@@ -3151,7 +3248,8 @@ void CMainFrame::_LoadGroupOption(const CString &strFileName, bool bClose)
 		if (pChild == NULL)
 			continue;
 
-		++m_MDITab.m_nInsertIndex;
+		++nInsertIndex;
+		m_MDITab.SetInsertIndex(nInsertIndex);
 
 		// activate now!
 		pChild->ActivateFrame(MDIGetActive() != NULL ? SW_SHOWNOACTIVATE : -1);
@@ -3170,8 +3268,8 @@ void CMainFrame::_LoadGroupOption(const CString &strFileName, bool bClose)
 			pChildActive = pChild;
 	}
 
-	m_MDITab.m_bInsertHere	= false;
-	m_MDITab.m_nInsertIndex = -1;
+	m_MDITab.InsertHere(false);
+	m_MDITab.SetInsertIndex(-1);
 
 	if (pChildActive == NULL)
 		return;
@@ -3271,10 +3369,6 @@ void CMainFrame::_WriteProfile()
 	CIniFileO	pr( g_szIniFileName, _T("Main") );
 	MtlWriteProfileMainFrameState(pr, m_hWnd);
 	/*Mtl*/WriteProfileStatusBarState(pr, m_hWndStatusBar);
-
-	// save MDI tab
-	pr.ChangeSectionName(_T("MDITab"));
-	MtlWriteProfileMDITab(pr, m_MDITab);
 
 	// save rebar
 	pr.ChangeSectionName(_T("ReBar"));
@@ -3680,7 +3774,7 @@ void CMainFrame::OnParentNotify(UINT fwEvent, UINT idChild, LPARAM lParam)
 
 	if ( !rc.PtInRect(ptRebar) )		// not on rebar
 		return;
-
+#if 0
 	HWND		hWnd	 = ::WindowFromPoint(pt);
 
 	if (hWnd == m_MDITab.m_hWnd) {		// on tab bar
@@ -3690,7 +3784,7 @@ void CMainFrame::OnParentNotify(UINT fwEvent, UINT idChild, LPARAM lParam)
 		if (m_MDITab.HitTest(ptTab) != -1)
 			return;
 	}
-
+#endif
 	CMenuHandle menuView = ::GetSubMenu(m_CmdBar.GetMenu(), _nPosViewMenu);
 	CMenuHandle menu	 = menuView.GetSubMenu(0);
 	menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd, NULL);
@@ -4018,7 +4112,7 @@ LRESULT CMainFrame::OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 
 	CWaitCursor 		 cur;
 	CLockRedrawMDIClient lock(m_hWndMDIClient);
-	CLockRedraw 		 lock2(m_MDITab);
+	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
 	MtlCloseAllMDIChildren(m_hWndMDIClient);
 
 	RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
@@ -4737,35 +4831,156 @@ LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 	default:	ATLASSERT(FALSE);
 	}
 	CChildFrame* pChild = GetActiveChildFrame();
-	if (pChild) {
-		CComPtr<IDispatch>	spDisp;
-		pChild->m_spBrowser->get_Document(&spDisp);
-		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
-		ATLASSERT(spDocument);
-		CComPtr<IHTMLWindow2>	spWindow;
-		spDocument->get_parentWindow(&spWindow);
-		ATLASSERT(spWindow);
-		if (wID == ID_SPECIAL_HOME)
-			spWindow->scrollBy(0, -300000);
-		else if (wID == ID_SPECIAL_END)
-			spWindow->scrollBy(0, 300000);
-		else {
-			pChild->SetFocus();
+	if (pChild == nullptr) 
+		return 0;
 
-			INPUT	inputs[2] = { 0 };
-			inputs[0].type		= INPUT_KEYBOARD;
-			inputs[0].ki.wVk	= nCode;
-			inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
-			inputs[0].ki.dwFlags= 0;
-			inputs[1].type		= INPUT_KEYBOARD;
-			inputs[1].ki.wVk	= nCode;
-			inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
-			inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
-			SendInput(2, inputs, sizeof(INPUT));
+	if (wID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
+		auto funcGetHTMLWindowOnCursorPos = [](CPoint pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+			HRESULT hr = S_OK;
+			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
+
+			CComPtr<IHTMLElementCollection>	spCol;
+			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spCol);
+			if (spCol.p) {
+				long length = 0;
+				hr = spCol->get_length(&length);
+				for (long i = 0; i < length; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
+					if (spFrame.p) {
+						CRect rc;
+						spFrame->get_offsetLeft(&rc.left);
+						spFrame->get_offsetTop(&rc.top);
+						long temp;
+						spFrame->get_offsetWidth(&temp);
+						rc.right += rc.left + temp;
+						spFrame->get_offsetHeight(&temp);
+						rc.bottom+= rc.top + temp;
+
+						CComPtr<IHTMLElement>	spBody;
+						spDoc2->get_body(&spBody);
+						CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+						CPoint ptScroll;
+						spBody2->get_scrollTop(&ptScroll.y);
+						spBody2->get_scrollLeft(&ptScroll.x);
+						rc -= ptScroll;
+						if (rc.PtInRect(pt)) {
+							CComQIPtr<IHTMLIFrameElement3>	spIFrameElement3 = spFrame;
+							if (spIFrameElement3 == nullptr)
+								continue;
+							CComPtr<IDispatch>	spDisp3;
+							spIFrameElement3->get_contentDocument(&spDisp3);
+							CComQIPtr<IHTMLDocument2>	spIFrameDocument = spDisp3;
+							CComQIPtr<IHTMLWindow2> spWindow;
+							spIFrameDocument->get_parentWindow(&spWindow);
+							return spWindow;
+						}
+					}
+				}
+			}
+			//CComPtr<IHTMLElementCollection>	spCol;
+			spCol.Release();
+			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spCol);
+			CComPtr<IHTMLFramesCollection2>	spFrames;
+			spDoc2->get_frames(&spFrames);
+			if (spCol.p && spFrames.p) {
+				long length = 0, framelength = 0;
+				hr = spCol->get_length(&length);
+				if (length == 0)
+					return nullptr;
+				hr = spFrames->get_length(&framelength);
+				ATLASSERT(length == framelength);
+				for (long i = 0; i < length; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
+					if (spFrame.p) {
+						CRect rc;
+						spFrame->get_offsetLeft(&rc.left);
+						spFrame->get_offsetTop(&rc.top);
+						long temp;
+						spFrame->get_offsetWidth(&temp);
+						rc.right += rc.left + temp;
+						spFrame->get_offsetHeight(&temp);
+						rc.bottom+= rc.top + temp;
+						if (rc.PtInRect(pt)) {
+							CComVariant vResult;
+							spFrames->item(&vIndex, &vResult);
+							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+							return spWindow;
+						}
+					}
+				}
+			}
+			return nullptr;
+		};
+
+		CComPtr<IDispatch>	spDisp;
+		HRESULT hr = pChild->m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+		if (spDocument == nullptr)
+			return 0;
+		CPoint pt;
+		::GetCursorPos(&pt);
+		pChild->ScreenToClient(&pt);
+
+		CComPtr<IHTMLWindow2> spWindow = funcGetHTMLWindowOnCursorPos(pt, spDocument);
+		if (spWindow) {
+			CComQIPtr<IHTMLDocument2>	spFrameDocument;
+			hr = spWindow->get_document(&spFrameDocument);
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					return 0;
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					return 0;
+				spFrameDocument = spDisp;
+				if (!spFrameDocument)
+					return 0;
+				spWindow.Release();
+				spFrameDocument->get_parentWindow(&spWindow);
+				if (!spWindow)
+					return 0;
+			}
+
+			if (wID == ID_SPECIAL_HOME)
+				spWindow->scrollBy(0, -300000);
+			else if (wID == ID_SPECIAL_END)
+				spWindow->scrollBy(0, 300000);
+		} else {
+			CComQIPtr<IHTMLDocument2>	spDocument2 = spDocument;
+			spDocument2->get_parentWindow(&spWindow);
+			ATLASSERT(spWindow);
+			if (wID == ID_SPECIAL_HOME)
+				spWindow->scrollBy(0, -300000);
+			else if (wID == ID_SPECIAL_END)
+				spWindow->scrollBy(0, 300000);
 		}
-	}
+	} else {
+		pChild->SetFocus();
+
+		INPUT	inputs[2] = { 0 };
+		inputs[0].type		= INPUT_KEYBOARD;
+		inputs[0].ki.wVk	= nCode;
+		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[0].ki.dwFlags= 0;
+		inputs[1].type		= INPUT_KEYBOARD;
+		inputs[1].ki.wVk	= nCode;
+		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
+		SendInput(2, inputs, sizeof(INPUT));
+
 	//PostMessage(WM_KEYDOWN, nCode, 0);
-	return S_OK;
+	}
+	return 0;
 }
 
 
@@ -5020,7 +5235,7 @@ int CMainFrame::_GetRecentCount()
 LRESULT CMainFrame::OnMouseWheel(UINT fwKeys, short zDelta, CPoint point)
 {
 	// I don't have a wheel mouse...
-	if ( (m_MDITab.GetMDITabExtendedStyle() & MTB_EX_WHEEL)
+	if (  CTabBarOption::s_bWheel
 	   && MtlIsBandVisible(m_hWndToolBar, IDC_MDITAB) )
 	{
 		CRect rcTab;
@@ -5058,14 +5273,10 @@ LRESULT CMainFrame::OnMouseWheel(UINT fwKeys, short zDelta, CPoint point)
 
 LRESULT CMainFrame::OnViewTabBarMulti(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	DWORD dwOldStyle = m_MDITab.GetMDITabExtendedStyle();
+	CTabBarOption::s_bMultiLine = !CTabBarOption::s_bMultiLine;
+	CTabBarOption::WriteProfile();
 
-	if (dwOldStyle & MTB_EX_MULTILINE)
-		dwOldStyle &= ~MTB_EX_MULTILINE;
-	else
-		dwOldStyle |=  MTB_EX_MULTILINE;
-
-	m_MDITab.SetMDITabExtendedStyle(dwOldStyle);
+	m_MDITab.ReloadSkin();
 	return 0;
 }
 
@@ -5097,7 +5308,7 @@ LRESULT CMainFrame::OnTabIdx(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl, BOOL 
 		if (wID < 0 || wID >=8 || wID >= nCount)
 			return 0;
 	}
-	m_MDITab.SetCurSelEx(wID);
+	m_MDITab.SetCurSel(wID);
 	return 0;
 }
 #endif
@@ -5819,7 +6030,7 @@ long CMainFrame::ApiGetTabIndex()
 
 void CMainFrame::ApiSetTabIndex(int nTabIndex)
 {
-	m_MDITab.SetCurSelEx(nTabIndex);
+	m_MDITab.SetCurSel(nTabIndex);
 }
 
 
@@ -5880,16 +6091,16 @@ void CMainFrame::ApiShowPanelBar()
 
 long CMainFrame::ApiGetTabState(int nIndex)
 {
-	BYTE bytData = 0;
-
-	if (m_MDITab.GetItemState(nIndex, bytData) == false)
+	DWORD state = 0;
+	m_MDITab.GetItemState(nIndex, state);
+	if (state == 0)
 		return -1;
 
 	long nRet	 = 0;
 
-	if (bytData & TCISTATE_SELECTED) {
+	if (state & TISS_SELECTED) {
 		nRet = 1;
-	} else if (bytData & TCISTATE_MSELECTED) {
+	} else if (state & TISS_MSELECTED) {
 		nRet = 2;
 	}
 

@@ -77,15 +77,18 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		// progress
 		CRect rcProgress(cxFileNameMargin, rcItem.top + cyProgressMargin, rcItem.right - cleftProgressMargin, rcItem.top + cyProgressMargin + ProgressHeight);
 		if (IsThemeNull() == false) {
-			if (IsThemeBackgroundPartiallyTransparent(PP_TRANSPARENTBAR, 0))
+			static int PROGRESSBAR  = _CheckOsVersion_VistaLater() ? PP_TRANSPARENTBAR : PP_BAR;
+			static int PROGRESSBODY = _CheckOsVersion_VistaLater() ? PP_FILL		   : PP_CHUNK;
+			if (IsThemeBackgroundPartiallyTransparent(PROGRESSBAR, 0))
 				DrawThemeParentBackground(memDC, rcProgress);
-			DrawThemeBackground(memDC, PP_TRANSPARENTBAR, 0, rcProgress);
+			DrawThemeBackground(memDC, PROGRESSBAR, 0, rcProgress);
 			CRect rcContent;
-			GetThemeBackgroundContentRect(memDC, PP_TRANSPARENTBAR, 0, rcProgress, rcContent);
+			GetThemeBackgroundContentRect(memDC, PROGRESSBAR, 0, rcProgress, rcContent);
+
 			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
 			int nPos = (int)((double)rcContent.Width() * Propotion);
 			rcContent.right = rcContent.left + nPos;
-			DrawThemeBackground(memDC, PP_FILL, 0, rcContent);
+			DrawThemeBackground(memDC, PROGRESSBODY, 0, rcContent);
 		} else {
 			memDC.DrawEdge(rcProgress, EDGE_RAISED, BF_ADJUST | BF_MONO | BF_RECT | BF_MIDDLE);
 			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
@@ -369,8 +372,11 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		Invalidate(FALSE);
 
 	} else if (nIDEvent == 2) {
-		if (m_vecpDLItem.size() == 0)
+		if (m_vecpDLItem.size() == 0) {
+			KillTimer(2);
+			GetTopLevelWindow().SetWindowText(NULL);
 			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
+		}
 	}
 }
 // ÉäÉXÉgÇ©ÇÁçÌèúÇ∑ÇÈ

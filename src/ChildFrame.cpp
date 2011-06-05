@@ -13,7 +13,7 @@
 #include "DonutFavoritesMenu.h"
 #include "FavoriteOrder.h"
 #include "DonutView.h"
-#include "MDITabCtrl.h"
+#include "DonutTabBar.h"
 #include "MDIChildUserMessenger.h"
 
 #include "option/AddressBarPropertyPage.h"
@@ -24,6 +24,7 @@
 #include "option/IgnoreURLsOption.h"
 #include "option/CloseTitleOption.h"
 #include "option/UrlSecurityOption.h"	//+++
+#include "option/MDITabDialog.h"
 #include "ExStyle.h"					//+++
 
 #include "ParseInternetShortcutFile.h"	//+++
@@ -88,7 +89,7 @@ static const LPCTSTR		g_lpszLight[] = {
 // ===========================================================================
 // 初期化・ページ読み込み
 
-CChildFrame::CChildFrame(  CMDITabCtrl &MDITab
+CChildFrame::CChildFrame(  CDonutTabBar &MDITab
 						 , CDonutAddressBar &addressbar
 						 , bool bNewWindow2
 						 , DWORD dwDefaultDLControlFlags
@@ -311,7 +312,7 @@ void	_threadChildFrame(CChildFrame* pChild, HWND hWndMDIClient, bool* pbCreated)
 
 CChildFrame *CChildFrame::NewWindow(
 		HWND				hWndMDIClient,
-		CMDITabCtrl &		tabMDI,
+		CDonutTabBar &		tabMDI,
 		CDonutAddressBar &	adBar,
 		bool				bNewWindow2 /*= false*/,
 		DWORD				dwDLFlags	/*= CDLControlOption::s_dwDLControlFlags*/,
@@ -894,7 +895,7 @@ LRESULT CChildFrame::OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWN
 
 	CWaitCursor 		 cur;
 	CLockRedrawMDIClient lock(m_hWndMDIClient);
-	CLockRedraw 		 lock2(m_MDITab);
+	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
 	MtlCloseAllMDIChildrenExcept(m_hWndMDIClient, m_hWnd);
 	return 0;
 }
@@ -972,27 +973,10 @@ void CChildFrame::OnClose()
 	SetMsgHandled(FALSE);
 	m_bClosing = true;
 
-	int  nIndex 		= m_MDITab.GetTabIndex(m_hWnd);
+	int  nIndex = m_MDITab.GetTabIndex(m_hWnd);
 
 	// for mdi tab ctrl
-	HWND hWndActiveNext = NULL;
-
-	if (MDIGetActive() == m_hWnd) {
-		// このウィンドウがアクティブなら
-		int nIndex = m_MDITab.ManageClose(m_hWnd);
-
-		if (nIndex != -1) {
-			hWndActiveNext = m_MDITab.GetTabHwnd(nIndex);
-			ATLASSERT( ::IsWindow(hWndActiveNext) );
-		}
-	}
-
 	m_MDITab.OnMDIChildDestroy(m_hWnd);		// このウィンドウに関連付けられたタブを削除
-
-	if (hWndActiveNext) {
-		// このウィンドウは破棄されるのでManageCloseで返されたタブをアクティブにする
-		MDIActivate(hWndActiveNext);
-	}
 
 	if ( !CMainOption::s_bAppClosing ||  !(CStartUpOption::s_dwFlags == CStartUpOption::STARTUP_LATEST) ) { 	//minit
 		CString strURL	 = GetLocationURL();
@@ -1168,7 +1152,7 @@ void CChildFrame::OnSize(UINT nType, CSize size)
 void CChildFrame::OnSysCommand(UINT uCmdType, CPoint pt)
 {
   #if 1	//+++ CTRL(+SHIFT)+TABでのタブ移動の順番を見た目通りにする処理
-	if ((m_MDITab.GetMDITabExtendedStyle() & MTB_EX_CTRLTAB_MDI) == 0) {	//+++ 元のMDI式にするのでなければ
+	if (CTabBarOption::s_bCtrlTabMDI == false) {	//+++ 元のMDI式にするのでなければ
 		if (uCmdType == SC_PREVWINDOW) {
 			m_MDITab.LeftTab();
 			SetMsgHandled(TRUE);
@@ -1502,7 +1486,7 @@ LRESULT CChildFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, H
 {
 	CWaitCursor 		 cur;
 	CLockRedrawMDIClient lock(m_hWndMDIClient);
-	CLockRedraw 		 lock2(m_MDITab);
+	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
 
 	MtlRefreshAllMDIChildrenExcept(m_hWndMDIClient, m_hWnd);
 	return 0;
@@ -1649,7 +1633,7 @@ void CChildFrame::OnFavoritesOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 		return;
 	} else if ( strCheck == _T("a ") ) {
 		CLockRedrawMDIClient	 lock(m_hWndMDIClient);
-		CMDITabCtrl::CLockRedraw lock2(m_MDITab);
+		CDonutTabBar::CLockRedraw lock2(m_MDITab);
 		MtlForEachFile( strFile, [this](const CString &strFileName) {
 			DonutOpenFile(GetTopLevelWindow(), strFileName);
 		});
@@ -1888,13 +1872,13 @@ void CChildFrame::OnUpdateProgressUI(CCmdUI *pCmdUI)
 // ==========================================================================
 // 拡張プロパティ
 
-BYTE CChildFrame::GetTabItemState(HWND hTarWnd)
+DWORD CChildFrame::GetTabItemState(HWND hTarWnd)
 {
 	int  nTabIndex = m_MDITab.GetTabIndex(hTarWnd);
-	BYTE bytData   = 0;
+	DWORD state = 0;
 
-	m_MDITab.GetItemState(nTabIndex, bytData);
-	return bytData;
+	m_MDITab.GetItemState(nTabIndex, state);
+	return state;
 }
 
 
@@ -1919,8 +1903,8 @@ LRESULT CChildFrame::OnGetExtendedTabStyle()
 	if (dwViewExStyle & DVS_EX_MOUSE_GESTURE)		dwFlags |= FLAG_SE_MOUSEGESTURE;
 	if (dwViewExStyle & DVS_EX_BLOCK_MAILTO)		dwFlags |= FLAG_SE_BLOCKMAILTO;
 
-	BYTE bytState = GetTabItemState(m_hWnd);
-	if ( !(bytState & TCISTATE_INACTIVE) )			dwFlags |= FLAG_SE_VIEWED;
+	DWORD state = GetTabItemState(m_hWnd);
+	if ( !(state & TISS_INACTIVE) )			dwFlags |= FLAG_SE_VIEWED;
 
 	if (dwRefreshStyle == 0)
 		dwFlags |= FLAG_SE_REFRESH_NONE;
@@ -1981,7 +1965,7 @@ void CChildFrame::OnSetExtendedTabStyle(DWORD dwStyle)
 		m_MDITab.NavigateLockTab(m_hWnd, (dwStyle & FLAG_SE_NAVIGATELOCK) != 0/*? true : false*/);
 	}
 
-	m_MDITab.InvalidateRect(NULL);
+	//m_MDITab.InvalidateRect(NULL);
 
 	//フラグを変更する
 	m_view.PutDLControlFlags(dwDLFlags);
@@ -3615,8 +3599,8 @@ void	CChildFrame::_SetFavicon(const CString& strURL)
 	HRESULT hr = S_OK;
 	CComPtr<IDispatch>	spDisp;
 	m_spBrowser->get_Document(&spDisp);
-	if (spDisp) {
-		CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+	CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+	if (spDocument) {
 		CComPtr<IHTMLElementCollection>	spCol;
 		spDocument->getElementsByTagName(CComBSTR(L"link"), &spCol);
 		if (spCol) {

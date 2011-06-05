@@ -19,10 +19,6 @@ using std::unordered_map;
 			return TRUE; 					\
 	}
 
-namespace MTL {
-	class CMDITabCtrl;
-};
-using namespace MTL;
 
 /////////////////////////////////////////////////
 /// FaviconÇä«óùÇ∑ÇÈ 
@@ -30,7 +26,7 @@ using namespace MTL;
 class CFaviconManager
 {
 public:
-	static void	Init(CMDITabCtrl* pTabCtrl);
+	static void	Init(HWND hWndTabBar);
 
 	static void		SetFavicon(HWND hWndChild, LPCTSTR strFaviconURL);
 	static HICON	GetFavicon(LPCTSTR strFaviconURL);
@@ -39,7 +35,7 @@ private:
 	static void _DLIconAndRegister(CString strFaviconURL, HWND hWnd);
 
 	// Data members
-	static CMDITabCtrl*	s_pTabCtrl;
+	static HWND	s_hWndTabBar;
 	static unordered_map<std::wstring, CIcon>	s_mapIcon;	// key:faviconÇÃURL íl:icon
 };
 
