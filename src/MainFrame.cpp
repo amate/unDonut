@@ -32,6 +32,8 @@
 #include "PluginEventImpl.h"
 #include "Thumbnail.h"
 #include "FaviconManager.h"
+#include "GdiplusUtil.h"
+
 
 #ifdef _DEBUG
 	const bool _Donut_MainFrame_traceOn = false;
@@ -98,6 +100,8 @@ CMainFrame::CMainFrame()
 	, m_bWM_TIMER(false)
 {
 	g_pMainWnd = this;			//+++ CreateEx()中にプラグイン初期化とかで参照されるので、呼び元でなく CMainFreameで設定するように変更.
+
+	GdiplusInit();
 }
 
 
@@ -560,7 +564,7 @@ void CMainFrame::init_loadPlugins()
 #if 1
 CMainFrame::~CMainFrame()
 {
-	m_hWnd = NULL;
+	GdiplusTerm();
 }
 
 //---------------------------------------
@@ -1673,9 +1677,8 @@ void CMainFrame::InitSkin()
 	m_CmdBar.InvalidateRect(NULL, TRUE);						//メニューバー
 	m_ReBar.RefreshSkinState(); 								//ReBar
 	m_MDITab.ReloadSkin();										//タブ
-	m_ToolBar.ReloadSkin(); 									//ツールバー
 	CToolBarOption::GetProfile();
-	m_ToolBar.GetInitButtonfunction()();	//\\+
+	m_ToolBar.ReloadSkin(); 									//ツールバー
 	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
 	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
 	m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
@@ -2527,7 +2530,7 @@ LRESULT CMainFrame::OnFileNew(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 void CMainFrame::OnFileNewBlank(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	OnUserOpenFile( _T("about:blank"), DonutGetStdOpenActivateFlag() );
-	SendMessage(WM_COMMAND, ID_SETFOCUS_ADDRESSBAR, 0);
+	PostMessage(WM_COMMAND, ID_SETFOCUS_ADDRESSBAR, 0);
 }
 
 
@@ -4518,7 +4521,7 @@ void CMainFrame::ShowNewStyleDonutOption()
 	CStartUpPropertyPage			pageStartUp;
 	CProxyPropertyPage				pageProxy;
 	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu);
-	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, m_ToolBar.GetInitButtonfunction());
+	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, std::bind(&CDonutToolBar::ReloadSkin, &m_ToolBar));
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);
 	CSearchPropertyPage 			pageSearch;

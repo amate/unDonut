@@ -75,7 +75,7 @@ public:
 	};
 
 	// Constructor
-	CToolBarPropertyPage(HMENU hMenu, BOOL *pbSkinChange, function<void ()> funcInitButton);
+	CToolBarPropertyPage(HMENU hMenu, BOOL *pbSkinChange, function<void ()> funcReloadSkin);
 
 	// Overrides
 	BOOL	OnSetActive();
@@ -148,6 +148,6 @@ private:
 
 	bool	m_bInit;
 	bool	m_bChanged;
-	function<void ()>	m_funcInitButton;
+	function<void ()>	m_funcReloadSkin;
 };
 

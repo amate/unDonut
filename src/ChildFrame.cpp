@@ -1321,13 +1321,13 @@ void CChildFrame::OnViewSetFocus(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 void CChildFrame::_SetPageFocus()
 {
 	dcfTRACE( _T("CChildFrame::_SetPageFocus(src:%d)\n"), ::GetFocus() );
-
+#if 0
 	if (m_bPageFocusInitialized)
 		return;
 
 	if ( !MtlIsApplicationActive(m_hWnd) )
 		return;
-
+#endif
 	if ( IsBrowserNull() )
 		return;
 

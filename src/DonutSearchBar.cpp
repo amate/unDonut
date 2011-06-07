@@ -432,6 +432,7 @@ void	CDonutSearchBar::Impl::SetSearchStr(const CString& strWord)
 	GetEditCtrl().SetWindowText(strWord);
 	_AddToolBarIcon(strWord);
 	_SetCmbKeywordEmptyStr();	//!< 検索バーに文字列がないときエンジン名を表示する
+	m_cmbKeyword.Invalidate();
 }
 
 /// 現在選択されている検索エンジン名取得

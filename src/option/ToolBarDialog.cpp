@@ -315,8 +315,8 @@ CString GetSmallFilePath()
 /////////////////////////////////////////////////////////
 // CToolBarPropertyPage
 
-CToolBarPropertyPage::CToolBarPropertyPage(HMENU hMenu, BOOL *pbSkinChange, function<void ()> funcInitButton)
-	: m_bInit(false), m_bChanged(false), m_funcInitButton(funcInitButton)
+CToolBarPropertyPage::CToolBarPropertyPage(HMENU hMenu, BOOL *pbSkinChange, function<void ()> funcReloadSkin)
+	: m_bInit(false), m_bChanged(false), m_funcReloadSkin(funcReloadSkin)
 {
 	m_hMenu 		 = hMenu;
 	m_bExistSkin	 = FALSE;
@@ -514,8 +514,8 @@ void	CToolBarPropertyPage::OnDestroy()
 	for (int i = 0; i < nCount; ++i) {
 		delete (IconListData*)m_ltIcon.GetItemDataPtr(i);
 	}
-	if (m_bChanged && m_funcInitButton)
-		m_funcInitButton();
+	if (m_bChanged && m_funcReloadSkin)
+		m_funcReloadSkin();
 }
 
 

@@ -2060,10 +2060,10 @@ void	CDonutTabBar::Impl::OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct)
 	int nIndex = GetTabIndex(hWndChildAct);
 	ATLASSERT(nIndex != -1);
 
-	//if (!m_bRedrawLocked) {
+	if (!m_bRedrawLocked) {
 		SetItemActive(nIndex);
 		UpdateWindow();
-	//}
+	}
 
 	SetCurSel(nIndex, false, false);
 }
@@ -2082,6 +2082,7 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex)
 
 	wndMDI.SetRedraw(TRUE);
 	wndMDI.RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+
 #else	//+++ ÉÅÉÇ:r13test	//*Ç®ééÇµ
 	m_wndMDIChildPopuping.MDIActivate(hWnd);
 #endif

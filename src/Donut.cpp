@@ -174,7 +174,7 @@ static bool _PrivateInit()
 	CUrlSecurityOption::GetProfile();
 	CDonutConfirmOption::GetProfile();
 	CStyleSheetOption::GetProfile();
-	CToolBarOption::GetProfile();
+	//CToolBarOption::GetProfile();
 	CTabBarOption::GetProfile();
 	ie_feature_control_setting();
 
@@ -461,7 +461,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 {
 	// DLL攻撃対策
 	SetDllDirectory(_T(""));
-
 #if 1
 	#if defined (_DEBUG) && defined(_CRTDBG_MAP_ALLOC)
 	//メモリリーク検出用

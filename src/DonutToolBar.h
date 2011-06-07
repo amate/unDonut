@@ -20,7 +20,6 @@ public:
 	void	SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS);
 	void	ReloadSkin();
 	void	Customize();
-	function<void ()> GetInitButtonfunction();
 
 private:
 	class Impl;

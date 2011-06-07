@@ -14,6 +14,12 @@ class CGdlplusUtil
 {
 public:
 	CGdlplusUtil()
+		: m_token(0)
+		, m_nEncoders(0)
+		, m_pImageCodecInfo(NULL)
+	{	}
+
+	void	Init()
 	{
 		GdiplusStartupInput	gdiplusStartupInput;
 		GdiplusStartup(&m_token, &gdiplusStartupInput, NULL);
@@ -23,7 +29,7 @@ public:
 		m_pImageCodecInfo = (Gdiplus::ImageCodecInfo*)(malloc(size));
 		GetImageEncoders(m_nEncoders, size, m_pImageCodecInfo);
 	}
-	~CGdlplusUtil()
+	void	Term()
 	{
 		free(m_pImageCodecInfo);
 		Gdiplus::GdiplusShutdown(m_token);
@@ -55,7 +61,17 @@ private:
 	
 };
 
-CGdlplusUtil	GdiplusUtil;	/// GDI+ÇÃèâä˙âªÇ∆å„énññÇÃÇΩÇﬂ
+CGdlplusUtil	GdiplusUtil;
+
+void	GdiplusInit()
+{
+	GdiplusUtil.Init();
+}
+
+void	GdiplusTerm()
+{
+	GdiplusUtil.Term();
+}
 
 
 

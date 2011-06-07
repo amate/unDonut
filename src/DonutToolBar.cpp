@@ -327,7 +327,7 @@ HWND	CDonutToolBar::Impl::Create(HWND hWndParent)
 	SetExtendedStyle(TBSTYLE_EX_MIXEDBUTTONS | TBSTYLE_EX_DRAWDDARROWS | TBSTYLE_EX_HIDECLIPPEDBUTTONS);
 	SetButtonStructSize();
 
-	_InitButton();	// ボタン登録
+	//_InitButton();	// ボタン登録
 
 	return hWnd;
 }
@@ -346,6 +346,7 @@ void	CDonutToolBar::Impl::SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hM
 void	CDonutToolBar::Impl::ReloadSkin()
 {
 	_UpdateImageLIst();
+	_InitButton();
 	_AdjustStyle();
 }
 
@@ -359,7 +360,6 @@ void	CDonutToolBar::Impl::Customize()
 	__super::Customize();	// 表示
 
 	s_dwToolbarStyle = dlg.m_dwStdToolBarStyle;
-	ReloadSkin();	// 表示更新
 
 	// 表示するボタンのインデックスを更新
 	CToolBarOption::s_vecShowBtn.clear();
@@ -372,13 +372,10 @@ void	CDonutToolBar::Impl::Customize()
 		CToolBarOption::s_vecShowBtn.push_back(btn.iBitmap);
 	}
 	CToolBarOption::WriteProfileToolbarShowButton();	// 保存
+
+	ReloadSkin();	// 表示更新
 }
 
-//-------------------------------
-function<void ()> CDonutToolBar::Impl::GetInitButtonfunction()
-{
-	return function<void ()>(std::bind(&CDonutToolBar::Impl::_InitButton, this));
-}
 
 // Overrides
 
@@ -570,6 +567,9 @@ void	CDonutToolBar::Impl::_InitButton()
 			InsertButton(-1, &tbBtn);
 		}
 	}
+	CSize size;
+	GetButtonSize(size);
+	//SetWindowPos(NULL, 0, 0, 3000, size.cy, SWP_NOMOVE | SWP_NOZORDER);
 
 }
 
@@ -786,6 +786,7 @@ void	CDonutToolBar::Impl::_ShowLabelRight()
 	}
 
 	AutoSize();
+	_UpdateBandInfo();
 }
 
 //------------------------------
@@ -1015,11 +1016,9 @@ void	CDonutToolBar::Customize()
 	pImpl->Customize();
 }
 
-//--------------------------------
-function<void ()> CDonutToolBar::GetInitButtonfunction()
-{
-	return pImpl->GetInitButtonfunction();
-}
+
+
+
 
 
 
