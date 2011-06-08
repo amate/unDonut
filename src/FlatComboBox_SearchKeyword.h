@@ -189,8 +189,7 @@ private: //\\ ダメな方法かもしれないけど
 			// update!
 			LRESULT   lRet	   = DefWindowProc();
 			{
-				//CClientDC dc(m_hWnd);
-				CPaintDC dc(m_hWnd);
+				CClientDC dc(m_hWnd);
 				_DoComboPaint(dc.m_hDC);	//+++ メモ:ボタンや入力欄の再描画...
 			}
 			//DrawEmptyStr();	//+++	このタイミングで描画したいが、実際にはOnPaintを抜けた後にEDIT側での再描画が発生して上書きされてしまう。

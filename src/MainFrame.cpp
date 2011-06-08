@@ -1467,90 +1467,82 @@ bool	CMainFrame::_IsSelectedTextInner()
 		if (spDocument == NULL)
 			AtlThrow(hr);
 
+
 		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
+				CRect rc;
+				spIFrame->get_offsetHeight(&rc.bottom);
+				spIFrame->get_offsetWidth(&rc.right);
+				CComPtr<IHTMLElement>	spCurElement = spIFrame;
+				do {
+					CPoint temp;
+					spCurElement->get_offsetTop(&temp.y);
+					spCurElement->get_offsetLeft(&temp.x);
+					rc += temp;
+					CComPtr<IHTMLElement>	spTemp;
+					spCurElement->get_offsetParent(&spTemp);
+					spCurElement.Release();
+					spCurElement = spTemp;
+				} while (spCurElement.p);
+				
+				return rc;
+			};
+			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
+				CPoint ptScroll;
+				CComPtr<IHTMLElement>	spBody;
+				spDoc2->get_body(&spBody);
+				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+				spBody2->get_scrollTop(&ptScroll.y);
+				spBody2->get_scrollLeft(&ptScroll.x);
+				if (ptScroll == CPoint(0, 0)) {
+					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
+					CComPtr<IHTMLElement>	spDocumentElement;
+					spDoc3->get_documentElement(&spDocumentElement);
+					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+					spDocumentElement2->get_scrollTop(&ptScroll.y);
+					spDocumentElement2->get_scrollLeft(&ptScroll.x);
+				}
+				return ptScroll;
+			};
+
 			HRESULT hr = S_OK;
 			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
 
-			CComPtr<IHTMLElementCollection>	spCol;
-			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spCol);
-			if (spCol.p) {
-				long length = 0;
-				hr = spCol->get_length(&length);
-				for (long i = 0; i < length; ++i) {
+			CComPtr<IHTMLFramesCollection2>	spFrames;
+			spDoc2->get_frames(&spFrames);
+			CComPtr<IHTMLElementCollection>	spIFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spIFrameCol);
+			CComPtr<IHTMLElementCollection>	spFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spFrameCol);
+			
+			long frameslength = 0, iframelength = 0, framelength = 0;
+			spFrames->get_length(&frameslength);
+			spIFrameCol->get_length(&iframelength);
+			spFrameCol->get_length(&framelength);
+			ATLASSERT(frameslength == iframelength || frameslength == framelength);
+
+			if (frameslength == iframelength && spIFrameCol.p && spFrames.p) {
+				for (long i = 0; i < iframelength; ++i) {
 					CComVariant vIndex(i);
 					CComPtr<IDispatch>	spDisp2;
-					spCol->item(vIndex, vIndex, &spDisp2);
-					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
-					if (spFrame.p) {
-						CRect rc;
-						spFrame->get_offsetLeft(&rc.left);
-						spFrame->get_offsetTop(&rc.top);
-						long temp;
-						spFrame->get_offsetWidth(&temp);
-						rc.right = rc.left + temp;
-						spFrame->get_offsetHeight(&temp);
-						rc.bottom= rc.top + temp;
-
-						bool b = false;
-						CPoint ptScroll;
-						if (rc.PtInRect(pt) == false) {
-							CComPtr<IHTMLElement>	spBody;
-							spDoc2->get_body(&spBody);
-							CComQIPtr<IHTMLElement2>	spBody2 = spBody;
-							spBody2->get_scrollTop(&ptScroll.y);
-							spBody2->get_scrollLeft(&ptScroll.x);
-
-							if (ptScroll == CPoint(0, 0)) {
-								CComQIPtr<IHTMLElement2>	spFrame2 = spFrame;
-								CRect rcClient;
-								spFrame2->get_clientTop(&rcClient.top);
-								spFrame2->get_clientLeft(&rcClient.left);
-								spFrame2->get_clientWidth(&temp);
-								rcClient.right = rcClient.left + temp;
-								spFrame2->get_clientHeight(&temp);
-								rcClient.bottom= rcClient.top + temp;
-
-								CComPtr<IHTMLElement>	spDocumentElement;
-								pDoc->get_documentElement(&spDocumentElement);
-								CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
-								spDocumentElement2->get_scrollTop(&ptScroll.y);
-								spDocumentElement2->get_scrollLeft(&ptScroll.x);
-								b = true;
-							}
-							rc -= ptScroll;
-						}
-						if (rc.PtInRect(pt)) {
-							if (b && ptScroll != CPoint(0, 0))
-								pt -= rc.TopLeft();	//\\+
-							CComQIPtr<IHTMLIFrameElement3>	spIFrameElement3 = spFrame;
-							if (spIFrameElement3 == nullptr)
-								continue;
-							CComPtr<IDispatch>	spDisp3;
-							spIFrameElement3->get_contentDocument(&spDisp3);
-							CComQIPtr<IHTMLDocument2>	spIFrameDocument = spDisp3;
-							CComQIPtr<IHTMLWindow2> spWindow;
-							spIFrameDocument->get_parentWindow(&spWindow);
-							return spWindow;
-						}
+					spIFrameCol->item(vIndex, vIndex, &spDisp2);
+					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
+					CPoint ptScroll = funcGetScrollPosition(spDoc2);
+					CRect rc = rcAbsolute - ptScroll;
+					if (rc.PtInRect(pt)) {
+						CComVariant vResult;
+						spFrames->item(&vIndex, &vResult);
+						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+						return spWindow;
 					}
 				}
 			}
-			//CComPtr<IHTMLElementCollection>	spCol;
-			spCol.Release();
-			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spCol);
-			CComPtr<IHTMLFramesCollection2>	spFrames;
-			spDoc2->get_frames(&spFrames);
-			if (spCol.p && spFrames.p) {
-				long length = 0, framelength = 0;
-				hr = spCol->get_length(&length);
-				if (length == 0)
-					return nullptr;
-				hr = spFrames->get_length(&framelength);
-				ATLASSERT(length == framelength);
-				for (long i = 0; i < length; ++i) {
+
+			if (frameslength == framelength && spFrameCol.p && spFrames.p) {
+				for (long i = 0; i < framelength; ++i) {
 					CComVariant vIndex(i);
 					CComPtr<IDispatch>	spDisp2;
-					spCol->item(vIndex, vIndex, &spDisp2);
+					spFrameCol->item(vIndex, vIndex, &spDisp2);
 					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
 					if (spFrame.p) {
 						CRect rc;
@@ -4838,67 +4830,81 @@ LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 		return 0;
 
 	if (wID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
-		auto funcGetHTMLWindowOnCursorPos = [](CPoint pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
+				CRect rc;
+				spIFrame->get_offsetHeight(&rc.bottom);
+				spIFrame->get_offsetWidth(&rc.right);
+				CComPtr<IHTMLElement>	spCurElement = spIFrame;
+				do {
+					CPoint temp;
+					spCurElement->get_offsetTop(&temp.y);
+					spCurElement->get_offsetLeft(&temp.x);
+					rc += temp;
+					CComPtr<IHTMLElement>	spTemp;
+					spCurElement->get_offsetParent(&spTemp);
+					spCurElement.Release();
+					spCurElement = spTemp;
+				} while (spCurElement.p);
+				
+				return rc;
+			};
+			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
+				CPoint ptScroll;
+				CComPtr<IHTMLElement>	spBody;
+				spDoc2->get_body(&spBody);
+				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+				spBody2->get_scrollTop(&ptScroll.y);
+				spBody2->get_scrollLeft(&ptScroll.x);
+				if (ptScroll == CPoint(0, 0)) {
+					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
+					CComPtr<IHTMLElement>	spDocumentElement;
+					spDoc3->get_documentElement(&spDocumentElement);
+					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+					spDocumentElement2->get_scrollTop(&ptScroll.y);
+					spDocumentElement2->get_scrollLeft(&ptScroll.x);
+				}
+				return ptScroll;
+			};
+
 			HRESULT hr = S_OK;
 			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
 
-			CComPtr<IHTMLElementCollection>	spCol;
-			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spCol);
-			if (spCol.p) {
-				long length = 0;
-				hr = spCol->get_length(&length);
-				for (long i = 0; i < length; ++i) {
+			CComPtr<IHTMLFramesCollection2>	spFrames;
+			spDoc2->get_frames(&spFrames);
+			CComPtr<IHTMLElementCollection>	spIFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spIFrameCol);
+			CComPtr<IHTMLElementCollection>	spFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spFrameCol);
+			
+			long frameslength = 0, iframelength = 0, framelength = 0;
+			spFrames->get_length(&frameslength);
+			spIFrameCol->get_length(&iframelength);
+			spFrameCol->get_length(&framelength);
+			ATLASSERT(frameslength == iframelength || frameslength == framelength);
+
+			if (frameslength == iframelength && spIFrameCol.p && spFrames.p) {
+				for (long i = 0; i < iframelength; ++i) {
 					CComVariant vIndex(i);
 					CComPtr<IDispatch>	spDisp2;
-					spCol->item(vIndex, vIndex, &spDisp2);
-					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
-					if (spFrame.p) {
-						CRect rc;
-						spFrame->get_offsetLeft(&rc.left);
-						spFrame->get_offsetTop(&rc.top);
-						long temp;
-						spFrame->get_offsetWidth(&temp);
-						rc.right += rc.left + temp;
-						spFrame->get_offsetHeight(&temp);
-						rc.bottom+= rc.top + temp;
-
-						CComPtr<IHTMLElement>	spBody;
-						spDoc2->get_body(&spBody);
-						CComQIPtr<IHTMLElement2>	spBody2 = spBody;
-						CPoint ptScroll;
-						spBody2->get_scrollTop(&ptScroll.y);
-						spBody2->get_scrollLeft(&ptScroll.x);
-						rc -= ptScroll;
-						if (rc.PtInRect(pt)) {
-							CComQIPtr<IHTMLIFrameElement3>	spIFrameElement3 = spFrame;
-							if (spIFrameElement3 == nullptr)
-								continue;
-							CComPtr<IDispatch>	spDisp3;
-							spIFrameElement3->get_contentDocument(&spDisp3);
-							CComQIPtr<IHTMLDocument2>	spIFrameDocument = spDisp3;
-							CComQIPtr<IHTMLWindow2> spWindow;
-							spIFrameDocument->get_parentWindow(&spWindow);
-							return spWindow;
-						}
+					spIFrameCol->item(vIndex, vIndex, &spDisp2);
+					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
+					CPoint ptScroll = funcGetScrollPosition(spDoc2);
+					CRect rc = rcAbsolute - ptScroll;
+					if (rc.PtInRect(pt)) {
+						CComVariant vResult;
+						spFrames->item(&vIndex, &vResult);
+						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+						return spWindow;
 					}
 				}
 			}
-			//CComPtr<IHTMLElementCollection>	spCol;
-			spCol.Release();
-			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spCol);
-			CComPtr<IHTMLFramesCollection2>	spFrames;
-			spDoc2->get_frames(&spFrames);
-			if (spCol.p && spFrames.p) {
-				long length = 0, framelength = 0;
-				hr = spCol->get_length(&length);
-				if (length == 0)
-					return nullptr;
-				hr = spFrames->get_length(&framelength);
-				ATLASSERT(length == framelength);
-				for (long i = 0; i < length; ++i) {
+
+			if (frameslength == framelength && spFrameCol.p && spFrames.p) {
+				for (long i = 0; i < framelength; ++i) {
 					CComVariant vIndex(i);
 					CComPtr<IDispatch>	spDisp2;
-					spCol->item(vIndex, vIndex, &spDisp2);
+					spFrameCol->item(vIndex, vIndex, &spDisp2);
 					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
 					if (spFrame.p) {
 						CRect rc;
