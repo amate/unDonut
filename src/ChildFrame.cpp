@@ -1324,10 +1324,10 @@ void CChildFrame::_SetPageFocus()
 #if 0
 	if (m_bPageFocusInitialized)
 		return;
-
+#endif
 	if ( !MtlIsApplicationActive(m_hWnd) )
 		return;
-#endif
+
 	if ( IsBrowserNull() )
 		return;
 

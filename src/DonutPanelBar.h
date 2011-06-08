@@ -106,6 +106,7 @@ public:
 		CHAIN_MSG_MAP		(CChevronHandler<CDonutPanelBarImpl>)
 		CHAIN_COMMANDS		(CWebBrowserCommandHandler<CDonutPanelBarImpl>)
 		CHAIN_COMMANDS_MEMBER(m_view)		// CHAIN_CLIENT_COMMANDS() not send, why?
+		CHAIN_MSG_MAP_MEMBER( m_menuPanel )
 		//CHAIN_MSG_MAP(baseClass)
 		FORWARD_NOTIFICATIONS()
 	END_MSG_MAP()
@@ -129,27 +130,27 @@ private:
 
 
 public:
-	void OpenFile(CString strFile)
+	void OpenFile(const CString& strFile)
 	{
 		m_strPanelFile = strFile;
 		SetTitle();
+		CString strPath = strFile;
+		MtlRemoveStringHeaderAndFooter(strPath);
 
-		MtlRemoveStringHeaderAndFooter(strFile);
-
-		if (  !MtlIsProtocol( strFile, _T("http") )
-		   && !MtlIsProtocol( strFile, _T("https") ) )
+		if (  !MtlIsProtocol( strPath, _T("http") )
+		   && !MtlIsProtocol( strPath, _T("https") ) )
 		{
-			if ( MtlPreOpenFile(strFile) )
+			if ( MtlPreOpenFile(strPath) )
 				return;
 			// handled
 		}
 
-		MTL::ParseInternetShortcutFile(strFile);
+		MTL::ParseInternetShortcutFile(strPath);
 
-		if (strFile.GetLength() > INTERNET_MAX_PATH_LENGTH)
+		if (strPath.GetLength() > INTERNET_MAX_PATH_LENGTH)
 			return;
 
-		Navigate2(strFile);
+		Navigate2(strPath);
 	}
 
 
@@ -226,6 +227,8 @@ private:
 		m_menuPanel.SetRootDirectoryPath( Misc::GetExeDirectory() + _T("Panel") );
 		m_menuPanel.SetTargetWindow(m_hWnd);
 		m_menuPanel.InstallExplorerMenu(menuPanel);
+		m_menuPanel.RefreshMenu();
+		m_menuPanel.SetExcuteFunction(boost::bind(&CDonutPanelBarImpl::OpenFile, this, _1));
 
 		if (m_bInitNavi) {
 			// Thread Create

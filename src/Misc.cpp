@@ -1041,7 +1041,7 @@ const CString	GetFileNameNoExt(const CString& strFileName)
 void	StrToNormalUrl(CString& strUrl)
 {
 	//+++ ¶‰E‚Ì‹ó”’‚àíœ
-	const TCHAR* spcs  = _T(" \t\r\n@");
+	const TCHAR* spcs  = _T(" \t\r\n@\"");
 	strUrl.TrimLeft(spcs);
 	strUrl.TrimRight(spcs);
 	//
