@@ -1,0 +1,10 @@
+; unDonutPlugin.def : DLL 用のモジュール パラメータ宣言
+
+LIBRARY      "unDonutPlugin"
+; DESCRIPTION  'unDonutPlugin Windows Dynamic Link Library'
+
+EXPORTS
+    CreateToolBar	@1
+	GetPluginInfo	@2
+	PreTranslateMessage	@3
+	PluginEvent		@4

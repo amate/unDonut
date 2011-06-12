@@ -1,0 +1,481 @@
+COMサーバー機能およびリファレンスについて
+
+
+このテキストはタブ幅4で読むと幸せになれます。多分。
+
+■まず、COMサーバー機能とは？
+様々なプログラム言語から、作成したプログラムの機能を共有するための規格の一つが
+COMです。機能を提供する側のプログラムをCOMサーバー、利用する側をCOMクライアント
+といいます。
+unDonutにおいてはサーバーがunDonut本体でクライアントがスクリプトまたはプラグイン
+ということになります。
+
+開発者はこの機能を用いてunDonutの一部を操作することができます。
+
+
+■利用可能なインターフェイス
+unDonutは原作であるDonutPのCOMサーバー機能を引き継ぎ改良し、
+4つのインターフェイスを公開しています。
+
+・IAPI
+  最初のインターフェイスです。基本的にして重要なメソッドを持ちます
+・IAPI2
+  release9で追加されたインターフェイスです。
+・IAPI3
+  release10で追加されたインターフェイスです。未実装多し。
+・IAPI4
+  release13で追加予定のインターフェイスです。現在の関数は仕様確定ですが、
+  関数が追加される可能性あり。
+・IDonutPEvents
+  unDonutで発生するイベントを伝えるためのインターフェイスです。
+  試験実装的な位置づけにつき記述なし。
+
+■注意事項
+　通し番号として使用するインデックスは全て0から始まります。
+
+■リファレンス
+
+□IAPI
+
+◇プロパティ
+long TabIndex;
+
+◇メソッド
+IDispatch* GetDocumentObject(int nIndex);
+IDispatch* GetWindowObject(int nIndex);
+IDispatch* GetWebBrowserObject(int nIndex);
+long       GetTabCount();
+long       NewWindow(BSTR bstrURL, BOOL bActive);
+void       Close(int nIndex);
+void       MoveToTab(WORD wBefor, WORD wAfter);
+long       MessageBox(BSTR bstrText, BSTR bstrCaption, UINT uType);
+long       GetTabState(long nIndex);
+void       ShowPanelBar();
+IDispatch* GetPanelDocumentObject();
+IDispatch* GetPanelWindowObject();
+IDispatch* GetPanelWebBrowserObject();
+
+◆プロパティ
+long TabIndex;
+[OUT]	現在のタブインデックス
+[IN]	指定インデックスをアクティブにする
+
+◆メソッド
+IDispatch* GetDocumentObject(int nIndex);
+[説明]	指定インデックスの IHTMLDocument2 を得る
+[引数]	nIndex
+		  オブジェクトを取得するタブのインデックス
+[戻り値]IHTMLDocument2 
+
+IDispatch* GetWindowObject(int nIndex);
+[説明]	指定インデックスの IHTMLWindow2 を得る
+[引数]	nIndex
+		  オブジェクトを取得するタブのインデックス
+[戻り値]IHTMLWindow2 
+
+IDispatch* GetWebBrowserObject(int nIndex);
+[説明] 指定インデックスの IWebBrowser2 を得る
+[引数]	nIndex
+		  オブジェクトを取得するタブのインデックス
+[戻り値]IWebBrowser2 
+
+long GetTabCount();
+[説明]	タブ数を得る
+[引数]	なし
+[戻り値]タブ数
+
+long NewWindow(BSTR bstrURL, BOOL bActive);
+[説明]	新しいウィンドウを作る
+[引数]	bstrURL
+		  ウィンドウで開くアドレス
+		bActive
+		  タブをアクティブにする:TRUE 否:FALSE
+[戻り値]作られたウィンドウのタブインデックス
+
+void Close(int nIndex)》
+[説明]	指定タブを閉じる
+[引数]	nIndex
+		  閉じるタブのインデックス
+[戻り値]なし
+
+void MoveToTab(WORD wBefor, WORD wAfter);
+[説明]	指定タブを移動する
+[引数]	wBefor
+		  移動させる前のタブ位置。左から0から始まるインデックス
+		wAfter
+		  移動させた後のタブ位置
+[戻り値]  なし
+[備考]	特定の場合でバグがありますが、いずれ直します。
+
+long MessageBox(BSTR bstrText, BSTR bstrCaption, UINT uType);
+[説明]	::MessageBoxのラップ
+[引数]	「MessageBox」で検索してください
+[戻り値]::MessageBoxの戻り値
+
+long GetTabState(long nIndex);
+[説明]	タブの状態を得る
+[引数]	状態を得るタブのインデックス
+[戻り値] 0:非アクティブ
+		 1:アクティブ
+		 2:選択
+		-1:Err
+
+void ShowPanelBar();
+[説明]	パネルバーを表示する
+[引数]	なし
+[戻り値]なし 
+
+IDispatch* GetPanelDocumentObject();
+[説明]	パネルバーの IHTMLDocument2 を得る
+[引数]	なし
+[戻り値]IHTMLDocument2 
+
+IDispatch* GetPanelWindowObject();
+[説明]	パネルバーの IHTMLWindow2 を得る
+[引数]	なし
+[戻り値]IHTMLWindow2 
+
+IDispatch* GetPanelWebBrowserObject();
+[説明]	パネルバーの IWebBrowser2 を得る
+[引数]	なし
+[戻り値]IWebBrowser2 
+
+
+
+□IAPI2
+
+◇メソッド
+void ExecuteCommand(int nCommand);
+BSTR GetSearchText();
+void SetSearchText(BSTR bstrText);
+BSTR GetAddressText();
+void SetAddressText(BSTR bstrText);
+long GetExtendedTabState(int nIndex);
+void SetExtendedTabState(int nIndex, long nState);
+long GetKeyState(int nKey);
+long GetProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nDefault);
+void WriteProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nValue);
+BSTR GetProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrDefault);
+void WriteProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrText);
+BSTR GetScriptFolder();
+BSTR GetCSSFolder();
+BSTR GetBaseFolder();
+BSTR GetExePath();
+void SetStyleSheet(int nIndex, BSTR bstrStyleSheet, BOOL bOff);
+
+◆メソッド
+void ExecuteCommand(int nCommand);
+[説明]  DonutPの任意のコマンドIDを指定して実行します。
+        コマンドIDについてはCommand.txtを参照してください。
+        ただし、実行する項目によってはエラーが発生することも考えられます。
+[引数]  nCommand
+          実行するコマンドのIDを指定します。
+[戻り値]なし
+
+
+BSTR GetSearchText();
+[説明]  検索バーに表示されているテキストを取得します。
+[引数]  なし
+[戻り値]検索バーのテキスト
+
+
+void SetSearchText(BSTR bstrText);
+[説明]  検索バーのテキストボックスに文字を設定します
+[引数]  bstrText
+          テキストボックスに設定する文字列
+[戻り値]なし
+
+
+BSTR GetAddressText();
+[説明]  アドレスバーに表示されているテキストを取得します。
+[引数]  なし
+[戻り値]アドレスバーのテキスト
+
+
+void SetAddressText(BSTR bstrText);
+[説明]  アドレスバーのテキストボックスに文字を設定します
+[引数]  bstrText
+          テキストボックスに設定する文字列
+[戻り値]なし
+
+
+long GetExtendedTabState(int nIndex);
+[説明]  タブの属性を取得します。
+[引数]  nIndex
+          属性を取得するタブのインデックス
+[戻り値]戻り値はタブの状態を示す次のフラグの組み合わせです。
+        FLAG_SE_DLIMAGES		0x00000001 画像のダウンロード
+        FLAG_SE_VIDEOS			0x00000002 ビデオの再生
+        FLAG_SE_BGSOUNDS		0x00000004 サウンドの再生
+        FLAG_SE_RUNACTIVEXCTLS	0x00000008 ActiveXコントロールの実行
+        FLAG_SE_DLACTIVEXCTLS	0x00000010 ActiveXコントロールのダウンロード
+        FLAG_SE_SCRIPTS			0x00000020 スクリプトの実行
+        FLAG_SE_JAVA			0x00000040 Javaの実行
+        FLAG_SE_NAVIGATELOCK	0x00000080 ナビゲートロック
+        FLAG_SE_MSGFILTER		0x00000100 メッセージフィルタ
+        FLAG_SE_MOUSEGESTURE	0x00000200 マウスジェスチャー
+        FLAG_SE_BLOCKMAILTO		0x00000400 mailto:無効
+		FLAG_SE_VIEWED			0x00001000 タブが既読(1)か未読(0)か
+		FLAG_SE_REFRESH_NONE	0x00010000 自動更新なし
+		FLAG_SE_REFRESH_15		0x00020000 15秒おき更新
+		FLAG_SE_REFRESH_30		0x00040000 30秒おき更新
+		FLAG_SE_REFRESH_1M		0x00080000 1分おき更新
+		FLAG_SE_REFRESH_2M		0x00100000 2分おき更新
+		FLAG_SE_REFRESH_5M		0x00200000 5分おき更新
+		FLAG_SE_REFRESH_USER	0x00400000 ユーザー設定の時間で更新
+		FLAG_SE_NOREFRESH		0x01000000 リロードしない
+
+		ただし、FLAG_SE_REFRESH_のフラグはどれか一つだけ指定できます。
+
+void SetExtendedTabState(int nIndex, long nState);
+[説明]  タブの属性を設定します。
+[引数]  nIndex
+          属性を設定するタブのインデックス
+        nState
+          設定するタブの状態。
+          GetExtendedTabStateのフラグを組み合わせて指定してください。
+[戻り値]なし
+
+
+long GetKeyState(int nKey);
+[説明]  キーの状態を取得します。
+        Win32APIのGetAsyncKeyStateのラッパーです。
+[引数]  nKey
+          状態を取得するキーの仮想キーコード
+          Shift = 0x10
+          Ctrl  = 0x11
+          Alt   = 0x12
+          他の値は「仮想キーコード」で調べてください。
+[戻り値]指定したキーが押されていると0でない値を返します。
+        キーが押されていないときは0を返します。
+
+
+long GetProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nDefault);
+[説明]  設定ファイルから数値を取得します。
+[引数]  bstrFile
+          設定ファイルのパスを指定します。
+          ファイル名のみ指定するとWindowsフォルダのファイルを意味します。
+        bstrSection
+          セクション名を指定します。
+        bstrKey
+          キー名を指定します。
+        nDefault
+          キーから値が取得できなかったときに返されるデフォルトの値を指定します。
+[戻り値]指定したキーが存在するときはそのキーの値を返します。
+        失敗したときはnDefaultの値を返します。
+
+
+void WriteProfileInt(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, int nValue);
+[説明]  設定ファイルに数値を書き込みます。
+[引数]  nValue
+          書き込む値を指定します。
+        これ以外の引数についてはGetProfileIntを参照してください。
+[戻り値]なし
+
+
+BSTR GetProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrDefault)
+[説明]  設定ファイルから文字列を取得します。
+[引数]  bstrDefault
+          キーから文字列が取得できなかったときに返される文字列を指定します。
+        これ以外の引数についてはGetProfileIntを参照してください。
+[戻り値]指定したキーが存在するときはそのキーの文字列を返します。
+        失敗したときはbstrDefaultの文字列を返します。
+
+
+void WriteProfileString(BSTR bstrFile, BSTR bstrSection, BSTR bstrKey, BSTR bstrText);
+[説明]  設定ファイルに文字列を書き込みます。
+[引数]  bstrText
+          書き込む文字列を指定します。
+        これ以外の引数についてはGetProfileIntを参照してください。
+[戻り値]なし
+
+
+BSTR GetScriptFolder();
+[説明]  Scriptフォルダのパスを返します。
+[引数]  なし
+[戻り値]Scriptフォルダのパス。Scriptフォルダがない場合は空文字("")を返します。
+
+
+BSTR GetCSSFolder();
+[説明]  CSSフォルダのパスを返します。
+[引数]  なし
+[戻り値]CSSフォルダのパス。CSSフォルダがない場合は空文字("")を返します。
+
+
+BSTR GetBaseFolder();
+[説明]  本体の実行ファイルがあるフォルダ（ベースフォルダ）のパスを返します。
+[引数]  なし
+[戻り値]ベースフォルダのパス。
+
+
+BSTR GetExePath();
+[説明]  本体のファイルパスを取得します。
+[引数]  なし
+[戻り値]exe本体のファイルパスを返します。
+
+
+void SetStyleSheet(int nIndex, BSTR bstrStyleSheet, BOOL bOff);
+[説明]  スタイルシートを指定します。
+[引数]  nIndex
+          タブのインデックスを指定します。
+        bstrStyleSheet
+          スタイルシートのファイルをフルパスで指定します。
+          この値に空文字("")を指定し、かつbOffがFALSEの場合標準のスタイルシートを使用します。
+        bOff
+        スタイルシートをOFFにするかを指定します。
+[戻り値]なし
+
+
+
+□IAPI3
+
+◇メソッド
+void SaveGroup(BSTR bstrGroupFile);
+void LoadGroup(BSTR bstrGroupFile, BOOL bClose);
+BSTR EncryptString(BSTR bstrString, BSTR bstrPass);
+BSTR DecryptString(BSTR bstrString);
+long InputBox(BSTR bstrTitle, BSTR bstrDescript, BSTR bstrDefault, int nFlag);
+long NewWindow3(BSTR bstrURL, BOOL bActive, long ExStyle, [in] const int *pHistInfo);
+long AddGroupItem(BSTR bstrGroupFile, int nIndex, [out, retval] long *pVal);
+long DeleteGroupItem(BSTR bstrGroupFile, int nIndex, [out, retval] long *pVal);
+
+◆メソッド
+void SaveGroup(BSTR bstrGroupFile);
+[説明]  開いている全てのタブをお気に入りグループとして保存します。
+[引数]  bstrGroupFile
+          保存するお気に入りグループファイルのフルパス（拡張子はdfgを推奨）
+[戻り値]なし
+
+void LoadGroup(BSTR bstrGroupFile, BOOL bClose);
+[説明]  任意のお気に入りグループを開く
+[引数]  bstrGroupFile
+          開くお気に入りグループファイルのフルパス
+		bClose
+		　今開いているタブを全て閉じる:TRUE 否:FALSE
+[戻り値]なし
+
+BSTR EncryptString(BSTR bstrString, BSTR bstrPass);
+[説明] 未実装につき使用不可
+
+BSTR DecryptString(BSTR bstrString);
+[説明] 未実装につき使用不可
+
+long InputBox(BSTR bstrTitle, BSTR bstrDescript, BSTR bstrDefault, int nFlag);
+[説明] 未実装につき使用不可
+		というかやってしまった。戻り値で文字列が返せない。OTL
+		というわけで永久封印
+
+long NewWindow3(BSTR bstrURL, BOOL bActive, long ExStyle, [in] const int *pHistInfo);
+[説明]  IAPIのNewWindowの拡張版。セキュリティなどを設定してウィンドウを開けます
+[引数]  bstrURL
+		  開くアドレス
+		bAvtice
+		  タブをアクティブにするか
+		ExStyle
+		  タブのスタイル。IAPI2のGetExtendedTabStateのフラグを参照のこと
+		pHistInfo
+          拡張情報を指定します。
+		  スクリプトでは利用できないので必ず0を指定してください。
+          使用例はTmpFavGroupプラグインのソースに記述があります。
+[戻り値]作成したウィンドウのタブインデックス
+
+long AddGroupItem(BSTR bstrGroupFile, int nIndex);
+[説明]  お気に入りグループに指定のタブを追加します
+[引数]  bstrGroupFile
+          お気に入りグループファイルのフルパス
+		nIndex
+		  追加するタブのインデックス
+[戻り値]追加された項目のファイル内インデックス
+
+long DeleteGroupItem(BSTR bstrGroupFile, int nIndex);
+[説明]	お気に入りグループの指定の項目を削除します。
+[引数]  bstrGroupFile
+          お気に入りグループファイルのフルパス
+		nIndex
+		  削除する項目のインデックス
+[戻り値]正常終了した場合は1、それ以外の場合は0を返す
+[備考]	削除した項目以降のインデックスは詰められるようになっています
+
+
+
+□IAPI4
+
+◇メソッド
+long GetHWND(long nType);
+void SetPropString(BSTR bstrKey, BSTR bstrValue);
+BSTR GetPropString(BSTR bstrKey);
+void SetPropInt(BSTR bstrKey, int nValue);
+int  GetPropInt(BSTR bstrKey);
+
+◆メソッド
+long GetHWND(long nType);
+[説明]  指定したウィンドウのハンドルを取得します。
+[引数]  nType
+          ウィンドウの種類
+          0 : メインウィンドウ(メインフレーム)
+          2 : アドレスバー
+          3 : アドレスバーのツールバー(移動ボタン)
+          5 : 検索バー(ダイアログ)
+          6 : 検索バーのキーワードコンボボックス
+          7 : 検索バーのエンジンコンボボックス
+          8 : 検索バーのツールバー
+          他順次実装予定
+[戻り値]  指定したウィンドウのハンドル
+          HWND型にキャストして使う
+          
+void SetPropString(BSTR bstrKey, BSTR bstrValue);
+[説明]  指定したキーに対応するデータを設定します。
+		設定したデータはGetPropStringで取得できます。
+		データは本体の終了と同時に消滅します。
+[引数]  bstrKey
+          キーとなる文字列
+		bstrValue
+		  値となる文字列
+[戻り値]なし
+
+BSTR GetPropString(BSTR bstrKey);
+[説明]  指定したキーに対応するデータを取得します。
+[引数]  bstrKey
+          キー文字列
+[戻り値]キーに関連付けられた文字列
+        何も設定されていないときは空の文字列
+
+void SetPropInt(BSTR bstrKey, int nValue);
+[説明]  指定したキーに対応するデータを設定します。
+		設定したデータはGetPropStringで取得できます。
+		データは本体の終了と同時に消滅します。
+[引数]  bstrKey
+          キーとなる文字列
+		bstrValue
+		  値となる数値
+[戻り値]なし
+
+int  GetPropInt(BSTR bstrKey);
+[説明]  指定したキーに対応するデータを取得します。
+[引数]  bstrKey
+          キー文字列
+[戻り値]キーに関連付けられた数値
+        何も設定されていないときは0
+
+
+
+更新履歴
+
+release9
+・IAPI2を公開
+
+release10β1
+・IAPI3を公開
+・Get/SetExtendedTabStateに自動更新の設定・取得を追加
+
+release10β3
+・Get/SetExtendedTabStateにタブの未読の設定・取得を追加
+・DeleteGroupItemを実装
+
+release11a
+・Get/SetExtendedTabStateの説明にタブの未読のフラグを記載し忘れたのを修正
+・NewWindow3の引数の説明が適切でないのを修正
+・GetKeyStateの説明に誤りがあったのを修正
+
+release13(予定)
+・IAPI4を公開(予定)

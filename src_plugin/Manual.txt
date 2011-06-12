@@ -1,0 +1,174 @@
+ミニット氏配布のPluginMakingに入っていた、プラグイン作成マニュアルです。
+(若干横幅調整しましたが、元のまま. 掲示板等はすでにないので... +mod)
+------------------------------------------------------------------------
+
+
+/*=================================
+     プラグイン作成マニュアル
+=================================*/
+
+
+
+unDonut のプラグインはツールバーとして作成されるツールバープラグインと、
+エクスプローラバーのペインとして表示されるエクスプローラバープラグインの
+２種類をサポートしています。
+
+プラグインの実態はダイナミック・リンク・ライブラリであり、一般的には DLL
+の拡張子で用いられる外部プログラムです。
+開発環境としてはVC+MFCをオススメしますが、それ以外でも作成することは可能
+です。
+
+
+unDonutがプラグインに対して要求する事項は２つです。
+
+1.CreateToolbar関数(またはCreateExplorerPane関数)を作成し外部公開すること
+2.GetPluginInfo関数を作成し外部公開すること
+
+この二つの関数を正しく実装したDLLを作成することで、unDonutはプラグインを
+その内部に組み込み機能拡張を行います。
+
+プラグインの機能をより強力にするために、プラグイン定義のメニューを呼び出
+したり、独自の設定を行うこともできます。
+
+
+ツールバープラグインを作成する際はCreateToolbar関数及びGetPluginInfo関数
+を実装してください。
+エクスプローラバープラグインを作成する際は  CreateExplorerPane 関数 及び
+GetPluginInfo 関数を実装してください。
+ツールバープラグインと エクスプローラバープラグイン の違いは、配置される
+場所と作成すべき関数が一部違うだけであとは殆ど同じです。
+
+
+関数で使う構造体及び定数の定義は以下のようになっています。
+
+typedef enum _PLUGIN_TYPE {
+    PLT_TOOLBAR=1,                  // ツールバープラグイン
+    PLT_EXPLORERBAR,                // エクスプローラバープラグイン
+    PLT_STATUSBAR,                  // Statusbar(未実装)
+    PLT_OPERATION,                  // Operation(未実装)
+}PLUGIN_TYPE;
+
+typedef struct _PLUGININFO {
+    int type;                       // プラグインのタイプ。上記定数のいずれか
+    char name[100];                 // プラグイン名
+    char version[100];              // バージョン
+    char versionDate[100];          // 作成日時
+    char authorName[100];           // 作者名
+    char authorEmail[100];          // 作者のメールアドレス(必須ではない)
+    char authorUrl[100];            // 作者のサイトアドレス(必須ではない)
+    char comment[1024*10];          // プラグインの説明文
+} PLUGININFO;
+
+それぞれの関数の定義は以下のようにしてください。
+引数、戻り値の型はC++及びWin32APIで定義されるものです。
+
+extern "C" HWND WINAPI CreateToolBar(HWND hWndParent, UINT nID);
+extern "C" HWND WINAPI CreateExplorerPane(HWND hWndParent, UINT nID);
+extern "C" void WINAPI GetPluginInfo(PLUGININFO* pstPluginInfo);
+extern "C" BOOL WINAPI PreTranslateMessage(MSG* pMsg);
+extern "C" void WINAPI ShowToolBarMenu(UINT nID);
+extern "C" void WINAPI ShowExplorerMenu(int x, int y);
+extern "C" void WINAPI PluginSetting();
+extern "C" int  WINAPI PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam);
+
+
+extern "C" HWND WINAPI CreateToolBar(HWND hWndParent, UINT nID);
+
+    unDonut がツールバープラグインを組み込むときに呼び出される関数です。
+    ここでツールバーとして組み込まれるウィンドウを作成してそのハンドルを
+    戻り値として本体側に渡します。
+    そうすると、unDonut はそのハンドルを用いてツールバーを操作し表示しま
+    す。
+    hWndParent 引数は unDonut のリバー（上部のツールバー群を管理するウィ
+    ンドウ）のハンドルで、ウィンドウを作成する際に親ウィンドウとして指定
+    したりできます。
+    nID 引数は ウィンドウの ID として指定する値ですが、 これは DonutP に
+    おける古い仕様でnIDを使用する必要はありません。
+    プラグイン作成者は Win32API の CreateWindowEx 関数、またはMFCやWTLの
+    Create関数などを用いて子ウィンドウとしてウィンドウを作成してください。
+    戻り値として NULL を返すとツールバーのロードが失敗したとみなされます。
+
+
+
+extern "C" HWND WINAPI CreateExplorerPane(HWND hWndParent, UINT nID);
+
+    unDonutがエクスプローラバープラグインを組み込むときに呼び出される関数
+    です。
+    基本的にやるべきことは ツールバープラグインの場合と同じなので 
+    CreateToolBar の説明もご覧ください。
+    hWndParent引数はエクスプローラバー内のプラグインバーのウィンドウハン
+    ドルです。ここで作成したウィンドウはプラグインバーの子ウィンドウとし
+    て組み込まれます。
+    nID引数は特に使用されません。
+    この関数が呼び出されるタイミングは、エクスプローラバーのプラグイン切
+    り替えで初めてそのプラグインが選択された時です。
+    戻り値としてNULLを返すとプラグインのロードに失敗したとみなされます。
+
+
+
+extern "C" void WINAPI GetPluginInfo(PLUGININFO* pstPluginInfo);
+
+    unDonutがプラグインの情報を必要とするときに呼び出されます。
+    具体的にはオプションでDLLを選択したときです。
+    PLUGININFOにプラグインの種類とその他プラグインに関係する情報をセット
+    します。
+    pstPluginInfo 引数は すでに メモリが確保された領域へのポインタなので
+    各項目に情報を設定するだけです。
+    最低限type要素だけちゃんと設定してあればあとは何でもかまいません。
+
+
+
+extern "C" BOOL WINAPI PreTranslateMessage(MSG* pMsg);
+
+    プラグインで作成したウィンドウに対してはキー入力に関するメッセージが
+    送られてこないため、unDonut 側はこの関数を通してキー入力のメッセージ
+    が発生したことをしらせます。プラグイン側はこのpMsgの情報をウィンドウ
+    に送る必要があります。
+    キー入力を必要としないプラグインであればこの関数を実装する必要はあり
+    ません。
+    戻り値は メッセージを処理した場合は TRUE を、 それ以外の場合は FALSE
+    を返して下さい。
+    この戻り値を適切に返さないと本体の機能を損なう恐れがあります。
+
+
+
+extern "C" void WINAPI ShowToolBarMenu(UINT nID);
+
+    ツールバープラグインでツールバーがドロップダウンメニューを表示させる
+    ときに呼び出されます。
+    nID 引数は ツールバーのドロップダウンボタンのインデックス値です。
+    この値からボタンの座標を算出してポップアップメニューを表示させる処理
+    を行ってください。
+
+
+
+extern "C" void WINAPI ShowExplorerMenu(int x, int y);
+
+    エクスプローラプラグインにおいて、エクスプローラバーのツールバーにあ
+    る「メニュー」ボタンをクリックしたときに呼び出されます。
+    プラグインのメニューはここで表示してください。
+    x及びy引数は「メニュー」ボタンの左下の座標（スクリーン座標）を表して
+    います。
+
+
+extern "C" void WINAPI PluginSetting();
+
+    本体のオプション-プラグインにおいて 「設定」ボタンを押したときに呼び
+    出される関数です。ダイアログを表示して設定を行うなり、どのように実装
+    してもかまいません。
+    実装しない場合はボタンを押しても特に何も起こりません。
+
+
+
+extern "C" int  WINAPI PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam);
+
+    unDonutでイベントが発生したときにプラグインに呼び出されます。
+    どんなイベントが発生するは PluginInfo.h を参照してください。
+
+
+
+
+プラグインから unDonut の機能を利用する場合は COM を使って各種メソッドを
+呼び出す形をとります。
+詳しくはサンプルの方の説明をご覧ください。
+
