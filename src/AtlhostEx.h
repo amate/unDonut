@@ -715,7 +715,7 @@ GetClientRect(&rect);
 			::EndPaint(m_hWnd, &ps);
 			return 1;
 		}
-		if (m_spViewObject && m_bWindowless)
+		if (m_spViewObject/* && m_bWindowless*/)
 		{
 			PAINTSTRUCT ps;
 			HDC hdc = ::BeginPaint(m_hWnd, &ps);

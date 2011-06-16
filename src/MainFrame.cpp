@@ -294,7 +294,7 @@ HWND	CMainFrame::init_tabCtrl()
 {
 	HWND	hWndMDITab = m_MDITab.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndMDITab) );
-	
+
 	CFaviconManager::Init(hWndMDITab);
 
 	return hWndMDITab;
@@ -2155,7 +2155,7 @@ LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 
 	//\\ たぶん検索したときに飛んでくる関数
 	CChildFrame *pActiveChild = GetActiveChildFrame();
-	if( pActiveChild != NULL )
+	if( pActiveChild)
 		pActiveChild->SaveSearchWordflg(false); //\\ 検索バーで検索したときアクティブなタブの検索文字列を保存しないようにする
 
 	HWND hWndNew = OpenUrlWithExProp(pArgs->strUrl, pArgs->dwOpenFlag, pArgs->strIniFile, pArgs->strSection);
@@ -2163,7 +2163,6 @@ LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 		hWndNew = MDIGetActive();
 
 	CChildFrame *pChild  = GetChildFrame(hWndNew);
-
 	if (pChild) {
 		CString str = pArgs->strSearchWord;
 
@@ -2176,6 +2175,7 @@ LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 		if (CSearchBarOption::s_bAutoHilight) {
 			pChild->SetSearchWordAutoHilight( str, true );
 		}
+		//pChild->SetNowSearchWord(str);
 	   #else
 		pChild->SetSearchWordAutoHilight( str, (dwStatus & STS_AUTOHILIGHT) != 0 );
 	   #endif
@@ -3490,6 +3490,7 @@ void CMainFrame::_FocusChecker()
 	}
 }
 
+
 // リバーとビューの間の横線を書く
 void		CMainFrame::OnPaint(CDCHandle /*dc*/)
 {
@@ -3623,7 +3624,7 @@ LRESULT CMainFrame::OnMenuGetObject(UINT uMsg, WPARAM wParam, LPARAM lParam, BOO
 //////////////////////////////////////////////////////////////////
 // to avoid the flicker on resizing
 
-LRESULT CMainFrame::OnMDIClientEraseBkgnd(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+BOOL CMainFrame::OnMDIClientEraseBkgnd(CDCHandle dc)
 {
   #if 0 //+++ 描画範囲の更新がちゃんと制御できていないので駄目
 	BOOL	bMaximized = 0;
@@ -3637,12 +3638,12 @@ LRESULT CMainFrame::OnMDIClientEraseBkgnd(UINT uMsg, WPARAM wParam, LPARAM lPara
   #endif
 
   #if 1 //*+++ BG描画指定.
-	if (drawMainFrameBg((HDC)wParam))
+	if (drawMainFrameBg(dc))
 		return 1;
   #endif
 
 	// no need to erase it
-	bHandled = FALSE;
+	SetMsgHandled(FALSE);
 	return 0;
 }
 
@@ -5978,6 +5979,9 @@ void	CMainFrame::SetFocusToSearchBarWithSelectedText()
 	m_SearchBar.GetEditCtrl().SetFocus();
 }
 
+
+
+// ==================================================================================
 
 /////////////////////////////////////////////
 // DonutP API

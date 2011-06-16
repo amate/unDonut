@@ -1286,9 +1286,7 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 		}
 
 		return;
-	}
-
-	if (hwndChildDeact == m_hWnd) { 	// I'm deactivated タブが切り替わった
+	} else if (hwndChildDeact == m_hWnd) { 	// I'm deactivated タブが切り替わった
 		_SaveFocus();
 		if( m_bSaveSearchWordflg == true ){	//\\ 現在、検索バーにある文字列を取っておく
 			pSearchBar->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);

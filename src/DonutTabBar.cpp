@@ -670,7 +670,7 @@ public:
 	void	OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct);
 	int		OnMDISetText(LPCTSTR lpstrText);
 
-	void	OnSetCurSel(int nIndex);
+	void	OnSetCurSel(int nIndex, int nOldIndex);
 	HRESULT OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, IDataObject** ppDataObject);
 
 private:
@@ -746,6 +746,7 @@ private:
 	ELinkState	m_LinkState;
 	bool		m_bInsertHere;
 	int			m_nInsertIndex;
+
 
 };
 
@@ -886,7 +887,7 @@ bool	CDonutTabBar::Impl::SetCurSel(int nIndex, bool bClicked/* = false*/, bool b
 	_ScrollOpposite(nIndex, bClicked);
 
 	if (bActiveOnly == false)
-		OnSetCurSel(nIndex);
+		OnSetCurSel(nIndex, nCurSel);
 
 	UpdateWindow();
 	return true;
@@ -1744,7 +1745,24 @@ LRESULT CDonutTabBar::Impl::OnMenuSelect(UINT uMsg, WPARAM wParam, LPARAM lParam
 void	CDonutTabBar::Impl::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	if (nFlags & MK_CONTROL) {	// 複数選択
-		
+		int nIndex = _HitTest(point);
+		if (nIndex != -1) {
+			ATLASSERT( _IsValidIndex(nIndex) );
+
+			if ( GetCurSel() != nIndex ) {
+				CSimpleArray<int>	arrIndex;
+				GetCurMultiSel(arrIndex, false);
+				if ( arrIndex.Find(nIndex) == -1 ) {	// 複数選択
+					if ( m_vecpItem[nIndex]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+						InvalidateRect(m_vecpItem[nIndex]->rcItem);
+				} else {								// 複数選択解除
+					if ( m_vecpItem[nIndex]->ModifyState(TISS_MSELECTED, 0) )
+						InvalidateRect(m_vecpItem[nIndex]->rcItem);
+				}
+			} else {
+				_PressItem(nIndex);
+			}
+		}	
 		return ;
 	}
 
@@ -2065,15 +2083,22 @@ void	CDonutTabBar::Impl::OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct)
 		UpdateWindow();
 	}
 
-	SetCurSel(nIndex, false, false);
+	SetCurSel(nIndex, false, true);
 }
 
 //------------------------------
 /// 
-void	CDonutTabBar::Impl::OnSetCurSel(int nIndex)
+void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 {
 	HWND	hWnd = GetTabHwnd(nIndex);
 	ATLASSERT( ::IsWindow(hWnd) );
+
+	/* 前のウィンドウの画面を更新しておく */
+	HWND	hWndOld = GetTabHwnd(nOldIndex);
+	if (hWndOld) {
+		::InvalidateRect(hWndOld, NULL, FALSE);
+		::UpdateWindow(hWndOld);
+	}
 #if 1 //+++ メモ:unDonut+
 	CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
 	wndMDI.SetRedraw(FALSE);
@@ -3098,21 +3123,6 @@ bool	CDonutTabBar::Impl::_ScrollItem(bool bRight/* = true*/)
 
 #if 0
 
-
-void CMDITabCtrl::RightTab()
-{
-	int nIndex = GetCurSel();
-	int nCount = GetItemCount();
-
-	if (nCount < 2)
-		return;
-
-	int nNext  = (nIndex + 1 < nCount) ? nIndex + 1 : 0;
-	SetCurSelEx(nNext);
-}
-
-
-
 void CMDITabCtrl::SetCurSelEx(int nIndex, bool bActivate)
 {
 	SetCurSel(nIndex);
@@ -3346,114 +3356,6 @@ int CMDITabCtrl::ShowTabListMenuDefault(int nX, int nY)
 
 
 
-int CMDITabCtrl::ShowTabListMenuVisible(int nX, int nY)
-{
-	int 		idxFirst = GetFirstVisibleIndex();
-	int 		idxLast  =	GetLastVisibleIndex();
-
-	if (idxFirst == -1 || idxLast == -1)
-		return -1;
-
-	// no item exist
-
-	//表示されていない左側のタブ
-	int 		i		 = 0;
-	int 		nCount	 = GetItemCount();
-	CMenu		menu;
-	menu.CreatePopupMenu();
-
-	for (i = 0; i < idxFirst; i++) {
-		menu.AppendMenu( 0, i + 1, _GetTabText(i) );
-	}
-
-	//表示中のタブ
-	if (i >= nCount)
-		return -1;
-
-	if (idxFirst != 0) {
-		menu.AppendMenu(MF_SEPARATOR, 0);
-	}
-
-	CMenuHandle menuSub;
-	menuSub.CreatePopupMenu();
-
-	for (i = idxFirst; i <= idxLast; i++) {
-		menuSub.AppendMenu( 0, i + 1, _GetTabText(i) );
-	}
-
-	menu.AppendMenu( MF_POPUP, (UINT_PTR) menuSub.m_hMenu, _T("表示中のタブ") );
-
-	//表示されていない右側のタブ
-	if (i > nCount)
-		return -1;
-
-	if (idxLast != nCount - 1) {
-		menu.AppendMenu(MF_SEPARATOR, 0);
-	}
-
-	for (i = idxLast + 1; i < nCount; i++) {
-		menu.AppendMenu( 0, i + 1, _GetTabText(i) );
-	}
-
-	int 	nRet = menu.TrackPopupMenu(
-						TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,
-						nX,
-						nY + 1,
-						m_hWnd);
-	return nRet - 1;
-}
-
-
-
-struct CMDITabCtrl::_Object_TabSorting {
-	CString strTitle;
-	int 	nIndex;
-};
-
-struct CMDITabCtrl::_Function_CompareTitle {
-	bool operator ()(const _Object_TabSorting &tab1, const _Object_TabSorting &tab2)
-	{
-		return ::lstrcmp(tab1.strTitle, tab2.strTitle) < 0;
-	}
-};
-
-int CMDITabCtrl::ShowTabListMenuAlphabet(int nX, int nY)
-{
-	std::vector<_Object_TabSorting> aryTab;
-
-	int 	nCount = GetItemCount();
-	int 	i;
-	for (i = 0; i < nCount; i++) {
-		_Object_TabSorting tab;
-		tab.strTitle = _GetTabText(i);
-		tab.nIndex	 = i;
-		aryTab.push_back(tab);
-	}
-
-	std::sort( aryTab.begin(), aryTab.end(), _Function_CompareTitle() );
-
-	CMenu	menu;
-	menu.CreatePopupMenu();
-
-	for (i = 0; i < nCount; i++) {
-		menu.AppendMenu(0, i + 1, aryTab[i].strTitle);
-	}
-
-	int 	nRet   = menu.TrackPopupMenu(
-							TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,
-							nX,
-							nY + 1,
-							m_hWnd);
-
-	if (nRet == 0)
-		return -1;
-
-	return aryTab[nRet - 1].nIndex;
-}
-
-
-
-
 
 
 // Overrides
@@ -3486,47 +3388,6 @@ void CMDITabCtrl::OnDeleteItemDrag(int nIndex)
 }
 
 
-// なんでこんなところにあるんだ
-//\\bool	m_bDragAccept;
-
-
-
-DROPEFFECT CMDITabCtrl::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
-{
-	m_bDragAccept = _MtlIsHlinkDataObject(pDataObject);
-	return _MtlStandardDropEffect(dwKeyState);
-}
-
-
-
-DROPEFFECT CMDITabCtrl::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
-{
-	if (!m_bDragAccept)
-		return DROPEFFECT_NONE;
-	return COleDragDropTabCtrl<CMDITabCtrl>::OnDragOver(pDataObject, dwKeyState, point, dropOkEffect);
-}
-
-
-
-
-void CMDITabCtrl::SetLinkState(int nState)
-{
-	m_nLinkState = nState;
-}
-
-
-BOOL CMDITabCtrl::GetLinkState()
-{
-	BOOL ret = FALSE;
-
-	if (m_nLinkState == LINKSTATE_A_ON || m_nLinkState == LINKSTATE_B_ON)
-		ret = TRUE;
-
-	if (m_nLinkState == LINKSTATE_A_ON)
-		m_nLinkState = LINKSTATE_OFF;
-
-	return ret;
-}
 
 #endif
 

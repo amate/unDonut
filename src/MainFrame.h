@@ -390,7 +390,7 @@ public:
 		REFLECT_NOTIFICATIONS( )	// must be last
 
 	ALT_MSG_MAP( 1 )
-		MESSAGE_HANDLER( WM_ERASEBKGND	, OnMDIClientEraseBkgnd )
+		MSG_WM_ERASEBKGND( OnMDIClientEraseBkgnd )
 		MSG_WM_SIZE( OnMDIClientSize )
 	END_MSG_MAP()
 
@@ -635,7 +635,7 @@ private:
 
 	//////////////////////////////////////////////////////////////////
 	// to avoid the flicker on resizing
-	LRESULT 	OnMDIClientEraseBkgnd(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
+	BOOL		OnMDIClientEraseBkgnd(CDCHandle dc);
 	void	 	OnMDIClientSize(UINT nType, CSize size);
 
 	//////////////////////////////////////////////////////////////////

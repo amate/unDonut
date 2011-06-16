@@ -44,7 +44,7 @@ public:
 
 	HWND	Create(HWND hWndParent);
 	void	SetMDIClient(HWND hWndMDIClient);
-	
+
 	// Attributes
 	HWND	GetTabHwnd(int nIndex);
 	int 	GetTabIndex(HWND hWndMDIChild);
