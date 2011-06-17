@@ -1395,6 +1395,22 @@ unsigned getIEMejourVersion()
 }
 
 
+bool	IsGpuRendering()
+{
+	static BOOL	bEnable = -1;
+	if (bEnable == -1) {
+		bEnable = FALSE;
+		CRegKey	rk;
+		if (rk.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_GPU_RENDERING"), KEY_READ) == ERROR_SUCCESS) {
+			CString strExe = GetFileBaseName(GetExeFileName());
+			DWORD	dwValue = 0;
+			if (rk.QueryDWORDValue(strExe, dwValue) == ERROR_SUCCESS)
+				bEnable = dwValue != 0;
+		}
+	}
+	return bEnable != 0;
+}
+
 
 /** +++ XP以降で使える、osヒープ取得で、フラグメンテーションを少なくするモードへの設定.
  *  ※ 一部 w2kでもMSのパッチによっては使えるらしい?

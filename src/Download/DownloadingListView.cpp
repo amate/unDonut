@@ -7,26 +7,14 @@
 
 
 // Constructor/Destructor
-CDownloadingListView::CDownloadingListView(CDownloadedListView* pDLed)
-	: m_pDownloadedListView(pDLed)
-	, m_bTimer(false)
+CDownloadingListView::CDownloadingListView()
+	: m_bTimer(false)
 { }
 
 CDownloadingListView::~CDownloadingListView()
 {
 	m_ImageList.Destroy();
 	m_ImgStop.Destroy();
-}
-
-
-
-// DLするアイテムを追加
-DLItem*	CDownloadingListView::CreateDLItem()
-{
-	DLItem* pDLItem = new DLItem;
-	return pDLItem;
-	// リストビューに追加
-	//_AddItemToList(pDLItem);
 }
 
 
@@ -294,7 +282,8 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			// (1.2 MB/sec)
 			CString strTransferRate;
 			int nProgressMargin = item.nProgress - item.nOldProgress;
-			
+			item.nOldProgress = item.nProgress;
+
 			if (item.deq.size() >= 10)
 				item.deq.pop_front();
 			item.deq.push_back(make_pair(nProgressMargin, (int)dwTimeMargin));
@@ -314,7 +303,7 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 				::swprintf(strTransferRate.GetBuffer(30), _T(" (%d KB/sec)"), KbTransferRate);
 				strTransferRate.ReleaseBuffer();
 			}
-			item.nOldProgress = item.nProgress;
+			
 
 			// 残り 4 分
 			int nRestByte = item.nProgressMax - item.nProgress;
@@ -400,7 +389,7 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	_RefreshList();
 
 	// DLedViewに追加
-	m_pDownloadedListView->AddDownloadedItem(pItem);
+	m_funcAddDownloadedItem(pItem);
 
 	if (m_vecpDLItem.size() == 0) {
 		KillTimer(1);
@@ -408,6 +397,8 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 		if (CDLOptions::bCloseAfterAllDL)	 //全てのDLが終わったので閉じる
 			SetTimer(2, 3 * 1000);	// 延滞して終了させる
 	}
+
+	::SHChangeNotify(SHCNE_CREATE, SHCNF_PATH, (LPCTSTR)pItem->strFilePath, NULL);
 
 	return 0;
 }

@@ -163,6 +163,8 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** ppv)
 {
 	if (guidService == SID_SDownloadManager && CDownloadManager::UseDownloadManager()) {
+		CString strReferer = GetLocationURL();
+		CDownloadManager::SetReferer(strReferer);
 		*ppv = (IDownloadManager*)CDownloadManager::GetInstance();
 		return S_OK;
 	}

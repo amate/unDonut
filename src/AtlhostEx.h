@@ -330,6 +330,7 @@ public:
 // This class is not cocreateable
 
 #include "ScriptErrorCommandTargetImpl.h"
+#include "Misc.h"
 
 class ATL_NO_VTABLE CAxHostWindow :
 		public CComCoClass<CAxHostWindow , &CLSID_NULL>,
@@ -715,7 +716,7 @@ GetClientRect(&rect);
 			::EndPaint(m_hWnd, &ps);
 			return 1;
 		}
-		if (m_spViewObject/* && m_bWindowless*/)
+		if (m_spViewObject && Misc::IsGpuRendering()/* && m_bWindowless*/)
 		{
 			PAINTSTRUCT ps;
 			HDC hdc = ::BeginPaint(m_hWnd, &ps);

@@ -11,23 +11,26 @@
 // CDownloadManager
 
 CDownloadManager*	CDownloadManager::s_pThis = NULL;
-
+CString	CDownloadManager::s_strReferer;
 
 // Constructor
 CDownloadManager::CDownloadManager()
 {
-	m_MSG_GetDefaultDLFolder	= ::RegisterWindowMessage(REGISTERMESSAGE_GETDEFAULTDLFOLDER);
-	m_MSG_StartDownload			= ::RegisterWindowMessage(REGISTERMESSAGE_STARTDOWNLOAD);
+	WM_GETDEFAULTDLFOLDER	= ::RegisterWindowMessage(REGISTERMESSAGE_GETDEFAULTDLFOLDER);
+	WM_STARTDOWNLOAD		= ::RegisterWindowMessage(REGISTERMESSAGE_STARTDOWNLOAD);
 
 	s_pThis = this;
 }
 
+//--------------------------------
+/// DLManagerを使うかどうかを返す
 bool CDownloadManager::UseDownloadManager()
 {
 	return CDLControlOption::s_bUseDLManager ? true : false;
 }
 
-// strURLをダウンロードする
+//-------------------------------
+/// strURLをダウンロードする
 void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND hWnd, DWORD dwDLOption)
 {
 	if (CDLControlOption::s_bUseDLManager == false)
@@ -40,31 +43,27 @@ void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND h
 	if (dwDLOption & DLO_SHOWWINDOW || CDLOptions::bShowWindowOnDL) 
 		OnShowDLManager(0, 0, NULL);
 
-	CCustomBindStatusCallBack* pCBSCB = m_wndDownload.StartBinding();
+	CCustomBindStatusCallBack* pCBSCB = _CreateCustomBindStatusCallBack();
+	pCBSCB->SetReferer(s_strReferer);
+	s_strReferer.Empty();
 	pCBSCB->SetOption(strDLFolder, hWnd, dwDLOption);
 	CString* pstrURL = new CString(strURL);
 	boost::thread trd(boost::bind(&CDownloadManager::_DLStart, this, pstrURL, (IBindStatusCallback*)pCBSCB));
 
 }
 
+//---------------------------------------------
 /// 現在ダウンロード中のアイテムの数を返す
 int		CDownloadManager::GetDownloadingCount() const
 {
 	return m_wndDownload.GetDownloadingCount();
 }
 
-void	CDownloadManager::_DLStart(CString* pstrURL, IBindStatusCallback* bscb)
-{
-	::CoInitialize(NULL);
-	HRESULT hr = ::URLOpenStream(NULL, *pstrURL, 0, bscb);
-	delete pstrURL;
-	ATLVERIFY(bscb->Release() == 0);
-	::CoUninitialize();
-}
-	
+
 
 
 // IUnknown
+
 STDMETHODIMP CDownloadManager::QueryInterface(REFIID iid, void ** ppvObject)
 {
     if (ppvObject == NULL) 
@@ -84,7 +83,11 @@ STDMETHODIMP CDownloadManager::QueryInterface(REFIID iid, void ** ppvObject)
 	return S_OK;
 }
 
+
 // IDownloadManager
+
+//--------------------------------------------
+/// DLが開始されるときに呼ばれる
 STDMETHODIMP CDownloadManager::Download(
 	IMoniker* pmk,  
 	IBindCtx* pbc,  
@@ -101,8 +104,7 @@ STDMETHODIMP CDownloadManager::Download(
 	if (CDLOptions::bShowWindowOnDL)
 		OnShowDLManager(0, 0, NULL);
 
-	CCustomBindStatusCallBack* pCBSCB = m_wndDownload.StartBinding();
-	pCBSCB->AddRef();
+	CCustomBindStatusCallBack* pCBSCB = _CreateCustomBindStatusCallBack();
 	IBindStatusCallback* pbscbPrev;
 	HRESULT hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, &pbscbPrev, 0);
 	if (FAILED(hr) && pbscbPrev) {
@@ -138,7 +140,8 @@ STDMETHODIMP CDownloadManager::Download(
 
 
 
-
+//----------------------------------
+/// 通知用ウィンドウの初期化 : DLManagerのフレームウィンドウを作成
 int CDownloadManager::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	SetMsgHandled(FALSE);
@@ -149,6 +152,8 @@ int CDownloadManager::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
+//---------------------------------
+/// DLManagerのフレームウィンドウの破棄
 void CDownloadManager::OnDestroy()
 {
 	SetMsgHandled(FALSE);
@@ -157,6 +162,8 @@ void CDownloadManager::OnDestroy()
 	}
 }
 
+//-------------------------------------
+/// ダウンロードマネージャーを表示する
 void CDownloadManager::OnShowDLManager(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	if (CDLControlOption::s_bUseDLManager == false)	{
@@ -197,12 +204,17 @@ void CDownloadManager::OnShowDLManager(UINT uNotifyCode, int nID, CWindow wndCtl
 	}
 }
 
+//---------------------------------------
+/// 既定のダウンロードフォルダを返す
 LRESULT CDownloadManager::OnDefaultDLFolder(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return (LRESULT)(LPCTSTR)CDLOptions::strDLFolderPath;
 }
 
-
+//---------------------------------------
+/// 外部からダウンロードマネージャーでファイルをＤＬする
+///
+/// @param [in]	wParam	DLStartItemのポインタ
 LRESULT CDownloadManager::OnStartDownload(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	DLStartItem* pItem  = (DLStartItem*)wParam;
@@ -211,4 +223,24 @@ LRESULT CDownloadManager::OnStartDownload(UINT uMsg, WPARAM wParam, LPARAM lPara
 
 	DownloadStart(pItem->strURL, pItem->strDLFolder, pItem->hWnd, pItem->dwOption);
 	return S_OK;
+}
+
+//--------------------------------------
+/// 別スレッドで開始されるDLの本体
+void	CDownloadManager::_DLStart(CString* pstrURL, IBindStatusCallback* bscb)
+{
+	::CoInitialize(NULL);
+	HRESULT hr = ::URLOpenStream(NULL, *pstrURL, 0, bscb);
+	delete pstrURL;
+	ATLVERIFY(bscb->Release() == 0);
+	::CoUninitialize();
+}
+
+
+//---------------------------------------
+CCustomBindStatusCallBack*	CDownloadManager::_CreateCustomBindStatusCallBack()
+{
+	DLItem* pDLItem = new DLItem;
+	CCustomBindStatusCallBack* pCustomBscb = new CCustomBindStatusCallBack(pDLItem, m_wndDownload.m_wndDownloadingListView.m_hWnd);
+	return pCustomBscb;
 }

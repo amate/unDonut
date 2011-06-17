@@ -11,7 +11,7 @@
 // Forward Declaration
 class CMainFrame;
 class CChildFrame;
-
+class CCustomBindStatusCallBack;
 
 ///////////////////////////////////////////////////////////////
 // CDownloadManager
@@ -27,6 +27,8 @@ public:
 	void	SetParent(HWND hWnd) { m_hWndParent = hWnd; }
 	static CDownloadManager* GetInstance() { return s_pThis; }
 	static bool UseDownloadManager();
+	static void	SetReferer(LPCTSTR strReferer) { s_strReferer = strReferer; }
+
 	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = DLO_OVERWRITEPROMPT );
 	int		GetDownloadingCount() const;
 
@@ -52,8 +54,8 @@ public:
 		MSG_WM_CREATE( OnCreate )
 		MSG_WM_DESTROY( OnDestroy )
 		COMMAND_ID_HANDLER_EX( ID_SHOW_DLMANAGER, OnShowDLManager )
-		MESSAGE_HANDLER_EX( m_MSG_GetDefaultDLFolder, OnDefaultDLFolder )
-		MESSAGE_HANDLER_EX( m_MSG_StartDownload, OnStartDownload )
+		MESSAGE_HANDLER_EX( WM_GETDEFAULTDLFOLDER, OnDefaultDLFolder )
+		MESSAGE_HANDLER_EX( WM_STARTDOWNLOAD	 , OnStartDownload )
 	END_MSG_MAP()
 
 
@@ -65,16 +67,16 @@ public:
 
 private:
 	void	_DLStart(CString* pstrURL, IBindStatusCallback* bscb);
-
+	CCustomBindStatusCallBack*	_CreateCustomBindStatusCallBack();
 
 	// Data members
 	static CDownloadManager*	s_pThis;
+	static CString				s_strReferer;
 	CDownloadFrame m_wndDownload;
 	HWND			m_hWndParent;
 
-	UINT			m_MSG_GetDefaultDLFolder;
-	UINT			m_MSG_StartDownload;
-
+	UINT	WM_GETDEFAULTDLFOLDER;
+	UINT	WM_STARTDOWNLOAD;
 
 };
 

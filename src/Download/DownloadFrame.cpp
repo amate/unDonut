@@ -4,31 +4,23 @@
 #include "DownloadFrame.h"
 #include "DownloadOptionDialog.h"
 #include "DownloadManager.h"
+#include "../IniFile.h"
 
+
+/////////////////////////////////////////////////////////////
+// CDownloadFrame
 
 // Constructor
 CDownloadFrame::CDownloadFrame()
-	: m_wndDownloadingListView(&m_wndDownloadedListView)
-	, m_bVisible(false)
+	: m_bVisible(false)
 {
 }
-
-
-CCustomBindStatusCallBack*	CDownloadFrame::StartBinding()
-{
-	DLItem* pItem = m_wndDownloadingListView.CreateDLItem();
-	CCustomBindStatusCallBack* p = new CCustomBindStatusCallBack(pItem, &m_wndDownloadingListView);
-	// 追加
-	//m_vecpCSCB.push_back(std::unique_ptr<CCustomBindStatusCallBack>(p));
-	return p;
-}
-
 
 
 ////////////////////////////////////////
 // Message map
 
-LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
+int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	// スプリッタウィンドウを作成
 	m_wndSplitter.Create(m_hWnd);
@@ -38,7 +30,6 @@ LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	m_wndDownloadingListView.Create(m_wndSplitter, rcDefault, 0
 		, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_BORDER
 		| LVS_REPORT | LVS_OWNERDRAWFIXED | LVS_NOCOLUMNHEADER| LVS_SINGLESEL/*| LVS_SHOWSELALWAYS*/);
-	//m_wndDownloadingListView.SetView(LV_VIEW_TILE);
 
 	m_wndSplitter.SetSplitterPane(SPLIT_PANE_TOP, m_wndDownloadingListView);
 
@@ -47,6 +38,8 @@ LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	m_wndDownloadedListView.ModifyStyle(0, WS_BORDER);
 
 	m_wndSplitter.SetSplitterPane(SPLIT_PANE_BOTTOM, m_wndDownloadedListView);
+
+	m_wndDownloadingListView.SetAddDownloadedItemfunc(boost::bind(&CDownloadedListView::AddDownloadedItem, &m_wndDownloadedListView, _1));
 
 #if 0
 	// コマンドバー ウィンドウの作成
@@ -117,10 +110,10 @@ LRESULT CDownloadFrame::OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPar
 	return 0;
 }
 
-
-LRESULT CDownloadFrame::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
+//---------------------------------------------
+/// ウィンドウ破棄されるとき : ウィンドウの位置サイズを保存する
+void	CDownloadFrame::OnDestroy()
 {
-#if 1
 	CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
 	CIniFileO pr(strIniFile, _T("Main"));
 
@@ -144,21 +137,20 @@ LRESULT CDownloadFrame::OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPa
 	int nSplitterPos = m_wndSplitter.GetSplitterPos();
 	pr.SetValue(nSplitterPos, _T("SplitterPos"));
 
-#endif
-
-	//bHandled = FALSE;
-	return 1;
 }
 
+//-------------------------------------
+/// バージョン情報を表示
 LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	//CAboutDlg dlg;
 	//dlg.DoModal();
-	MessageBox(_T("　　　version 2.2　　　"), _T("DownloadManager"));
+	MessageBox(_T("　　　version 2.3　　　"), _T("DownloadManager"));
 	return 0;
 }
 
-// オプション設定画面を開く
+//-------------------------------------
+/// オプション設定画面を開く
 LRESULT CDownloadFrame::OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
 	CDLOptionDialog dlg;
@@ -168,6 +160,8 @@ LRESULT CDownloadFrame::OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 	return 0;
 }
 
+//-------------------------------------
+/// ウィンドウが破棄されないように＆ウィンドウのサイズを控える
 void	CDownloadFrame::OnClose()
 {
 	ShowWindow(SW_HIDE);

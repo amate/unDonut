@@ -3,16 +3,11 @@
 #pragma once
 
 #include <wininet.h>
-#pragma comment(lib,"wininet.lib")
 #include <UrlMon.h>
-#pragma comment(lib,"Urlmon.lib")
-#pragma comment(lib,"winmm.lib")
-#include <boost/thread.hpp>
 
 
+// ëOï˚êÈåæ
 struct DLItem;
-class CDownloadingListView;
-class CDownloadedListView;
 
 #define WM_USER_REMOVEFROMDOWNLIST	(WM_APP + 1)
 #define WM_USER_ADDTODOWNLOADLIST	(WM_APP	+ 2)
@@ -26,9 +21,10 @@ class CCustomBindStatusCallBack
 {
 public:
 	// Constructor\Destructor
-	CCustomBindStatusCallBack(DLItem* pItem, CDownloadingListView* pwndDLing);
+	CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing);
 	~CCustomBindStatusCallBack();
 
+	void	SetReferer(LPCTSTR strReferer);
 	void	SetOption(LPCTSTR strDLFolder, HWND hWnd, DWORD dwOption);
 	void	SetBSCB(IBindStatusCallback* pPrev) { m_spBSCBPrev = pPrev; }
 	void	SetBindCtx(IBindCtx* pBind) { m_spBindCtx = pBind; }
@@ -98,7 +94,7 @@ private:
 	CComPtr<IStream>		m_spStream;
 	DWORD					m_dwTotalRead;
 	DLItem*					m_pDLItem;
-	CDownloadingListView*	m_pDownloadingListView;
+	HWND					m_hWndDLing;
 	CComPtr<IBindStatusCallback>	m_spBSCBPrev;
 	CComPtr<IBindCtx>				m_spBindCtx;
 	HANDLE							m_hFile;

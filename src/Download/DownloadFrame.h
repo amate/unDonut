@@ -7,18 +7,17 @@
 #include "DownloadingListView.h"
 #include "DownloadedListView.h"
 #include "CustomBindStatusCallBack.h"
-#include "../IniFile.h"
-//#include "OptionDialog.h"
-//#include "AboutDlg.h"
 
 
+class CDownloadManager;
 
 //////////////////////////////////////////////////////////
-// CDownloadFrame
+/// ダウンロードマネージャーのメインフレーム
 
 class CDownloadFrame
 	: public CFrameWindowImpl<CDownloadFrame>
 {
+	friend class CDownloadManager;
 public:
 	DECLARE_FRAME_WND_CLASS(_T("DonutDownloadManager"), NULL)
 	
@@ -27,7 +26,6 @@ public:
 
 	void	SetParentWindow(HWND hWnd) { m_hWndParent = hWnd; }
 	void	EnableVisible() { m_bVisible = true; }
-	CCustomBindStatusCallBack*	StartBinding();
 
 	int		GetDownloadingCount() const { 
 		return m_wndDownloadingListView.GetDownloadingCount();
@@ -35,9 +33,9 @@ public:
 
 	// Message map and Handler
 	BEGIN_MSG_MAP(CDownloadFrame)
-		MESSAGE_HANDLER(WM_CREATE, OnCreate)
-		MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
-		MSG_WM_CLOSE( OnClose )
+		MSG_WM_CREATE	( OnCreate	)
+		MSG_WM_DESTROY	( OnDestroy	)
+		MSG_WM_CLOSE	( OnClose	)
 		COMMAND_ID_HANDLER(ID_DLAPP_ABOUT, OnAppAbout)
 		COMMAND_ID_HANDLER(ID_DLOPENOPTION,  OnOpenOption)
 		CHAIN_MSG_MAP(CFrameWindowImpl<CDownloadFrame>)
@@ -45,12 +43,12 @@ public:
 	END_MSG_MAP()
 
 
-	LRESULT OnCreate(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/);
-	LRESULT OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled);
-	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
-	// オプション設定画面を開く
-	LRESULT OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
+	void	OnDestroy();
 	void	OnClose();
+	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	
 
 private:
 	CHorSplitterWindow		m_wndSplitter;

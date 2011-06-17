@@ -3,13 +3,16 @@
 #include "stdafx.h"
 #include "CustomBindStatusCallBack.h"
 #include <regex>
-#include "DownloadOptionDialog.h"
-#include "DownloadingListView.h"
-#include "DownloadedListView.h"
 #include <MLang.h>
 #include <atldlgs.h>
 #include "../Misc.h"
 #include "../MtlMisc.h"
+#include "DownloadOptionDialog.h"
+#include "DownloadingListView.h"
+
+#pragma comment(lib,"wininet.lib")
+#pragma comment(lib,"Urlmon.lib")
+#pragma comment(lib,"winmm.lib")
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
@@ -18,11 +21,11 @@
 // どうもm_spBSCBPrevがNULLだとＤＬが正常終了しないようで（Ｘ押しても止まらないし）
 
 // Constructor;
-CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, CDownloadingListView* pwndDLing)
+CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing)
 	: m_dwTotalRead(0)
 	, m_hFile(INVALID_HANDLE_VALUE)
 	, m_pDLItem(pItem)
-	, m_pDownloadingListView(pwndDLing) 
+	, m_hWndDLing(hWndDLing) 
 	, m_cRef(0)
 	, m_hWndNotify(NULL)
 {
@@ -32,11 +35,16 @@ CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, CDownloading
 // Destructor
 CCustomBindStatusCallBack::~CCustomBindStatusCallBack()
 {
-#if 0
-	if (::PathFileExists(m_pDLItem->strFilePath  + _T(".incomplete")))
-		::DeleteFile(m_pDLItem->strFilePath  + _T(".incomplete"));
-#endif
 }
+
+
+//------------------------------
+/// リファラを設定
+void	CCustomBindStatusCallBack::SetReferer(LPCTSTR strReferer)
+{
+	m_pDLItem->strReferer = strReferer;
+}
+
 
 
 void	CCustomBindStatusCallBack::SetOption(LPCTSTR strDLFolder, HWND hWnd, DWORD dwOption)
@@ -66,9 +74,9 @@ int CCustomBindStatusCallBack::_ActiveMessageBox(const CString& strText, UINT uT
 	// 最前面アプリケーションの入力処理機構に接続する 
 	AttachThreadInput( ::GetCurrentThreadId(), foregroundID, TRUE); 
 	// 最前面ウィンドウを変更する 
-	::SetForegroundWindow(m_pDownloadingListView->m_hWnd);
+	::SetForegroundWindow(m_hWndDLing);
 
-	int nReturn = MessageBox(m_pDownloadingListView->m_hWnd, strText, NULL, uType);
+	int nReturn = MessageBox(m_hWndDLing, strText, NULL, uType);
 	// 接続を解除する
 	AttachThreadInput( ::GetCurrentThreadId(), foregroundID, FALSE);
 
@@ -170,7 +178,8 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
 		::SendMessage(m_hWndNotify, uMsg, (WPARAM)(LPCTSTR)m_pDLItem->strText, 0);
 	}
 
-	m_pDownloadingListView->PostMessage(WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem, (LPARAM)this);
+	/* DLリストから削除 */
+	::PostMessage(m_hWndDLing, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem, (LPARAM)this);
 
 	// お片付け
 	if (::PathFileExists(m_pDLItem->strFilePath  + _T(".incomplete")))
@@ -224,8 +233,8 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 				return E_ABORT;
 			}
 
-			// DLリストに追加
-			m_pDownloadingListView->PostMessage(WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem);
+			/* DLリストに追加 */
+			::PostMessage(m_hWndDLing, WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem, 0);
 		}
 	}
 
@@ -285,7 +294,7 @@ HRESULT CCustomBindStatusCallBack::BeginningTransaction(
 	if (pszAdditionalHeaders == NULL) 
 		return E_POINTER;
 	*pszAdditionalHeaders = NULL;
-#if 0
+
 	if (m_pDLItem->strReferer.IsEmpty() == FALSE) {	// リファラーを追加する
 		CString strBuffer;
 		strBuffer.Format(_T("Referer: %s\r\n"), m_pDLItem->strReferer);
@@ -297,7 +306,7 @@ HRESULT CCustomBindStatusCallBack::BeginningTransaction(
 		wcscpy(wszAdditionalHeaders, (LPCTSTR)strBuffer);
 		*pszAdditionalHeaders = wszAdditionalHeaders;
 	}
-#endif
+
 
 
 	return S_OK;

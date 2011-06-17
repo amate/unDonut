@@ -213,6 +213,7 @@ void ErrorLogPrintf(const TCHAR* fmt, ...);
 
 BOOL	IsWow64(); 					//+++
 unsigned getIEMejourVersion();		//+++
+bool	IsGpuRendering();
 
 
 // ==========================================================================

@@ -56,7 +56,6 @@ class CDownloadingListView
 {
 public:
 	//DECLARE_WND_SUPERCLASS(_T("DownloadingListView"), GetWndClassName())
-	friend class CCustomBindStatusCallBack;
 
 	// Constants
 	enum {
@@ -79,12 +78,12 @@ public:
 	};
 
 	// Constructor/Destructor
-	CDownloadingListView(CDownloadedListView* pDLed);
+	CDownloadingListView();
 	~CDownloadingListView();
 
+	void	SetAddDownloadedItemfunc(function<void (DLItem*)> func) { m_funcAddDownloadedItem = func; }
 
-	DLItem*	CreateDLItem();
-
+	// Attributes
 	int		GetDownloadingCount() const { return (int)m_vecpDLItem.size(); }
 
 	// Overrides
@@ -132,7 +131,7 @@ private:
 	std::map<CString, int>	m_mapImgIndex;		// key:ägí£éqÅAvalue:ImagelistÇÃindex
 	CImageList				m_ImgStop;
 
-	CDownloadedListView*	m_pDownloadedListView;
+	function<void (DLItem*)> m_funcAddDownloadedItem;
 
 	CToolTipCtrl			m_ToolTip;
 	bool					m_bTimer;
