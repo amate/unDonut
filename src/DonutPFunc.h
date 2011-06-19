@@ -14,6 +14,25 @@ extern const TCHAR	g_cSeparater[];
 
 //////////////////////////////////////////////////////
 
+//---------------------------------------
+/// lengthを持ちitemに3つの引数を取るコレクション専用
+template<class collection>
+void	ForEachHtmlElement(collection col, function<bool (IDispatch*)> func)
+{
+	if (col) {
+		long length = 0;
+		col->get_length(&length);
+		for (long i = 0; i < length; ++i) {
+			CComVariant	vIndex(i);
+			CComPtr<IDispatch>	spDisp;
+			col->item(vIndex, vIndex, &spDisp);
+			if (func(spDisp) == false)
+				break;
+		}
+	}
+}
+
+
 //-----------------------------------------
 /// アイテムＩＤリストからアイコンを作る
 HICON	CreateIconFromIDList(PCIDLIST_ABSOLUTE pidl);

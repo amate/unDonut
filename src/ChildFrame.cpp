@@ -3602,40 +3602,34 @@ void	CChildFrame::_SetFavicon(const CString& strURL)
 		CComPtr<IHTMLElementCollection>	spCol;
 		spDocument->getElementsByTagName(CComBSTR(L"link"), &spCol);
 		if (spCol) {
-			long length = 0;
-			hr = spCol->get_length(&length);
-			if (SUCCEEDED(hr)) {
-				for (long i = 0; i < length; ++i) {
-					CComVariant vIndex(i);
-					CComPtr<IDispatch>	spDisp2;
-					spCol->item(vIndex, vIndex, &spDisp2);
-					CComQIPtr<IHTMLLinkElement>	spLink = spDisp2;
-					if (spLink) {
-						CComBSTR strrel;
-						spLink->get_rel(&strrel);
-						CComBSTR strhref;
-						spLink->get_href(&strhref);
-						strrel.ToLower();
-						if (strrel == _T("shortcut icon") || strrel == _T("icon")) {
-							DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
-							hr = UrlCombine(strURL, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
-							strFaviconURL.ReleaseBuffer();
-							if (SUCCEEDED(hr)) {
-								goto FAVICON_FOUND;
-							}
-						}
+			ForEachHtmlElement(spCol, [&](IDispatch* pDisp) -> bool {
+				CComQIPtr<IHTMLLinkElement>	spLink = pDisp;
+				if (spLink.p) {
+					CComBSTR strrel;
+					spLink->get_rel(&strrel);
+					CComBSTR strhref;
+					spLink->get_href(&strhref);
+					strrel.ToLower();
+					if (strrel == _T("shortcut icon") || strrel == _T("icon")) {
+						DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
+						hr = ::UrlCombine(strURL, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
+						strFaviconURL.ReleaseBuffer();
+						if (SUCCEEDED(hr))
+							return false;
 					}
 				}
-			}
+				return true;
+			});
+		}
+	}
+	if (strFaviconURL.IsEmpty()) {	// ルートにあるFaviconのアドレスを得る
+		DWORD cchResult = INTERNET_MAX_URL_LENGTH;
+		if (::CoInternetParseUrl(strURL, PARSE_ROOTDOCUMENT, 0, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
+			strFaviconURL.ReleaseBuffer();
+			strFaviconURL += _T("/favicon.ico");
 		}
 	}
 
-	DWORD cchResult = INTERNET_MAX_URL_LENGTH;
-	if (::CoInternetParseUrl(strURL, PARSE_ROOTDOCUMENT, 0, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
-		strFaviconURL.ReleaseBuffer();
-		strFaviconURL += _T("/favicon.ico");
-	}
-FAVICON_FOUND:
 	m_strFaviconURL = strFaviconURL;
 	CFaviconManager::SetFavicon(m_hWnd, strFaviconURL);
 }

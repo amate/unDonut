@@ -742,7 +742,7 @@ GetClientRect(&rect);
 							FillRect(hdcCompatible, &rcClient, hbrBack);
 							DeleteObject(hbrBack);
 
-							m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, (RECTL*)&m_rcPos, NULL, NULL);
+							m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, NULL/*(RECTL*)&m_rcPos*/, NULL, NULL);
 
 							::BitBlt(hdc, 0, 0, rcClient.right, rcClient.bottom,  hdcCompatible, 0, 0, SRCCOPY);
 						}

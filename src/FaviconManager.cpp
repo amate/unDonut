@@ -53,38 +53,20 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 		CString strSaveIconPath;
 		::URLDownloadToCacheFile(NULL, strFaviconURL, strSaveIconPath.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, 0, NULL);
 		strSaveIconPath.ReleaseBuffer();
+
 		HICON hIcon = AtlLoadIconImage((LPCTSTR)strSaveIconPath, LR_LOADFROMFILE | LR_DEFAULTCOLOR, 16, 16);
+		if (hIcon == NULL) {
+			CString strExt = Misc::GetFileExt(strSaveIconPath);
+			strExt.MakeLower();
+			if (strExt == _T("png") || strExt == _T("gif") || strExt == _T("ico")) {
+				unique_ptr<Gdiplus::Bitmap>	pbmp(Gdiplus::Bitmap::FromFile(strSaveIconPath));
+				if (pbmp)
+					pbmp->GetHICON(&hIcon);
+			}
+		}
 		if (hIcon) {
 			s_mapIcon[std::wstring(strFaviconURL)] = hIcon;
 			hFaviIcon = hIcon;
-		} else {
-			CString strExt = Misc::GetFileExt(strSaveIconPath);
-			strExt.MakeLower();
-			if (strExt == _T("png") || strExt == _T("gif")) {
-				Gdiplus::Bitmap*	pbmp = Gdiplus::Bitmap::FromFile(strSaveIconPath);
-				if (pbmp) {
-					pbmp->GetHICON(&hIcon);
-					if (hIcon) {
-						s_mapIcon[std::wstring(strFaviconURL)] = hIcon;
-						hFaviIcon = hIcon;
-					}
-					delete pbmp;
-				}
-#if 0
-				Gdiplus::Image	image(strSaveIconPath);
-				CString strEncodedPath = strSaveIconPath + _T(".bmp");
-				Gdiplus::ImageCodecInfo* pEncoder = GetEncoderByMimeType(L"image/bmp");
-				ATLASSERT(pEncoder);
-				if (image.Save(strEncodedPath, &pEncoder->Clsid) == Gdiplus::Status::Ok) {
-						
-					bmp.GetHICON(&hIcon);
-					if (hIcon) {
-						s_mapIcon[std::wstring(strFaviconURL)] = hIcon;
-						hFaviIcon = hIcon;
-					}
-				}
-#endif
-			}
 		}
 	}
 	PostMessage(s_hWndTabBar, WM_SETFAVICONIMAGE, (WPARAM)hWnd, (LPARAM)hFaviIcon);
@@ -93,7 +75,6 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 		ATLASSERT(FALSE);
 	}
 }
-
 
 
 
