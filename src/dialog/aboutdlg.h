@@ -19,9 +19,24 @@ class CAboutDlg : public CAeroDialogImpl<CAboutDlg>			//+++ Aero実験.
 class CAboutDlg : public CDialogImpl<CAboutDlg>
 #endif
 {
-protected:
-	//テキストボックス
-	CContainedWindow m_wndEdit;
+public:
+	enum { IDD = IDD_ABOUTBOX };
+
+	// コンストラクタ
+	CAboutDlg();
+
+	// メッセージマップ
+	BEGIN_MSG_MAP(CAboutDlg)
+	  #ifdef USE_AERO
+		CHAIN_MSG_MAP(CAeroDialogImpl<CAboutDlg>)			//+++ Aero.
+	  #endif
+		MESSAGE_HANDLER   ( WM_INITDIALOG, OnInitDialog)
+		COMMAND_ID_HANDLER( IDOK		 , OnCloseCmd  )
+		COMMAND_ID_HANDLER( IDCANCEL	 , OnCloseCmd  )
+	ALT_MSG_MAP(1)
+		MESSAGE_HANDLER   ( WM_LBUTTONUP , OnLButtonUp )
+	END_MSG_MAP()
+
 
 	//コマンドハンドラ
 	LRESULT 		 OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
@@ -40,29 +55,15 @@ protected:
 	CString 	GetOSName_Version5(OSVERSIONINFO &osvi);	//2000 XP 2003Server
 	CString 	GetOSName_Version6(OSVERSIONINFO &osvi);	//Vista
 
+private:
+	void	_subclassWindows(HWND hWndChild);
 
-public:
-	//定数 ダイアログリソースID
-  //#ifdef USE_AERO		//+++
-	//WORD		IDD;	//+++ Aeroでリソース切り替えるため変数化.
-  //#else
-	enum { IDD = IDD_ABOUTBOX };
-  //#endif
-
-	//メッセージマップ
-	BEGIN_MSG_MAP(CAboutDlg)
-	  #ifdef USE_AERO
-		CHAIN_MSG_MAP(CAeroDialogImpl<CAboutDlg>)			//+++ Aero.
-	  #endif
-		MESSAGE_HANDLER   ( WM_INITDIALOG, OnInitDialog)
-		COMMAND_ID_HANDLER( IDOK		 , OnCloseCmd  )
-		COMMAND_ID_HANDLER( IDCANCEL	 , OnCloseCmd  )
-	ALT_MSG_MAP(1)
-		MESSAGE_HANDLER   ( WM_LBUTTONUP , OnLButtonUp )
-	END_MSG_MAP()
-
-	//コンストラクタ
-	CAboutDlg();
+	// Data members
+	CContainedWindow m_wndEdit;		//テキストボックス
+	CAeroStatic	m_static[12];
+	int	m_nSubclassPos;
+	CAeroCtrlImpl<CStatic>	m_staticIcon;
+	CAeroButton	m_btnOk;
 };
 
 /////////////////////////////////////////////////////////////////////////////

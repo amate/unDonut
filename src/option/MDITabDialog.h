@@ -40,6 +40,7 @@ enum EMtb_Ex {
 	// +mod
 	MTB_EX_CTRLTAB_MDI			= 0x00800000L,	//+++
 	MTB_EX_SHOWFAVICON			= 0x01000000L,
+	MTB_EX_CENTERALIGN			= 0x02000000L,
 
 	MTB_EX_DEFAULT_BITS	= MTB_EX_MULTILINE
 						| MTB_EX_WHEEL 
@@ -71,9 +72,13 @@ public:
 	static bool		s_bMouseDownSelect;
 	static bool		s_bCtrlTabMDI;
 	static bool		s_bShowFavicon;
+	static bool		s_bCenterAlign;
 	static int		s_MClickCommand;
 	static int		s_RClickCommand;
 	static int		s_DClickCommand;
+	static CPoint	s_ptOffsetActive;
+	static CPoint	s_ptOffsetNormal;
+	static CPoint	s_ptOffsetMSelect;
 
 	// CMDITabPropertyPage—p
 	static int		m_nRadioRightClick;
@@ -133,6 +138,14 @@ public:
 	DDX_INT_RANGE	( IDC_EDIT_TABSEPARATORWIDTH	, s_nTabSeparatorWidth, 5, 125 )
 	DDX_CHECK		( IDC_CHECK_FIREFOXLIKE			, s_bFirefoxLike )
 	DDX_CHECK		( IDC_SHOWFAVICON				, s_bShowFavicon )
+	DDX_CHECK		( IDC_CHECK_CENTERALIGN			, s_bCenterAlign )
+
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETACTIVEX		, (int&)s_ptOffsetActive.x  , -5, 5 )
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETACTIVEY		, (int&)s_ptOffsetActive.y  , -5, 5 )
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETNORMALX		, (int&)s_ptOffsetNormal.x  , -5, 5 )
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETNORMALY		, (int&)s_ptOffsetNormal.y  , -5, 5 )
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETMSELECTX		, (int&)s_ptOffsetMSelect.x , -5, 5 )
+	DDX_INT_RANGE	( IDC_EDIT_OFFSETMSELECTY		, (int&)s_ptOffsetMSelect.y , -5, 5 )
 	END_DDX_MAP()
 
 

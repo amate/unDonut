@@ -124,12 +124,12 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, HIMAGELIST hImgFavicon,
 		// 選択された
 		_DrawSkinCur(dc, item.rcItem);
 //		Update_Selected(dc, pTabSkin, bHot, bPressed);
-		//ptOffset += CPoint(2, 2);	// タブに書かれる文字を若干下げる
+		ptOffset += CTabBarOption::s_ptOffsetActive;
 	} else if (item.state & TISS_MSELECTED) {
 		// 複数選択された
 		_DrawSkinSel(dc, item.rcItem);
 //		Update_MultiSel(dc, pTabSkin, bHot, bPressed);
-		//ptOffset += CPoint(4, 6);	// タブに書かれる文字を若干下げる
+		ptOffset += CTabBarOption::s_ptOffsetMSelect;
 	} else {
 		// 選択されていない
 		if (bHot == true && bPressed == false) {
@@ -138,20 +138,20 @@ void	CTabSkin::Update(CDCHandle dc, HIMAGELIST hImgList, HIMAGELIST hImgFavicon,
 			_DrawSkinNone(dc, item.rcItem);
 		}
 //		Update_NotSel(dc, pTabSkin, bHot, bPressed, ptOffset);
-		//ptOffset += CPoint(2, 4);
+		ptOffset += CTabBarOption::s_ptOffsetNormal;
 	}
 
-	_DrawText(dc, /*ptOffset + */CPoint(cxIconOffset, cyTabText), item, CTabBarOption::s_bAnchorColor);
+	_DrawText(dc, ptOffset + CPoint(cxIconOffset, cyTabText), item, CTabBarOption::s_bAnchorColor);
 
 	if (item.nImgIndex != -1) {
 		::ImageList_Draw(hImgList, item.nImgIndex, dc, 
 			item.rcItem.left + ptOffset.x + s_kcxIconGap + cxTabLoadIcon,
-			item.rcItem.top + ((item.rcItem.Height() - LoadIconSize) / 2) /*+ (ptOffset.y / 2)*/ + cyTabIcon, ILD_TRANSPARENT);
+			item.rcItem.top + ((item.rcItem.Height() - LoadIconSize) / 2) + (ptOffset.y / 2) + cyTabIcon, ILD_TRANSPARENT);
 	} else if (CTabBarOption::s_bShowFavicon) {
 		int nFaviconIndex = (item.nFaviconIndex != -1) ? item.nFaviconIndex : 0;
 		::ImageList_Draw(hImgFavicon, nFaviconIndex, dc,
 			item.rcItem.left + ptOffset.x + cxTabIcon,
-			item.rcItem.top + ((item.rcItem.Height() - faviconSize) / 2) /*+ (ptOffset.y / 2)*/ + cyTabIcon, ILD_TRANSPARENT);
+			item.rcItem.top + ((item.rcItem.Height() - faviconSize) / 2) + (ptOffset.y / 2) + cyTabIcon, ILD_TRANSPARENT);
 	}
 
 #if 0
@@ -265,6 +265,8 @@ void	CTabSkin::_DrawText(CDCHandle dc, CPoint ptOffset, const TabItem& item, boo
 		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_LEFT | DT_END_ELLIPSIS;
 	} else {
 		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | /*DT_CENTER | */DT_NOCLIP;
+		if (CTabBarOption::s_bCenterAlign)
+			uFormat |= DT_CENTER;
 	}
 
 	if ( item.state & TISS_NAVIGATELOCK ) {

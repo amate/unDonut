@@ -718,6 +718,12 @@
     <ClInclude Include="DonutTabBar.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
+    <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\uxtheme_wrap.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

@@ -1047,6 +1047,8 @@
     <ClCompile Include="XmlFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h" />
+    <ClInclude Include="..\wtl80\include\uxtheme_wrap.h" />
     <ClInclude Include="AccelManager.h" />
     <ClInclude Include="AmbientDispatch.h" />
     <ClInclude Include="API.h" />

@@ -24,27 +24,41 @@ using namespace WTL;
 //以下実装
 CAboutDlg::CAboutDlg()
 	: m_wndEdit(this, 1)			//テキストボックスへのメッセージはALT_MSG_MAP(1)で受け取る
+	, m_nSubclassPos(0)
+{	}
+
+static BOOL	CALLBACK EnumChildProc(HWND hWndChild, LPARAM pfunc)
 {
-  #if 0 //def USE_AERO	//+++ Aeroテスト.
- 	IDD = IDD_ABOUTBOX;
- 	if (CDwm::IsDwmSupported()) {
-	 	IDD = IDD_ABOUTBOX_AERO;
-	}
-  #endif
+	function<void (HWND)>& func = *(function<void (HWND)>*)pfunc;
+	func(hWndChild);
+	return TRUE;
+}
+
+
+void	CAboutDlg::_subclassWindows(HWND hWndChild)
+{
+	CString strClass;
+	GetClassName(hWndChild, strClass.GetBuffer(128), 128);
+	if (strClass.CompareNoCase(_T("Static")) == 0) {
+		if (::GetWindowTextLength(hWndChild) > 0) {
+			ATLASSERT(m_nSubclassPos < _countof(m_static));
+			m_static[m_nSubclassPos].SubclassWindow(hWndChild);
+			++m_nSubclassPos;
+		} else {
+			if (CWindow(hWndChild).GetStyle() & SS_ICON)
+				m_staticIcon.SubclassWindow(hWndChild);
+		}
+	} else if (::GetDlgCtrlID(hWndChild) == IDOK)
+		m_btnOk.SubclassWindow(hWndChild);
 }
 
 
 
 LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/)
 {
-	CenterWindow( GetParent() );	//ダイアログは常に中央表示
+	SetMsgHandled(FALSE);
 
-  #ifdef USE_AERO	//+++ Aeroテスト.
- 	if (CDwm::IsDwmSupported()) {
-		MARGINS m = {-1};
-		SetMargins(m);
-	}
-  #endif
+	CenterWindow( GetParent() );	//ダイアログは常に中央表示
 
 	//ラベルに情報を設定
 	CStatic label	   = GetDlgItem(IDC_STATIC_VERSION);
@@ -58,9 +72,28 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 
 	//テキストボックス宛てのメッセージを処理できるようにする
 	m_wndEdit.SubclassWindow(edit.m_hWnd);
+
+  #ifdef USE_AERO	//+++ Aeroテスト.
+	MARGINS m = {-1};
+	CRect rcEdit;
+	CRect rcWindow;
+	m_wndEdit.GetWindowRect(&rcEdit);
+	GetWindowRect(&rcWindow);
+	m.cxLeftWidth	= rcEdit.left - rcWindow.left;
+	m.cxRightWidth	= rcWindow.right - rcEdit.right;
+	m.cyBottomHeight= rcWindow.bottom	- rcEdit.bottom;
+
+	CPoint ptEdit;
+	::MapWindowPoints(m_wndEdit, m_hWnd, &ptEdit, 1);
+	m.cyTopHeight	= ptEdit.y;
+	SetMargins(m);
+  #endif
+
+	function<void (HWND)>	func = std::bind(&CAboutDlg::_subclassWindows, this, std::placeholders::_1);
+	::EnumChildWindows(m_hWnd, EnumChildProc, (LPARAM)&func);
+
 	return TRUE;
 }
-
 
 
 LRESULT CAboutDlg::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
@@ -76,7 +109,6 @@ LRESULT CAboutDlg::OnLButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 {
 	//テキスト全選択
 	CEdit  edit = GetDlgItem(IDC_EDITINFO);
-
 	edit.SetSelAll();
 
 	//メニューを表示(クリップボードにテキストをコピーするか否か)

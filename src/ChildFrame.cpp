@@ -2852,7 +2852,7 @@ void CChildFrame::searchEngines(const CString &strKeyWord )
 	//strSearchWord.Remove('\r');
 	strSearchWord.Replace( _T("\r\n"), _T("") );
 
-	CIniFileI	pr( g_szIniFileName, STR_ADDRESS_BAR );
+	CIniFileI	pr( g_szIniFileName, _T("AddressBar") );
 	CString 		strEngin = pr.GetStringUW( _T("EnterCtrlEngin"), NULL, 256 );
 	pr.Close();
 	::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) strSearchWord, (LPARAM) (LPCTSTR) strEngin);

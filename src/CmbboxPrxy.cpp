@@ -219,7 +219,7 @@ void CComboBoxPrxyR::ResetTimer()
 	CIniFileI	pr( strFile, _T("RAND") );
 
 	DWORD		dwRandChk	  = 0;
-	pr.QueryValue( dwRandChk, STR_ENABLE );
+	pr.QueryValue( dwRandChk, _T("Enable") );
 
 	DWORD		dwRandTimeMin = 5;
 	pr.QueryValue( dwRandTimeMin, _T("Min") );
@@ -257,7 +257,7 @@ bool CComboBoxPrxyR::UseIE()
 	// ÉçÅ[ÉJÉã
 	CIniFileI	pr( strFile, _T("USE_IE") );
 	DWORD		dwUseIE = 1;
-	pr.QueryValue( dwUseIE, STR_ENABLE );
+	pr.QueryValue( dwUseIE, _T("Enable") );
 	pr.Close();
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -302,7 +302,7 @@ CString CComboBoxPrxyR::GetBypass()
 	{
 		CIniFileI	pr( strFile, _T("LOCAL") );
 		DWORD		dwLocalChk = 0;
-		pr.QueryValue( dwLocalChk, STR_ENABLE );
+		pr.QueryValue( dwLocalChk, _T("Enable") );
 
 		if (dwLocalChk == TRUE)
 			strBypass = strBypass + _T(";<local>");

@@ -47,7 +47,7 @@ void CAddressBarOption::GetProfile()
 	//minit
 	s_bReplaceSpace  = _check_flag(ABR_EX_SEARCH_REPLACE, dwFlags); 	//+++ ? 1 : 0;
 
-	pr.ChangeSectionName(STR_ADDRESS_BAR);
+	pr.ChangeSectionName(_T("AddressBar"));
 	s_strEnterCtrlEngine	= pr.GetString(_T("EnterCtrlEngin"));
 	s_strEnterShiftEngine	= pr.GetString(_T("EnterShiftEngin"));
 
@@ -78,7 +78,7 @@ void CAddressBarOption::SaveProfile()
 	pr.SetValue(dwFlags, _T("ExtendedStyle"));
 
 
-	pr.ChangeSectionName(STR_ADDRESS_BAR);
+	pr.ChangeSectionName(_T("AddressBar"));
 
 	pr.SetStringUW( s_strEnterCtrlEngine , _T("EnterCtrlEngin") );
 	pr.SetStringUW( s_strEnterShiftEngine, _T("EnterShiftEngin") );

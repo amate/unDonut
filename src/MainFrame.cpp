@@ -232,7 +232,7 @@ HWND	CMainFrame::init_commandBarWindow()
 	if ( lf.GetProfile(prFont) ) {
 		m_CmdBar.SetMenuLogFont(lf);
 
-		CFont 	font;	//\\ SetFontもここでするように
+		CFontHandle 	font;	//\\ SetFontもここでするように
 		MTLVERIFY( font.CreateFontIndirect(&lf) );
 		if (font.m_hFont) 
 			SetFont(font);
@@ -260,8 +260,12 @@ HWND	CMainFrame::init_toolBar()
 
 	m_ToolBar.SetDropDownMenu(menuFav, menuGroup, menuCssSub);
 
-	if (m_CmdBar.m_fontMenu.m_hFont)	// コマンドバーのフォント設定と同じに
-		m_ToolBar.SetFont(m_CmdBar.m_fontMenu.m_hFont);
+	if (m_CmdBar.m_fontMenu.m_hFont) {	// コマンドバーのフォント設定と同じに
+		LOGFONT lf;
+		m_CmdBar.m_fontMenu.GetLogFont(&lf);
+		CFontHandle font;
+		m_ToolBar.SetFont(font.CreateFontIndirect(&lf));
+	}
 
 	return hWndToolBar;
 }
@@ -5560,7 +5564,7 @@ void CMainFrame::_FullScreen(BOOL bOn)
 	}
 	SetRedraw(TRUE);
 	RedrawWindow(NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-	if (::IsThemeActive() == FALSE) {
+	if (UxTheme_Wrap::IsThemeActive() == FALSE) {
 		::RedrawWindow(NULL, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 	}
 }

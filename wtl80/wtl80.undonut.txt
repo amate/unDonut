@@ -1,0 +1,56 @@
+wtl8.0 for unDonut
+
+
+このフォルダは、wtl8.0 より、unDonutのコンパイルに必要な
+  include\ フォルダ
+のみを抜き出したものです。
+2008-10月にsvnリポジトリにあった修正を反映し、またunDonut側のエラー対策
+で、多少変更を加えいます。
+
+差分取るの面倒だったのと、WTL のバージョンが違うといろいろ再コンパイルが
+大変になりやすいので、なるべく再コンパイルできる環境にするため、まるまま
+入れています。ライセンスは CPL or MS-PL なんで問題ないはず...(たぶん)
+
+
+include関係以外は省いてしまってるので、ちゃんとしたwtlは
+CPL1.0版	http://sourceforge.net/projects/wtl
+MS-PL版		http://www.microsoft.com/downloads/details.aspx?familyid=E5BA5BA4-6E6B-462A-B24C-61115E846F0C&displaylang=en
+から取得してください。
+
+sorceforgeとmicrosoftでライセンスの違う配布物になっています。
+プログラム部分は全く同じで、ファイル先頭のコメントでのライセンス表記
+が違います。
+
+私(+mod)が弄った部分やunDonutからコピペした部分についてライセンス主張は
+ないので、このフォルダの改造版ヘッダを流用する場合は、CPL1.0かMS-PLとし
+て扱ってください。
+※ CPL で扱われる場合はお手数ですが、CPL版のWTLを取得して、ファイル先頭
+　 コメント以外の部分を置き換えてください。
+※ atldwm.h はひょっとすると wtl8.0 配布物になく、wtl の svn リポジトリ
+　 のみにあるファイルかもです。
+
+
+unDonut+mod用の変更点
+・(wtl80に対し、2008-10-28にチェックアウトしたWTLのsvn-trunkの内容を反映)
+・自分(+mod)が見やすいようにインデントを調整(ただしなるべく行単位なので
+　テキスト比較ツールで空白無視で比較すれば差異がでない範囲)。
+・おそらくReleaseDC()抜け(dcリーク)している箇所を修正.
+・wtl内で使われているmalloc,free関係を ::operator new, ::operator delete
+  に置換（メモリー管理のチェックをunDonut側のものが使われるように）
+・CMDIWindow::GetActive()等いくつか、ATLASSERT(::IsWindows(～))している
+　箇所をIsWindowsでfalseならNULLハンドルを返すように変更.
+・atltheme.h で使う uxtheme.lib/dll 関係が、xp未満のwin-os でハングしない
+　ようにdllを遅延読込するようにラッパーを用意して対応. (UxTheme_Wrap.h)
+　(unDonutでのatltheme_d.hの内容を反映)
+・atldwm.h で使う dwmapi.lib/dll 関係が、xp未満のwin-os でハングしない
+　ようにdllを遅延読込するようにラッパーを用意して対応. (DwmApi_Wrap.h)
+・atlsplit.h に、(un)Donut版改造atlsplitの内容を反映した。
+　（parent関係のメンバーが増えています）
+・atlframe.h OnDestroy()中のPostQuitMessage(1)を(0)に変更
+　※ 意味を変えるライブラリ非互換はマズい、と思いつつ、そもそもosへその
+　　まま返す値としては、正常終了は0のほうがよいので...
+・CString のメンバー関数 IsEmpty(),GetLength()で保持するポインターがNULL
+　の場合ハングしてしまっていたのを空文字列とみなすようにした。
+　※本来はNULLになることは無いので、そのようなことをする必要なしだが、
+　　unDonut+mod側のバグでクラスメンバーをmemsetで0クリアしてしまっていた時
+　　にやった強引対処の残り.

@@ -9,19 +9,6 @@
 #define 	  AFX_STDAFX_H__19D42987_EAF8_11D3_BD32_96A992FCCD39__INCLUDED_
 
 
-#if 1	//+++	デバッグ用
- #define USE_ZEROFILL_NEW				//+++ 手抜きで 0 クリアをする new を使う. まだはずさないほうがよさそう...
- //#define USE_DLMALLOC
- //#define USE_ORG_UNDONUT_INI			//+++ unDonut+ から変わってしまった .ini や拡張プロパティの値をなるべく、オリジナルのunDonutにあわせる場合に定義.
- //#define USE_MEMORYLOG 				//+++ donutでのnew,deleteログ生成.
- //#define USE_ATL3_BASE_HOSTEX			//+++ about:blankがらみのバグのデバッグで用意. 突き止めたのでatl3用以外で定義する必要なし.
- //x #define USE_UNDONUT_G_SRC 			//+++ gae氏のunDonut_g 2006-08-05 の公開ソースより移植した部分を有効にしてみる.(お試し) ...デフォルトで反映しとくのでラベルは破棄.
- #ifndef NDEBUG
-  //#define _CRTDBG_MAP_ALLOC 			//+++ 定義するとVCライブラリによるmalloc系のチェック強化...
-  //#define USE_ATLDBGMEM				//+++ atldbgmem.h を使う場合... ※include,マクロの依存関係の都合、現状、regexは使用できない状態.
- #endif
-#endif
-
 // Change these values to use different versions
 #ifdef WIN64	//+++ 64ビット版win は winXp64以降のみに対応.
 #define WINVER					0x0502
@@ -45,6 +32,7 @@
 
 #define ATL_TRACE_CATEGORY		0x00000001
 #define ATL_TRACE_LEVEL 		4
+
 #define _WTL_USE_CSTRING
 #define _WTL_FORWARD_DECLARE_CSTRING
 #define _ATL_USE_CSTRING_FLOAT
@@ -58,17 +46,7 @@
 #endif
 
 
-// unDonut と unDonut+(mod) との非互換部分の切り替え
-#ifdef USE_ORG_UNDONUT_INI								//+++ unDonut r13testの記述.
-#define STR_ADDRESS_BAR 		_T("AddresBar")
-#define STR_ENABLE				_T("Enabel")
-#else													//+++ unDonut+ より変更(typo修正された)
-#define STR_ADDRESS_BAR 		_T("AddressBar")
-#define STR_ENABLE				_T("Enable")
-#endif
-
-
-#if 0
+#if 0	// 1 でメモリリークチェック
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
 #include <crtdbg.h>
@@ -77,41 +55,8 @@
 // Win32API
 #include <windows.h>
 
-#ifdef USE_DLMALLOC	//+++ new,deleteにdlmallocを用いてみる. 
- #undef 	_CRTDBG_MAP_ALLOC	// cランタイムなデバッグ関係は使えない
- #undef 	USE_ATLDBGMEM		// atlのメモリデバッグ関係は使えない...
- #define 	USE_DL_PREFIX		// 本物のmalloc,freeの置換は大変なので、dlmalloc名のまま使う.
- #include 	"dlmalloc.h"
-  #if 0 //def USE_DLMALLOC
-   #define 	malloc 		dlmalloc
-   #define 	calloc 		dlcalloc
-   #define 	realloc 	dlrealloc
-   #define 	free 		dlfree
- #endif
-#endif
 
-#if 1	//+++ メモリー＋デバッグの辻褄あわせ等
- #include <new>
- #if defined NDEBUG == 0 && defined USE_ATL3_BASE_HOSTEX == 0
-  #if defined USE_ATLDBGMEM
-   //#define _ATL_NO_TRACK_HEAP
-   #include <atldbgmem.h>
-  #endif
-  #ifdef _CRTDBG_MAP_ALLOC
-   #include <malloc.h>
-   #include <crtdbg.h>
-  #endif
- #pragma push_macro("new")
- #undef  new
- #include <xdebug>
- #include <xmemory>
- #include <xlocale>
- #pragma pop_macro("new")
- #endif
-#endif
-
-
-//C Standard Library
+// C Standard Library
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -125,7 +70,7 @@
 #include <time.h>
 //#include <io.h>
 
-//STL(C++ Standard Library)
+// STL(C++ Standard Library)
 #include <vector>
 #include <list>
 #include <queue>
@@ -147,14 +92,8 @@ using boost::function;
 //using namespace std::placeholders;
 using std::unique_ptr;
 
-#define DBG_M() 		ErrorLogPrintf(_T("%s (%d)\n"), __FILE__, __LINE__)
 
-#ifdef USE_DLMALLOC
-#define _recalloc		recalloc
-inline void* recalloc(void* p, size_t a, size_t b) { void* q = realloc(p,a*b); if (q) memset(q, 0, a*b); return q; }
-#endif
-
-//ATL/WTL
+// ATL/WTL
 #include <atlbase.h>
 #include <atlapp.h>
 
@@ -162,19 +101,6 @@ extern CServerAppModule _Module;						//アプリケーションインスタンス
 extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 
 #include <atlcom.h>
-
-
-#if _ATL_VER < 0x700 && defined(USE_ATL3_BASE_HOSTEX) == 0
-#define USE_ATL3_BASE_HOSTEX
-#endif
-
-#if defined USE_ATL3_BASE_HOSTEX == 0	/*_ATL_VER >= 0x700*/	//+++
-//#include "AtlifaceEx.h"	//+++ すでに不要のよう?.
-//#include "AtlifaceEx_i.c" //+++ すでに不要のよう?.
-//#include <AtlHost.h>
-//#include "AtlHostEx.h"
-#else
-#endif
 
 #include <atlwin.h>
 #include <atlctl.h>
@@ -194,6 +120,16 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 #include <atldef.h>
 //#include <atlsync.h>
 
+
+#define _WTL_USE_VSSYM32
+#include <atltheme.h>	// 改造バージョンを使用しないとダメ
+
+#define USE_AERO
+//+++ Aero を使ってみるテスト.
+#ifdef USE_AERO
+#include <atldwm.h>
+#endif
+
 // etc
 #include <winerror.h>
 #include <winnls32.h>
@@ -206,25 +142,8 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 //#include <rpcproxy.h>
 //#include <urlmon.h>
 
-#ifndef  WM_THEMECHANGED
- #define WM_THEMECHANGED	0x031A
-#endif
 
-//非XPでも動作するように動的リンクするようにした改造版ヘッダ
-#if _MSC_VER >= 1500	//+++ メモ:undonutで使うWTL80側を改造したのでこちらを使ってもok.
-						//+++ だが、ヘッダがそろってないとダメなようなんで、手抜きでコンパイラバージョンで切り替え
-#define _WTL_USE_VSSYM32
-#include <atltheme.h>
-#else					//+++ 古いコンパイラ用...だが、こっちのほうがサイズ小さくなるかも...
-#include "WtlFixed/atltheme_d.h"
-#endif
-
-//+++ Aero を使ってみるテスト.
-#ifdef USE_AERO
-#include <atldwm.h>
-#endif
-
-//IEコンポーネントで使う定義
+// IEコンポーネントで使う定義
 #include <shlobj.h>
 #include <wininet.h>
 #include <shlwapi.h>
@@ -239,31 +158,12 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 #include <urlhist.h>
 
 
-#ifndef USE_DIET	//XML用
+// XML用
 //+++ 使うのはMSXML2の範囲?のようだし、xp64,vista64 には msxml3.dllがでデフォで入っているようなので、3にしてみる.
 //#import "msxml4.dll" named_guids	//raw_interfaces_only
 #import "msxml3.dll" named_guids	//raw_interfaces_only
 using namespace MSXML2;
-#endif
 
-//+++ 手抜きで 0 クリアをする new を用意.
-//メモリリーク確認用のnew/deleteオーバーロード
-#if defined USE_ATLDBGMEM
-#define DEBUG_NEW	new(__FILE__, __LINE__)
-#elif (defined USE_ZEROFILL_NEW) || (defined USE_MEMORYLOG && defined _DEBUG)
-void *operator	new(size_t t);
-void *operator	new[] (size_t t);
-void operator	delete(void *p);
-void operator	delete[] (void *p);
-//#undef USE_MEMORYLOG
-#endif
-
-#if 0 //defined _DEBUG && defined _CRTDBG_MAP_ALLOC
-void* operator	new(size_t sz, const char* fname, unsigned line);
-void* operator	new[](size_t sz, const char* fname, unsigned line);
-void  operator	delete(void* p, const char* fname, unsigned line);
-void  operator	delete[](void* p, const char* fname, unsigned line);
-#endif
 
 #include "dbg_wm.h"
 
@@ -272,25 +172,11 @@ void  operator	delete[](void* p, const char* fname, unsigned line);
 #include "Misc.h"
 #include "dialog/DebugWindow.h"
 
-#ifdef USE_ATL3_BASE_HOSTEX/*_ATL_VER < 0x700*/ //+++
-#include "for_atl3/AtlifaceEx.h"
-#include "for_atl3/AtlHostEx_for_atl3.h"
-#endif
-
 
 #undef min
 #undef max
 using std::min;
 using std::max;
-
-#if _ATL_VER < 0x700
-namespace std {
-template<typename T> inline const T min(const T& a, const T& b) { return a < b; }
-template<typename T> inline const T max(const T& a, const T& b) { return b < a; }
-}
-#endif
-
-
 
 
 

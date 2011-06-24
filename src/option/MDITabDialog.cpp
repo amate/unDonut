@@ -25,9 +25,13 @@ bool	CTabBarOption::s_bFirefoxLike		= false;
 bool	CTabBarOption::s_bMouseDownSelect	= false;
 bool	CTabBarOption::s_bCtrlTabMDI		= false;
 bool	CTabBarOption::s_bShowFavicon		= false;
+bool	CTabBarOption::s_bCenterAlign		= false;
 int		CTabBarOption::s_MClickCommand = 0;
 int		CTabBarOption::s_RClickCommand = 0;
 int		CTabBarOption::s_DClickCommand = 0;
+CPoint	CTabBarOption::s_ptOffsetActive;
+CPoint	CTabBarOption::s_ptOffsetNormal;
+CPoint	CTabBarOption::s_ptOffsetMSelect;
 
 int		CTabBarOption::m_nRadioRightClick;
 int		CTabBarOption::m_nRadioDoubleClick;
@@ -51,6 +55,7 @@ void CTabBarOption::GetProfile()
 	s_bMouseDownSelect = (s_dwExStyle & MTB_EX_MOUSEDOWNSELECT		) != 0;
 	s_bCtrlTabMDI	   = (s_dwExStyle & MTB_EX_CTRLTAB_MDI			) != 0;		//+++
 	s_bShowFavicon	   = (s_dwExStyle & MTB_EX_SHOWFAVICON			) != 0;
+	s_bCenterAlign	   = (s_dwExStyle & MTB_EX_CENTERALIGN			) != 0;
 
 	if		(s_dwExStyle & MTB_EX_RIGHTCLICKCLOSE  )	m_nRadioRightClick = 1;
 	else if (s_dwExStyle & MTB_EX_RIGHTCLICKREFRESH)	m_nRadioRightClick = 2;
@@ -90,6 +95,13 @@ void CTabBarOption::GetProfile()
 
 	pr.QueryValue((int&)s_nTabSeparatorWidth, _T("SeparatorWidth"));
 	s_bFirefoxLike = pr.GetValue(_T("FirefoxLike"), s_bFirefoxLike) != 0;
+
+	s_ptOffsetActive.x	= pr.GetValuei(_T("OffsetActiveX"));
+	s_ptOffsetActive.y	= pr.GetValuei(_T("OffsetActiveY"));
+	s_ptOffsetNormal.x	= pr.GetValuei(_T("OffsetNormalX"));
+	s_ptOffsetNormal.y	= pr.GetValuei(_T("OffsetNormalY"));
+	s_ptOffsetMSelect.x = pr.GetValuei(_T("OffsetMSelectX"));
+	s_ptOffsetMSelect.y = pr.GetValuei(_T("OffsetMSelectY"));
 }
 
 //-------------------------
@@ -105,6 +117,7 @@ void CTabBarOption::WriteProfile()
 	if (s_bMouseDownSelect	)	s_dwExStyle |= MTB_EX_MOUSEDOWNSELECT;
 	if (s_bCtrlTabMDI		)	s_dwExStyle |= MTB_EX_CTRLTAB_MDI;
 	if (s_bShowFavicon		)	s_dwExStyle |= MTB_EX_SHOWFAVICON;
+	if (s_bCenterAlign		)	s_dwExStyle |= MTB_EX_CENTERALIGN;
 
 	switch (m_nRadioRightClick) {
 	case 1: s_dwExStyle |= MTB_EX_RIGHTCLICKCLOSE;		break;
@@ -151,6 +164,13 @@ void CTabBarOption::WriteProfile()
 
 	pr.SetValue( s_nTabSeparatorWidth, _T("SeparatorWidth") );
 	pr.SetValue( s_bFirefoxLike		 , _T("FirefoxLike") );
+
+	pr.SetValue( s_ptOffsetActive.x		, _T("OffsetActiveX"));
+	pr.SetValue( s_ptOffsetActive.y		, _T("OffsetActiveY"));
+	pr.SetValue( s_ptOffsetNormal.x		, _T("OffsetNormalX"));
+	pr.SetValue( s_ptOffsetNormal.y		, _T("OffsetNormalY"));
+	pr.SetValue( s_ptOffsetMSelect.x	, _T("OffsetMSelectX"));
+	pr.SetValue( s_ptOffsetMSelect.y	, _T("OffsetMSelectY"));
 }
 
 

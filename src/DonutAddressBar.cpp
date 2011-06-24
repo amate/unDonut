@@ -1002,7 +1002,7 @@ void	CDonutAddressBar::Impl::_OnEnterKeyDownEx()
 	if ( s_bReplaceSpace )			//minit
 		str.Replace( _T("Å@"), _T(" ") );
 
-	CIniFileI	pr( g_szIniFileName, STR_ADDRESS_BAR );
+	CIniFileI	pr( g_szIniFileName, _T("AddressBar") );
 	CString 	strEnterCtrl  = pr.GetStringUW(_T("EnterCtrlEngin"));
 	CString 	strEnterShift = pr.GetStringUW(_T("EnterShiftEngin"));
 	pr.Close();

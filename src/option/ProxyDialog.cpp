@@ -107,7 +107,7 @@ void CProxyPropertyPage::_SetData()
 		CIniFileI	pr( strFile, _T("RAND") );
 
 		DWORD		dwRandChk	  = 0;
-		pr.QueryValue( dwRandChk, STR_ENABLE );
+		pr.QueryValue( dwRandChk, _T("Enable") );
 		m_nRandChk	   = dwRandChk;
 
 		DWORD		dwRandTimeMin = 5;
@@ -147,7 +147,7 @@ void CProxyPropertyPage::_SetData()
 	{
 		CIniFileI	pr( strFile, _T("LOCAL") );
 		DWORD		dwLocalChk = 0;
-		pr.QueryValue( dwLocalChk, STR_ENABLE );
+		pr.QueryValue( dwLocalChk, _T("Enable") );
 		m_nLocalChk = dwLocalChk;
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -157,7 +157,7 @@ void CProxyPropertyPage::_SetData()
 	{
 		CIniFileI	pr( strFile, _T("USE_IE") );
 		DWORD		dwUseIE    = 1;
-		pr.QueryValue( dwUseIE, STR_ENABLE );
+		pr.QueryValue( dwUseIE, _T("Enable") );
 		m_nUseIE	= dwUseIE;
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -214,7 +214,7 @@ void CProxyPropertyPage::_GetData()
 	// ÉâÉìÉ_ÉÄ
 	{
 		CIniFileO	pr( strFile, _T("RAND") );
-		pr.SetValue( (DWORD) m_nRandChk, STR_ENABLE );
+		pr.SetValue( (DWORD) m_nRandChk, _T("Enable") );
 		pr.SetValue( (DWORD) m_nRandTimeMin, _T("Min") );
 		pr.SetValue( (DWORD) m_nRandTimeSec, _T("Sec") );
 	}
@@ -255,7 +255,7 @@ void CProxyPropertyPage::_GetData()
 	// ÉçÅ[ÉJÉã
 	{
 		CIniFileO	pr( strFile, _T("LOCAL") );
-		pr.SetValue( (DWORD) m_nLocalChk, STR_ENABLE );
+		pr.SetValue( (DWORD) m_nLocalChk, _T("Enable") );
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -263,7 +263,7 @@ void CProxyPropertyPage::_GetData()
 	// IE
 	{
 		CIniFileO	pr( strFile, _T("USE_IE") );
-		pr.SetValue( (DWORD) m_nUseIE, STR_ENABLE );
+		pr.SetValue( (DWORD) m_nUseIE, _T("Enable") );
 	}
 	//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 }

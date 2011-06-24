@@ -591,7 +591,7 @@ private:
 		DWORD		dwFlags	  = 0;
 
 		{
-			CIniFileI pr0( g_szIniFileName, STR_ADDRESS_BAR );
+			CIniFileI pr0( g_szIniFileName, _T("AddressBar") );
 			pr0.QueryString(szGoogleCode, _T("EnterCtrl"), &dwCount);
 			pr0.QueryValue( dwFlags, _T("") );
 		}
