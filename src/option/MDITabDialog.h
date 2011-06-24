@@ -114,7 +114,7 @@ public:
 	BOOL OnSetActive();
 	BOOL OnKillActive();
 	BOOL OnApply();
-
+	void OnDataValidateError(UINT nCtrlID, BOOL bSave, _XData& data);
 
 	// DDX map
 	BEGIN_DDX_MAP( CMDITabPropertyPage )

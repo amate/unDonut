@@ -219,6 +219,15 @@ BOOL CMDITabPropertyPage::OnApply()
 }
 
 
+void CMDITabPropertyPage::OnDataValidateError(UINT nCtrlID, BOOL bSave, _XData& data)
+{
+    CString strMsg; 
+    strMsg.Format(_T("%d から %d までの値を入力してください。"),
+        data.intData.nMin, data.intData.nMax);
+    MessageBox(strMsg, _T("エラー"), MB_ICONEXCLAMATION);
+
+}
+
 
 void CMDITabPropertyPage::OnCmbSelChange(UINT /*code*/, int id, HWND /*hWnd*/)
 {
