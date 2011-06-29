@@ -19,7 +19,7 @@
 
 #include "ItemIDList.h"
 #include "MtlMisc.h"
-
+#include "Misc.h"
 
 
 namespace MTL {
@@ -278,18 +278,27 @@ inline bool MtlCopyFile(const CString &strTo, const CSimpleArray<CString> &arrFi
 
 inline bool MtlMoveFile(const CString &strTo, const CSimpleArray<CString> &arrFiles)
 {
+	CString strDir = strTo;
+	if (strTo[strTo.GetLength() - 1] != _T('\\'))
+		strDir += _T('\\');
+	int nCount = arrFiles.GetSize();
+	for (int i = 0; i < nCount; ++i) {
+		CString strNew = strDir + Misc::GetFileBaseName(arrFiles[i]);
+		::MoveFileEx(arrFiles[i], strNew, MOVEFILE_COPY_ALLOWED);
+	}
+	return true;
+#if 0
 	LPTSTR		   lpszFrom = _MtlMakeFileOperationBuffer(arrFiles);
 
-	CString 	   strTo_	= strTo + _T('\0');
 	SHFILEOPSTRUCT fop		= {
-		NULL,		   FO_MOVE, lpszFrom, strTo_,
+		NULL,		   FO_MOVE, lpszFrom, strDir,
 		FOF_ALLOWUNDO, FALSE,	NULL,	  NULL
 	};
-
-	bool		   bOk		= (::SHFileOperation(&fop) == 0);
-
+	int nError = ::SHFileOperation(&fop);
+	bool	bOk	= nError == 0;
 	delete[] lpszFrom;
 	return bOk;
+#endif
 }
 
 

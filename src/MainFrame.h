@@ -39,6 +39,7 @@
 #include "Download/DownloadManager.h"
 #include "option/AddressBarPropertyPage.h"
 #include "option/SearchPropertyPage.h"
+#include "FindBar.h"
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -715,7 +716,7 @@ private:
 	LRESULT 	OnPrivacyReport		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnCookiesIE6		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	LRESULT 	OnHilight			(LPCTSTR lpszKeyWord);
-	LRESULT 	OnFindKeyWord		(LPCTSTR lpszKeyWord, BOOL bBack);
+	LRESULT 	OnFindKeyWord		(LPCTSTR lpszKeyWord, BOOL bBack, long Flags = 0);
 	LRESULT 	OnWindowCloseCmp	(int nTarIndex, BOOL bLeft);
    #ifndef NO_STYLESHEET
 	LRESULT 	OnChangeCSS			(LPCTSTR lpszStyleSheet);
@@ -908,8 +909,9 @@ private:
 	CDonutReBarCtrl 					m_ReBar;
 
 	CDonutStatusBarCtrl 				m_wndStatusBar;
-	CProgressBarCtrl					m_wndProgress;
-	CComboBoxPrxyR						m_cmbBox;
+
+	CFindBar							m_FindBar;
+
 
 	CMainOption 						m_MainOption;
 	CDonutSecurityZone					m_secZone;

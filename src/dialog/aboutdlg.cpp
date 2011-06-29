@@ -73,25 +73,24 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	//テキストボックス宛てのメッセージを処理できるようにする
 	m_wndEdit.SubclassWindow(edit.m_hWnd);
 
-  #ifdef USE_AERO	//+++ Aeroテスト.
-	MARGINS m = {-1};
-	CRect rcEdit;
-	CRect rcWindow;
-	m_wndEdit.GetWindowRect(&rcEdit);
-	GetWindowRect(&rcWindow);
-	m.cxLeftWidth	= rcEdit.left - rcWindow.left;
-	m.cxRightWidth	= rcWindow.right - rcEdit.right;
-	m.cyBottomHeight= rcWindow.bottom	- rcEdit.bottom;
+	if (IsCompositionEnabled()) {
+		MARGINS m = {-1};
+		CRect rcEdit;
+		CRect rcWindow;
+		m_wndEdit.GetWindowRect(&rcEdit);
+		GetWindowRect(&rcWindow);
+		m.cxLeftWidth	= rcEdit.left - rcWindow.left;
+		m.cxRightWidth	= rcWindow.right - rcEdit.right;
+		m.cyBottomHeight= rcWindow.bottom	- rcEdit.bottom;
 
-	CPoint ptEdit;
-	::MapWindowPoints(m_wndEdit, m_hWnd, &ptEdit, 1);
-	m.cyTopHeight	= ptEdit.y;
-	SetMargins(m);
-  #endif
+		CPoint ptEdit;
+		::MapWindowPoints(m_wndEdit, m_hWnd, &ptEdit, 1);
+		m.cyTopHeight	= ptEdit.y;
+		SetMargins(m);
 
-	function<void (HWND)>	func = std::bind(&CAboutDlg::_subclassWindows, this, std::placeholders::_1);
-	::EnumChildWindows(m_hWnd, EnumChildProc, (LPARAM)&func);
-
+		function<void (HWND)>	func = std::bind(&CAboutDlg::_subclassWindows, this, std::placeholders::_1);
+		::EnumChildWindows(m_hWnd, EnumChildProc, (LPARAM)&func);
+	}
 	return TRUE;
 }
 

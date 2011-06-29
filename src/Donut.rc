@@ -93,6 +93,8 @@ IDB_DLERROR				  BITMAP				  "res\\DLError.bmp"
 IDB_DLOPTIONS			  BITMAP				  "res\\DLOptions.bmp"
 IDB_DLHELP				  BITMAP				  "res\\DLHelp.bmp"
 IDI_GENERIC_DOCUMENT	  ICON					  "res\\Generic_Document.ico"
+IDB_FIND				  BITMAP				  "res\\Find.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -987,7 +989,7 @@ BEGIN
     LTEXT           "システム", IDC_STATIC, 4, 128, 269, 9, SS_LEFT | SS_SUNKEN
     LTEXT           "その他", IDC_STATIC, 4, 168, 269, 9, SS_LEFT | SS_SUNKEN
     AUTOCHECKBOX    "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)", IDC_CHK_IGNORE_BLANK, 8, 100, 253, 10
-    AUTOCHECKBOX    "Ctrl+Fで検索バーにフォーカスを当てる", IDC_CHK_FOCUSTOSEARCHBAR, 8, 112, 124, 10
+    AUTOCHECKBOX    "独自ページ内検索バーを使用する", IDC_CHK_USECUSTOMFINDBAR, 8, 112, 115, 9
 END
 
 IDD_PROPPAGE_EXPMENU DIALOGEX 0, 0, 280, 256

@@ -66,7 +66,7 @@ STDMETHODIMP CDocHostUIHandlerDispatch::TranslateAccelerator(
 	/* [in] */ DWORD			nCmdID,
 	/* [retval][out] */HRESULT* dwRetVal)
 {
-	if (CMainOption::s_bFocusToSearchBar && ::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
+	if (CMainOption::s_bUseCustomFindBar && ::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
 		if (wParam == 0x46) {	//F
 			g_pMainWnd->SetFocusToSearchBarWithSelectedText();
 			*dwRetVal = S_OK;

@@ -48,7 +48,7 @@ bool		CMainOption::s_bTravelLogClose			= false;
 bool		CMainOption::s_bStretchImage			= false;
 
 bool		CMainOption::s_bIgnore_blank			= false;
-bool		CMainOption::s_bFocusToSearchBar		= false;
+bool		CMainOption::s_bUseCustomFindBar		= false;
 
 CMainOption::CMainOption()
 {
@@ -84,7 +84,7 @@ void CMainOption::GetProfile()
 
 	s_bTabMode		= (s_dwMainExtendedStyle & MAIN_EX_NOMDI) != 0;
 	s_bIgnore_blank	= (s_dwMainExtendedStyle & MAIN_EX_IGNORE_BLANK) != 0;
-	s_bFocusToSearchBar = (s_dwMainExtendedStyle & MAIN_EX_FOCUSTOSEARCHBAR) != 0;
+	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
 
 	// NOTE. If all the Web Browser server on your desktop is unloaded, some OS automatically goes online.
 	//		 And if all the Web Browser server on you application is unloaded, some OS automatically goes online.
@@ -245,6 +245,7 @@ void CMainPropertyPage::OnFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
 // Constructor
 CMainPropertyPage::CMainPropertyPage(HWND hWnd)
 	: m_wnd(hWnd)
+	, m_bInit(false)
 {
 	_SetData();
 }
@@ -254,16 +255,18 @@ CMainPropertyPage::CMainPropertyPage(HWND hWnd)
 // Overrides
 BOOL CMainPropertyPage::OnSetActive()
 {
-	ATLTRACE( _T("CMainPropertyPage::OnSetActive()\n") );
+	if (m_bInit == false) {
+		m_bInit = true;
+		DoDataExchange(DDX_LOAD);
+	}
 	SetModified(TRUE);
-	return DoDataExchange(DDX_LOAD);
+	return TRUE;
 }
 
 
 
 BOOL CMainPropertyPage::OnKillActive()
 {
-	ATLTRACE( _T("CMainPropertyPage::OnKillActive()\n") );
 	return TRUE;//DoDataExchange(DDX_SAVE);
 }
 
@@ -315,7 +318,7 @@ void CMainPropertyPage::_GetData()
 #endif
 
 	if (s_bIgnore_blank)		CMainOption::s_dwMainExtendedStyle |= MAIN_EX_IGNORE_BLANK;
-	if (s_bFocusToSearchBar)	CMainOption::s_dwMainExtendedStyle |= MAIN_EX_FOCUSTOSEARCHBAR;
+	if (s_bUseCustomFindBar)	CMainOption::s_dwMainExtendedStyle |= MAIN_EX_USECUSTOMFINDBER;
 
 	// update max window count
 	CMainOption::s_dwMaxWindowCount  = m_nMaxWindowCount;
@@ -451,24 +454,25 @@ BOOL CMainPropertyPage2::OnSetActive()
 	if (!m_bInit) {
 		m_bInit = TRUE;
 		InitCtrls();
+		DoDataExchange(DDX_LOAD);
 	}
 
 	SetModified(TRUE);
-	return DoDataExchange(FALSE);
+	return TRUE;
 }
 
 
 
 BOOL CMainPropertyPage2::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 
 BOOL CMainPropertyPage2::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
+	if ( DoDataExchange(DDX_SAVE) ) {
 		_GetData();
 		return TRUE;
 	} else {

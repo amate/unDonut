@@ -269,12 +269,12 @@
     <ClCompile Include="DonutTabBar.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
+    <ClCompile Include="FindBar.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="AmbientDispatch.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="API.h">
@@ -723,6 +723,9 @@
     </ClInclude>
     <ClInclude Include="..\wtl80\include\uxtheme_wrap.h">
       <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="FindBar.h">
+      <Filter>Source Files\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

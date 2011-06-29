@@ -4,6 +4,7 @@
 
 #include <atlddx.h>
 #include "../IniFile.h"
+#include "../resource.h"
 
 #define REGISTERMESSAGE_GETDEFAULTDLFOLDER	_T("Donut_DLManager_GetDefaultDLFolder")
 #define REGISTERMESSAGE_STARTDOWNLOAD		_T("Donut_DLManager_StartDownload")

@@ -6,6 +6,7 @@
  */
 #pragma once
 
+#include "../resource.h"
 
 enum EAbr_Ex {
 	ABR_EX_AUTOCOMPLETE 	= 0x00000001L,

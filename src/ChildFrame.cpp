@@ -880,7 +880,17 @@ void CChildFrame::OnStateCompleted()
 	}
 }
 
+#include "option/MainOption.h"
+#include "MainFrame.h"
 
+void	CChildFrame::OnEditFind(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	if (CMainOption::s_bUseCustomFindBar) {
+		g_pMainWnd->SetFocusToSearchBarWithSelectedText();
+	} else {
+		__super::OnEditFind(0, 0, NULL);
+	}
+}
 
 
 // ===========================================================================
@@ -1823,6 +1833,8 @@ void CChildFrame::OnProgressChange(long progress, long progressMax)
 {
 	m_nProgress    = progress;
 	m_nProgressMax = progressMax;
+	if (progress == -1)
+		PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
 }
 
 
@@ -2866,7 +2878,7 @@ void CChildFrame::searchEngines(const CString &strKeyWord )
 //
 // ページ内検索
 //
-LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown)
+LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags/* = 0*/)
 {
 	// アクティブウィンドウの取得
 	HWND	hWndActive = MDIGetActive();
@@ -2888,9 +2900,9 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown)
 		return 0;
 
 	// 検索
-	BOOL	bSts = _FindKeyWordOne(spDocument, lpszKeyWord, bFindDown);
+	BOOL	bSts = _FindKeyWordOne(spDocument, lpszKeyWord, bFindDown, Flags);
 	if (bSts)
-		return 1;
+		return TRUE;
 
 	// フレームウィンドウの取得
 	CComPtr<IHTMLFramesCollection2> 	spFrames;
@@ -2939,7 +2951,7 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown)
 			}
 
 			// 検索
-			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown);
+			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown, Flags);
 			if (bFindIt) {
 				m_nPainBookmark = ii;
 				break;
@@ -2970,11 +2982,24 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown)
 
 			CComPtr<IHTMLDocument2> spDocumentFr;
 			hr		= spWindow->get_document(&spDocumentFr);
-			if ( FAILED(hr) )
-				continue;
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					continue;
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					continue;
+				spDocumentFr = spDisp;
+				if (!spDocument)
+					continue;
+			}
 
 			// 検索
-			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown);
+			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown, Flags);
 			if (bFindIt) {
 				m_nPainBookmark = ii;
 				break;
@@ -2987,21 +3012,19 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown)
 		}
 	}
 
-	return 1;
+	return bFindIt;
 }
 
 
 //
 //ページ内検索
 //
-BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStrKeyWord, BOOL bFindDown)
+BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStrKeyWord, BOOL bFindDown, long Flags /*= 0*/)
 {
 	// ドキュメントがNULLなら終了
 	if (!pDocument)
 		return FALSE;
 
-	// 待機中はカーソルを砂時計に変更する
-	HCURSOR 	hCursor = SetCursor( LoadCursor(NULL, IDC_WAIT) );
 	HRESULT	hr = S_OK;
 	// キーワードを一語取得
 	//x strKeyWord = strtok( (LPSTR) strKeyWord.GetBuffer(0), " " );
@@ -3034,45 +3057,35 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 	// テキストレンジを取得
 	CComPtr<IHTMLTxtRange>		spTxtRange;
 	spHTMLBody->createTextRange(&spTxtRange);
-
 	if (!spTxtRange)
 		return FALSE;
 
-	if (m_strBookmark != NULL) {
+	if (m_strBookmark && m_strOldKeyword == rStrKeyWord) {
 		VARIANT_BOOL vMoveBookmark = VARIANT_FALSE;
-		long		 nMove;
 		spTxtRange->moveToBookmark(m_strBookmark, &vMoveBookmark);
-
-		if (vMoveBookmark == VARIANT_FALSE) {
-			;
-		} else {
+		if (vMoveBookmark == TRUE) {
+			long lActual;
 			if (bFindDown) {
-				CComBSTR	bstrNow;
-				spTxtRange->get_text(&bstrNow);
-
-				CString  strNow(bstrNow);
-
-				if (strNow != strKeyWord)
-					spTxtRange->collapse(false);
-
-				spTxtRange->moveStart( (BSTR) CComBSTR("Character"), 1, &nMove );
-				spTxtRange->moveEnd  ( (BSTR) CComBSTR("Textedit" ), 1, &nMove );
+				spTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+				spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
 			} else {
-				spTxtRange->moveStart( (BSTR) CComBSTR("Textedit" ), -1, &nMove );
-				spTxtRange->moveEnd  ( (BSTR) CComBSTR("Character"), -10, &nMove );
+				spTxtRange->collapse(VARIANT_TRUE);	// Caretの位置を選択したテキストの一番上に
+				spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
 			}
 		}
+	} else {	// 検索範囲を全体にする
+		long lActual;
+		spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
+		spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
 	}
+	m_strOldKeyword = rStrKeyWord;
 
 	CComBSTR		bstrText(strKeyWord);
 	BOOL			bSts  = FALSE;
 	VARIANT_BOOL	vBool = VARIANT_FALSE;
 	int	nSearchCount = 0;
-	while (1) {
-		hr	  = spTxtRange->findText(bstrText, (bFindDown) ? 1 : -1, 0, &vBool);
-		if (vBool == VARIANT_FALSE)
-			break;
-	
+	while (spTxtRange->findText(bstrText, (bFindDown) ? 1 : -1, Flags, &vBool), vBool == VARIANT_TRUE) {
+
 		auto funcMove = [&spTxtRange, bFindDown] () {	// 検索範囲を変更する関数
 			CComBSTR bstrUnitChar = L"character";
 			long lActual = 0;
@@ -3081,50 +3094,39 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 			else
 				spTxtRange->moveEnd  (bstrUnitChar, -10, &lActual );
 		};
+		
+		CComPtr<IHTMLElement>	spFirstParentElement;
 
-		// 親タグ名が"TEXTAREA"なら選択領域の最後へ移動(?)
-		CComPtr<IHTMLElement> spParentElement;
-		hr = spTxtRange->parentElement(&spParentElement);
-		if (FAILED(hr))
-			break;
-
-		// 親
-		CComQIPtr<IHTMLElement2>	spElement2 = spParentElement;
-		ATLASSERT(spElement2);
-		CComPtr<IHTMLCurrentStyle>	spStyle;
-		spElement2->get_currentStyle(&spStyle);
-		CComBSTR	strdisplay;
-		if (spStyle) {
-			hr = spStyle->get_display(&strdisplay);
-			if (strdisplay && strdisplay == _T("none")) {
-				funcMove();
-				continue;
-			}
-		}
-		// 親の親
-		CComPtr<IHTMLElement>	spParentElement2;
-		spParentElement->get_parentElement(&spParentElement2);
-		if (spParentElement2) {
-			spElement2 = spParentElement2;
-			ATLASSERT(spElement2);
+		bool	bVisible = true;
+		CComQIPtr<IHTMLElement> spParentElement;
+		spTxtRange->parentElement(&spParentElement);
+		spFirstParentElement = spParentElement;
+		while (spParentElement) {
+			CComQIPtr<IHTMLElement2>	spParentElm2 = spParentElement;
 			CComPtr<IHTMLCurrentStyle>	spStyle;
-			spElement2->get_currentStyle(&spStyle);
+			spParentElm2->get_currentStyle(&spStyle);
 			if (spStyle) {
-				hr = spStyle->get_display(&strdisplay);
-				if (strdisplay && strdisplay == _T("none")) {
+				CComBSTR	strdisplay;
+				spStyle->get_display(&strdisplay);
+				if (strdisplay && strdisplay == _T("none")) {	// 表示されていない場合はスキップ
 					funcMove();
-					continue;
+					bVisible = false;
+					break;
 				}
 			}
+			CComPtr<IHTMLElement>	spPPElm;
+			spParentElement->get_parentElement(&spPPElm);
+			spParentElement = spPPElm;
 		}
+		if (bVisible == false)
+			continue;
 
 		CComBSTR	bstrParentTag;
-		hr = spParentElement->get_tagName(&bstrParentTag);
-		if (FAILED(hr))
-			break;
+		spFirstParentElement->get_tagName(&bstrParentTag);
 		if (   bstrParentTag != _T("SCRIPT")
+			&& bstrParentTag != _T("NOSCRIPT")
 			&& bstrParentTag != _T("TEXTAREA")) 
-			break;	// 終わり
+			break;	/* 終わり */
 
 		++nSearchCount;
 		if (nSearchCount > 5)	// 5以上で打ち止め
@@ -3184,10 +3186,9 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 		}
 	};
 
-	if (FAILED(hr) || vBool == VARIANT_FALSE) {
+	if (vBool == VARIANT_FALSE) {
 		CComPtr<IHTMLSelectionObject> spSelection;
-		HRESULT 	hr = pDocument->get_selection(&spSelection);
-
+		pDocument->get_selection(&spSelection);
 		if (spSelection)
 			spSelection->empty();
 	} else {
@@ -3199,17 +3200,10 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 
 		bSts = TRUE;
 
-		DWORD		dwStatus = 0;
 		CIniFileI pr( g_szIniFileName, _T("SEARCH") );
-		pr.QueryValue( dwStatus, _T("Status") );
-		pr.Close();
-
-		if (dwStatus & STS_SCROLLCENTER)
+		if (pr.GetValue(_T("Status")) & STS_SCROLLCENTER)
 			funcScrollBy(pDocument);
 	}
-
-	// カーソルを元に戻す
-	SetCursor(hCursor);
 
 	return bSts;
 }
@@ -3339,19 +3333,17 @@ struct CChildFrame::_Function_Hilight2 {
 			CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
 			hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
 			if (!spHTMLTxtRange)
-				AtlThrow(hr);
-
-			// キーワードを検索
-			CComBSTR		bstrText= strKeyWord;
-			VARIANT_BOOL	vBool	= VARIANT_FALSE;
-			hr	= spHTMLTxtRange->findText(bstrText, 1, 0, &vBool);
+				AtlThrow(hr);			
 
 			//+++ 最大キーワード数(無限ループ対策)
 			static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
 			//+++ 無限ループ状態を強制終了させるため、ループをカウントする
 			unsigned num = 0;
 
-			while (vBool == VARIANT_TRUE) {
+			// キーワードを検索
+			CComBSTR		bstrText= strKeyWord;
+			VARIANT_BOOL	vBool	= VARIANT_FALSE;
+			while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
 				// 現在選択しているHTMLテキストを取得
 				CComBSTR	bstrTextNow;
 				hr = spHTMLTxtRange->get_text(&bstrTextNow);
@@ -3365,7 +3357,6 @@ struct CChildFrame::_Function_Hilight2 {
 				bstrTextNew.Append(_T("</span>"));
 
 
-				// 親タグ名が"TEXTAREA"なら選択領域の最後へ移動(?)
 				CComPtr<IHTMLElement> spParentElement;
 				hr = spHTMLTxtRange->parentElement(&spParentElement);
 				if (FAILED(hr))
@@ -3377,17 +3368,11 @@ struct CChildFrame::_Function_Hilight2 {
 					AtlThrow(hr);
 
 				if (   bstrParentTag != _T("SCRIPT")
-					&& bstrParentTag != _T("TEXTAREA")) 
+					&& bstrParentTag != _T("NOSCRIPT")
+					&& bstrParentTag != _T("TEXTAREA")
+					&& bstrParentTag != _T("STYLE"))
 				{
-					//CComBSTR	strInner;
-					//spParentElement->get_outerText(&strInner);
-					//strInner += _T("\n");
-					//DEBUGPUT(strInner);
-					//if (bstrParentTag == _T("TEXTAREA"))
-					//	spHTMLTxtRange->collapse(VARIANT_FALSE);
-
-					// ハイライトする
-					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);
+					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
 					if (FAILED(hr))
 						AtlThrow(hr);
 
@@ -3395,13 +3380,12 @@ struct CChildFrame::_Function_Hilight2 {
 					if (++num > maxKeyword)		
 						break;
 				}
-
+				spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+#if 0
 				CComBSTR bstrUnitChar = L"character";
 				long lActual = 0;
 				spHTMLTxtRange->moveStart(bstrUnitChar, 1, &lActual);
-
-				vBool = VARIANT_FALSE;
-				hr	  = spHTMLTxtRange->findText(bstrText, 1, 0, &vBool);
+#endif
 			}
 
 			++nLightIndex;

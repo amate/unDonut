@@ -9,9 +9,12 @@
 #include <atlmisc.h>
 #include <atlctrls.h>
 #include <atlcrack.h>
-#include "resource.h"
+//#include "resource.h"
+#ifndef IDD_DEBUGWINDOW
+#define IDD_DEBUGWINDOW                 308
+#endif
 
-const bool	g_cnt_b_use_debug_window	=	true;
+const bool	g_cnt_b_use_debug_window	=	false;
 
 // DEBUGPUT(_T("test%s\n"), _T("test"));
 #ifdef _DEBUG

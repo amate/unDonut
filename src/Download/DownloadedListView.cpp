@@ -4,7 +4,7 @@
 #include "DownloadedListView.h"
 #include "DownloadingListView.h"
 #include "IniFile.h"
-
+#include "../resource.h"
 
 void	CDownloadedListView::AddDownloadedItem(DLItem* pItem)
 {

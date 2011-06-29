@@ -155,7 +155,7 @@ public:
 	void SetNowSearchWord(const CString& strWord){ m_strSearchWord = strWord; }; //\\+
 	void SaveSearchWordflg(const bool b){ m_bSaveSearchWordflg = b; }; //\\+
 
-public:
+
 	// Message map and handlers
 	BEGIN_MSG_MAP(CChildFrame)
 		try {	//+++
@@ -262,7 +262,6 @@ public:
 	END_MSG_MAP()
 
 
-public:
 	// Update Command UI Map
 	BEGIN_UPDATE_COMMAND_UI_MAP( CChildFrame )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_view )
@@ -299,7 +298,6 @@ public:
 	END_UPDATE_COMMAND_UI_MAP()
 
 
-private:
 	// Command overrides
 	LRESULT OnChangeCSS(LPCTSTR lpszStyleSheet);
 	LRESULT OnStyleSheet(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -329,6 +327,8 @@ private:
 
 	void 	OnWindowPrev(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)	{ MDINext(m_hWnd, TRUE); }
 	void 	OnWindowNext(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/) { MDINext(m_hWnd, FALSE); }
+
+	void	OnEditFind(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	LRESULT OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnLeftRightClose(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -361,8 +361,8 @@ private:
 	BOOL 	CheckFrameDefinePage(CComPtr<IHTMLDocument2> spDocument);
 	void 	StyleSheetSub(IHTMLDocument2 *pDocument, CString strSheet, BOOL bOff, CString strSheetPath);
 
-	LRESULT OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown);
-	BOOL 	_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStrKeyWord, BOOL bFindDown);	//ページ内検索
+	LRESULT OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags = 0);
+	BOOL 	_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStrKeyWord, BOOL bFindDown, long Flags = 0);	//ページ内検索
 	void 	ScrollBy(IHTMLDocument2 *pDoc2);
 
 	void 	_OpenSelectedText(IHTMLDocument2 *pDocument);
@@ -464,7 +464,10 @@ private:
 	HWND										m_hWndFocus;
 	HWND										m_hWndF;
 	HWND										m_hWndA;
+	
 	CComBSTR/*BSTR*/							m_strBookmark;
+	CString										m_strOldKeyword;
+
 	CImageList									m_imgList;
 
 	CString 									m_strDfgFileName;

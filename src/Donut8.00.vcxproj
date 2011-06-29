@@ -904,6 +904,7 @@
     <ClCompile Include="FavoriteOrder.cpp" />
     <ClCompile Include="FavoritesMenu.cpp" />
     <ClCompile Include="FavTreeViewCtrl.cpp" />
+    <ClCompile Include="FindBar.cpp" />
     <ClCompile Include="GdiplusUtil.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="ItemIDList.cpp" />
@@ -1050,7 +1051,6 @@
     <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h" />
     <ClInclude Include="..\wtl80\include\uxtheme_wrap.h" />
     <ClInclude Include="AccelManager.h" />
-    <ClInclude Include="AmbientDispatch.h" />
     <ClInclude Include="API.h" />
     <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
@@ -1097,6 +1097,7 @@
     <ClInclude Include="FavoritesMenu.h" />
     <ClInclude Include="FavTreeViewCtrl.h" />
     <ClInclude Include="FileNotification.h" />
+    <ClInclude Include="FindBar.h" />
     <ClInclude Include="FlatComboBox.h" />
     <ClInclude Include="FlatComboBox_SearchKeyword.h" />
     <ClInclude Include="GdiplusUtil.h" />

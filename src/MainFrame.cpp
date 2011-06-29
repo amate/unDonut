@@ -128,6 +128,9 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	HWND hWndMDITab		= init_tabCtrl();			// タブバーの初期化
 	HWND hWndLinkBar	= init_linkBar();			// リンクバーの初期化
 
+	m_FindBar.Create(m_hWnd);
+	m_FindBar.SetUpdateLayoutFunc(boost::bind(&CMainFrame::UpdateLayout, this, _1));
+
 	init_rebar();									// リバーの初期化
 	init_statusBar();								// ステータスバーの初期化
 	init_pluginManager();							// プラグインマネージャの初期化
@@ -871,6 +874,9 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 		bFocus	|= (::GetFocus() == m_AddressBar.GetEditCtrl().m_hWnd);
 	if (::IsWindow(m_SearchBar.GetEditCtrl()/*m_SearchBar.m_hWnd*/))
 		bFocus	|= (::GetFocus() == m_SearchBar.GetEditCtrl().m_hWnd);
+	HWND hWndFind = m_FindBar.GetHWND();
+	if (::IsWindow(hWndFind))
+		bFocus	|= ::IsChild(hWndFind, pMsg->hwnd);
 #ifdef _DEBUG
 	if (::IsWindow(m_wndDebug.m_hWnd)) {
 		bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl().m_hWnd);
@@ -951,8 +957,16 @@ END:
 	UpdateBarsPosition(rc, bResizeBars);
 	if (m_bFullScreen == false)
 		rc.top++;
+
+	HWND hWndFind = m_FindBar.GetHWND();
+	if (::IsWindowVisible(hWndFind)) {
+		CRect rcFind;
+		::GetClientRect(hWndFind, &rcFind);
+		::SetWindowPos( hWndFind, NULL, rc.left, rc.top, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
+		rc.top += rcFind.bottom;
+	}
 	if (m_hWndClient) {
-		::SetWindowPos( m_hWndClient, NULL, rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, SWP_NOZORDER | SWP_NOACTIVATE );
+		::SetWindowPos( m_hWndClient, NULL, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER | SWP_NOACTIVATE );
 	}
 }
 
@@ -1534,6 +1548,8 @@ bool	CMainFrame::_IsSelectedTextInner()
 					CPoint ptScroll = funcGetScrollPosition(spDoc2);
 					CRect rc = rcAbsolute - ptScroll;
 					if (rc.PtInRect(pt)) {
+						pt.x	-= rc.left;
+						pt.y	-= rc.top;
 						CComVariant vResult;
 						spFrames->item(&vIndex, &vResult);
 						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
@@ -1549,15 +1565,17 @@ bool	CMainFrame::_IsSelectedTextInner()
 					spFrameCol->item(vIndex, vIndex, &spDisp2);
 					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
 					if (spFrame.p) {
-						CRect rc;
-						spFrame->get_offsetLeft(&rc.left);
-						spFrame->get_offsetTop(&rc.top);
-						long temp;
-						spFrame->get_offsetWidth(&temp);
-						rc.right += rc.left + temp;
-						spFrame->get_offsetHeight(&temp);
-						rc.bottom+= rc.top + temp;
+						CRect rc = funcGetIFrameAbsolutePosition(spFrame);
+						//spFrame->get_offsetLeft(&rc.left);
+						//spFrame->get_offsetTop(&rc.top);
+						//long temp;
+						//spFrame->get_offsetWidth(&temp);
+						//rc.right += rc.left + temp;
+						//spFrame->get_offsetHeight(&temp);
+						//rc.bottom+= rc.top + temp;
 						if (rc.PtInRect(pt)) {
+							pt.x	-= rc.left;
+							pt.y	-= rc.top;
 							CComVariant vResult;
 							spFrames->item(&vIndex, &vResult);
 							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
@@ -1619,6 +1637,19 @@ bool	CMainFrame::_IsSelectedTextInner()
 		CComQIPtr<IHTMLTextRangeMetrics2>	spMetrics = spTargetDisp;
 		ATLASSERT(spMetrics);
 		CComPtr<IHTMLRect>	spRect;
+		hr = spMetrics->getBoundingClientRect(&spRect);
+		if (FAILED(hr))
+			AtlThrow(hr);
+
+		CRect rc;
+		spRect->get_top(&rc.top);
+		spRect->get_left(&rc.left);
+		spRect->get_right(&rc.right);
+		spRect->get_bottom(&rc.bottom);
+		if (rc.PtInRect(pt)) {
+			return true;
+		}
+#if 0
 		CComPtr<IHTMLRectCollection>	spRcCollection;
 		hr = spMetrics->getClientRects(&spRcCollection);
 		if (FAILED(hr))
@@ -1644,6 +1675,7 @@ bool	CMainFrame::_IsSelectedTextInner()
 				}
 			}
 		}
+#endif
 
 	}
 	catch (const CAtlException& e) {
@@ -5909,8 +5941,8 @@ LRESULT CMainFrame::OnHilight(LPCTSTR lpszKeyWord)
 	return SendMessage(hWndActive, WM_USER_HILIGHT, (WPARAM) lpszKeyWord, 0);
 }
 
-
-LRESULT CMainFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bBack)
+/// ※今のところFlags指定は意味ない
+LRESULT CMainFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bBack, long Flags /*= 0*/)
 {
 	HWND hWndActive = MDIGetActive();
 
@@ -5976,11 +6008,12 @@ void CMainFrame::OnSearchWeb_engineId(UINT code, int id, HWND hWnd)
 }
 
 
-// ページで選択されたテキストを検索バーに設定して、フォーカスをあてる
+//-----------------------------------------
+/// 独自ページ内検索バーを表示する
 void	CMainFrame::SetFocusToSearchBarWithSelectedText()
 {
-	m_SearchBar.SetSearchStr(GetActiveSelectedText());
-	m_SearchBar.GetEditCtrl().SetFocus();
+	if (CMainOption::s_bUseCustomFindBar) 
+		m_FindBar.ShowFindBar(GetActiveSelectedText());
 }
 
 

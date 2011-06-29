@@ -432,15 +432,17 @@ public:
 			//HFONT prev = dc.SelectFont(GetFont());
 			AeroDrawText(dc, strText, &rcClient, dwStyle, DTT_COMPOSITED | DTT_GLOWSIZE, 9);
 			//dc.SelectFont(prev);
-		} else
+		} else {
 			DefWindowProc(WM_PRINTCLIENT, (WPARAM)dc.m_hDC, 0);
+		}
 	}
 
 
 	// Message map
 	BEGIN_MSG_MAP_EX( CAeroStatic )
 		CHAIN_MSG_MAP( CThemeImpl<CAeroStatic> )
-		CHAIN_MSG_MAP( CBufferedPaintWindowImpl )
+		if (uMsg == WM_PAINT || uMsg == WM_ERASEBKGND && IsCompositionEnabled())
+			CHAIN_MSG_MAP( CBufferedPaintWindowImpl )
 	END_MSG_MAP()
 
 
@@ -656,8 +658,9 @@ public:
 			if (IsThemeBackgroundPartiallyTransparent(SBBACKGROUND, nStateId))
 				DrawThemeParentBackground(dc, &rcClient);
 			DrawThemeBackground(dc, SBBACKGROUND, nStateId, &rcClient, &rcClient);
-		} else
+		} else {
 			SetMsgHandled(FALSE);
+		}
 		return 1;
 	}
 	

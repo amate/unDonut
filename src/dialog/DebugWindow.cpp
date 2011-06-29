@@ -4,12 +4,8 @@
  */
 #include "stdafx.h"
 #include "DebugWindow.h"
+#include "../resource.h"
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
 
 
 #ifndef NDEBUG

@@ -30,7 +30,8 @@ enum EMain_Ex {
 	MAIN_EX_REGISTER_AS_BROWSER 	= 0x00010000L,
 	MAIN_EX_INHERIT_OPTIONS 		= 0x00020000L,
 	MAIN_EX_IGNORE_BLANK			= 0x00040000L,
-	MAIN_EX_FOCUSTOSEARCHBAR		= 0x00080000L,
+	//MAIN_EX_FOCUSTOSEARCHBAR		= 0x00080000L,
+	MAIN_EX_USECUSTOMFINDBER		= 0x00100000L,
 	// MAIN_EX_NOCAPTION			= 0x00080000L,		//+++ 廃案:メインフレームのキャプションをなくす. (とりあえずskinのほうで行うことにした)
 };
 
@@ -88,7 +89,7 @@ public:
 	static bool 						s_bStretchImage;
 
 	static bool							s_bIgnore_blank;
-	static bool							s_bFocusToSearchBar;
+	static bool							s_bUseCustomFindBar;
 
 public:
 	// Constructor
@@ -140,6 +141,8 @@ public:
 
 private:
 	// Data members
+	bool			m_bInit;
+
 	int 			m_nNewWindow;
 	int 			m_nNoActivate;
 	int 			m_nNoActivateNewWin;
@@ -182,7 +185,7 @@ public:
 		DDX_CHECK( IDC_CHECK_MAIN_KILLDIALOG			, m_nKillDialog 		)
 		DDX_CHECK( IDC_CHECK_MAIN_REGISTER_AS_BROWSER	, m_nRegisterAsBrowser	)
 		DDX_CHECK( IDC_CHK_IGNORE_BLANK					, s_bIgnore_blank		)
-		DDX_CHECK( IDC_CHK_FOCUSTOSEARCHBAR				, s_bFocusToSearchBar	)
+		DDX_CHECK( IDC_CHK_USECUSTOMFINDBAR				, s_bUseCustomFindBar	)
 		//+++ DDX_CHECK( IDC_CHECK_NOCLOSE_NAVILOCK 	, m_nNoCloseNL			)
 
 		DDX_INT_RANGE( IDC_EDIT_MAIN_LIMITEDCOUNT		, m_nMaxWindowCount, 0, 255 )

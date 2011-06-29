@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "../resource.h"
 #include "DownloadingListView.h"
 #include "DownloadedListView.h"
 #include "CustomBindStatusCallBack.h"

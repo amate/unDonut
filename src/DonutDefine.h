@@ -162,7 +162,7 @@ extern	class CMainFrame *		g_pMainWnd;
 #define MSG_WM_USER_FIND_KEYWORD(func)								 \
 	if (uMsg == WM_USER_FIND_KEYWORD) { 							 \
 		SetMsgHandled(TRUE);										 \
-		lResult = (LRESULT) func( (LPCTSTR) wParam, (BOOL) lParam ); \
+		lResult = (LRESULT) func( (LPCTSTR) wParam, (BOOL) lParam, 0); \
 		if ( IsMsgHandled() )										 \
 			return TRUE;											 \
 	}

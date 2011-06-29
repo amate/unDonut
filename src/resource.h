@@ -128,6 +128,7 @@
 #define IDB_DLHELP						313
 #define IDD_DLOPTION					314
 #define IDI_GENERIC_DOCUMENT			315
+#define IDB_FIND						316
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -537,6 +538,8 @@
 #define IDC_EDIT_OFFSETNORMALY			1402
 #define IDC_EDIT_OFFSETMSELECTX			1403
 #define IDC_EDIT_OFFSETMSELECTY			1404
+#define IDC_CHK_USECUSTOMFINDBAR		1405
+
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -838,6 +841,11 @@
 #define ID_COPYTRANSLATERESULT			33184
 #define ID_A_DICTIONARY					33185
 #define ID_SAVEIMAGE					33186
+#define ID_FIND_PAGEUP					33187
+#define ID_FIND_PAGEDOWN				33188
+#define ID_FIND_HIGHLIGHT				33189
+#define ID_FIND_OPTION					33190
+
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -881,7 +889,7 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        316
+#define _APS_NEXT_RESOURCE_VALUE        317
 #define _APS_NEXT_COMMAND_VALUE         33187
 #define _APS_NEXT_CONTROL_VALUE         1398
 #define _APS_NEXT_SYMED_VALUE           130
