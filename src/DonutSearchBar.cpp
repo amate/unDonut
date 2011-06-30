@@ -167,14 +167,19 @@ public:
 		NOTIFY_CODE_HANDLER_EX( TTN_GETDISPINFO, OnToolBarGetDispInfo )
 		COMMAND_HANDLER_EX	( IDC_CMB_KEYWORD, CBN_SELCHANGE, OnKeywordSelChange	)
 		COMMAND_HANDLER_EX	( IDC_CMB_ENGIN	 , CBN_SELCHANGE, OnEngineSelChange		)
-		
+
 	ALT_MSG_MAP(1)	// KeywordEdit
 		MSG_WM_KEYDOWN	( OnKeywordKeyDown )
 		MSG_WM_KILLFOCUS( OnKeywordKillFocus )
-		MSG_WM_CHAR 	( OnChar 		 )
+		//MSG_WM_LBUTTONDOWN( OnEditLButtonDown )
+		MSG_WM_RBUTTONUP  ( OnEditRButtonUp )
+		MSG_WM_CONTEXTMENU( OnEditContextMenu )
+		
 	ALT_MSG_MAP(2)	// SearchEnginComboBox
 		MSG_WM_KEYDOWN	( OnEngineKeyDown  )
 		MESSAGE_HANDLER_EX( WM_CTLCOLORLISTBOX, OnShowEngineListBox )
+	ALT_MSG_MAP(3)	// KeywordComboBox
+		COMMAND_CODE_HANDLER( EN_CHANGE	, OnEditChanged )
 	END_MSG_MAP()
 
 
@@ -201,7 +206,10 @@ public:
 	// KeywordEdit
 	void	OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	void	OnKeywordKillFocus(CWindow wndFocus);
-	void	OnChar(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnEditLButtonDown(UINT nFlags, CPoint point);
+	void	OnEditRButtonUp(UINT nFlags, CPoint point);
+	void	OnEditContextMenu(CWindow wnd, CPoint point);
+	LRESULT OnEditChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 
 	// SearchEngineComboBox
 	void	OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
@@ -259,6 +267,7 @@ private:
 
 	CContainedWindow m_wndKeyword;		// ComboBox内のエディットコントロール
 	CContainedWindow m_wndEngine;
+	CContainedWindow m_wndCmbKeyword;
 
 	int 			 m_cxBtnsBtn;					///< 旧 横幅調整用
 	int 			 m_has; 						//+++
@@ -284,6 +293,7 @@ private:
 CDonutSearchBar::Impl::Impl()
 	: m_wndKeyword(this, 1)
 	, m_wndEngine(this, 2)
+	, m_wndCmbKeyword(this, 3)
 	, m_cxBtnsBtn(0)			//+++ 旧横幅調整用
 	, m_has(0)					//+++
 	, m_nEngineWidth(0)			//+++
@@ -937,6 +947,7 @@ int		CDonutSearchBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	/// サブクラス化
 	m_wndKeyword.SubclassWindow( m_editKeyword );
 	m_wndEngine.SubclassWindow( m_cmbEngine );
+	m_wndCmbKeyword.SubclassWindow( m_cmbKeyword );
 
 	//ツールバー初期化
 	{
@@ -1031,6 +1042,7 @@ void	CDonutSearchBar::Impl::OnDestroy()
 	// サブクラス化解除
 	m_wndKeyword.UnsubclassWindow();
 	m_wndEngine.UnsubclassWindow();
+	m_cmbKeyword.UnsubclassWindow();
 
 	// Drag&Drop登録解除
 	RevokeDragDrop();
@@ -1396,6 +1408,7 @@ void	CDonutSearchBar::Impl::OnKeywordSelChange(UINT uNotifyCode, int nID, CWindo
 		_OnEnterKeyDown();
 }
 
+
 /// 検索エンジンComboBoxの選択が変わった
 void	CDonutSearchBar::Impl::OnEngineSelChange(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -1481,8 +1494,6 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 				};
 				funcDeleteKeywordHistory();
 					//SetMsgHandled(FALSE);
-			} else {
-				OnChar(0, 0, 0);
 			}
 		} else if (nChar == VK_TAB) {
 			m_cmbEngine.SetFocus();
@@ -1496,15 +1507,121 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 /// キーワードボックスからフォーカスが外れた
 void CDonutSearchBar::Impl::OnKeywordKillFocus(CWindow wndFocus)
 {
-	SetMsgHandled(false);
+	//SetMsgHandled(false);
+	m_wndKeyword.DefWindowProc();
 	//_AddToolBarIcon(GetSearchStr());	/* ツールバーを更新する */
 }
 
-/// リアルタイムに単語ボタンに反映していく
-void CDonutSearchBar::Impl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
+
+void	CDonutSearchBar::Impl::OnEditLButtonDown(UINT nFlags, CPoint point)
 {
 	m_wndKeyword.DefWindowProc();
 
+	if (::GetFocus() != m_editKeyword.m_hWnd) {
+		m_editKeyword.SetFocus();
+		m_editKeyword.SetSelAll();
+	}
+}
+
+void	CDonutSearchBar::Impl::OnEditRButtonUp(UINT nFlags, CPoint point)
+{
+	if (::GetFocus() != m_editKeyword.m_hWnd) {
+		m_editKeyword.SetFocus();
+		m_editKeyword.SetSelAll();
+	}
+	SetMsgHandled(FALSE);
+}
+
+
+void	CDonutSearchBar::Impl::OnEditContextMenu(CWindow wnd, CPoint point)
+{
+	enum {
+		ID_UNDO			= 1,
+		ID_CUT			= 2,
+		ID_COPY			= 3,
+		ID_PASTE		= 4,
+		ID_PASTEANDMOVE	= 5,
+		ID_CLEAR		= 6,
+		ID_SELALL		= 7,
+	};
+
+	UINT nFlags = 0;
+	CMenu menu;
+	menu.CreatePopupMenu();
+	{
+		nFlags = m_editKeyword.CanUndo() ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_UNDO		  , _T("元に戻す(&U)"));
+	}
+	menu.AppendMenu(MF_SEPARATOR);
+
+	int nStart, nEnd;
+	m_editKeyword.GetSel(nStart, nEnd);
+	{
+		nFlags = (nStart == nEnd) ? MFS_DISABLED : 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_CUT		  , _T("切り取り(&T)"));
+	}
+	{
+		nFlags = (nStart < nEnd) ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_COPY		  , _T("コピー(&C)"));
+	}
+	CString strClipboard = MtlGetClipboardText();
+	{
+		nFlags = strClipboard.IsEmpty() ? MFS_DISABLED : 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_PASTE		 , _T("貼り付け(&P)"));
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_PASTEANDMOVE, _T("クリップボードから検索(&S)"));
+	}
+	{
+		nFlags = (nStart < nEnd) ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_CLEAR		 , _T("削除(&D)"));
+	}
+	menu.AppendMenu(MF_SEPARATOR);
+	{
+		if (nStart == 0 && nEnd == MtlGetWindowText(m_editKeyword).GetLength())
+			nFlags = MFS_DISABLED;
+		else
+			nFlags = 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_SELALL		 , _T("すべて選択(&A)"));
+	}
+
+	int nRet = menu.TrackPopupMenu(TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, m_hWnd);
+	if (nRet == 0)
+		return;
+
+	switch (nRet) {
+	case ID_UNDO:		
+		m_editKeyword.Undo();
+		break;
+
+	case ID_CUT:			
+		m_editKeyword.Cut();
+		break;
+
+	case ID_COPY:	
+		m_editKeyword.Copy();
+		break;
+
+	case ID_PASTE:		
+		m_editKeyword.Paste();
+		break;
+
+	case ID_PASTEANDMOVE:
+		SearchWeb(strClipboard);
+		break;
+
+	case ID_CLEAR:		
+		m_editKeyword.Clear();
+		break;
+
+	case ID_SELALL:		
+		m_editKeyword.SetSelAll();
+		break;
+	}
+}
+
+
+/// リアルタイムに単語ボタンに反映していく
+LRESULT CDonutSearchBar::Impl::OnEditChanged(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled)
+{
 	if (s_bNoWordButton == false) {
 		//SetMsgHandled(false);
 		m_bWordLock = false;
@@ -1537,12 +1654,9 @@ void CDonutSearchBar::Impl::OnChar(UINT nChar, UINT nRepCnt, UINT nFlags)
 			MTLVERIFY( m_wndToolBar.SetButtonInfo(ID_SEARCHBAR_WORD00 + i, &bi) );
 		}
 
-		m_wndToolBar.SetButtonSize(m_ButtonSize);
-	//	m_wndToolBar.AutoSize();
-	//	m_wndToolBar.Invalidate();
-		//ShowToolBarIcon(true);
-	
+		m_wndToolBar.SetButtonSize(m_ButtonSize);	
 	}
+	return 0;
 }
 
 
