@@ -1494,6 +1494,8 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 				};
 				funcDeleteKeywordHistory();
 					//SetMsgHandled(FALSE);
+			} else {
+				SetMsgHandled(FALSE);
 			}
 		} else if (nChar == VK_TAB) {
 			m_cmbEngine.SetFocus();
