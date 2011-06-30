@@ -102,6 +102,8 @@ struct CDonutAddressBar::Impl :
 		MESSAGE_HANDLER ( WM_ERASEBKGND,		OnEditEraseBackground	)
 		MESSAGE_HANDLER ( WM_LBUTTONDBLCLK, 	OnEditLButtonDblClk 	)
 		MSG_WM_KEYDOWN	( OnEditKeyDown )
+		MSG_WM_RBUTTONUP  ( OnEditRButtonUp )
+		MSG_WM_CONTEXTMENU( OnEditContextMenu )
 	ALT_MSG_MAP(3)	// GoButton
 		MSG_WM_RBUTTONDOWN( OnGoRButtonDown )
 	END_MSG_MAP()
@@ -130,6 +132,8 @@ struct CDonutAddressBar::Impl :
 	LRESULT OnEditEraseBackground(UINT /*uMsg */ , WPARAM wParam, LPARAM /*lParam */ , BOOL &bHandled);
 	LRESULT OnEditLButtonDblClk(UINT /*uMsg */ , WPARAM /*wParam */ , LPARAM /*lParam */ , BOOL & /*bHandled */ );
 	void	OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnEditRButtonUp(UINT nFlags, CPoint point);
+	void	OnEditContextMenu(CWindow wnd, CPoint point);
 
 	// GoButton
 	void	OnGoRButtonDown(UINT nFlags, CPoint point);
@@ -157,6 +161,7 @@ private:
 	void	_SetEditIconIndex(int nIndex);
 
 public:
+
 	// Data members
 	CFlatComboBox				m_comboFlat;
 	CToolBarCtrl				m_wndGo;
@@ -827,6 +832,101 @@ void	CDonutAddressBar::Impl::OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags
 		SetMsgHandled(TRUE);
 	} else {
 		SetMsgHandled(FALSE);
+	}
+}
+
+void	CDonutAddressBar::Impl::OnEditRButtonUp(UINT nFlags, CPoint point)
+{
+	if (::GetFocus() != m_edit.m_hWnd) {
+		m_edit.SetFocus();
+		m_edit.SetSelAll();
+	}
+	SetMsgHandled(FALSE);
+}
+
+
+void	CDonutAddressBar::Impl::OnEditContextMenu(CWindow wnd, CPoint point)
+{
+	enum {
+		ID_UNDO			= 1,
+		ID_CUT			= 2,
+		ID_COPY			= 3,
+		ID_PASTE		= 4,
+		ID_PASTEANDMOVE	= 5,
+		ID_CLEAR		= 6,
+		ID_SELALL		= 7,
+	};
+
+	UINT nFlags = 0;
+	CMenu menu;
+	menu.CreatePopupMenu();
+	{
+		nFlags = m_edit.CanUndo() ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_UNDO		  , _T("元に戻す(&U)"));
+	}
+	menu.AppendMenu(MF_SEPARATOR);
+
+	int nStart, nEnd;
+	m_edit.GetSel(nStart, nEnd);
+	{
+		nFlags = (nStart == nEnd) ? MFS_DISABLED : 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_CUT		  , _T("切り取り(&T)"));
+	}
+	{
+		nFlags = (nStart < nEnd) ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_COPY		  , _T("コピー(&C)"));
+	}
+	{
+		nFlags = MtlGetClipboardText().IsEmpty() ? MFS_DISABLED : 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_PASTE		 , _T("貼り付け(&P)"));
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_PASTEANDMOVE, _T("貼り付けて移動(&M)"));
+	}
+	{
+		nFlags = (nStart < nEnd) ? 0 : MFS_DISABLED;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_CLEAR		 , _T("削除(&D)"));
+	}
+	menu.AppendMenu(MF_SEPARATOR);
+	{
+		if (nStart == 0 && nEnd == MtlGetWindowText(m_edit).GetLength())
+			nFlags = MFS_DISABLED;
+		else
+			nFlags = 0;
+		menu.AppendMenu(nFlags, (UINT_PTR)ID_SELALL		 , _T("すべて選択(&A)"));
+	}
+
+	int nRet = menu.TrackPopupMenu(TPM_NONOTIFY | TPM_RETURNCMD, point.x, point.y, m_hWnd);
+	if (nRet == 0)
+		return;
+
+	switch (nRet) {
+	case ID_UNDO:		
+		m_edit.Undo();
+		break;
+
+	case ID_CUT:			
+		m_edit.Cut();
+		break;
+
+	case ID_COPY:	
+		m_edit.Copy();
+		break;
+
+	case ID_PASTE:		
+		m_edit.Paste();
+		break;
+
+	case ID_PASTEANDMOVE:	
+		OnGoRButtonDown(0, CPoint());
+		SetMsgHandled(TRUE);
+		break;
+
+	case ID_CLEAR:		
+		m_edit.Clear();
+		break;
+
+	case ID_SELALL:		
+		m_edit.SetSelAll();
+		break;
 	}
 }
 

@@ -100,8 +100,6 @@ CMainFrame::CMainFrame()
 	, m_bWM_TIMER(false)
 {
 	g_pMainWnd = this;			//+++ CreateEx()中にプラグイン初期化とかで参照されるので、呼び元でなく CMainFreameで設定するように変更.
-
-	GdiplusInit();
 }
 
 
@@ -170,6 +168,8 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	init_loadPlugins();								// プラグインを読み込む
 
 	UpdateLayout();									// 画面更新
+
+	GdiplusInit();
 
 	return 0;	//return lRet;
 }
@@ -2803,7 +2803,7 @@ void	CMainFrame::SaveAllTab()
 	/* すべてのタブの情報を取得 */
 	std::list<SDfgSaveInfo>	SaveInfoList;
 	_Function_Enum_ChildInfomation	f(this, MDIGetActive(), SaveInfoList, 0, CMainOption::s_bTravelLogGroup);
-	m_MDITab.ForEachWindow( f );
+	m_MDITab.ForEachWindow( boost::ref(f) );
 
 	CString	TabList = Misc::GetExeDirectory() + _T("TabList.xml");
 
