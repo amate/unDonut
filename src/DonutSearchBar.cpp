@@ -2002,7 +2002,7 @@ void CDonutSearchBar::Impl::_OnEnterKeyDown()
 	CString  str;
 
 	int nIndexCmb = m_cmbKeyword.GetCurSel();
-	if (nIndexCmb == -1) {
+	if (nIndexCmb == -1 || m_cmbKeyword.GetDroppedState() == FALSE) {
 		str = MtlGetWindowText(m_cmbKeyword);
 	} else {
 		m_cmbKeyword.GetLBText(nIndexCmb, str);
