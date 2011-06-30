@@ -25,6 +25,7 @@ public:
 	HWND	Create(HWND hWndParent);
 	void	SetUpdateLayoutFunc(function<void (BOOL)> func) { m_funcUpdateLayout = func; }
 	void	ShowFindBar(const CString& strKeyword);
+	void	CloseFindBar();
 
 	// Overrides
 	void	DoPaint(CDCHandle dc);
@@ -184,7 +185,8 @@ HWND	CFindBar::Impl::Create(HWND hWndParent)
 	return hWnd;
 }
 
-
+//--------------------------------
+/// バーを表示する
 void	CFindBar::Impl::ShowFindBar(const CString& strKeyword)
 {
 	if (strKeyword.IsEmpty() == FALSE)
@@ -193,6 +195,20 @@ void	CFindBar::Impl::ShowFindBar(const CString& strKeyword)
 	m_funcUpdateLayout(FALSE);
 	m_Edit.SetFocus();
 	m_Edit.SetSelAll();
+	_HighlightKeyword(!m_bAutoHighlight, false);	// 更新
+}
+
+//--------------------------------
+/// バーを閉じる
+void	CFindBar::Impl::CloseFindBar()
+{
+	m_CloseState = TTCS_NORMAL;
+	ShowWindow(FALSE);
+	m_funcUpdateLayout(FALSE);
+
+	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
+	if (pChild) 
+		pChild->SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
 }
 
 
@@ -311,15 +327,8 @@ void	CFindBar::Impl::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (GetCapture() == m_hWnd) {
 		ReleaseCapture();
-		if (m_rcClose.PtInRect(point)) {
-			m_CloseState = TTCS_NORMAL;
-			ShowWindow(FALSE);
-			m_funcUpdateLayout(FALSE);
-
-			CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-			if (pChild) 
-				pChild->SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
-		}
+		if (m_rcClose.PtInRect(point)) 
+			CloseFindBar();
 	}
 }
 
@@ -442,6 +451,8 @@ void	CFindBar::Impl::OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 	m_Edit.DefWindowProc();
 	if (nChar == VK_RETURN) 
 		_FindKeyword(!(::GetKeyState(VK_SHIFT) < 0));
+	else if (nChar == VK_ESCAPE)
+		CloseFindBar();
 }
 
 //---------------------------------
@@ -467,12 +478,6 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	}
 
 	CString	strKeyword = MtlGetWindowText(m_Edit);
-	CString strtemp2;
-	int nLength = strKeyword.GetLength() + 1;
-	::LCMapString(LOCALE_SYSTEM_DEFAULT, LCMAP_HALFWIDTH, strKeyword, -1, strtemp2.GetBuffer(nLength), nLength);
-	strtemp2.ReleaseBuffer();
-	strKeyword = strtemp2;
-	
 
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild == nullptr)
@@ -597,11 +602,13 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 {
 	CString	strKeyword = MtlGetWindowText(m_Edit);
+#if 0
 	CString strtemp2;
 	int nLength = strKeyword.GetLength() + 1;
 	::LCMapString(LOCALE_SYSTEM_DEFAULT, LCMAP_HALFWIDTH, strKeyword, -1, strtemp2.GetBuffer(nLength), nLength);
 	strtemp2.ReleaseBuffer();
 	strKeyword = strtemp2;
+#endif
 	if (strKeyword.IsEmpty())
 		return;
 
