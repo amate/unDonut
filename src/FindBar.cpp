@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "FindBar.h"
 #include "MtlWin.h"
+#include "MtlWeb.h"
 #include "MainFrame.h"
 
 //////////////////////////////////////////////
@@ -40,6 +41,7 @@ public:
 		MSG_WM_MOUSEMOVE ( OnMouseMove )
 		MSG_WM_LBUTTONDOWN( OnLButtonDown )
 		MSG_WM_LBUTTONUP  ( OnLButtonUp	)
+		MSG_WM_PARENTNOTIFY( OnParentNotify )
 		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel )
 		NOTIFY_CODE_HANDLER_EX( TBN_DROPDOWN, OnDropDownOption )
 		MSG_WM_CTLCOLOREDIT	 ( OnCtlColorEdit )
@@ -60,6 +62,7 @@ public:
 	void	OnMouseMove(UINT nFlags, CPoint point);
 	void	OnLButtonDown(UINT nFlags, CPoint point);
 	void	OnLButtonUp(UINT nFlags, CPoint point);
+	void	OnParentNotify(UINT message, UINT nChildID, LPARAM lParam);
 	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDropDownOption(LPNMHDR pnmh);
 	HBRUSH	OnCtlColorEdit(CDCHandle dc, CEdit edit);
@@ -74,6 +77,7 @@ public:
 	void	OnEditLButtonDown(UINT nFlags, CPoint point);
 
 private:
+	void	_RemoveHighlight(IHTMLDocument3* pDoc3);
 	void	_HighlightKeyword(bool bNoHighlight = false, bool bEraseOld = true);
 	void	_FindKeyword(bool bFindDown);
 
@@ -115,6 +119,7 @@ private:
 	bool	m_bPageEnd;
 
 	function<void (BOOL)>	m_funcUpdateLayout;
+	bool	m_bNowShowing;
 };
 
 //=============================
@@ -130,6 +135,7 @@ CFindBar::Impl::Impl()
 	, m_bNoHit(false)
 	, m_nMatchCount(0)
 	, m_bPageEnd(false)
+	, m_bNowShowing(false)
 {
 	SetThemeClassList(VSCLASS_TOOLTIP);
 }
@@ -189,13 +195,22 @@ HWND	CFindBar::Impl::Create(HWND hWndParent)
 /// バーを表示する
 void	CFindBar::Impl::ShowFindBar(const CString& strKeyword)
 {
-	if (strKeyword.IsEmpty() == FALSE)
+	SetRedraw(FALSE);
+	if (strKeyword.IsEmpty() == FALSE) {
+		m_bNowShowing = true;
 		m_Edit.SetWindowText(strKeyword);
+		m_bNowShowing = false;
+	}
 	ShowWindow(TRUE);
+	SetRedraw(TRUE);
+	RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE | RDW_ALLCHILDREN);
+
 	m_funcUpdateLayout(FALSE);
 	m_Edit.SetFocus();
 	m_Edit.SetSelAll();
-	_HighlightKeyword(!m_bAutoHighlight, false);	// 更新
+
+	_HighlightKeyword(!m_bAutoHighlight);	// 更新
+	_FindKeyword(true);
 }
 
 //--------------------------------
@@ -333,6 +348,30 @@ void	CFindBar::Impl::OnLButtonUp(UINT nFlags, CPoint point)
 	}
 }
 
+//--------------------------------------
+/// ハイライトボタンを右クリックでハイライト解除する
+void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
+{
+	if (message == WM_RBUTTONDOWN) {
+		CPoint pt;
+		::GetCursorPos(&pt);
+		m_ToolBar.ScreenToClient(&pt);
+		CRect rc;
+		m_ToolBar.GetRect(ID_FIND_HIGHLIGHT, &rc);
+		if (rc.PtInRect(pt)) {
+			CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
+			if (pChild) {
+				CComPtr<IDispatch>	spDisp;
+				pChild->m_spBrowser->get_Document(&spDisp);
+				CComQIPtr<IHTMLDocument3> spDoc3 = spDisp;
+				if (spDoc3)
+					_RemoveHighlight(spDoc3);
+			}
+		}
+	}
+}
+
+
 //---------------------------------
 /// エディットコントロールにフォーカスがある場合でもスクロールできるようにする
 LRESULT CFindBar::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -420,6 +459,9 @@ HBRUSH	CFindBar::Impl::OnCtlColorStatic(CDCHandle dc, CStatic wndStatic)
 
 void	CFindBar::Impl::OnEditChanged(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	if (m_bNowShowing) // ShowFindBar の方でする
+		return ;
+
 	_HighlightKeyword(!m_bAutoHighlight);
 	_FindKeyword(true);
 }
@@ -464,12 +506,44 @@ void	CFindBar::Impl::OnEditLButtonDown(UINT nFlags, CPoint point)
 	if (GetFocus() != m_Edit.m_hWnd) {
 		m_Edit.SetFocus();
 		m_Edit.SetSelAll();
-		_HighlightKeyword(!m_bAutoHighlight, false);	// 更新
+		_HighlightKeyword(!m_bAutoHighlight);	// 更新
 	} else {
 		SetMsgHandled(FALSE);
 	}
 }
 
+//---------------------------------------------
+/// ハイライトを解除する
+void	CFindBar::Impl::_RemoveHighlight(IHTMLDocument3* pDoc3)
+{
+	CComQIPtr<IHTMLDocument2> spDoc2 = pDoc3;
+	_MtlForEachHTMLDocument2(spDoc2, [&](IHTMLDocument2* pDoc) {
+		CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
+		pDoc->get_selection(&spSelection);
+		if (spSelection.p)
+			spSelection->empty();
+
+		vector<CComPtr<IHTMLElement> > vecElm;
+		CComPtr<IHTMLElementCollection>	spCol;
+		CComQIPtr<IHTMLDocument3> spDoc3 = pDoc;
+		spDoc3->getElementsByTagName(CComBSTR(L"span"), &spCol);
+		ForEachHtmlElement(spCol, [&vecElm](IDispatch* pDisp) -> bool {
+			CComQIPtr<IHTMLElement>	spElm = pDisp;
+			if (spElm.p) {
+				CComBSTR strID;
+				spElm->get_id(&strID);
+				if (strID && strID == L"udfbh")
+					vecElm.push_back(spElm);
+			}
+			return true;
+		});
+		for (auto it = vecElm.rbegin(); it != vecElm.rend(); ++it) {
+			CComBSTR str;
+			(*it)->get_innerText(&str);
+			(*it)->put_outerHTML(str);
+		}
+	});
+}
 
 void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEraseOld /*= true*/)
 {
@@ -491,12 +565,6 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	if (spDoc == nullptr)
 		return;
 
-	/* テキスト選択を空にする */
-	CComPtr<IHTMLSelectionObject> spSelection;
-	spDoc->get_selection(&spSelection);
-	if (spSelection)
-		spSelection->empty();
-
 	long Flags = 0;
 	if (m_bWordUnit)
 		Flags |= 2;
@@ -510,74 +578,59 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 
 	/* 前のハイライト表示を消す */
 	CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc;
-	CComPtr<IHTMLElement>	spElmID;
-	spDoc3->getElementById(CComBSTR(L"udfbh"), &spElmID);
-	if (bEraseOld && spElmID) {
-		vector<CComPtr<IHTMLElement> > vecElm;
-		CComPtr<IHTMLElementCollection>	spCol;
-		spDoc3->getElementsByTagName(CComBSTR(L"span"), &spCol);
-		ForEachHtmlElement(spCol, [&vecElm](IDispatch* pDisp) -> bool {
-			CComQIPtr<IHTMLElement>	spElm = pDisp;
-			if (spElm.p) {
-				CComBSTR strID;
-				spElm->get_id(&strID);
-				if (strID && strID == L"udfbh")
-					vecElm.push_back(spElm);
-			}
-			return true;
-		});
-		for (auto it = vecElm.rbegin(); it != vecElm.rend(); ++it) {
-			CComBSTR str;
-			(*it)->get_innerText(&str);
-			(*it)->put_outerHTML(str);
-		}
-	}
+	if (bEraseOld)
+		_RemoveHighlight(spDoc3);
 
 	/* 単語をハイライトする */
 	m_nMatchCount = 0;
 	if (strKeyword.GetLength() > 0) {
-		CComPtr<IHTMLElement>	spElm;
-		spDoc->get_body(&spElm);
-		CComQIPtr<IHTMLBodyElement>	spBody = spElm;
-		if (spBody == nullptr)
-			return;
+		_MtlForEachHTMLDocument2(spDoc, [&](IHTMLDocument2* pDoc) {
+			CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
+			pDoc->get_selection(&spSelection);
+			if (spSelection.p)
+				spSelection->empty();
 
-		CComPtr<IHTMLTxtRange>	spTxtRange;
-		spBody->createTextRange(&spTxtRange);
-		if (spTxtRange == nullptr)
-			return;
+			CComPtr<IHTMLElement>	spElm;
+			pDoc->get_body(&spElm);
+			CComQIPtr<IHTMLBodyElement>	spBody = spElm;
+			if (spBody.p == nullptr)
+				return;
 
-		long nMove;
-		spTxtRange->moveStart(strTextedit, -1, &nMove);
-		spTxtRange->moveEnd(strTextedit, 1, &nMove);
-		VARIANT_BOOL	vResult;
-		CComBSTR	strWord = strKeyword;
-		while (spTxtRange->findText(strWord, 0, Flags, &vResult), vResult == VARIANT_TRUE) {
-			CComPtr<IHTMLElement> spParentElement;
-			spTxtRange->parentElement(&spParentElement);
-			CComBSTR	bstrParentTag;
-			spParentElement->get_tagName(&bstrParentTag);
-			if (   bstrParentTag != _T("SCRIPT")
-				&& bstrParentTag != _T("NOSCRIPT")
-				&& bstrParentTag != _T("TEXTAREA")
-				&& bstrParentTag != _T("STYLE")) 
-			{
-				if (bNoHighlight == false) {
-					CComBSTR strInnerText;
-					spTxtRange->get_text(&strInnerText);
-					//VARIANT_BOOL	vRet;
-					//spTxtRange->execCommand(strBackColor, VARIANT_FALSE, CComVariant(strColor), &vRet);
-					CComBSTR strValue(L"<span id=\"udfbh\" style=\"color:black;background:greenyellow\">");//#00FFFF
-					strValue += strInnerText;
-					strValue += _T("</span>");
-					spTxtRange->pasteHTML(strValue);
+			CComPtr<IHTMLTxtRange>	spTxtRange;
+			spBody->createTextRange(&spTxtRange);
+			if (spTxtRange.p == nullptr)
+				return;
+
+			//long nMove;
+			//spTxtRange->moveStart(strTextedit, -1, &nMove);
+			//spTxtRange->moveEnd(strTextedit, 1, &nMove);
+			VARIANT_BOOL	vResult;
+			CComBSTR	strWord = strKeyword;
+			while (spTxtRange->findText(strWord, 1, Flags, &vResult), vResult == VARIANT_TRUE) {
+				CComPtr<IHTMLElement> spParentElement;
+				spTxtRange->parentElement(&spParentElement);
+				CComBSTR	bstrParentTag;
+				spParentElement->get_tagName(&bstrParentTag);
+				if (   bstrParentTag != _T("SCRIPT")
+					&& bstrParentTag != _T("NOSCRIPT")
+					&& bstrParentTag != _T("TEXTAREA")
+					&& bstrParentTag != _T("STYLE")) 
+				{
+					if (bNoHighlight == false) {
+						CComBSTR strInnerText;
+						spTxtRange->get_text(&strInnerText);
+						//VARIANT_BOOL	vRet;
+						//spTxtRange->execCommand(strBackColor, VARIANT_FALSE, CComVariant(strColor), &vRet);
+						CComBSTR strValue(L"<span id=\"udfbh\" style=\"color:black;background:greenyellow\">");//#00FFFF
+						strValue += strInnerText;
+						strValue += _T("</span>");
+						spTxtRange->pasteHTML(strValue);
+					}
+					++m_nMatchCount;
 				}
-				++m_nMatchCount;
+				spTxtRange->collapse(VARIANT_FALSE);
 			}
-			long t;
-			spTxtRange->moveStart(strChar, 1, &t);
-			spTxtRange->moveEnd(strTextedit, 1, &t);
-		}
+		});
 	}
 
 	/* 一致件数を表示 */

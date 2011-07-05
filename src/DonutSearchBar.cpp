@@ -2002,7 +2002,7 @@ void CDonutSearchBar::Impl::_OnEnterKeyDown()
 	CString  str;
 
 	int nIndexCmb = m_cmbKeyword.GetCurSel();
-	if (nIndexCmb == -1 || m_cmbKeyword.GetDroppedState() == FALSE) {
+	if (nIndexCmb == -1 /*|| m_cmbKeyword.GetDroppedState() == FALSE*/) {
 		str = MtlGetWindowText(m_cmbKeyword);
 	} else {
 		m_cmbKeyword.GetLBText(nIndexCmb, str);
@@ -2048,7 +2048,7 @@ void CDonutSearchBar::Impl::_AddToSearchBoxUnique(const CString& str)
 	}
 
 	m_cmbKeyword.InsertString(0, str);
-	m_cmbKeyword.SetCurSel(0);
+	m_cmbKeyword.SetCurSel(-1);
 
 	boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
 	//_SaveHistory();	// ’Ç‰Á‚Ì‚½‚Ñ‚É•Û‘¶‚µ‚Ä‚Ý‚é

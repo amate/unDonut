@@ -1838,7 +1838,7 @@ void CChildFrame::OnProgressChange(long progress, long progressMax)
 {
 	m_nProgress    = progress;
 	m_nProgressMax = progressMax;
-	if (progress == -1)
+	if (progress == 0 && progressMax == 0)
 		PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
 }
 
