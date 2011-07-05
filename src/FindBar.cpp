@@ -262,8 +262,9 @@ BOOL	CFindBar::Impl::PreTranslateMessage(MSG* pMsg)
 	if (pMsg->hwnd == m_Edit.m_hWnd) {
 		UINT msg = pMsg->message;
 		if (msg == WM_SYSKEYDOWN || msg == WM_SYSKEYUP || msg == WM_KEYDOWN) {
-			if ((int) pMsg->wParam == VK_RETURN) {
-				OnEditKeyDown(VK_RETURN, 0, 0);
+			UINT nChar = (int) pMsg->wParam;
+			if (nChar == VK_RETURN || nChar == VK_ESCAPE) {
+				OnEditKeyDown(nChar, 0, 0);
 				return TRUE;
 			}
 		}
@@ -448,11 +449,12 @@ void	CFindBar::Impl::OnFindHighlight(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void	CFindBar::Impl::OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	m_Edit.DefWindowProc();
 	if (nChar == VK_RETURN) 
 		_FindKeyword(!(::GetKeyState(VK_SHIFT) < 0));
 	else if (nChar == VK_ESCAPE)
 		CloseFindBar();
+	else
+		m_Edit.DefWindowProc();
 }
 
 //---------------------------------

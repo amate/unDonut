@@ -111,6 +111,8 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 {
 	bHandled = FALSE;
 
+	init_message_loop();							// メッセージループの準備
+
 	// オプションでお気に入りメニューの表示変更時、お気に入りメニュー更新
 	CFavoritesMenuOption::SetFuncRefreshFav(std::bind(&CMainFrame::_RefreshFavMenu, this));
 
@@ -147,7 +149,6 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	CmdUIAddToolBar(m_SearchBar.GetHWndToolBar());	// set up UI
 
 	CDLControlOption::SetUserAgent();				// ユーザーエージェントの設定
-	init_message_loop();							// メッセージループの準備
 
 	//SetAutoBackUp();//OnBackUpOptionChanged(0,0,0);// OnCreate後の処理で別途呼び出すようにした.
 	RegisterDragDrop();	//DragAcceptFiles();		// ドラッグ＆ドロップ準備

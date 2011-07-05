@@ -363,7 +363,7 @@ public:
 
 	LRESULT OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags = 0);
 	BOOL 	_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStrKeyWord, BOOL bFindDown, long Flags = 0);	//ÉyÅ[ÉWì‡åüçı
-	void 	ScrollBy(IHTMLDocument2 *pDoc2);
+
 
 	void 	_OpenSelectedText(IHTMLDocument2 *pDocument);
 	CString _GetSelectedText(IHTMLDocument2* pDocument);

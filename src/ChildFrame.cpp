@@ -404,7 +404,6 @@ void CChildFrame::_InitDragDropSetting()
 }
 
 
-
 /// ナビゲートの準備
 void CChildFrame::OnBeforeNavigate2(
 					IDispatch *			pDisp,
@@ -416,6 +415,8 @@ void CChildFrame::OnBeforeNavigate2(
 					bool &				bCancel )
 {
 	dcfTRACE(_T("CChildFrame::OnBeforeNavigate2 URL(%s) frame(%s)\n"), strURL.Left(100), strTargetFrameName);
+
+	bool bTopWindow = IsPageIWebBrowser(pDisp);
 
   #if 1	//+++ 自動リサイズ可能なページに新たに絵でないページを表示すると、そのページもリサイズ可能になってしまっていたのを対処.
 	if (m_nImgWidth >= 0) {
@@ -466,7 +467,7 @@ void CChildFrame::OnBeforeNavigate2(
 	}
 
 	// deter popups
-	if ( m_bNewWindow2 && IsPageIWebBrowser(pDisp) && CIgnoredURLsOption::SearchString(strURL) ) {	// close ignored url
+	if ( m_bNewWindow2 && bTopWindow && CIgnoredURLsOption::SearchString(strURL) ) {	// close ignored url
 		bCancel 	  = true;
 		m_bNewWindow2 = false;
 		m_bClosing	  = true;
@@ -500,7 +501,7 @@ void CChildFrame::OnBeforeNavigate2(
 	}
 
 	// 自分でDLコントロールを切り替えたときは無視するように
-	if (m_view.m_bLightRefresh == false) {
+	if (m_view.m_bLightRefresh == false && bTopWindow) {
 	  #if 1	//+++ Url別拡張プロパティ設定の処理. 主にリンク用.(通常のopenの場合は、CMainFrame::OnUserOpenFileな処理を通るので、そちらで設定ずみ)
 		DWORD exopts = 0xFFFFFFFF, dlCtlFlg = 0xFFFFFFFF, exstyle = 0xFFFFFFFF, autoRefresh = 0xFFFFFFFF, dwExPropOpt = 8;
 		if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
@@ -579,10 +580,14 @@ void CChildFrame::OnBeforeNavigate2(
   #else
 	m_bNowHilight	= FALSE;
   #endif
-	m_nPainBookmark = 0;
-	m_strBookmark	= LPCOLESTR(NULL);
+	/* ページ内検索の情報をリセット */
+	if (bTopWindow) {
+		m_nPainBookmark = 0;
+		m_strBookmark	= LPCOLESTR(NULL);
+	}
 
-	if (IsPageIWebBrowser(pDisp) && strURL.Left(11).CompareNoCase(_T("javascript:")) != 0)
+	/* Faviconを白紙に設定 */
+	if (bTopWindow && strURL.Left(11).CompareNoCase(_T("javascript:")) != 0)
 		m_MDITab.OnSetFaviconImage(m_hWnd, NULL);
 
 	m_bNowNavigate = true;	// Navigate中である
@@ -2880,27 +2885,20 @@ void CChildFrame::searchEngines(const CString &strKeyWord )
 //
 LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags/* = 0*/)
 {
-	// アクティブウィンドウの取得
-	HWND	hWndActive = MDIGetActive();
-	if (hWndActive == NULL)
-		return 0;
-
 	if (!m_spBrowser)
 		return 0;
 
-	// ドキュメントの取得
 	CComPtr<IDispatch>	spDisp;
-	HRESULT 			hr	= m_spBrowser->get_Document(&spDisp);
-	if ( FAILED(hr) )
-		return 0;
-
-	// htmlの取得
-	CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
+	HRESULT hr = m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument2>	spDocument = spDisp;	// htmlの取得
 	if (!spDocument)
 		return 0;
 
+	CString strKeyword = lpszKeyWord;
+	strKeyword.Replace(_T('ﾞ'), _T('゛'));
+
 	// 検索
-	BOOL	bSts = _FindKeyWordOne(spDocument, lpszKeyWord, bFindDown, Flags);
+	BOOL	bSts = _FindKeyWordOne(spDocument, strKeyword, bFindDown, Flags);
 	if (bSts)
 		return TRUE;
 
@@ -2951,7 +2949,7 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Fla
 			}
 
 			// 検索
-			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown, Flags);
+			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, bFindDown, Flags);
 			if (bFindIt) {
 				m_nPainBookmark = ii;
 				break;
@@ -2999,7 +2997,7 @@ LRESULT CChildFrame::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Fla
 			}
 
 			// 検索
-			bFindIt = _FindKeyWordOne(spDocumentFr, lpszKeyWord, bFindDown, Flags);
+			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, bFindDown, Flags);
 			if (bFindIt) {
 				m_nPainBookmark = ii;
 				break;
@@ -3067,10 +3065,10 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 			long lActual;
 			if (bFindDown) {
 				spTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
-				spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
+				//spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
 			} else {
 				spTxtRange->collapse(VARIANT_TRUE);	// Caretの位置を選択したテキストの一番上に
-				spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
+				//spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
 			}
 		}
 	} else {	// 検索範囲を全体にする
@@ -3209,59 +3207,6 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 }
 //^^^
 
-
-
-void CChildFrame::ScrollBy(IHTMLDocument2 *pDoc2)
-{
-	CComPtr<IHTMLDocument3> 	   pDoc3;
-	HRESULT 	hr = pDoc2->QueryInterface(&pDoc3);
-	if ( FAILED(hr) )
-		return;
-
-	CComPtr<IHTMLElement>		   pElem;
-	hr	= pDoc3->get_documentElement(&pElem);
-	if ( FAILED(hr) )
-		return;
-
-	long		height = 0;
-	hr	= pElem->get_offsetHeight(&height); 	// HTML表示領域の高さ
-	if ( FAILED(hr) )
-		return;
-
-	CComPtr<IHTMLSelectionObject>  pSel;
-	hr	= pDoc2->get_selection(&pSel);
-	if ( FAILED(hr) )
-		return;
-
-	CComPtr<IDispatch>			   pDisp;
-	hr	= pSel->createRange(&pDisp);
-
-	if ( FAILED(hr) )
-		return;
-
-	CComPtr<IHTMLTextRangeMetrics> pTxtRM;
-	hr	= pDisp->QueryInterface(&pTxtRM);
-	if ( FAILED(hr) )
-		return;
-
-	long		y = 0;
-	hr	= pTxtRM->get_offsetTop(&y);		// 選択部分の画面上からのy座標
-	if ( FAILED(hr) )
-		return;
-
-	long scy = y - height / 2;				// 画面中央までの距離
-
-	// 距離が表示部分の1/4より大きければスクロールさせる
-	if ( (scy > height / 4) || (scy < -height / 4) ) {
-		CComPtr<IHTMLWindow2> pWnd;
-		hr = pDoc2->get_parentWindow(&pWnd);
-
-		if ( FAILED(hr) )
-			return;
-
-		pWnd->scrollBy(0, scy);
-	}
-}
 
 
 
