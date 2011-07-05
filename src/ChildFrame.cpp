@@ -2726,7 +2726,8 @@ void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 	dcfTRACE( _T("CChildFrame::OnEditOpenSelectedRef\n") );
 	m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	CSimpleArray<CString> arrUrls;
-	MtlForEachHTMLDocument2( m_spBrowser, [&arrUrls, this] (IHTMLDocument2 *pDocument) {
+	bool bNoAddFromMenu = false;
+	MtlForEachHTMLDocument2( m_spBrowser, [&arrUrls, &bNoAddFromMenu, this] (IHTMLDocument2 *pDocument) {
 		CComPtr<IHTMLSelectionObject>	spSelection;
 		HRESULT 	hr	= pDocument->get_selection(&spSelection);
 		if ( FAILED(hr) )
@@ -2751,7 +2752,10 @@ void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 				//bstrText		= pMenu->GetAnchorUrl();
 				//bstrLocationUrl = pMenu->GetAnchorUrl();
 			   #if _ATL_VER >= 0x700	//+++
-				arrUrls.Add(pMenu->GetAnchorUrl());
+				if (bNoAddFromMenu == false) {
+					arrUrls.Add(pMenu->GetAnchorUrl());
+					bNoAddFromMenu = true;
+				}
 			   #else
 				arrUrls.Add( *const_cast<CString*>(&pMenu->GetAnchorUrl()) );
 			   #endif
@@ -2797,6 +2801,8 @@ void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 			}
 
 			MtlCreateHrefUrlArray( arrUrls, WTL::CString(bstrText), WTL::CString(bstrLocationUrl) );
+			if (arrUrls.GetSize() > 0)
+				bNoAddFromMenu = true;	// ‘I‘ð”ÍˆÍ‚©‚çƒŠƒ“ƒN‚ªŒ©‚Â‚©‚Á‚½‚Ì‚Å
 		}
 	});
 	for (int i = 0; i < arrUrls.GetSize(); ++i) {
