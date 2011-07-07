@@ -224,7 +224,7 @@ private:
 	void	_ResizeBar(int difA = 0, int difB = 0);
 	void	_UpdateLayout(const CPoint& pt);
 	void	_UpdateLayout2(const CPoint& pt);
-	void	_OnEnterKeyDown();
+	void	_OnEnterKeyDown(bool bEditText = false);
 	void	_AddToSearchBoxUnique(const CString& str);
 	void	_EncodeString(CString& str, int dwEncode);
 	void	_DrawDragEffect(bool bRemove);
@@ -1480,7 +1480,7 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 		}
 	} else {
 		if (nChar == VK_RETURN) {
-			_OnEnterKeyDown();	// 検索
+			_OnEnterKeyDown(true);	// 検索
 
 		} else if (nChar == VK_DELETE) {
 			if ( m_cmbKeyword.GetDroppedState() ) {
@@ -1668,7 +1668,7 @@ void	CDonutSearchBar::Impl::OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlag
 {
 	m_wndEngine.DefWindowProc();
 	if (nChar == VK_RETURN)
-		_OnEnterKeyDown();
+		_OnEnterKeyDown(true);
 }
 
 /// 検索エンジンリストボックスを隠れないように移動する
@@ -1997,12 +1997,12 @@ void CDonutSearchBar::Impl::_UpdateLayout2(const CPoint& pt)
 	UpdateWindow();
 }
 
-void CDonutSearchBar::Impl::_OnEnterKeyDown()
+void CDonutSearchBar::Impl::_OnEnterKeyDown(bool bEditText /*= false*/)
 {
 	CString  str;
 
 	int nIndexCmb = m_cmbKeyword.GetCurSel();
-	if (nIndexCmb == -1 /*|| m_cmbKeyword.GetDroppedState() == FALSE*/) {
+	if (nIndexCmb == -1 || bEditText) {
 		str = MtlGetWindowText(m_cmbKeyword);
 	} else {
 		m_cmbKeyword.GetLBText(nIndexCmb, str);
@@ -2048,7 +2048,6 @@ void CDonutSearchBar::Impl::_AddToSearchBoxUnique(const CString& str)
 	}
 
 	m_cmbKeyword.InsertString(0, str);
-	m_cmbKeyword.SetCurSel(-1);
 
 	boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
 	//_SaveHistory();	// 追加のたびに保存してみる

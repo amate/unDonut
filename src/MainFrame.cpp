@@ -5597,9 +5597,13 @@ void CMainFrame::_FullScreen(BOOL bOn)
 	}
 	SetRedraw(TRUE);
 	RedrawWindow(NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-	if (UxTheme_Wrap::IsThemeActive() == FALSE) {
-		::RedrawWindow(NULL, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	if (UxTheme_Wrap::IsCompositionActive() == FALSE) {
+		::RedrawWindow(GetDesktopWindow(), NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+		HWND hWndTray = ::FindWindow(_T("Shell_TrayWnd"), NULL);
+		if (hWndTray)
+			::RedrawWindow(hWndTray, NULL, NULL, RDW_ERASE | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 	}
+	UpdateLayout(TRUE);
 }
 
 

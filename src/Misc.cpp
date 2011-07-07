@@ -1367,30 +1367,33 @@ BOOL IsWow64()
 //+++
 unsigned getIEMejourVersion()
 {
-	//レジストリからIEのバージョンを取得
-	TCHAR			buf[MAX_PATH+2];
-	DWORD			dwCount = MAX_PATH;
-	Misc::CRegKey 	reg;
+	static unsigned ver = -1;
+	if (ver == -1) {
+		//レジストリからIEのバージョンを取得
+		TCHAR			buf[MAX_PATH+2];
+		DWORD			dwCount = MAX_PATH;
+		Misc::CRegKey 	reg;
 
-	memset(buf, 0, sizeof buf);
-	LRESULT rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer"), KEY_QUERY_VALUE );
-	if (rc == ERROR_SUCCESS) {
-		rc = reg.QueryStringValue(_T("Version"), buf, &dwCount);
-		reg.Close();
-	}
-
-	if (rc != ERROR_SUCCESS) {
-		rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer\\Version Vector"), KEY_QUERY_VALUE );
+		memset(buf, 0, sizeof buf);
+		LRESULT rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer"), KEY_QUERY_VALUE );
 		if (rc == ERROR_SUCCESS) {
-			rc = reg.QueryStringValue(_T("IE"), buf, &dwCount);
-			//DWORD dw = 0;
-			//LRESULT rc = reg.QueryDWORDValue(_T("IE"), dw);
-			//sprintf(buf, _T("%d"), dw);
+			rc = reg.QueryStringValue(_T("Version"), buf, &dwCount);
 			reg.Close();
 		}
-	}
 
-	unsigned ver = _tcstol(buf, NULL, 10);
+		if (rc != ERROR_SUCCESS) {
+			rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer\\Version Vector"), KEY_QUERY_VALUE );
+			if (rc == ERROR_SUCCESS) {
+				rc = reg.QueryStringValue(_T("IE"), buf, &dwCount);
+				//DWORD dw = 0;
+				//LRESULT rc = reg.QueryDWORDValue(_T("IE"), dw);
+				//sprintf(buf, _T("%d"), dw);
+				reg.Close();
+			}
+		}
+
+		ver = _tcstol(buf, NULL, 10);
+	}
 	return ver;
 }
 

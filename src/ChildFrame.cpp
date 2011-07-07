@@ -3070,11 +3070,14 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 		if (vMoveBookmark == TRUE) {
 			long lActual;
 			if (bFindDown) {
-				spTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+				spTxtRange->collapse(false);	// Caretの位置を選択したテキストの一番下に
+				if (Misc::getIEMejourVersion() < 9)
+					spTxtRange->moveStart(CComBSTR(L"character"), 1, &lActual);
 				//spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
 			} else {
-				spTxtRange->collapse(VARIANT_TRUE);	// Caretの位置を選択したテキストの一番上に
-				//spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
+				spTxtRange->collapse(true);	// Caretの位置を選択したテキストの一番上に
+				//if (Misc::getIEMejourVersion() < 9) 
+				//	spTxtRange->moveEnd  (CComBSTR(L"character"), -10, &lActual);			
 			}
 		}
 	} else {	// 検索範囲を全体にする
@@ -3091,12 +3094,13 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 	while (spTxtRange->findText(bstrText, (bFindDown) ? 1 : -1, Flags, &vBool), vBool == VARIANT_TRUE) {
 
 		auto funcMove = [&spTxtRange, bFindDown] () {	// 検索範囲を変更する関数
-			CComBSTR bstrUnitChar = L"character";
 			long lActual = 0;
 			if (bFindDown)
-				spTxtRange->moveStart(bstrUnitChar, 1, &lActual);
+				spTxtRange->collapse(false);
+				//spTxtRange->moveStart(CComBSTR(L"character"), 1, &lActual);
 			else
-				spTxtRange->moveEnd  (bstrUnitChar, -10, &lActual );
+				spTxtRange->collapse(true);
+				//spTxtRange->moveEnd  (CComBSTR(L"character"), -10, &lActual);
 		};
 		
 		CComPtr<IHTMLElement>	spFirstParentElement;
@@ -3132,9 +3136,9 @@ BOOL CChildFrame::_FindKeyWordOne(IHTMLDocument2 *pDocument, const CString& rStr
 			&& bstrParentTag != _T("TEXTAREA")) 
 			break;	/* 終わり */
 
-		++nSearchCount;
-		if (nSearchCount > 5)	// 5以上で打ち止め
-			break;
+		//++nSearchCount;
+		//if (nSearchCount > 5)	// 5以上で打ち止め
+		//	break;
 
 		funcMove();
 	}
