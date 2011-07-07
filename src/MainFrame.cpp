@@ -3166,7 +3166,7 @@ void CMainFrame::CSaveGroupOptionToFile::Run(CMainFrame* pMainWnd, const CString
 
 	try {	//+++ 意味なくなったけど念のため例外チェック.
 		// f=
-		pMainWnd->m_MDITab.ForEachWindow( f );		// MtlForEachMDIChild(m_hWndMDIClient, f);
+		pMainWnd->m_MDITab.ForEachWindow( boost::ref(f) );		// MtlForEachMDIChild(m_hWndMDIClient, f);
 	} catch (...) {
 		ErrorLogPrintf(_T("グループオプションセーブ中に例外発生\n"));
 	}

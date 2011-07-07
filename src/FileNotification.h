@@ -59,7 +59,7 @@ public:
 		m_ThreadParams._hWnd		  = hWnd;
 
 		CString 		strPath = strDirPath;
-		MtlRemoveTrailingBackSlash(strPath);
+		//MtlRemoveTrailingBackSlash(strPath);
 		m_ThreadParams.strPath = strPath;
 
 		HANDLE	hWait = ::FindFirstChangeNotification(  strPath,
