@@ -467,7 +467,7 @@ private:
 
 			if ( SUCCEEDED(hr) ) {
 				m_hItemDragging 		= hItem;
-				DROPEFFECT	dropEffect	= DoDragDrop(spDataObject, DROPEFFECT_MOVE | DROPEFFECT_COPY);
+				DROPEFFECT	dropEffect	= DoDragDrop(spDataObject, DROPEFFECT_MOVE | DROPEFFECT_COPY | DROPEFFECT_LINK);
 				m_hItemDragging 		= NULL;
 			}
 		} else {

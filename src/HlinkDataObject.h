@@ -15,7 +15,7 @@
 /////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-
+#include <atlmisc.h>
 #include "MtlCom.h"
 #include "MtlDragDrop.h"
 
@@ -177,18 +177,21 @@ public:
 		pmedium->pUnkForRelease = NULL;
 
 		HGLOBAL hGlobal = NULL;
-
-		if ( pformatetcIn->cfFormat == MTL_CF_TEXT) {		//+++ UNICODEC³
+		static const UINT CF_SHELLURL  = ::RegisterClipboardFormat(CFSTR_SHELLURL);
+		static const UINT CF_FILENAME  = ::RegisterClipboardFormat(CFSTR_FILENAME);
+		const UINT format = pformatetcIn->cfFormat;
+		if (format == MTL_CF_TEXT || format == CF_FILENAME) {
 			hGlobal = _CreateText();
-		} else if (pformatetcIn->cfFormat == ::RegisterClipboardFormat(CFSTR_SHELLURL)) {
+		} else if (format == CF_SHELLURL) {
 			hGlobal = _CreateURL();
-		} else if (pformatetcIn->cfFormat == CF_HDROP) {
+		} else if (format == CF_HDROP) {
 			// next, create shortcuts
 			_InitFileNamesArrayForHDrop();
 			// third, create dropfile
 			hGlobal = (HGLOBAL) MtlCreateDropFile(m_arrFileNames);
 			ATLASSERT(hGlobal != NULL);
 		}
+
 		if (hGlobal != NULL) {
 			pmedium->hGlobal = hGlobal;
 			return S_OK;
@@ -199,20 +202,22 @@ public:
 
 private:
 	// IDataObject
-	STDMETHOD	(QueryGetData) (FORMATETC * pformatetc)
+	STDMETHOD	(QueryGetData) (FORMATETC* pformatetc)
 	{
 		if (pformatetc == NULL)
 			return E_POINTER;
 
-		if ( pformatetc->cfFormat == CF_HDROP || pformatetc->cfFormat == MTL_CF_TEXT	//+++ UNICODEC³(MTL_CF_TEXT)
-		   || pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_SHELLURL) )
-			return NOERROR;
+		if (   pformatetc->cfFormat == CF_HDROP 
+			|| pformatetc->cfFormat == MTL_CF_TEXT	//+++ UNICODEC³(MTL_CF_TEXT)
+		    || pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_SHELLURL) 
+			|| pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_FILENAME) )
+			return S_OK;
 		else
 			return DATA_E_FORMATETC;
 	}
 
 
-	STDMETHOD	(EnumFormatEtc) (DWORD dwDirection, IEnumFORMATETC * *ppenumFormatEtc)
+	STDMETHOD	(EnumFormatEtc) (DWORD dwDirection, IEnumFORMATETC** ppenumFormatEtc)
 	{
 		HLDTRACE( _T("CHlinkDataObject::EnumFormatEtc\n") );
 
@@ -239,6 +244,7 @@ private:
 				{ CF_HDROP, 								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },
 				{ MTL_CF_TEXT,								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },		//+++ UNICODE‘Îô(MTL_CF_TEXT)
 				{ ::RegisterClipboardFormat(CFSTR_SHELLURL), NULL,		DVASPECT_CONTENT,	-1,   0 			},
+				{ ::RegisterClipboardFormat(CFSTR_FILENAME), NULL,		DVASPECT_CONTENT,	-1,   0 			},
 			};
 			hr = pEnumFormatEtc->Init(formatetcs, formatetcs + _countof(formatetcs), NULL, AtlFlagCopy);
 			hr = pEnumFormatEtc->QueryInterface(IID_IEnumFORMATETC, (void **) ppenumFormatEtc);
@@ -305,7 +311,7 @@ private:
 			return NULL;
 
 		CString		strText  = m_arrNameAndUrl[0].second;
-		DWORD		size     = ::lstrlen(strText) + 1;
+		DWORD		size     = strText.GetLength() + 1;
 		HGLOBAL		hMem	 = ::GlobalAlloc( GHND, size * sizeof(TCHAR) );
 
 		if (hMem == NULL)
@@ -346,7 +352,7 @@ private:
 		// return ::WritePrivateProfileString(_T("InternetShortcut"), _T("URL"), strUrl, strFileName)
 	}
 
-
+	/// arrFileNames‚É“ü‚Á‚Ä‚éƒtƒ@ƒCƒ‹–¼‚Æ”í‚ç‚È‚¢ƒtƒ@ƒCƒ‹–¼‚ð•Ô‚·
 	CString _UniqueFileName(CSimpleArray<CString> &arrFileNames, const CString &strFileName)
 	{
 		CString strNewName = strFileName;
@@ -354,33 +360,11 @@ private:
 		int 	i		   = 0;
 
 		while (arrFileNames.Find(strNewName) != -1) {
-			strTmp	   = _RemoveExtFromPath(strFileName);
-			strTmp	  += _T('[');
-			strTmp.Append(i++);
-			strTmp	  += _T(']');
-			strTmp	  += _GetExtFromPath(strFileName);
-			strNewName = strTmp;
+			strTmp.Format(_T("%s[%d].%s"), Misc::GetFileBaseNoExt(strFileName), i, Misc::GetFileExt(strFileName));
+			++i;
 		}
 
 		return strNewName;
-	}
-
-
-	CString _RemoveExtFromPath(const CString &strPath)
-	{
-		CString strResult = strPath;
-		int 	nIndex	  = strPath.ReverseFind( _T('.') );
-
-		if (nIndex != -1)
-			strResult = strResult.Left(nIndex);
-
-		return strResult;
-	}
-
-
-	CString _GetExtFromPath(const CString &strPath)
-	{
-		return strPath.Right(4);
 	}
 };
 

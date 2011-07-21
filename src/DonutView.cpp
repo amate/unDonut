@@ -178,6 +178,8 @@ STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** p
 // IDropTarget
 STDMETHODIMP CDonutView::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
+	m_bTempUseDefaultDropTarget = false;
+
 	m_spDropTargetHelper->DragEnter(m_hWnd, pDataObj, (LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
 	m_bExternalDrag = MtlIsDataAvailable(pDataObj, ::RegisterClipboardFormat(CFSTR_FILENAME));
@@ -191,7 +193,11 @@ STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect
 {
 	m_spDropTargetHelper->DragOver((LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->DragOver(grfKeyState, pt, pdwEffect);
-	
+	if (*pdwEffect == DROPEFFECT_COPY) {
+		m_bTempUseDefaultDropTarget = true;
+		return hr;
+	}
+
 	if (m_bUseCustomDropTarget) {
 		if (*pdwEffect == DROPEFFECT_COPY) {
 			m_bTempUseDefaultDropTarget = true;
@@ -216,6 +222,8 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 {
 	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
 	HRESULT hr = m_spDefaultDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
+	if (m_bTempUseDefaultDropTarget)//\\ 
+		return hr;
 
 	if (m_bUseCustomDropTarget && m_bTempUseDefaultDropTarget == false) {
 		hr = S_OK;
