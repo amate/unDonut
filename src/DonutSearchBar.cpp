@@ -780,7 +780,7 @@ BOOL	CDonutSearchBar::Impl::PreTranslateMessage(MSG *pMsg)
 		}
 
 		// return key have to be passed
-		if (vKey == VK_RETURN) {
+		if (pMsg->hwnd == m_editKeyword.m_hWnd && vKey == VK_RETURN) {
 			//\\+return _MTL_TRANSLATE_WANT;
 			OnKeywordKeyDown(VK_RETURN, 0, 0);
 			return _MTL_TRANSLATE_HANDLE;
@@ -1478,6 +1478,8 @@ void CDonutSearchBar::Impl::OnKeywordKeyDown(UINT nChar, UINT nRepCnt, UINT nFla
 					m_cmbKeyword.SetCurSel(0);
 			}
 		}
+	} else if (m_cmbKeyword.GetDroppedState() && nChar == VK_RETURN) {
+		_OnEnterKeyDown(false);	// ドロップリストビューでEnterキーを押した
 	} else {
 		if (nChar == VK_RETURN) {
 			_OnEnterKeyDown(true);	// 検索
