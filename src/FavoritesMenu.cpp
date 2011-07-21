@@ -16,7 +16,7 @@
 /////////////////////////////////////////////////////////////////
 // CExplorerMenu::Impl
 
-class CExplorerMenu::Impl : public CFileNotification
+class CExplorerMenu::Impl
 {
 	friend CExplorerMenu;
 public:
@@ -82,7 +82,6 @@ public:
 		MESSAGE_HANDLER_WND( SC_VSCROLL			, OnVScroll)
 
 		COMMAND_RANGE_HANDLER_EX(m_nMinID, m_nMaxID, OnCommandRange)
-		MESSAGE_HANDLER_EX( WM_FILENOTIFICATION, OnFileNotification )
 	END_MSG_MAP()
 
 
@@ -94,7 +93,6 @@ public:
 	LRESULT OnMeasureItem(UINT /*uMsg*/, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 	LRESULT OnVScroll(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 	void	OnCommandRange(UINT, int nID, HWND hWndCtrl);
-	LRESULT OnFileNotification(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 
 private:
@@ -110,8 +108,6 @@ private:
 	BOOL	_CheckID(int nID);
 
 	// Data members
-	UINT	WM_FILENOTIFICATION;
-
 	int 						 m_nOriginalMenuItemCountExceptInsertPointMenuItem;
 	int 						 m_nOriginalInsertPoint;
 
@@ -165,6 +161,8 @@ private:
 	boost::thread				m_tdCreateMenu;
 	volatile bool				m_bStopCreate;
 	volatile bool				m_bCreating;	// メニューが作成中かどうか
+
+	CFileNotification			m_FileChangeNotify;
 };
 
 
@@ -198,7 +196,6 @@ CExplorerMenu::Impl::Impl(CExplorerMenu* p)
 	lf.SetMenuFont();
 	m_fontMenu		= lf.CreateFontIndirect();
 
-	WM_FILENOTIFICATION = GET_REGISTERED_MESSAGE(Mtl_FileNotification);
 }
 
 // Destructor
@@ -271,7 +268,8 @@ void	CExplorerMenu::Impl::SetTargetWindow(HWND hWnd)
 	m_hWnd = hWnd;
 
 	ATLASSERT(m_strRootDirectoryPath.IsEmpty() == FALSE);
-	SetUpFileNotificationThread(m_hWnd, m_strRootDirectoryPath, true);
+	m_FileChangeNotify.SetFileNotifyFunc(boost::bind(&CExplorerMenu::Impl::RefreshMenu, this));
+	m_FileChangeNotify.SetUpFileNotification(m_strRootDirectoryPath, true);
 }
 
 // メニューを作成更新する
@@ -407,19 +405,6 @@ void	CExplorerMenu::Impl::OnCommandRange(UINT, int nID, HWND hWndCtrl)
 	}
 	//m_mapID.RemoveAll();// delayed clean up.
 }
-
-
-LRESULT	CExplorerMenu::Impl::OnFileNotification(UINT uMsg, WPARAM wParam, LPARAM lParam) 
-{
-	if (m_strRootDirectoryPath == (LPCTSTR)wParam) {	// 同じウィンドウハンドルで実行してる時用
-		RefreshMenu();
-	} else {
-		SetMsgHandled(FALSE);
-	}
-	
-	return 0;
-}
-
 
 
 void	CExplorerMenu::Impl::OnDestroy()

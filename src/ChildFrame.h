@@ -450,6 +450,8 @@ public:
 private:
 
 	void	_SetFavicon(const CString& strURL);
+	void	_SetFocusToHTML();
+	void	_KillFocusToHTML();
 
 	// Constants
 	enum { _nPosFavoriteMenuOfTab = 10 };

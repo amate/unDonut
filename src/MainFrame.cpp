@@ -498,7 +498,7 @@ void CMainFrame::init_splitterWindow()
 {
 	m_hWndClient	= m_wndSplit.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
 	ATLASSERT( ::IsWindow(m_hWndClient) );
-	m_wndSplit.SetSplitterExtendedStyle(0);
+	m_wndSplit.SetSplitterExtendedStyle(SPLIT_GRADIENTBAR/*0*/);
 }
 
 //------------------------------------
@@ -2194,10 +2194,13 @@ LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 	CChildFrame *pActiveChild = GetActiveChildFrame();
 	if( pActiveChild)
 		pActiveChild->SaveSearchWordflg(false); //\\ 検索バーで検索したときアクティブなタブの検索文字列を保存しないようにする
-
+	
+	bool bOldSaveFlag = CSearchBarOption::s_bSaveSearchWord;	// 検索バーの文字列が消える件に一応の対処
+	CSearchBarOption::s_bSaveSearchWord = false;				// 本当はこんなことしちゃダメ
 	HWND hWndNew = OpenUrlWithExProp(pArgs->strUrl, pArgs->dwOpenFlag, pArgs->strIniFile, pArgs->strSection);
 	if (hWndNew == NULL) 
 		hWndNew = MDIGetActive();
+	CSearchBarOption::s_bSaveSearchWord = bOldSaveFlag;
 
 	CChildFrame *pChild  = GetChildFrame(hWndNew);
 	if (pChild) {

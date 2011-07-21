@@ -62,9 +62,7 @@ public:
 // CExplorerToolBarCtrlImpl
 
 template <class T, class TBase = CToolBarCtrl, class TWinTraits = CControlWinTraits>
-class ATL_NO_VTABLE 	CExplorerToolBarCtrlImpl
-	: public CWindowImpl< T, TBase, TWinTraits>
-	, public CFileNotification
+class ATL_NO_VTABLE 	CExplorerToolBarCtrlImpl : public CWindowImpl< T, TBase, TWinTraits>
 {
 public:
 	// Declarations
@@ -96,7 +94,8 @@ private:
 
 	CComPtr<IContextMenu2>					m_spContextMenu2;
 	DWORD									m_dwOptionalStyle;
-
+	CFileNotification	m_FileChangeNotify;
+	UINT	WM_FILECHANGENOTIFY;
 
 public:
 	// Constructor
@@ -147,6 +146,8 @@ private:
 
 	void	_SetSystemImageList();
 
+	void	_FileChangeNotify() { PostMessage(WM_FILECHANGENOTIFY); }
+
 public:
 	// Message map and handlers
 	BEGIN_MSG_MAP(CExplorerToolBarCtrlImpl)
@@ -157,7 +158,7 @@ public:
 
 		MESSAGE_HANDLER(WM_MENURBUTTONUP, OnMenuRButtonUp)
 		MESSAGE_HANDLER(WM_RBUTTONUP	, OnRButtonUp	 )
-		MESSAGE_HANDLER(GET_REGISTERED_MESSAGE(Mtl_FileNotification), OnFileNotification)
+		MESSAGE_HANDLER(WM_FILECHANGENOTIFY, OnFileNotification)
 		CHAIN_MSG_MAP_MEMBER(m_ExpMenu)
 
 		//	REFLECTED_NOTIFY_CODE_HANDLER(TBN_DROPDOWN, OnDropDown)
@@ -291,6 +292,8 @@ CExplorerToolBarCtrlImpl<T, TBase, TWinTraits>::CExplorerToolBarCtrlImpl(int nIn
 	m_nCurrentID = m_nMinID;
 
 	m_idlHtml	 = MtlGetHtmlFileIDList();
+
+	WM_FILECHANGENOTIFY = ::RegisterWindowMessage(_T("DonutFileChangeNotify"));
 }
 
 // Destructor
@@ -702,7 +705,8 @@ LRESULT	CExplorerToolBarCtrlImpl<T, TBase, TWinTraits>::OnCreate(UINT uMsg, WPAR
 	SetButtonStructSize();
 
 	_UpdateButtons();
-	SetUpFileNotificationThread(m_hWnd, m_idlRootFolder.GetPath(), false);
+	m_FileChangeNotify.SetFileNotifyFunc(boost::bind(&thisClass::_FileChangeNotify, this));
+	m_FileChangeNotify.SetUpFileNotification(m_idlRootFolder.GetPath(), false);
 
 	m_ExpMenu.SetExcuteFunction(boost::bind(&thisClass::OnExecuteFromExpMenu, this, _1));
 

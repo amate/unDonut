@@ -1293,8 +1293,9 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 		m_AddressBar.ReplaceIcon(hFavicon);
 		m_AddressBar.SetWindowText( GetLocationURL() );
 	  #endif
-		_SetPageFocus();
-		_RestoreFocus();
+		//_SetPageFocus();
+		_SetFocusToHTML();
+		//_RestoreFocus();
 		if (CSearchBarOption::s_bSaveSearchWord) {
 			pSearchBar->SetSearchStr(m_strSearchWord); //\\ 保存しておいた文字列を検索バーに戻す
 			pSearchBar->ForceSetHilightBtnOn(m_bNowHilight != 0);
@@ -1302,7 +1303,8 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 
 		return;
 	} else if (hwndChildDeact == m_hWnd) { 	// I'm deactivated タブが切り替わった
-		_SaveFocus();
+		//_SaveFocus();
+		_KillFocusToHTML();
 		if( m_bSaveSearchWordflg == true ){	//\\ 現在、検索バーにある文字列を取っておく
 			pSearchBar->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);
 			m_strSearchWord.ReleaseBuffer();
@@ -1838,8 +1840,7 @@ void CChildFrame::OnProgressChange(long progress, long progressMax)
 {
 	m_nProgress    = progress;
 	m_nProgressMax = progressMax;
-	if (progress == 0 && progressMax == 0)
-		PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
+	PostThreadMessage(GetCurrentThreadId(), WM_NULL, 0, 0);
 }
 
 
@@ -3574,6 +3575,51 @@ void	CChildFrame::_SetFavicon(const CString& strURL)
 }
 
 
+/// ページにフォーカスを与える
+void	CChildFrame::_SetFocusToHTML()
+{
+	if (m_spBrowser != NULL) {
+		CComQIPtr<IOleObject>	spOleObj = m_spBrowser;
+		if (spOleObj) {
+			CComPtr<IOleClientSite> spClientSite;
+			spOleObj->GetClientSite(&spClientSite);
+			RECT rcClient;
+			GetClientRect(&rcClient);
+			spOleObj->DoVerb(OLEIVERB_UIACTIVATE, NULL, spClientSite, 0, m_hWnd, &rcClient);
+		}
+	}
+#if 0	// こっちはhtmlにフォーカスを与えるだけ(上と微妙に違う)
+	if(m_spWebBrowser2 != NULL)
+	{
+		CComPtr<IDispatch> spDocument;
+		HRESULT hRet = m_spWebBrowser2->get_Document(&spDocument);
+		if(SUCCEEDED(hRet) && spDocument != NULL)
+		{
+			CComQIPtr<IHTMLDocument2> spHtmlDoc = spDocument;
+			if(spHtmlDoc != NULL)
+			{
+				CComPtr<IHTMLWindow2> spParentWindow;
+				hRet = spHtmlDoc->get_parentWindow(&spParentWindow);
+				if(spParentWindow != NULL)
+					spParentWindow->focus();
+			}
+		}
+	}
+#endif
+}
+
+/// フォーカスを切る
+void	CChildFrame::_KillFocusToHTML()
+{
+	HRESULT	hr = E_FAIL;
+	CComPtr<IOleInPlaceObject> pIOleInPlaceObject;
+	if (m_spBrowser != NULL) {
+		m_spBrowser->QueryInterface(&pIOleInPlaceObject);
+		if(pIOleInPlaceObject) {
+			hr = pIOleInPlaceObject->UIDeactivate(); // IEのUIを無効化
+		}
+	}
+}
 
 
 

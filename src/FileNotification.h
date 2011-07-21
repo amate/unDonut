@@ -1,129 +1,92 @@
 /**
  *	@file FileNotification.h
  *	@brief	ファイルの更新の監視. (リンクバー専用?)
+ *	@note	変更の通知は別スレッドから実行されるので注意
  */
 
 #pragma once
 
-//#include <boost/thread.hpp>
+#include <boost/thread.hpp>
 
 
 class CFileNotification 
 {
 public:
-	// Declarations
-	DECLARE_REGISTERED_MESSAGE( Mtl_FileNotification )
-
-private:
-	struct _ThreadParam {
-		HWND	_hWnd;
-		HANDLE	_hExitEvent;
-		HANDLE	_hNotification;
-		CString	strPath;
-
-		_ThreadParam() : _hWnd(0), _hExitEvent(0), _hNotification(0) {} 	//+++
-	};
-
-public:
 	// Ctor/Dtor
 	CFileNotification()
-		: m_hNotificationThread( NULL )
-		, m_uNotificationThreadID( 0 )
-		, m_ThreadParams()					//+++ 抜けチェック対策.
-	{
-	}
+		: m_hNotification(INVALID_HANDLE_VALUE)
+		, m_hExitEvent(INVALID_HANDLE_VALUE)
+	{	}
 
 
 	~CFileNotification()
 	{
-		if (m_hNotificationThread != NULL)
-			_CleanUpNotification();
+		_CleanUpNotification();
 	}
 
+	void SetFileNotifyFunc(function<void ()> func) { m_funcNotify = func; }
 
-private:
-	// Data members
-	HANDLE			m_hNotificationThread;
-	UINT			m_uNotificationThreadID;
-	_ThreadParam	m_ThreadParams;
-
-public:
-	bool SetUpFileNotificationThread(HWND hWnd, const CString &strDirPath, bool bWatchSubTree = false)
+	bool SetUpFileNotification(const CString& strDirPath, bool bWatchSubTree = false)
 	{
-		/* イベントを作成 */
-		m_ThreadParams._hExitEvent	  = ::CreateEvent(NULL, FALSE, FALSE, NULL);
-		ATLASSERT(m_ThreadParams._hExitEvent != INVALID_HANDLE_VALUE);
+		if (m_hExitEvent != INVALID_HANDLE_VALUE)
+			return false;	// 監視を実行中である
+		ATLASSERT(m_funcNotify);
 
-		/* 通知先のウィンドウハンドルを設定 */
-		ATLASSERT( ::IsWindow(hWnd) );
-		m_ThreadParams._hWnd		  = hWnd;
+		m_hExitEvent = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+		ATLASSERT(m_hExitEvent != INVALID_HANDLE_VALUE);
 
-		CString 		strPath = strDirPath;
-		//MtlRemoveTrailingBackSlash(strPath);
-		m_ThreadParams.strPath = strPath;
-
-		HANDLE	hWait = ::FindFirstChangeNotification(  strPath,
+		m_hNotification = ::FindFirstChangeNotification(  strDirPath,
 														bWatchSubTree,													// flag for monitoring
 														FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME);	// fixed by INUYA, thank you.
-
-		// お気に入りのリンクフォルダが見つからなかったらfalseを返す
-		if (hWait == INVALID_HANDLE_VALUE || hWait == NULL) 				// can't find the Link directory
+		ATLASSERT(m_hNotification != INVALID_HANDLE_VALUE);
+		if (m_hNotification == INVALID_HANDLE_VALUE) 			// can't find the Link directory
 			return false;
 
-		m_ThreadParams._hNotification = hWait;
-		//boost::thread	thread_Notification( boost::bind(&CFileNotification::_FileNotificationThread, this, (LPVOID)&m_ThreadParams) );
-
-		//m_hNotificationThread	= ::CreateThread(NULL, 0, _FileNotificationThread, (LPVOID) &m_ThreadParams, 0, &m_dwNotificationThreadID);
-		//ATLASSERT(m_hNotificationThread != INVALID_HANDLE_VALUE);
-
-		m_hNotificationThread	= (HANDLE)::_beginthreadex(NULL, 0, _FileNotificationThread, (LPVOID) &m_ThreadParams, 0, &m_uNotificationThreadID);
-		ATLASSERT(m_hNotificationThread);
+		m_thread_Notification = boost::thread( boost::bind(&CFileNotification::_threadFileNotification, this) );
 
 		return true;
 	}
 
+	void StopFileNotification() { _CleanUpNotification(); }
+
 private:
 	void _CleanUpNotification()
 	{
-		MTLVERIFY( ::SetEvent(m_ThreadParams._hExitEvent) );
+		if (m_hExitEvent == INVALID_HANDLE_VALUE)
+			return;
 
-		DWORD dwResult = ::WaitForSingleObject(m_hNotificationThread, DONUT_THREADWAIT);
+		MTLVERIFY( ::SetEvent(m_hExitEvent) );
 
-		if (dwResult == WAIT_OBJECT_0) {
-			// wait the thread over
-		}
+		if (!m_thread_Notification.timed_join(boost::posix_time::milliseconds(DONUT_THREADWAIT)))
+			ATLASSERT(FALSE);
 
-		::FindCloseChangeNotification(m_ThreadParams._hNotification);
-		::CloseHandle(m_ThreadParams._hExitEvent);
-		::CloseHandle(m_hNotificationThread);								// fixed by DGSTR, thanks!
+		::CloseHandle(m_hExitEvent);
+		m_hExitEvent = INVALID_HANDLE_VALUE;
+		::FindCloseChangeNotification(m_hNotification);
+		m_hNotification = INVALID_HANDLE_VALUE;
 	}
 
-
-	static UINT WINAPI _FileNotificationThread(LPVOID lpParam)
+	void _threadFileNotification()
 	{
-		_ThreadParam*	pParam	= (_ThreadParam *) lpParam;
-
-		ATLASSERT( ::IsWindow(pParam->_hWnd) );
-
-		HANDLE			handles[] = { pParam->_hExitEvent, pParam->_hNotification };
-
+		HANDLE handles[] = { m_hExitEvent, m_hNotification };
 		for (;;) {
-			DWORD dwResult = ::WaitForMultipleObjects(2, handles, FALSE, INFINITE);
-
-			if (dwResult == WAIT_OBJECT_0) {								// killevent
-				break;														// thread must be ended
-			} else if (dwResult == WAIT_OBJECT_0 + 1) { 					//notification
-				::SendMessage(pParam->_hWnd, GET_REGISTERED_MESSAGE(Mtl_FileNotification), (WPARAM)(LPCTSTR)pParam->strPath, 0);
-				::FindNextChangeNotification(pParam->_hNotification);
-			} else if (dwResult == WAIT_FAILED) {
-				ATLASSERT(FALSE);
-				break;
+			DWORD dwResult = ::WaitForMultipleObjects(_countof(handles), handles, FALSE, INFINITE);
+			if (dwResult == WAIT_OBJECT_0)
+				break;	// スレッドを終了させる
+			else if (dwResult == WAIT_OBJECT_0 + 1) {
+				ATLASSERT(m_funcNotify);
+				m_funcNotify();	// 変更通知
+				::FindNextChangeNotification(m_hNotification);
 			} else {
 				ATLASSERT(FALSE);
 				break;
 			}
 		}
-		_endthreadex(0);
-		return 0;
 	}
+
+	// Data members
+	function<void ()>	m_funcNotify;
+	HANDLE	m_hNotification;
+	HANDLE	m_hExitEvent;
+	boost::thread m_thread_Notification;
 };
