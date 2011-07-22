@@ -23,7 +23,7 @@ using namespace MTL;
 TCHAR	CDLControlOption::s_szUserAgent[MAX_PATH];					// UDT DGSTR
 TCHAR	CDLControlOption::s_szUserAgent_cur[MAX_PATH];				//+++
 bool	CDLControlOption::s_bUseDLManager = false;
-
+int		CDLControlOption::s_nGPURenderStyle = CDLControlOption::GPURENDER_NONE;
 
 DWORD CDLControlOption::s_dwDLControlFlags	   = DLCTL_DEFAULT/*DLCTL_BGSOUNDS | DLCTL_VIDEOS | DLCTL_DLIMAGES*/;	//+++ 0以外の値に変更.
 DWORD CDLControlOption::s_dwExtendedStyleFlags = DVS_EX_FLATVIEW | DVS_EX_MOUSE_GESTURE ;							//+++ 0以外の値に変更.
@@ -58,6 +58,8 @@ void CDLControlOption::GetProfile()
 	// UH
 	pr.QueryValue( s_dwExtendedStyleFlags, _T("ViewStyle") );
 
+	s_nGPURenderStyle = pr.GetValuei(_T("GPURenderStyle"), GPURENDER_NONE);
+
 	pr.ChangeSectionName(_T("DownloadManager"));
 	s_bUseDLManager = pr.GetValue(_T("UseDLManager")) != 0;
 }
@@ -72,6 +74,8 @@ void CDLControlOption::WriteProfile()
 
 	// UH
 	pr.SetValue ( s_dwExtendedStyleFlags, _T("ViewStyle") );
+
+	pr.SetValue( s_nGPURenderStyle, _T("GPURenderStyle") );
 
 	pr.ChangeSectionName(_T("DownloadManager"));
 	pr.SetValue(s_bUseDLManager, _T("UseDLManager"));
@@ -121,6 +125,11 @@ BOOL CDLControlPropertyPage::OnSetActive()
 		// ENDE
 		GetDlgItem(IDC_EDIT_DEFAULT_USER_AGENT).SetWindowText(s_szUserAgent_cur);
 
+		if (Misc::IsGpuRendering() == false) {
+			GetDlgItem(IDC_RADIO_NONE).EnableWindow(FALSE);
+			GetDlgItem(IDC_RADIO_CASH).EnableWindow(FALSE);
+			GetDlgItem(IDC_RADIO_ALWAYS).EnableWindow(FALSE);
+		}
 		DoDataExchange(DDX_LOAD);
 	}
 	return TRUE;

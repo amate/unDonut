@@ -31,6 +31,7 @@ public:
 		CHAIN_MSG_MAP(CAeroDialogImpl<CAboutDlg>)			//+++ Aero.
 	  #endif
 		MESSAGE_HANDLER   ( WM_INITDIALOG, OnInitDialog)
+		MSG_WM_CTLCOLORSTATIC( OnCtlColorStatic )
 		COMMAND_ID_HANDLER( IDOK		 , OnCloseCmd  )
 		COMMAND_ID_HANDLER( IDCANCEL	 , OnCloseCmd  )
 	ALT_MSG_MAP(1)
@@ -39,9 +40,10 @@ public:
 
 
 	//コマンドハンドラ
-	LRESULT 		 OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
-	LRESULT 		 OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT 		 OnLButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
+	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
+	HBRUSH	OnCtlColorStatic(CDCHandle dc, CStatic wndStatic);
+	LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnLButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
 
 	//その他内部関数
 	CString 	GetEnvironInfo();

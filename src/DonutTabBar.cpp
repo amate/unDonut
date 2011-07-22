@@ -2098,7 +2098,9 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 	/* 前のウィンドウの画面を更新しておく */
 	HWND	hWndOld = GetTabHwnd(nOldIndex);
 	if (hWndOld) {
-		::InvalidateRect(hWndOld, NULL, FALSE);
+		CRect rcOldWnd;
+		::GetClientRect(hWndOld, &rcOldWnd);
+		::InvalidateRect(hWndOld, &rcOldWnd, FALSE);
 		::UpdateWindow(hWndOld);
 	}
 #if 1 //+++ メモ:unDonut+
@@ -2108,7 +2110,7 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 	m_wndMDIChildPopuping.MDIActivate(hWnd);
 
 	wndMDI.SetRedraw(TRUE);
-	wndMDI.RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	wndMDI.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 
 #else	//+++ メモ:r13test	//*お試し
 	m_wndMDIChildPopuping.MDIActivate(hWnd);

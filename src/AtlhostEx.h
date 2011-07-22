@@ -40,6 +40,9 @@
 	#error atlhost.h requires Hosting support (_ATL_NO_HOSTING is defined)
 #endif //_ATL_NO_HOSTING
 
+#include "ScriptErrorCommandTargetImpl.h"
+#include "Misc.h"
+#include "option/DLControlOption.h"
 
 #pragma pack(push,_ATL_PACKING)
 namespace ATL
@@ -328,9 +331,6 @@ public:
 /////////////////////////////////////////////////////////////////////////////
 // CAxHostWindow
 // This class is not cocreateable
-
-#include "ScriptErrorCommandTargetImpl.h"
-#include "Misc.h"
 
 class ATL_NO_VTABLE CAxHostWindow :
 		public CComCoClass<CAxHostWindow , &CLSID_NULL>,
@@ -697,6 +697,12 @@ GetClientRect(&rect);
 		bHandled = FALSE;
 		return lRes;
 	}
+	
+	CRect	m_rcPrev;
+	CString m_strUrlPrev;
+	CPoint	m_ptScroll;
+	CBitmap	m_bmpPrev;
+
 	LRESULT OnPaint(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
 		if (m_spViewObject == NULL)
@@ -716,6 +722,23 @@ GetClientRect(&rect);
 			::EndPaint(m_hWnd, &ps);
 			return 1;
 		}
+		auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
+			CPoint ptScroll;
+			CComPtr<IHTMLElement>	spBody;
+			spDoc2->get_body(&spBody);
+			CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+			spBody2->get_scrollTop(&ptScroll.y);
+			spBody2->get_scrollLeft(&ptScroll.x);
+			if (ptScroll == CPoint(0, 0)) {
+				CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
+				CComPtr<IHTMLElement>	spDocumentElement;
+				spDoc3->get_documentElement(&spDocumentElement);
+				CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+				spDocumentElement2->get_scrollTop(&ptScroll.y);
+				spDocumentElement2->get_scrollLeft(&ptScroll.x);
+			}
+			return ptScroll;
+		};
 		if (m_spViewObject && Misc::IsGpuRendering()/* && m_bWindowless*/)
 		{
 			PAINTSTRUCT ps;
@@ -730,6 +753,8 @@ GetClientRect(&rect);
 			HBITMAP hBitmap = CreateCompatibleBitmap(hdc, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
 			if (hBitmap != NULL)
 			{
+				bool bDraw = false;
+
 				HDC hdcCompatible = ::CreateCompatibleDC(hdc);
 				if (hdcCompatible != NULL)
 				{
@@ -742,7 +767,40 @@ GetClientRect(&rect);
 							FillRect(hdcCompatible, &rcClient, hbrBack);
 							DeleteObject(hbrBack);
 
-							m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, NULL/*(RECTL*)&m_rcPos*/, NULL, NULL);
+							if (CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_CASH) {
+								if (m_rcPrev != rcClient) {
+									bDraw = true;
+									m_rcPrev = rcClient;
+								} else {
+									CComQIPtr<IWebBrowser2>	spBrowser = m_spOleObject;
+									if (spBrowser) {
+										CComBSTR strUrl;
+										spBrowser->get_LocationURL(&strUrl);
+										if (strUrl && m_strUrlPrev != strUrl) {
+											bDraw = true;
+											m_strUrlPrev = strUrl;
+										} else {
+											CComPtr<IDispatch>	spDisp;
+											spBrowser->get_Document(&spDisp);
+											CComQIPtr<IHTMLDocument2> spDoc = spDisp;
+											if (spDoc) {
+												CPoint pt = funcGetScrollPosition(spDoc);
+												if (pt != m_ptScroll) {
+													bDraw = true;
+													m_ptScroll = pt;
+												}
+											}
+										}
+									}
+								}
+								if (bDraw == false) {
+									::SelectObject(hdcCompatible, m_bmpPrev);
+								} else {
+									m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, (RECTL*)&m_rcPos, NULL, NULL);
+								}
+							} else if (CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_ALWAYS) {
+								m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, (RECTL*)&m_rcPos, NULL, NULL);
+							}
 
 							::BitBlt(hdc, 0, 0, rcClient.right, rcClient.bottom,  hdcCompatible, 0, 0, SRCCOPY);
 						}
@@ -750,7 +808,12 @@ GetClientRect(&rect);
 					}
 					::DeleteDC(hdcCompatible);
 				}
-				::DeleteObject(hBitmap);
+				if (bDraw) {
+					if (m_bmpPrev.m_hBitmap)
+						m_bmpPrev.DeleteObject();
+					m_bmpPrev = hBitmap;
+				} else
+					::DeleteObject(hBitmap);
 			}
 			::EndPaint(m_hWnd, &ps);
 		}

@@ -73,6 +73,10 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	//テキストボックス宛てのメッセージを処理できるようにする
 	m_wndEdit.SubclassWindow(edit.m_hWnd);
 
+	WTL::CLogFont	lf;
+	lf.SetMenuFont();
+	m_wndEdit.SetFont(lf.CreateFontIndirect());
+
 	if (IsCompositionEnabled()) {
 		MARGINS m = {-1};
 		CRect rcEdit;
@@ -94,6 +98,15 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	return TRUE;
 }
 
+/// エディットコントロールを白背景に
+HBRUSH	CAboutDlg::OnCtlColorStatic(CDCHandle dc, CStatic wndStatic)
+{
+	if (wndStatic.m_hWnd == m_wndEdit.m_hWnd)
+		return (HBRUSH)GetStockObject(WHITE_BRUSH);
+
+	SetMsgHandled(FALSE);
+	return 0;
+}
 
 LRESULT CAboutDlg::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
