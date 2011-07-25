@@ -135,7 +135,6 @@ private:
 
 	CToolTipCtrl			m_ToolTip;
 	bool					m_bTimer;
-
 };
 
 

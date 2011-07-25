@@ -7,8 +7,7 @@
 
 
 // Constructor/Destructor
-CDownloadingListView::CDownloadingListView()
-	: m_bTimer(false)
+CDownloadingListView::CDownloadingListView() : m_bTimer(false)
 { }
 
 CDownloadingListView::~CDownloadingListView()
@@ -360,12 +359,6 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		}
 		Invalidate(FALSE);
 
-	} else if (nIDEvent == 2) {
-		if (m_vecpDLItem.size() == 0) {
-			KillTimer(2);
-			GetTopLevelWindow().SetWindowText(NULL);
-			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
-		}
 	}
 }
 // リストから削除する
@@ -392,21 +385,24 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	m_funcAddDownloadedItem(pItem);
 
 	if (m_vecpDLItem.size() == 0) {
-		KillTimer(1);
+		KillTimer(1);		// 画面更新タイマーを停止
 		m_bTimer = false;
-		if (CDLOptions::bCloseAfterAllDL)	 //全てのDLが終わったので閉じる
-			SetTimer(2, 3 * 1000);	// 延滞して終了させる
+		if (CDLOptions::bCloseAfterAllDL) {	// 全てのDLが終わったので閉じる
+			GetTopLevelWindow().SetWindowText(NULL);
+			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
+		}
 	}
 
-	::SHChangeNotify(SHCNE_CREATE, SHCNF_PATH, (LPCTSTR)pItem->strFilePath, NULL);
+	/* エクスプローラーにファイルの変更通知 */
+	::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(pItem->strFilePath + _T(".incomplete")), static_cast<LPCTSTR>(pItem->strFilePath));
 
 	return 0;
 }
 
 LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	if (m_bTimer == false) {
-		SetTimer(1, 1000);
+	if (m_bTimer == false) {	
+		SetTimer(1, 1000);		// 画面更新タイマーを開始
 		m_bTimer = true;
 	}
 	_AddItemToList((DLItem*)wParam);

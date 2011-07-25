@@ -439,10 +439,12 @@ CString CDonutSearchBar::Impl::GetSearchStr() const
 void	CDonutSearchBar::Impl::SetSearchStr(const CString& strWord)
 {
 	m_bWordLock = false;	// 単語ボタンのロックを解除
+	m_cmbKeyword.SetCurSel(-1);
 	GetEditCtrl().SetWindowText(strWord);
 	_AddToolBarIcon(strWord);
 	_SetCmbKeywordEmptyStr();	//!< 検索バーに文字列がないときエンジン名を表示する
 	m_cmbKeyword.Invalidate();
+	m_cmbKeyword.UpdateWindow();
 }
 
 /// 現在選択されている検索エンジン名取得

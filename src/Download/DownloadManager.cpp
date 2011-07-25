@@ -101,6 +101,9 @@ STDMETHODIMP CDownloadManager::Download(
 	if (CDLControlOption::s_bUseDLManager == false)
 		return E_FAIL;
 
+	if (::GetKeyState(VK_MENU) < 0)
+		return E_FAIL;	// Altを押しているとデフォルトに任せる
+
 	if (CDLOptions::bShowWindowOnDL)
 		OnShowDLManager(0, 0, NULL);
 
@@ -118,6 +121,7 @@ STDMETHODIMP CDownloadManager::Download(
 			}
 		}
 	} else {
+#if 0	//\\ 自前でやっちゃうとまずいっぽい
 		// pbscbPrevがNULLだったときの場合
 		LPOLESTR strUrl;
 		hr = pmk->GetDisplayName(pbc, NULL, &strUrl);
@@ -126,7 +130,7 @@ STDMETHODIMP CDownloadManager::Download(
 			::CoTaskMemFree(strUrl);
 			return S_OK;
 		}
-
+#endif
 	}
 	if (SUCCEEDED(hr)) {
 		CComPtr<IStream>	spStream;

@@ -27,9 +27,8 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_wndSplitter.SetSplitterExtendedStyle(0);
 
 	// DownloadingListView作成
-	m_wndDownloadingListView.Create(m_wndSplitter, rcDefault, 0
-		, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_BORDER
-		| LVS_REPORT | LVS_OWNERDRAWFIXED | LVS_NOCOLUMNHEADER| LVS_SINGLESEL/*| LVS_SHOWSELALWAYS*/);
+	m_wndDownloadingListView.Create(m_wndSplitter, rcDefault, nullptr
+		, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_BORDER);
 
 	m_wndSplitter.SetSplitterPane(SPLIT_PANE_TOP, m_wndDownloadingListView);
 
@@ -145,7 +144,7 @@ LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 {
 	//CAboutDlg dlg;
 	//dlg.DoModal();
-	MessageBox(_T("　　　version 2.3　　　"), _T("DownloadManager"));
+	MessageBox(_T("　　　version 2.4　　　"), _T("DownloadManager"));
 	return 0;
 }
 

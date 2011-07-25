@@ -2095,26 +2095,30 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 	HWND	hWnd = GetTabHwnd(nIndex);
 	ATLASSERT( ::IsWindow(hWnd) );
 
-	/* 前のウィンドウの画面を更新しておく */
-	HWND	hWndOld = GetTabHwnd(nOldIndex);
-	if (hWndOld) {
-		CRect rcOldWnd;
-		::GetClientRect(hWndOld, &rcOldWnd);
-		::InvalidateRect(hWndOld, &rcOldWnd, FALSE);
-		::UpdateWindow(hWndOld);
+	if (Misc::IsGpuRendering()) {
+		/* 前のウィンドウの画面を更新しておく */
+		HWND	hWndOld = GetTabHwnd(nOldIndex);
+		if (hWndOld) {
+			CRect rcOldWnd;
+			::GetClientRect(hWndOld, &rcOldWnd);
+			::InvalidateRect(hWndOld, &rcOldWnd, FALSE);
+			::UpdateWindow(hWndOld);
+		}
+		m_wndMDIChildPopuping.MDIActivate(hWnd);
+	} else {
+	#if 1 //+++ メモ:unDonut+
+		CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
+		wndMDI.SetRedraw(FALSE);
+
+		m_wndMDIChildPopuping.MDIActivate(hWnd);
+
+		wndMDI.SetRedraw(TRUE);
+		wndMDI.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+
+	#else	//+++ メモ:r13test	//*お試し
+		m_wndMDIChildPopuping.MDIActivate(hWnd);
+	#endif
 	}
-#if 1 //+++ メモ:unDonut+
-	CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
-	wndMDI.SetRedraw(FALSE);
-
-	m_wndMDIChildPopuping.MDIActivate(hWnd);
-
-	wndMDI.SetRedraw(TRUE);
-	wndMDI.RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-
-#else	//+++ メモ:r13test	//*お試し
-	m_wndMDIChildPopuping.MDIActivate(hWnd);
-#endif
 }
 
 
