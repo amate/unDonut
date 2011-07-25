@@ -280,7 +280,7 @@ private:
 
 			if ( SUCCEEDED(hr) ) {
 				m_nDraggingCmdID = nCmdID;
-				DROPEFFECT dropEffect = DoDragDrop(spDataObject, DROPEFFECT_MOVE | DROPEFFECT_COPY);
+				DROPEFFECT dropEffect = DoDragDrop(spDataObject, DROPEFFECT_MOVE | DROPEFFECT_COPY | DROPEFFECT_LINK);
 				m_nDraggingCmdID = -1;
 			}
 
