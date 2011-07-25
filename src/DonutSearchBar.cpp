@@ -118,8 +118,12 @@ public:
 	HWND	Create(HWND hWndParent);
 	void	ReloadSkin(int nCmbStyle);
 	void	SetFont(HFONT hFont, BOOL bRedraw = TRUE);
+
+	HWND	GetHWND() const { return m_hWnd; }
+	HWND	GetKeywordComboBox() const { return m_cmbKeyword; }
 	CEdit	GetEditCtrl() const { return m_editKeyword; }
 	HWND	GetHWndToolBar() const { return m_wndToolBar; }
+
 	bool	ForceSetHilightBtnOn(bool bOn);
 	bool	GetHilightSw() const { return m_bHilightSw != 0; }
 	CMenuHandle GetSearchEngineMenuHandle();
@@ -177,6 +181,8 @@ public:
 		
 	ALT_MSG_MAP(2)	// SearchEnginComboBox
 		MSG_WM_KEYDOWN	( OnEngineKeyDown  )
+		MSG_WM_SETFOCUS	( OnEngineSetFocus )
+		MSG_WM_KILLFOCUS( OnEngineKillFocus )
 		MESSAGE_HANDLER_EX( WM_CTLCOLORLISTBOX, OnShowEngineListBox )
 	ALT_MSG_MAP(3)	// KeywordComboBox
 		COMMAND_CODE_HANDLER( EN_CHANGE	, OnEditChanged )
@@ -213,6 +219,8 @@ public:
 
 	// SearchEngineComboBox
 	void	OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnEngineSetFocus(CWindow wndOld);
+	void	OnEngineKillFocus(CWindow wndFocus);
 	LRESULT OnShowEngineListBox(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
@@ -1671,8 +1679,29 @@ LRESULT CDonutSearchBar::Impl::OnEditChanged(WORD wNotifyCode, WORD wID, HWND hW
 void	CDonutSearchBar::Impl::OnEngineKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	m_wndEngine.DefWindowProc();
-	if (nChar == VK_RETURN)
+	if (nChar == VK_RETURN) {
 		_OnEnterKeyDown(true);
+	} else if (nChar == VK_TAB) {
+		m_cmbKeyword.SetFocus();
+	}
+}
+
+/// 検索エンジンコンボボックスではIMEを無効にする
+void	CDonutSearchBar::Impl::OnEngineSetFocus(CWindow wndOld)
+{
+	SetMsgHandled(FALSE);
+
+	::WINNLSEnableIME(m_cmbEngine, FALSE);
+	_SetCmbKeywordEmptyStr();
+}
+
+/// フォーカスが外れたら有効にする
+void	CDonutSearchBar::Impl::OnEngineKillFocus(CWindow wndFocus)
+{
+	SetMsgHandled(FALSE);
+
+	::WINNLSEnableIME(m_cmbEngine, TRUE);
+	_SetCmbKeywordEmptyStr();
 }
 
 /// 検索エンジンリストボックスを隠れないように移動する
@@ -2149,6 +2178,17 @@ void	CDonutSearchBar::ReloadSkin(int nCmbStyle)
 void	CDonutSearchBar::SetFont(HFONT hFont, BOOL bRedraw)
 {
 	pImpl->SetFont(hFont, bRedraw);
+}
+
+
+HWND	CDonutSearchBar::GetHWND() const
+{
+	return pImpl->GetHWND();
+}
+
+HWND	CDonutSearchBar::GetKeywordComboBox() const
+{
+	return pImpl->GetKeywordComboBox();
 }
 
 CEdit	CDonutSearchBar::GetEditCtrl() const

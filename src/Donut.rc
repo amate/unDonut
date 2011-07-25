@@ -2864,7 +2864,7 @@ END
 
 STRINGTABLE
 BEGIN
-    ID_FILE_OPEN_TABLIST    "TabList.xmlを開く"
+    ID_FILE_OPEN_TABLIST    "TabList.xmlを開く\nTabList.xmlを開く"
 END
 
 #endif    // 日本語 (日本) resources

@@ -32,8 +32,12 @@ public:
 	HWND	Create(HWND hWndParent);
 	void	ReloadSkin(int nCmbStyle);
 	void	SetFont(HFONT hFont, BOOL bRedraw = TRUE);
+
+	HWND	GetHWND() const;
+	HWND	GetKeywordComboBox() const;
 	CEdit	GetEditCtrl() const;
 	HWND	GetHWndToolBar() const;
+
 	bool	ForceSetHilightBtnOn(bool bOn);
 	bool	GetHilightSw() const;
 	void	SetSearchStr(const CString& strWord);

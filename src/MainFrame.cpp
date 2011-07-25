@@ -6215,10 +6215,13 @@ void CMainFrame::ApiGetSearchText( /*[out, retval]*/ BSTR *bstrText)
 void CMainFrame::ApiSetSearchText(BSTR bstrText)
 {
 	CString strText = bstrText;
+	m_SearchBar.SetSearchStr(strText);
+#if 0
 	CEdit	edit	= m_SearchBar.GetEditCtrl();
-
+	
 	edit.SendMessage(WM_CHAR, 'P');
 	edit.SetWindowText(strText);
+#endif
 }
 
 
@@ -6567,8 +6570,17 @@ long CMainFrame::ApiDeleteGroupItem(BSTR bstrGroupFile, int nIndex)
 //IAPI4
 HWND CMainFrame::ApiGetHWND(long nType)
 {
-	if (nType == 0)
+	switch (nType) {
+	case 0:
 		return m_hWnd;
+	case 5:
+		return m_SearchBar.GetHWND();
+	case 6:
+		return m_SearchBar.GetKeywordComboBox();
+	case 8:
+		return m_SearchBar.GetHWndToolBar();
+
+	}
 	return NULL;
 }
 
