@@ -2105,6 +2105,7 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 			::UpdateWindow(hWndOld);
 		}
 		m_wndMDIChildPopuping.MDIActivate(hWnd);
+		::RedrawWindow(m_wndMDIChildPopuping.m_hWndMDIClient, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 	} else {
 	#if 1 //+++ ÉÅÉÇ:unDonut+
 		CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);

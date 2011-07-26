@@ -727,6 +727,8 @@ GetClientRect(&rect);
 			CComPtr<IHTMLElement>	spBody;
 			spDoc2->get_body(&spBody);
 			CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+			if (spBody2.p == nullptr)
+				return CPoint();
 			spBody2->get_scrollTop(&ptScroll.y);
 			spBody2->get_scrollLeft(&ptScroll.x);
 			if (ptScroll == CPoint(0, 0)) {
@@ -734,6 +736,8 @@ GetClientRect(&rect);
 				CComPtr<IHTMLElement>	spDocumentElement;
 				spDoc3->get_documentElement(&spDocumentElement);
 				CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+				if (spDocumentElement2.p == nullptr)
+					return CPoint();
 				spDocumentElement2->get_scrollTop(&ptScroll.y);
 				spDocumentElement2->get_scrollLeft(&ptScroll.x);
 			}
