@@ -3590,10 +3590,10 @@ void	CChildFrame::_SetFocusToHTML()
 		}
 	}
 #if 0	// こっちはhtmlにフォーカスを与えるだけ(上と微妙に違う)
-	if(m_spWebBrowser2 != NULL)
+	if (m_spBrowser != NULL)
 	{
 		CComPtr<IDispatch> spDocument;
-		HRESULT hRet = m_spWebBrowser2->get_Document(&spDocument);
+		HRESULT hRet = m_spBrowser->get_Document(&spDocument);
 		if(SUCCEEDED(hRet) && spDocument != NULL)
 		{
 			CComQIPtr<IHTMLDocument2> spHtmlDoc = spDocument;
