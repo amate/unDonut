@@ -2104,7 +2104,13 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 			::InvalidateRect(hWndOld, &rcOldWnd, FALSE);
 			::UpdateWindow(hWndOld);
 		}
+
+		CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
+		wndMDI.SetRedraw(FALSE);
+
 		m_wndMDIChildPopuping.MDIActivate(hWnd);
+
+		wndMDI.SetRedraw(TRUE);
 		::RedrawWindow(m_wndMDIChildPopuping.m_hWndMDIClient, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 	} else {
 	#if 1 //+++ ÉÅÉÇ:unDonut+

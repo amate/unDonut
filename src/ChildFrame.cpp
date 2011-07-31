@@ -1145,7 +1145,7 @@ void CChildFrame::OnSize(UINT nType, CSize size)
 		return;
 	}
 
-	m_view.MoveWindow(0, 0, size.cx, size.cy);	//\\+
+	//m_view.MoveWindow(0, 0, size.cx, size.cy, FALSE);	//\\+
 
 	if ( CMainOption::s_bTabMode && (nType == SIZE_RESTORED || nType == SIZE_MINIMIZED) ) {
 		dcfTRACE( _T(" restored\n") );		
