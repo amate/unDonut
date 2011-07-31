@@ -227,8 +227,10 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 
 			m_hFile = ::CreateFile(m_pDLItem->strFilePath + _T(".incomplete"), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (m_hFile == INVALID_HANDLE_VALUE) {
-				ATLASSERT(FALSE);
-				MessageBox(NULL, _T("ファイルの作成に失敗しました"), NULL, MB_OK | MB_ICONWARNING);
+				//ATLASSERT(FALSE);
+				CString strError = _T("ファイルの作成に失敗しました\n詳細:");
+				strError += GetLastErrorString();
+				MessageBox(NULL, strError, NULL, MB_OK | MB_ICONWARNING);
 				Cancel();
 				return E_ABORT;
 			}

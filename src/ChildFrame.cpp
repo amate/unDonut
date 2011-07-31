@@ -452,10 +452,7 @@ void CChildFrame::OnBeforeNavigate2(
 
 	//\\ mailto:無効 が有効なとき開かない
 	if (m_view.m_ViewOption.m_dwExStyle & DVS_EX_BLOCK_MAILTO) {
-		CString strMailto = strURL.Left(6);
-		strMailto.MakeUpper();
-
-		if (strMailto.Compare( _T("MAILTO") ) == 0) {
+		if (strURL.Left(7).CompareNoCase( _T("mailto:") ) == 0) {
 			bCancel = true;
 			return;
 		}
@@ -480,7 +477,7 @@ void CChildFrame::OnBeforeNavigate2(
 		return;
 	}
 	//\\ Navigate中かつjavescriptから始まるウィンドウはナビゲートしない
-	if (m_bNowNavigate && strURL.Left(15).CompareNoCase(_T("javascript:void")) == 0) {
+	if (m_bNowNavigate && strURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {	// void
 		bCancel = true;
 		return;
 	}

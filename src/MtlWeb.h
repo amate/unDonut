@@ -186,41 +186,6 @@ private:
 		T *pT = static_cast<T *>(this);
 		CComQIPtr<IOleCommandTarget> spCmdTarget = pT->m_spBrowser;
 		spCmdTarget->Exec(&CGID_MSHTML, IDM_COPY, 0, NULL, NULL);
-#if 0	//\\ いつか役に立つ日がくると信じてる
-		CComPtr<IDispatch>				pDisp;
-		CComPtr<IDispatch>				pDisp2;
-		CComQIPtr<IHTMLDocument2>		pIHTMLDocument2;
-		CComPtr<IHTMLSelectionObject>	pIHTMLSelectionObject;
-		CComQIPtr<IHTMLTxtRange>		pIHTMLTxtRange;
-		CComBSTR	bstr;
-
-		T *pT = static_cast<T *>(this);
-		pT->m_spBrowser->get_Document(&pDisp);
-		pIHTMLDocument2 = pDisp;
-		pIHTMLDocument2->get_selection(&pIHTMLSelectionObject);
-		pIHTMLSelectionObject->createRange(&pDisp2);
-		pIHTMLTxtRange = pDisp2;
-		pIHTMLTxtRange->get_text(&bstr);	// 選択範囲のテキストを取得
-
-		if (!bstr)
-			return;	// 空なら帰る
-
-		HGLOBAL hg;
-		TCHAR*	strMem;
-		CString str = bstr;
-		DWORD	dwCount = (DWORD)(str.GetLength() + 1) * sizeof(TCHAR);
-
-		hg = ::GlobalAlloc(GHND | GMEM_SHARE, dwCount);
-		strMem = (TCHAR*)::GlobalLock(hg);
-
-		lstrcpy(strMem, str);
-		::GlobalUnlock(hg);
-
-		::OpenClipboard(NULL);
-		::EmptyClipboard();
-		::SetClipboardData(CF_UNICODETEXT , hg);	// クリップボードにコピー
-		::CloseClipboard();
-#endif
 	}
 
 
@@ -436,15 +401,16 @@ private:
 		CString strTempPath 		   = Misc::GetExeDirectory() + _T("ShortcutTmp\\");
 		CreateDirectory(strTempPath, NULL);
 
-		TCHAR	sztmpFileName[MAX_PATH];
-		sztmpFileName[0]	= 0;	//+++
-		::GetTempFileName(strTempPath , _T("dnr") , 0 , sztmpFileName);
+		CString	tmpFileName;
+		::GetTempFileName(strTempPath , _T("dnr") , 0 , tmpFileName.GetBuffer(MAX_PATH));
+		tmpFileName.ReleaseBuffer();
+		tmpFileName.Replace(_T(".tmp"), _T(".htm"));
 
-		HANDLE	hFile	= ::CreateFile(sztmpFileName ,
+		HANDLE	hFile	= ::CreateFile(tmpFileName ,
 								GENERIC_WRITE,
 								0,
 								0,
-								OPEN_EXISTING,
+								CREATE_ALWAYS,
 								FILE_ATTRIBUTE_TEMPORARY,
 								NULL);
 		DWORD	dwAccBytes = 0;
@@ -465,20 +431,17 @@ private:
 		::CloseHandle(hFile);
 
 		// get editor path
-		Misc::CRegKey rk;
-		LONG	lRet	= rk.Open(	HKEY_LOCAL_MACHINE,
-									_T("SOFTWARE\\Microsoft\\Internet Explorer\\View Source Editor\\Editor Name"),
-									KEY_QUERY_VALUE);
-		TCHAR	szEditorName[MAX_PATH+1] = _T("notepad.exe");
-		DWORD	dwCount 			   = MAX_PATH;	//+++ * sizeof (TCHAR);
-
-		if (lRet == ERROR_SUCCESS) {
-			//+++ 警告対策  lRet = rk.QueryValue(szEditorName, LPCTSTR(NULL), &dwCount);
-			lRet = rk.QueryStringValue(LPCTSTR(NULL), szEditorName, &dwCount);
+		TCHAR	strpath[MAX_PATH];
+		ULONG	pnChars = MAX_PATH;
+		CRegKey	rk;
+		if ( rk.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Internet Explorer\\View Source Editor\\Editor Name"), KEY_READ) == ERROR_SUCCESS ) {
+			if ( rk.QueryStringValue(NULL, strpath, &pnChars) == ERROR_SUCCESS ) {
+				ShellExecute(pT->m_hWnd , _T("open") , strpath , tmpFileName , NULL , SW_SHOWNORMAL);
+				return;
+			}
 		}
 
-		rk.Close();
-		ShellExecute(pT->m_hWnd , _T("open") , szEditorName , sztmpFileName , 0 , SW_SHOW);
+		ShellExecute(pT->m_hWnd , _T("open") , _T("notepad.exe") , tmpFileName , NULL , SW_SHOWNORMAL);
 		// i cannot use CreateProcess for checking Exit code, coz i cannnot check it ,in case using src Handling tool.
 	}
 
