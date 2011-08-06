@@ -1746,30 +1746,60 @@ LRESULT CDonutTabBar::Impl::OnMenuSelect(UINT uMsg, WPARAM wParam, LPARAM lParam
 // 左クリックDOWN : DragDrop開始
 void	CDonutTabBar::Impl::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	if (nFlags & MK_CONTROL) {	// 複数選択
-		int nIndex = _HitTest(point);
-		if (nIndex != -1) {
-			ATLASSERT( _IsValidIndex(nIndex) );
+	int nIndex = _HitTest(point);
+	if (nIndex == -1)
+		return;
 
-			if ( GetCurSel() != nIndex ) {
-				CSimpleArray<int>	arrIndex;
-				GetCurMultiSel(arrIndex, false);
-				if ( arrIndex.Find(nIndex) == -1 ) {	// 複数選択
-					if ( m_vecpItem[nIndex]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
-						InvalidateRect(m_vecpItem[nIndex]->rcItem);
-				} else {								// 複数選択解除
-					if ( m_vecpItem[nIndex]->ModifyState(TISS_MSELECTED, 0) )
-						InvalidateRect(m_vecpItem[nIndex]->rcItem);
+	if (nFlags & MK_CONTROL) {	// 複数選択
+		if ( GetCurSel() != nIndex ) {
+			CSimpleArray<int>	arrIndex;
+			GetCurMultiSel(arrIndex, false);
+			if ( arrIndex.Find(nIndex) == -1 ) {	// 複数選択
+				if ( m_vecpItem[nIndex]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+					InvalidateRect(m_vecpItem[nIndex]->rcItem);
+			} else {								// 複数選択解除
+				if ( m_vecpItem[nIndex]->ModifyState(TISS_MSELECTED, 0) )
+					InvalidateRect(m_vecpItem[nIndex]->rcItem);
+			}
+		} else {
+			_PressItem(nIndex);
+		}
+
+	} else if (nFlags & MK_SHIFT) {
+		CSimpleArray<int>	arrIndex;
+		GetCurMultiSel(arrIndex, false);
+		if (arrIndex.GetSize() == 0) {	// アクティブなタブからnIndexまでを複数選択する
+			if (nIndex < GetCurSel()) {
+				for (int i = nIndex; i < GetCurSel(); ++i) {
+					if ( m_vecpItem[i]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+						InvalidateRect(m_vecpItem[i]->rcItem);
 				}
 			} else {
-				_PressItem(nIndex);
+				for (int i = GetCurSel() + 1; i <= nIndex; ++i) {
+					if ( m_vecpItem[i]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+						InvalidateRect(m_vecpItem[i]->rcItem);
+				}
 			}
-		}	
-		return ;
-	}
-
-	int	nIndex = _HitTest(point);
-	if (nIndex != -1) {
+		} else {
+			int nLastMultiSel = arrIndex[arrIndex.GetSize() - 1];
+			if (nIndex < nLastMultiSel) {							// nIndexが複数選択タブの左側
+				for (int i = nIndex; i < nLastMultiSel; ++i) {
+					if (i != GetCurSel()) {
+						if ( m_vecpItem[i]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+							InvalidateRect(m_vecpItem[i]->rcItem);
+					}
+				}
+			} else {
+				for (int i = arrIndex[0] + 1; i <= nIndex; ++i) {
+					if (i != GetCurSel()) {
+						if ( m_vecpItem[i]->ModifyState(TISS_SELECTED, TISS_MSELECTED) )
+							InvalidateRect(m_vecpItem[i]->rcItem);
+					}
+				}
+			}
+		}
+		
+	} else {
 		//デフォルトではDown時に切り替え release10β4
 		//以前はUp時に切り替えでDownはD&Dの前段階という仕様
 		if (s_bMouseDownSelect) {
@@ -1851,14 +1881,26 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 			ClientToScreen(&point);
 			//CMenuHandle menu	 = m_menuPopup.GetSubMenu(0);
 
-			DWORD	dwFlag = TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON;
-			if (CMenuOption::s_bR_Equal_L) dwFlag |= TPM_RIGHTBUTTON;
+			DWORD	dwFlag = TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD;
+			if (CMenuOption::s_bR_Equal_L) 
+				dwFlag |= TPM_RIGHTBUTTON;
 
 			CMenuHandle menu = CCustomContextMenuOption::s_menuTabItem;
 			CSimpleArray<HMENU>	arrDestroyMenu;
 			CCustomContextMenuOption::AddSubMenu(menu, GetTopLevelWindow(), arrDestroyMenu);
 			// ポップアップメニューを表示する
-			menu.TrackPopupMenu(dwFlag, point.x, point.y, hWndChild);
+			int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, hWndChild);
+			if (nCmd != 0) {
+				if (nCmd == ID_FILE_CLOSE) {	// 場合によっては複数選択されたタブも閉じる
+					CSimpleArray<int>	arr;
+					GetCurMultiSelEx(arr, nIndex);
+					int nCount = arr.GetSize();
+					for (int i = 0; i < nCount; ++i) {
+						::PostMessage(GetTabHwnd(arr[i]), WM_CLOSE, 0, 0);
+					}
+				} else 
+					MtlSendCommand(hWndChild, nCmd);
+			}
 
 			CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
 
@@ -3069,11 +3111,8 @@ void CDonutTabBar::Impl::_DoDragDrop(const CPoint& pt, UINT nFlags, int nIndex)
 		_HotItem(); 								// clean up hot item
 
 		// set up current drag item index list
-		GetCurMultiSel(m_arrCurDragItems);
-		if (m_arrCurDragItems.Find(nIndex) == -1) { // not multi-select draging
-			m_arrCurDragItems.RemoveAll();
-			m_arrCurDragItems.Add(nIndex);
-		}
+		GetCurMultiSelEx(m_arrCurDragItems, nIndex);
+
 		CComPtr<IDataObject> spDataObject;
 		HRESULT hr = OnGetTabCtrlDataObject(m_arrCurDragItems, &spDataObject);
 		if ( SUCCEEDED(hr) ) {

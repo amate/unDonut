@@ -897,6 +897,7 @@
     <ClCompile Include="DonutToolBar.cpp" />
     <ClCompile Include="DonutView.cpp" />
     <ClCompile Include="Download\CustomBindStatusCallBack.cpp" />
+    <ClCompile Include="Download\DLListWindow.cpp" />
     <ClCompile Include="Download\DownloadedListView.cpp" />
     <ClCompile Include="Download\DownloadFrame.cpp" />
     <ClCompile Include="Download\DownloadingListView.cpp" />
@@ -1082,6 +1083,7 @@
     <ClInclude Include="DonutView.h" />
     <ClInclude Include="DonutViewOption.h" />
     <ClInclude Include="Download\CustomBindStatusCallBack.h" />
+    <ClInclude Include="Download\DLListWindow.h" />
     <ClInclude Include="Download\DownloadedListView.h" />
     <ClInclude Include="Download\DownloadFrame.h" />
     <ClInclude Include="Download\DownloadingListView.h" />

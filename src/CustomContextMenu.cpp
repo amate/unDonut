@@ -3,6 +3,8 @@
 #include "stdafx.h"
 #include "CustomContextMenu.h"
 #include "Download/DownloadManager.h"
+#include "MainFrame.h"
+
 
 ///////////////////////////////////////////////////////////////
 // CCustomContextMenu
@@ -249,6 +251,7 @@ HRESULT CCustomContextMenu::ShowContextMenu(DWORD dwID, POINT* pptPosition, IUnk
 		&& iSelection == ID_SAVEDIALOG 
 		&& CDownloadManager::UseDownloadManager()) 
 	{	// DLManager‚É‘—‚é
+		CDownloadManager::GetInstance()->SetReferer(g_pMainWnd->GetActiveChildFrame()->GetLocationURL());
 		CDownloadManager::GetInstance()->DownloadStart(m_strUrl, NULL, NULL, DLO_SHOWWINDOW);
 	} else {
 		// Send selected shortcut menu item command to shell

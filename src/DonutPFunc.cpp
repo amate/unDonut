@@ -953,7 +953,7 @@ int GetFontHeight(HFONT hFont)
 CString	GetLastErrorString(HRESULT hr)
 {
 	if (hr == -1)
-		hr = GetLastError();
+		hr = AtlHresultFromLastError();//GetLastError();
 	LPVOID lpMsgBuf;
 	ATLVERIFY(FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL));
@@ -962,3 +962,43 @@ CString	GetLastErrorString(HRESULT hr)
 	LocalFree(lpMsgBuf);
 	return strError;
 }
+
+
+//------------------------------------------
+/// 一時ファイル置き場のパスを返す
+bool	GetDonutTempPath(CString& strTempPath)
+{
+	::GetTempPath(MAX_PATH, strTempPath.GetBuffer(MAX_PATH));
+	strTempPath.ReleaseBuffer();
+	if (::PathIsDirectory(strTempPath) == FALSE) {
+		CString strError;
+		strError.Format(_T("tempフォルダが存在しません。\nパス:%s"), strTempPath);
+		MessageBox(NULL, strError, NULL, MB_ICONERROR);
+		return false;
+	}
+	strTempPath += _T("unDonut_Temp\\");
+	if (::PathIsDirectory(strTempPath) == FALSE)
+		::CreateDirectory(strTempPath, NULL);
+	return true;
+}
+
+
+
+//------------------------------------------
+/// エクスプローラーを開いてアイテムを選択する
+void	OpenFolderAndSelectItem(const CString& strPath)
+{
+	LPITEMIDLIST	pidlFolder = ::ILCreateFromPath(strPath);
+	if (pidlFolder == nullptr)
+		return ;
+	LPITEMIDLIST	pidlChild = ::ILClone(::ILFindLastID(pidlFolder));
+	::ILRemoveLastID(pidlFolder);
+
+	LPCITEMIDLIST	pidlchildarr[] = { pidlChild };
+	HRESULT hr = ::SHOpenFolderAndSelectItems(pidlFolder, 1, pidlchildarr, 0);
+	::ILFree(pidlFolder);
+	::ILFree(pidlChild);
+}
+
+
+

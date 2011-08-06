@@ -56,6 +56,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_SHOW_DLMANAGER, OnShowDLManager )
 		MESSAGE_HANDLER_EX( WM_GETDEFAULTDLFOLDER, OnDefaultDLFolder )
 		MESSAGE_HANDLER_EX( WM_STARTDOWNLOAD	 , OnStartDownload )
+		MESSAGE_HANDLER_EX( WM_SETREFERER		 , OnSetReferer )
 	END_MSG_MAP()
 
 
@@ -64,6 +65,7 @@ public:
 	void OnShowDLManager(UINT uNotifyCode, int nID, CWindow wndCtl);
 	LRESULT OnDefaultDLFolder(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnStartDownload(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnSetReferer(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:
 	void	_DLStart(CString* pstrURL, IBindStatusCallback* bscb);
@@ -77,6 +79,7 @@ private:
 
 	UINT	WM_GETDEFAULTDLFOLDER;
 	UINT	WM_STARTDOWNLOAD;
+	UINT	WM_SETREFERER;
 
 };
 

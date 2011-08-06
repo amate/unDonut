@@ -1,6 +1,6 @@
 ; unDonutPlugin.def : DLL 用のモジュール パラメータ宣言
 
-LIBRARY      "unDonutPlugin"
+;LIBRARY      "unDonutPlugin"
 ; DESCRIPTION  'unDonutPlugin Windows Dynamic Link Library'
 
 EXPORTS

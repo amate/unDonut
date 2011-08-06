@@ -53,19 +53,20 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	//HWND hWndToolBar = CreateSimpleToolBarCtrl(m_hWnd, IDR_MAINFRAME, FALSE, ATL_SIMPLE_TOOLBAR_PANE_STYLE);
 	CToolBarCtrl	wndToolBar;
-	HWND hWndToolBar = wndToolBar.Create(m_hWnd, rcDefault, 0, ATL_SIMPLE_TOOLBAR_PANE_STYLE);
+	HWND hWndToolBar = wndToolBar.Create(m_hWnd, rcDefault, 0, ATL_SIMPLE_TOOLBAR_PANE_STYLE | TBSTYLE_LIST);
 	wndToolBar.SetButtonStructSize();
+	wndToolBar.SetExtendedStyle(TBSTYLE_EX_MIXEDBUTTONS);
 
+	CBitmap bmpToolBar = AtlLoadBitmap(IDB_DLTOOLBAR);
 	CImageList	imagelist;
-	imagelist.Create(16, 16, ILC_COLOR32 | ILC_MASK, 2, 1);
-	CBitmap bmpOption	= AtlLoadBitmap(IDB_DLOPTIONS);
-	CBitmap bmpHelp		= AtlLoadBitmap(IDB_DLHELP);
-	imagelist.Add(bmpOption);
-	imagelist.Add(bmpHelp);
+	imagelist.Create(16, 16, ILC_COLOR32 | ILC_MASK, 4, 1);
+	imagelist.Add(bmpToolBar, RGB(0, 0, 0));
 	wndToolBar.SetImageList(imagelist);
-	wndToolBar.AddButton(ID_DLOPENOPTION, TBSTYLE_BUTTON, TBSTATE_ENABLED,  0, (LPCTSTR)NULL, 0);
-	wndToolBar.AddButton(ID_DLAPP_ABOUT, TBSTYLE_BUTTON, TBSTATE_ENABLED, 1, (LPCTSTR)NULL, 0);
 
+	wndToolBar.AddButton(ID_DLOPENOPTION , TBSTYLE_BUTTON, TBSTATE_ENABLED , 0, _T("オプション"), 0);
+	wndToolBar.AddButton(ID_SET_DLFOLDER , TBSTYLE_BUTTON, TBSTATE_ENABLED , 1, _T("DL先フォルダを設定する"), 0);
+	wndToolBar.AddButton(ID_OPEN_DLFOLDER, TBSTYLE_BUTTON, TBSTATE_ENABLED , 2, _T("DL先フォルダを開く"), 0);
+	wndToolBar.AddButton(ID_DLAPP_ABOUT	 , TBSTYLE_BUTTON, TBSTATE_ENABLED , 3, _T("About"), 0);
 
 	CreateSimpleReBar(ATL_SIMPLE_REBAR_NOBORDER_STYLE);
 	//AddSimpleReBarBand(hWndCmdBar);
@@ -139,16 +140,6 @@ void	CDownloadFrame::OnDestroy()
 }
 
 //-------------------------------------
-/// バージョン情報を表示
-LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
-{
-	//CAboutDlg dlg;
-	//dlg.DoModal();
-	MessageBox(_T("　　　version 2.4　　　"), _T("DownloadManager"));
-	return 0;
-}
-
-//-------------------------------------
 /// オプション設定画面を開く
 LRESULT CDownloadFrame::OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
@@ -158,6 +149,51 @@ LRESULT CDownloadFrame::OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 	}
 	return 0;
 }
+
+//-------------------------------------
+/// DL先フォルダを設定する
+LRESULT CDownloadFrame::OnSetDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	CString strPath;
+	CShellFileOpenDialog SHdlg(NULL, FOS_PICKFOLDERS);
+	if (SHdlg.IsNull() == false) {
+		if (SHdlg.DoModal(m_hWnd) == IDOK) {
+			SHdlg.GetFilePath(strPath);
+		}
+	} else {
+		CFolderDialog dlg(NULL, _T("フォルダを選択してください。"));
+		if (dlg.DoModal(m_hWnd) == IDOK) {
+			strPath = dlg.GetFolderPath();
+			
+		}
+	}
+	if (strPath.IsEmpty() == FALSE) {
+		MTL::MtlMakeSureTrailingBackSlash(strPath);
+		CDLOptions::strDLFolderPath	   = strPath;
+		CDLOptions::_SavePathHistory(strPath, CDLOptions::s_vecDLFolderHistory);
+		CDLOptions::SaveProfile();
+	}
+	return 0;
+}
+
+//-------------------------------------
+/// DL先フォルダを開く
+LRESULT CDownloadFrame::OnOpenDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	::ShellExecute(NULL, NULL, CDLOptions::strDLFolderPath, NULL, NULL, SW_NORMAL);
+	return 0;
+}
+
+//-------------------------------------
+/// バージョン情報を表示
+LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
+{
+	//CAboutDlg dlg;
+	//dlg.DoModal();
+	MessageBox(_T("　　　version 3.0　　　"), _T("DownloadManager"));
+	return 0;
+}
+
 
 //-------------------------------------
 /// ウィンドウが破棄されないように＆ウィンドウのサイズを控える

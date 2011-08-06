@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <atlmisc.h>
 #include "ItemIDList.h"
 #include "MtlMisc.h"
 #include "Misc.h"
@@ -95,20 +96,24 @@ inline bool MtlIsProtocol(const CString &strPath, const CString &strProSrc)
 }
 
 
-
+/// ファイル作成時の無効な文字を置換する
 inline void MtlValidateFileName(CString &strName)
 {
 	strName.Replace( _T("\\"), _T("-") );
 	strName.Replace( _T("/" ), _T("-") );
 	strName.Replace( _T(":" ), _T("-") );
-	strName.Replace( _T("," ), _T("-") );
-	strName.Replace( _T(";" ), _T("-") );
 	strName.Replace( _T("*" ), _T("-") );
 	strName.Replace( _T("?" ), _T("-") );
 	strName.Replace( _T("\""), _T("-") );
 	strName.Replace( _T("<" ), _T("-") );
 	strName.Replace( _T(">" ), _T("-") );
 	strName.Replace( _T("|" ), _T("-") );
+}
+
+/// 有効なファイル名ならtrueを返す
+inline bool MtlIsValidateFileName(const CString& strFileName)
+{
+	return strFileName.FindOneOf(_T("\\/:*?\"<>|")) == -1;
 }
 
 

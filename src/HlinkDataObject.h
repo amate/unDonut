@@ -18,9 +18,11 @@
 #include <atlmisc.h>
 #include "MtlCom.h"
 #include "MtlDragDrop.h"
+#include "DonutPFunc.h"
 
 namespace MTL {
 
+const UINT	CF_SHELLURLW	= ::RegisterClipboardFormat(CFSTR_INETURLW);
 
 // for debug
 #ifdef _DEBUG
@@ -31,104 +33,21 @@ namespace MTL {
 #endif
 
 
-
-class CHlinkDataObjectBase {
-	static bool 		s_bStaticInit;
-public:
-	static CString *	s_pstrTmpDir;
-
-public:
-	CHlinkDataObjectBase()
-	{
-		// init static variables
-		if (!s_bStaticInit) {
-			::EnterCriticalSection(&_Module.m_csStaticDataInit);
-
-			if (!s_bStaticInit) {
-				s_pstrTmpDir  = new CString;
-
-				// calc tmp directory name
-				*s_pstrTmpDir = Misc::GetExeDirectory() + _T("ShortcutTmp\\");
-				HLDTRACE(_T(" s_pstrTmpDir(%s)\n"), *s_pstrTmpDir);
-
-				// done
-				s_bStaticInit = true;
-			}
-
-			::LeaveCriticalSection(&_Module.m_csStaticDataInit);
-		}
-	}
-
-
-	// call when your application finished
-	static void Term()
-	{
-		_RemoveTmpDirectory();
-
-		if (s_pstrTmpDir)
-			delete s_pstrTmpDir;
-
-		s_pstrTmpDir = NULL;
-	}
-
-
-	static void _CleanCurTmpFiles()
-	{
-		if (s_pstrTmpDir == NULL)	// if no DataObject had been ever created,
-			return;
-
-		MtlForEachFile( *s_pstrTmpDir, _Function_RemoveFile() );
-	}
-
-
-private:
-	struct _Function_RemoveFile {
-		void operator ()(const CString &strFile)
-		{
-			if ( MtlIsExt( strFile, _T(".url") ) )
-				::DeleteFile(strFile);
-		}
-	};
-
-
-	static void _RemoveTmpDirectory()
-	{
-		if (s_pstrTmpDir == NULL)	// if no DataObject had been ever created,
-			return;
-
-		MtlForEachFile( *s_pstrTmpDir, _Function_RemoveFile() );
-		::RemoveDirectory(*s_pstrTmpDir);
-	}
-
-
-public:
-	static void _CreateTmpDirectory()
-	{
-		HLDTRACE( _T("CHlinkDataObjectBase::_CreateTmpDirectory\n") );
-		ATLASSERT(s_pstrTmpDir != NULL);
-		// create directory
-		SECURITY_ATTRIBUTES sa;
-		sa.nLength				= sizeof (SECURITY_ATTRIBUTES);
-		sa.lpSecurityDescriptor = NULL;
-		sa.bInheritHandle		= FALSE;
-		::CreateDirectory(*s_pstrTmpDir, &sa);
-	}
-
-};
-
-
-
-__declspec(selectany) bool 		CHlinkDataObjectBase::s_bStaticInit	= false;
-__declspec(selectany) CString*	CHlinkDataObjectBase::s_pstrTmpDir 	= NULL;
-
+//-------------------------------------------------
+/// pDataObjectがリンクを示すものであればtrueを返す
+inline bool _MtlIsHlinkDataObject(IDataObject *pDataObject)
+{
+	return    MtlIsDataAvailable(pDataObject, CF_HDROP)
+		   || MtlIsDataAvailable(pDataObject, MTL_CF_TEXT)		//+++ UNICODE対策(MTL_CF_TEXT)
+		   || MtlIsDataAvailable(pDataObject, CF_SHELLURLW );
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
-// CHlinkDataObject
+// CHlinkDataObject - リンクデータ用のIDataObject
 
 class ATL_NO_VTABLE CHlinkDataObject
-	: public CHlinkDataObjectBase
-	, public CComCoClass<CHlinkDataObject, &CLSID_NULL>
+	: public CComCoClass<CHlinkDataObject, &CLSID_NULL>
 	, public CComObjectRootEx<CComSingleThreadModel>
 	, public IDataObjectImpl<CHlinkDataObject>
 {
@@ -147,13 +66,9 @@ public:
 	// Data members
 	CComPtr<IDataAdviseHolder>					m_spDataAdviseHolder;	// expected by IDataObjectImpl
 	CSimpleArray< std::pair<CString, CString> > m_arrNameAndUrl;
-private:
-	bool m_bInitialized;
-	CSimpleArray<CString>						m_arrFileNames;
 
 
-public:
-	// Ctor/Dtor
+	// Constructor
 	CHlinkDataObject() : m_bInitialized(false)
 	{
 		HLDTRACE( _T("CHlinkDataObject::CHlinkDataObject\n") );
@@ -177,12 +92,11 @@ public:
 		pmedium->pUnkForRelease = NULL;
 
 		HGLOBAL hGlobal = NULL;
-		static const UINT CF_SHELLURL  = ::RegisterClipboardFormat(CFSTR_SHELLURL);
 		static const UINT CF_FILENAME  = ::RegisterClipboardFormat(CFSTR_FILENAME);
 		const UINT format = pformatetcIn->cfFormat;
 		if (format == MTL_CF_TEXT || format == CF_FILENAME) {
 			hGlobal = _CreateText();
-		} else if (format == CF_SHELLURL) {
+		} else if (format == CF_SHELLURLW) {
 			hGlobal = _CreateURL();
 		} else if (format == CF_HDROP) {
 			// next, create shortcuts
@@ -209,13 +123,12 @@ private:
 
 		if (   pformatetc->cfFormat == CF_HDROP 
 			|| pformatetc->cfFormat == MTL_CF_TEXT	//+++ UNICODE修正(MTL_CF_TEXT)
-		    || pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_SHELLURL) 
+		    || pformatetc->cfFormat == CF_SHELLURLW 
 			|| pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_FILENAME) )
 			return S_OK;
 		else
 			return DATA_E_FORMATETC;
 	}
-
 
 	STDMETHOD	(EnumFormatEtc) (DWORD dwDirection, IEnumFORMATETC** ppenumFormatEtc)
 	{
@@ -230,8 +143,7 @@ private:
 		typedef CComEnum< IEnumFORMATETC, &IID_IEnumFORMATETC, FORMATETC, _Copy<FORMATETC> >  CEnumFormatEtc;
 
 		CComObject<CEnumFormatEtc>* pEnumFormatEtc;
-		HRESULT 					hr = CComObject<CEnumFormatEtc>::CreateInstance(&pEnumFormatEtc);
-
+		HRESULT hr = CComObject<CEnumFormatEtc>::CreateInstance(&pEnumFormatEtc);
 		if ( FAILED(hr) ) {
 			HLDTRACE( _T(" CComObject<CEnumFormatEtc>::CreateInstance failed\n") );
 			return S_FALSE;
@@ -243,7 +155,7 @@ private:
 			FORMATETC formatetcs[] = {
 				{ CF_HDROP, 								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },
 				{ MTL_CF_TEXT,								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },		//+++ UNICODE対策(MTL_CF_TEXT)
-				{ ::RegisterClipboardFormat(CFSTR_SHELLURL), NULL,		DVASPECT_CONTENT,	-1,   0 			},
+				{ CF_SHELLURLW,								 NULL,		DVASPECT_CONTENT,	-1,   0 			},
 				{ ::RegisterClipboardFormat(CFSTR_FILENAME), NULL,		DVASPECT_CONTENT,	-1,   0 			},
 			};
 			hr = pEnumFormatEtc->Init(formatetcs, formatetcs + _countof(formatetcs), NULL, AtlFlagCopy);
@@ -256,18 +168,26 @@ private:
 	}
 
 	// Implementation
+
+	/// ショートカットファイルを作成する
 	void _InitFileNamesArrayForHDrop()
 	{	// on demmand
 		if (m_bInitialized)
 			return;
 
 		ATLASSERT(m_arrFileNames.GetSize() == 0);
-		_CreateTmpDirectory();		// on demmand
-
-		// first, clear prev tmp files now
-		_CleanCurTmpFiles();
-
 		HLDTRACE( _T("CHlinkDataObject::_InitFileNamesArrayForHDrop\n") );
+
+		CString strTempPath;
+		if (GetDonutTempPath(strTempPath) == false) {
+			MessageBox(NULL, _T("一時フォルダの作成に失敗"), NULL, MB_ICONERROR);
+			return ;
+		}
+
+		MtlForEachFile(strTempPath, [](const CString& strFile) {
+			if (MtlIsExt(strFile, _T(".url")))
+				::DeleteFile(strFile);
+		});
 
 		CSimpleArray<CString> arrTmpFiles;
 
@@ -278,7 +198,7 @@ private:
 			HLDTRACE(_T(" (%s, %s)\n"), strName, strUrl);
 
 			if ( !strName.IsEmpty() ) { 		// not a local file
-				strName = _CompactFileName( *s_pstrTmpDir, strName, _T(".url") );
+				strName = _CompactFileName(strTempPath, strName, _T(".url"));
 				strName = _UniqueFileName(arrTmpFiles, strName);
 
 				if ( _CreateInternetShortcutFile(strName, strUrl) )
@@ -304,16 +224,14 @@ private:
 		return strDir + strFile.Left(nRest) + strExt;
 	}
 
-
 	HGLOBAL _CreateText()
 	{
 		if (m_arrNameAndUrl.GetSize() == 0)
 			return NULL;
 
-		CString		strText  = m_arrNameAndUrl[0].second;
-		DWORD		size     = strText.GetLength() + 1;
-		HGLOBAL		hMem	 = ::GlobalAlloc( GHND, size * sizeof(TCHAR) );
-
+		const CString&	strText  = m_arrNameAndUrl[0].second;
+		DWORD	size = (strText.GetLength() + 1) * sizeof(TCHAR);
+		HGLOBAL	hMem = ::GlobalAlloc( GHND, size );
 		if (hMem == NULL)
 			return NULL;
 
@@ -328,13 +246,25 @@ private:
 	{
 		if (m_arrNameAndUrl.GetSize() == 0)
 			return NULL;
-		DWORD	dwSize	= m_arrNameAndUrl[0].second.GetLength() + 1;
-		HGLOBAL hMem	= ::GlobalAlloc(GHND, dwSize);
+		
+		DWORD	dwSize = 0;
+		int nCount = m_arrNameAndUrl.GetSize();
+		for (int i = 0; i < nCount; ++i) {
+			dwSize += (m_arrNameAndUrl[i].second.GetLength() + 1) * sizeof(WCHAR);
+		}
+		dwSize += sizeof(WCHAR);
+
+		HGLOBAL hMem = ::GlobalAlloc(GHND, dwSize);
 		if (hMem == NULL)
 			return NULL;
 
-		LPSTR	lpszDest = static_cast<LPSTR>(::GlobalLock(hMem));
-		::lstrcpynA(lpszDest, CT2CA(m_arrNameAndUrl[0].second), dwSize);
+		LPWSTR	lpszDest = (LPWSTR)::GlobalLock(hMem);
+		for (int i = 0; i < nCount; ++i) {
+			const CString& strUrl = m_arrNameAndUrl[i].second;
+			::wcscpy(lpszDest, strUrl);
+			lpszDest += strUrl.GetLength() + 1;
+		}
+		*lpszDest = L'\0';
 		::GlobalUnlock(hMem);
 		return hMem;
 
@@ -366,59 +296,12 @@ private:
 
 		return strNewName;
 	}
+
+
+	// Data members
+	bool					m_bInitialized;
+	CSimpleArray<CString>	m_arrFileNames;
 };
-
-
-
-// service
-class CHlinkDropTargetHelper {
-	bool m_bOnlyLink;
-	bool m_bDragAccept;
-
-public:
-	CHlinkDropTargetHelper() : m_bOnlyLink(false), m_bDragAccept(true) { }
-
-private:
-	// Overrides
-	DROPEFFECT OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
-	{
-		if (  MtlIsDataAvailable(pDataObject, CF_HDROP)
-		   || MtlIsDataAvailable(pDataObject, MTL_CF_TEXT) )		//+++ UNICODE対策(MTL_CF_TEXT)
-		{
-			return _MtlStandardDropEffect(dwKeyState);
-
-		} else if ( MtlIsDataAvailable( pDataObject, ::RegisterClipboardFormat(CFSTR_SHELLURL) ) ) {
-			m_bOnlyLink = true;
-			return DROPEFFECT_LINK;
-
-		} else {
-			m_bDragAccept = false;
-		}
-
-		return DROPEFFECT_NONE;
-	}
-
-
-	DROPEFFECT OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
-	{
-		if (!m_bDragAccept)
-			return DROPEFFECT_NONE;
-
-		if (m_bOnlyLink)
-			return DROPEFFECT_LINK;
-		else
-			return _MtlStandardDropEffect(dwKeyState) | DROPEFFECT_COPY;
-	}
-};
-
-
-inline bool _MtlIsHlinkDataObject(IDataObject *pDataObject)
-{
-	return MtlIsDataAvailable(pDataObject, CF_HDROP)
-		   || MtlIsDataAvailable(pDataObject, MTL_CF_TEXT)		//+++ UNICODE対策(MTL_CF_TEXT)
-		   || MtlIsDataAvailable( pDataObject, ::RegisterClipboardFormat(CFSTR_SHELLURL) );
-}
-
 
 
 ////////////////////////////////////////////////////////////////////////////

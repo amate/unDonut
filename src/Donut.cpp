@@ -208,10 +208,7 @@ void _PrivateTerm()
 	CThemeDLLLoader::UnLoadThemeDLL();
   #endif
 	CExMenuManager::Terminate();
-
-	// don't forget
-	CHlinkDataObject::Term();
-
+	
 	ATLTRACE(_T("ê›íËÇÃï€ë∂äÆóπ!\n"));
 #if 0
 	CString strPath = Misc::GetExeDirectory() + _T("lock");

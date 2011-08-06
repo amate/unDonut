@@ -131,5 +131,15 @@ int 	ForceMessageLoop(HWND hWnd = NULL);
 CString	GetLastErrorString(HRESULT hr = -1);
 
 
+//------------------------------------------
+/// 一時ファイル置き場のパスを返す
+bool	GetDonutTempPath(CString& strTempPath);
+
+//------------------------------------------
+/// エクスプローラーを開いてアイテムを選択する
+void	OpenFolderAndSelectItem(const CString& strPath);
+
+
+
 #endif	// __DONUTPFUNC_H__
 

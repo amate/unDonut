@@ -4,10 +4,79 @@
 #include "DownloadingListView.h"
 #include "DownloadedListView.h"
 #include "DownloadOptionDialog.h"
+#include "../MtlWin.h"
+#include "../MtlFile.h"
+#include "../MtlCom.h"
+#include "../HlinkDataObject.h"
+#include "../DonutPFunc.h"
+#include "DLListWindow.h"
+
+namespace {
+
+/////////////////////////////////////////////////////////////////
+/// ファイル名変更ダイアログ
+
+class CRenameDialog : public CDialogImpl<CRenameDialog>
+{
+public:
+	enum { IDD = IDD_RENAMEDIALOG };
+	
+	// Constructor
+	CRenameDialog(LPCTSTR strOldFileName, LPCTSTR strFilePath) : m_strOldFileName(strOldFileName)
+	{
+		m_strFolder = Misc::GetDirName(CString(strFilePath)) + _T("\\");
+	}
+	
+	CString	GetNewFileName() const { return m_strNewFileName; }
+	CString GetNewFilePath() const { return m_strFolder + m_strNewFileName; }
+
+	BEGIN_MSG_MAP( CRenameDialog )
+		MSG_WM_INITDIALOG( OnInitDialog )
+		COMMAND_ID_HANDLER_EX( IDOK, OnOk)
+		COMMAND_ID_HANDLER_EX( IDCANCEL, OnCancel )
+	END_MSG_MAP()
+
+	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+	{
+		GetDlgItem(IDC_EDIT).SetWindowText(m_strOldFileName);
+		return 0;
+	}
+
+	void OnOk(UINT uNotifyCode, int nID, CWindow wndCtl)
+	{
+		m_strNewFileName = MtlGetWindowText(GetDlgItem(IDC_EDIT));
+		if (m_strNewFileName.IsEmpty()) {
+			MessageBox(_T("ファイル名を入力してください。"), NULL, MB_ICONERROR);
+			return ;
+		}
+		if (MtlIsValidateFileName(m_strNewFileName) == false) {
+			MessageBox(_T("有効なファイル名ではありません。\n「\\/:*?\"<>|」はファイル名に含めることはできません。"), NULL, MB_ICONERROR);
+			return ;
+		}
+		if (::PathFileExists(m_strFolder + m_strNewFileName)) {
+			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION) == IDCANCEL)
+				return ;
+		}
+		EndDialog(nID);
+	}
+
+	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
+	{
+		EndDialog(nID);
+	}
+
+
+private:
+	CString	m_strOldFileName;
+	CString m_strFolder;
+	CString m_strNewFileName;
+};
+
+};	// namespace
 
 
 // Constructor/Destructor
-CDownloadingListView::CDownloadingListView() : m_bTimer(false)
+CDownloadingListView::CDownloadingListView() : m_bTimer(false), m_pItemPopup(nullptr)
 { }
 
 CDownloadingListView::~CDownloadingListView()
@@ -91,7 +160,7 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		memDC.DrawText((*it)->strText, -1, rcDiscribe, DT_SINGLELINE);
 
 		// 停止アイコン描画
-		CPoint ptStop(rcClient.right - 23, rcItem.top + cyProgressMargin - 2);
+		CPoint ptStop(rcClient.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin);
 		m_ImgStop.Draw(memDC, 0, ptStop, ILD_NORMAL);
 
 		// 下にラインを引く
@@ -107,56 +176,61 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 	dc.SelectFont(hOldFont);
 }
 
-// リストビューに追加
-void	CDownloadingListView::_AddItemToList(DLItem* pItem)
+
+DROPEFFECT CDownloadingListView::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
 {
-	// 先頭にアイテムを追加
-	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(pItem));
-
-	// アイコンを追加
-	_AddIcon(pItem);
-
-	_RefreshList();
+	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
+		return DROPEFFECT_LINK;
+	return DROPEFFECT_NONE;
 }
 
-// アイテムの左端に置くアイコンを読み込む
-void CDownloadingListView::_AddIcon(DLItem *pItem)
-{
-	CString strExt = Misc::GetFileExt(pItem->strFileName);
-	if (strExt.IsEmpty()) {
-		pItem->nImgIndex = 0;
-	} else {
-		auto it = m_mapImgIndex.find(strExt);
-		if (it != m_mapImgIndex.end()) {	// 見つかった
-			pItem->nImgIndex = it->second;
-		} else {							// 見つからなかった
-			SHFILEINFO sfinfo;
-			CString strFind;
-			strFind.Format(_T("*.%s"), strExt);
-			// アイコンを取得
-			::SHGetFileInfo(strFind, FILE_ATTRIBUTE_NORMAL, &sfinfo, sizeof(SHFILEINFO)
-				, SHGFI_ICON | SHGFI_USEFILEATTRIBUTES);
-			ATLASSERT(sfinfo.hIcon);
-			// イメージリストにアイコンを追加
-			int nImgIndex = m_ImageList.AddIcon(sfinfo.hIcon);
-			// 拡張子とイメージリストのインデックスを関連付ける
-			m_mapImgIndex.insert(std::pair<CString, int>(strExt, nImgIndex));
-			::DestroyIcon(sfinfo.hIcon);
 
-			pItem->nImgIndex = nImgIndex;
+DROPEFFECT CDownloadingListView::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
+{
+	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
+		return DROPEFFECT_LINK;
+	return DROPEFFECT_NONE;
+}
+
+
+DROPEFFECT CDownloadingListView::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point)
+{
+	if (dropEffect != DROPEFFECT_LINK) 
+		return DROPEFFECT_NONE;
+
+	vector<CString>	vecUrl;
+	FORMATETC formatetc = { CF_SHELLURLW, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	STGMEDIUM stgmedium = { 0 };
+	HRESULT hr = pDataObject->GetData(&formatetc, &stgmedium);
+	if ( SUCCEEDED(hr) ) {
+		if (stgmedium.hGlobal != NULL) {
+			HGLOBAL hText = stgmedium.hGlobal;
+			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
+			while (*strList) {
+				CString strUrl = strList;
+				if (strUrl.Left(4).CompareNoCase(_T("http")) != 0)
+					break;
+				vecUrl.push_back(strUrl);
+				strList += strUrl.GetLength() + 1;				
+			}
+			::GlobalUnlock(hText);
 		}
+		::ReleaseStgMedium(&stgmedium);
 	}
+	if (vecUrl.empty() == false) {
+		CDLListWindow* pwndDL = new CDLListWindow;
+		pwndDL->Create(m_hWnd);
+		pwndDL->SetDLList(vecUrl);
+	}
+	return DROPEFFECT_LINK;
 }
 
 
 
-/////////////////////////////////////////////////////////////////////////////
 // Message map
 
 int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-    LRESULT lRet = DefWindowProc();
-
 	// 水平スクロールバーを削除
 	ModifyStyle(WS_HSCROLL, 0);
 
@@ -201,63 +275,93 @@ int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_ToolTip.AddTool(ti);
 	m_ToolTip.Activate(TRUE);
 	m_ToolTip.SetDelayTime(TTDT_AUTOPOP, 30 * 1000);
-	m_ToolTip.SetMaxTipWidth(500);
+	m_ToolTip.SetMaxTipWidth(600);
 
 	OpenThemeData(L"PROGRESS");
 
-    return lRet;
+	RegisterDragDrop();
+
+    return 0;
 }
 
 void CDownloadingListView::OnDestroy()
 {
-	KillTimer(1);
+	if (m_bTimer)
+		KillTimer(1);
+
+	RevokeDragDrop();
 }
-// サイズに合わせてプログレスバーの大きさを変更する
+
+
 void CDownloadingListView::OnSize(UINT nType, CSize size)
 {
 	SetMsgHandled(FALSE);
 
-	DefWindowProc();
-
 	if (size != CSize(0, 0)) {
-		CSize	sizeWnd;
-		GetScrollSize(sizeWnd);
-		sizeWnd.cx = size.cx == 0 ? 1 : size.cx;
-
-		SetScrollSize(sizeWnd, FALSE, false);
+		std::for_each(m_vecpDLItem.begin(), m_vecpDLItem.end(), [size](std::unique_ptr<DLItem>&	pItem) {
+			pItem->rcItem.right = size.cx;
+		});
+		CSize	scrollsize;
+		GetScrollSize(scrollsize);
+		scrollsize.cx	= size.cx ? size.cx : 1;
+		m_sizeClient.cx = scrollsize.cx;
+		SetScrollSize(scrollsize, FALSE, false);
 		SetScrollLine(10, 10);
 	}
-	
 }
 
 void CDownloadingListView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	CPoint ptOffset;
-	GetScrollOffset(ptOffset);
-
 	CRect rcClient;
 	GetClientRect(rcClient);
 
-	CPoint pt = point;
-	pt.y += ptOffset.y;
+	int nIndex = _HitTest(point);
 
-	int i = 0;
-	for (auto it = m_vecpDLItem.cbegin(); it != m_vecpDLItem.cend(); ++it, ++i) {
-		DLItem& item = *(*it);
-		if (item.dwState & DLITEMSTATE_SELECTED) {
+	int nCount = (int)m_vecpDLItem.size();
+	for (int i = 0; i < nCount; ++i) {
+		DLItem& item = *m_vecpDLItem[i];
+		if (item.dwState & DLITEMSTATE_SELECTED) 
 			item.dwState &= ~DLITEMSTATE_SELECTED;
-		}
-		if (item.rcItem.PtInRect(pt)) {
-			CRect rcStop(CPoint(rcClient.right - 23, (ItemHeight + UnderLineHeight) * i + cyProgressMargin - 2), CSize(16, 16));
-			if (rcStop.PtInRect(pt)) {
-				item.bAbort = true;	// 停止する
+		if (i == nIndex) {
+			CRect rcItem = _GetItemClientRect(i);
+			CRect rcStop(CPoint(rcClient.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin), CSize(cxStop, cyStop));
+			if (rcStop.PtInRect(point)) {
+				item.bAbort = true;	// DLを停止する
+				TRACEIN(_T("DLをキャンセルしました！: %s"), m_vecpDLItem[i]->strFileName);
 			} else {
 				item.dwState |= DLITEMSTATE_SELECTED;
 			}
 		}
 	}
-
 	Invalidate(FALSE);
+}
+
+//------------------------------------
+/// 右クリックメニューを表示する
+void CDownloadingListView::OnRButtonUp(UINT nFlags, CPoint point)
+{
+	int nIndex = _HitTest(point);
+	if (nIndex == -1)
+		return;
+
+	int nCount = (int)m_vecpDLItem.size();
+	for (int i = 0; i < nCount; ++i) {
+		DLItem& item = *m_vecpDLItem[i];
+		if (item.dwState & DLITEMSTATE_SELECTED) 
+			item.dwState &= ~DLITEMSTATE_SELECTED;
+		if (i == nIndex) 
+			item.dwState |= DLITEMSTATE_SELECTED;
+	}
+	Invalidate(FALSE);
+
+	CMenu	menu;
+	menu.LoadMenu(IDM_DOWNLOADINGLISTVIEW);
+	CMenu	submenu = menu.GetSubMenu(0);
+
+	m_pItemPopup = m_vecpDLItem[nIndex].get();
+	CPoint pt;
+	::GetCursorPos(&pt);
+	submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
 }
 
 
@@ -341,8 +445,10 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 				}
 			}
 		}
+		/* タイトルバーに情報を表示する */
 		if (nMaxTotalSecondTime > 0) {
-			CString strTitle = _T("残り ");
+			CString strTitle;
+			strTitle.Format(_T("DLアイテム数 %d - 全ファイルのDL終了まで残り "), (int)m_vecpDLItem.size());
 			int nhourTime	= nMaxTotalSecondTime / (60 * 60);									// 時間
 			int nMinTime	= (nMaxTotalSecondTime - (nhourTime * (60 * 60))) / 60;			// 分
 			int nSecondTime = nMaxTotalSecondTime - (nhourTime * (60 * 60)) - (nMinTime * 60);	// 秒
@@ -355,13 +461,15 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			strTitle.Append(nSecondTime) += _T(" 秒");
 			GetTopLevelWindow().SetWindowText(strTitle);
 		} else {
-			GetTopLevelWindow().SetWindowText(NULL);
+			GetTopLevelWindow().SetWindowText(_T("\0"));
 		}
 		Invalidate(FALSE);
 
 	}
 }
-// リストから削除する
+
+//----------------------------------------------------
+/// リストから削除する
 LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	DLItem* pItem = (DLItem*)wParam;
@@ -371,10 +479,11 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	//pbscb->Release();
 	
 	// vectorから削除する
-	for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
-		if ((*it).get() == pItem) {
-			(*it).release();
-			m_vecpDLItem.erase(it);
+	int nCount = (int)m_vecpDLItem.size();
+	for (int i = 0; i < nCount; ++i) {
+		if (m_vecpDLItem[i].get() == pItem) {
+			m_vecpDLItem[i].release();
+			m_vecpDLItem.erase(m_vecpDLItem.begin() + i);
 			break;
 		}
 	}
@@ -384,17 +493,15 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	// DLedViewに追加
 	m_funcAddDownloadedItem(pItem);
 
+	/* 全ファイルのDL終了 */
 	if (m_vecpDLItem.size() == 0) {
 		KillTimer(1);		// 画面更新タイマーを停止
 		m_bTimer = false;
-		if (CDLOptions::bCloseAfterAllDL) {	// 全てのDLが終わったので閉じる
-			GetTopLevelWindow().SetWindowText(NULL);
-			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);
+		GetTopLevelWindow().SetWindowText(_T("\0"));
+		if (CDLOptions::bCloseAfterAllDL) {	
+			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);	// 全てのDLが終わったので閉じる
 		}
 	}
-
-	/* エクスプローラーにファイルの変更通知 */
-	::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(pItem->strFilePath + _T(".incomplete")), static_cast<LPCTSTR>(pItem->strFilePath));
 
 	return 0;
 }
@@ -412,7 +519,6 @@ LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lPara
 LRESULT CDownloadingListView::OnTooltipGetDispInfo(LPNMHDR pnmh)
 {
     LPNMTTDISPINFO pntdi = (LPNMTTDISPINFO)pnmh;
-
     if (pntdi->uFlags & TTF_IDISHWND) {
 		POINT pt;
 		GetCursorPos(&pt);
@@ -440,19 +546,104 @@ void CDownloadingListView::OnMouseMove(UINT nFlags, CPoint point)
 	}
 }
 
+//---------------------------------------------
+/// DL中のアイテムの名前を変更する
+void	CDownloadingListView::OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (m_pItemPopup == nullptr)
+		return;
+
+	CRenameDialog	dlg(m_pItemPopup->strFileName, m_pItemPopup->strFilePath);
+	if (dlg.DoModal(m_hWnd) != IDOK)
+		return;
+
+	CString strOldFilePath = m_pItemPopup->strFilePath;
+	m_pItemPopup->strFileName = dlg.GetNewFileName();
+	m_pItemPopup->strFilePath = dlg.GetNewFilePath();
+
+	int nCount = (int)m_vecpDLItem.size();
+	for (int i = 0; i < nCount; ++i) {
+		if (m_pItemPopup == m_vecpDLItem[i].get()) {	// まだDL中
+			InvalidateRect(_GetItemClientRect(i), FALSE);
+			m_pItemPopup = nullptr;
+			return ;
+		}
+	}
+	
+	// DLは終わっていたので普通にリネーム
+	::MoveFileEx(strOldFilePath, m_pItemPopup->strFilePath, MOVEFILE_REPLACE_EXISTING);
+
+	/* エクスプローラーにファイルの変更通知 */
+	::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(strOldFilePath), static_cast<LPCTSTR>(m_pItemPopup->strFilePath));
+	
+	m_pItemPopup = nullptr;
+}
+
+//---------------------------------------------------------
+/// 保存先のフォルダを開く
+void	CDownloadingListView::OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (m_pItemPopup == nullptr)
+		return ;
+
+	OpenFolderAndSelectItem(m_pItemPopup->strIncompleteFilePath);
+
+	m_pItemPopup = nullptr;
+}
 
 
-// リストを更新する
+//----------------------------------------------
+/// リストビューに追加
+void	CDownloadingListView::_AddItemToList(DLItem* pItem)
+{
+	// 先頭にアイテムを追加
+	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(pItem));
+
+	// アイコンを追加
+	_AddIcon(pItem);
+
+	_RefreshList();
+}
+
+//----------------------------------------------
+/// アイテムの左端に置くアイコンを読み込む
+void CDownloadingListView::_AddIcon(DLItem *pItem)
+{
+	CString strExt = Misc::GetFileExt(pItem->strFileName);
+	if (strExt.IsEmpty()) {
+		pItem->nImgIndex = 0;
+	} else {
+		auto it = m_mapImgIndex.find(strExt);
+		if (it != m_mapImgIndex.end()) {	// 見つかった
+			pItem->nImgIndex = it->second;
+		} else {							// 見つからなかった
+			SHFILEINFO sfinfo;
+			CString strFind;
+			strFind.Format(_T("*.%s"), strExt);
+			// アイコンを取得
+			::SHGetFileInfo(strFind, FILE_ATTRIBUTE_NORMAL, &sfinfo, sizeof(SHFILEINFO)
+				, SHGFI_ICON | SHGFI_USEFILEATTRIBUTES);
+			ATLASSERT(sfinfo.hIcon);
+			// イメージリストにアイコンを追加
+			int nImgIndex = m_ImageList.AddIcon(sfinfo.hIcon);
+			// 拡張子とイメージリストのインデックスを関連付ける
+			m_mapImgIndex.insert(std::pair<CString, int>(strExt, nImgIndex));
+			::DestroyIcon(sfinfo.hIcon);
+
+			pItem->nImgIndex = nImgIndex;
+		}
+	}
+}
+
+
+//-----------------------------------------------
+/// リストを更新する
 void	CDownloadingListView::_RefreshList()
 {
 	CRect rcClient;
 	GetClientRect(rcClient);
 
-	CPoint	ptOffset;
-	GetScrollOffset(ptOffset);
-
 	int cySize = 0;
-	std::size_t	size = m_vecpDLItem.size();
 	for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
 		// アイテムの位置を設定
 		(*it)->rcItem.top = cySize;
@@ -460,29 +651,44 @@ void	CDownloadingListView::_RefreshList()
 		(*it)->rcItem.bottom = cySize;
 		cySize += UnderLineHeight;
 
-		(*it)->rcItem.right = ItemMinWidth;
+		(*it)->rcItem.right = rcClient.right;
 	}
 
-	CSize	sizeWnd;
-	GetScrollSize(sizeWnd);
-	sizeWnd.cy = (cySize == 0) ? 1 : cySize;
-	SetScrollSize(sizeWnd, FALSE, false);
+	CSize	size;
+	size.cx	= rcClient.right;
+	size.cy	= m_vecpDLItem.size() ? cySize : 1;
+	SetScrollSize(size, TRUE, false);
 	SetScrollLine(10, 10);
 
 	Invalidate(FALSE);
 }
-
-
+//----------------------------------------------
+/// ptにあるDLアイテムのインデックスを返す
 int		CDownloadingListView::_HitTest(CPoint pt)
 {
 	int nCount = (int)m_vecpDLItem.size();
 	for (int i = 0; i < nCount; ++i) {
-		if (m_vecpDLItem[i]->rcItem.PtInRect(pt)) 
+		//if (m_vecpDLItem[i]->rcItem.PtInRect(pt)) 
+		if (_GetItemClientRect(i).PtInRect(pt))
 			return i;
 	}
 	return -1;
 }
 
+//----------------------------------------------
+/// nIndexのアイテムのクライアント座標での範囲を返す
+CRect	CDownloadingListView::_GetItemClientRect(int nIndex)
+{
+	ATLASSERT(0 <= nIndex && nIndex < (int)m_vecpDLItem.size());
+
+	CPoint	ptOffset;
+	GetScrollOffset(ptOffset);
+
+	CRect rcItem = m_vecpDLItem[nIndex]->rcItem;
+	rcItem.top		-= ptOffset.y;
+	rcItem.bottom	-= ptOffset.y;
+	return rcItem;
+}
 
 
 

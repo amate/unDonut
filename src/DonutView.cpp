@@ -239,12 +239,18 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 		} else {
 			CString strText;
 			if (   MtlGetHGlobalText(pDataObj, strText)
-				|| MtlGetHGlobalText(pDataObj, strText, ::RegisterClipboardFormat(CFSTR_SHELLURL)) )
+				|| MtlGetHGlobalText(pDataObj, strText, CF_SHELLURLW) )
 			{
 				::SendMessage(GetTopLevelParent(), WM_COMMAND_DIRECT, m_nDDCommand, (LPARAM) (LPCTSTR) strText);
 				*pdwEffect = DROPEFFECT_NONE;
 			}
 		}
+	} else if (MTL::MtlIsDataAvailable(pDataObj, CF_SHELLURLW)) {	// ƒ^ƒu‚È‚Ç‚©‚ç
+		CString strURL;
+		MtlGetHGlobalText(pDataObj, strURL, CF_SHELLURLW);
+		if (strURL.IsEmpty() == FALSE)
+			Navigate2(strURL);
+
 	} else {	// ŠO•”‚©‚ç
 		CString strURL;
 		MtlGetHGlobalText(pDataObj, strURL, ::RegisterClipboardFormat(CFSTR_FILENAME));
@@ -402,32 +408,38 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	  #endif
 	}
 	catch (const CAtlException& e) {
-		e;
-		MessageBox(_T("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));
+		MessageBox(GetLastErrorString(e));
 	}
-	return lRet;
+	return 0;
 }
 
 
 
 void CDonutView::OnDestroy()
 {
-	SetMsgHandled(FALSE);
+	if (m_spBrowser) {
+		HRESULT hr = m_spBrowser->Stop();
+		CComQIPtr<IOleInPlaceObject>	spInPlaceObject = m_spBrowser;
+		ATLASSERT(spInPlaceObject);
+		hr = spInPlaceObject->InPlaceDeactivate();
+		ATLASSERT(SUCCEEDED(hr));
+		spInPlaceObject.Release();
 
-	HRESULT hr = m_spBrowser->Stop();
-	CComQIPtr<IOleInPlaceObject>	spInPlaceObject = m_spBrowser;
-	ATLASSERT(spInPlaceObject);
-	hr = spInPlaceObject->InPlaceDeactivate();
-	ATLASSERT(SUCCEEDED(hr));
+		// Set Client Site
+		CComPtr<IOleObject>	spOleObject;
+		hr = m_spBrowser->QueryInterface(IID_IOleObject, (void**)&spOleObject);
+		ATLASSERT(SUCCEEDED(hr));
+		hr = spOleObject->Close(OLECLOSE_NOSAVE);
 
-	// Set Client Site
-	CComPtr<IOleObject>	spOleObject;
-	hr = m_spBrowser->QueryInterface(IID_IOleObject, (void**)&spOleObject);
-	ATLASSERT(SUCCEEDED(hr));
-	hr = spOleObject->Close(OLECLOSE_NOSAVE);
-	hr = spOleObject->SetClientSite(NULL);
+		spOleObject.Release();
+		m_spBrowser.Release();
+		m_spAxAmbient.Release();
+		m_spHost.Release();
+	}
 
 	m_ViewOption.Uninit();
+
+	DefWindowProc();
 }
 
 

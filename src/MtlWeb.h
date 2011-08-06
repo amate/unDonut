@@ -28,6 +28,7 @@
 #include "MtlMisc.h"
 #include "MtlWeb.h"
 #include "MtlFile.h"
+#include "DonutPFunc.h"
 
 
 
@@ -390,16 +391,18 @@ private:
 		}
 	}
 
-
+	/// 選択範囲のソースをエディタで表示する
 	void viewSelectedSource(const CString &strHTMLText)
 	{
-		if ( strHTMLText.IsEmpty() ) return;
+		if ( strHTMLText.IsEmpty() ) 
+			return;
 
-		T * 	pT					   = static_cast<T *>(this);
+		T* pT = static_cast<T*>(this);
 
 		// get tmp path & create tmp file
-		CString strTempPath 		   = Misc::GetExeDirectory() + _T("ShortcutTmp\\");
-		CreateDirectory(strTempPath, NULL);
+		CString strTempPath;
+		if (GetDonutTempPath(strTempPath) == false)
+			return ;
 
 		CString	tmpFileName;
 		::GetTempFileName(strTempPath , _T("dnr") , 0 , tmpFileName.GetBuffer(MAX_PATH));
@@ -413,6 +416,13 @@ private:
 								CREATE_ALWAYS,
 								FILE_ATTRIBUTE_TEMPORARY,
 								NULL);
+		if (hFile == INVALID_HANDLE_VALUE) {
+			CString strError;
+			strError.Format(_T("ファイルが作成できません。\nパス:%s"), tmpFileName);
+			MessageBox(NULL, strError, NULL, MB_ICONERROR);
+			return ;
+		}
+
 		DWORD	dwAccBytes = 0;
 	  #ifdef UNICODE
 		//CIniFileI pr( g_szIniFileName, _T("etc") );

@@ -93,6 +93,11 @@ __inline const CString eucjp_to_CString(const std::vector<char>& eucjp) { return
 
 CString	UnknownToCString(const std::vector<char>& src);
 
+//---------------------------------------------------
+/// str‚ªShift-JIS(CF•¶š—ñ‚È‚çtrue‚ğ•Ô‚·
+bool	IsShiftJIS(LPCSTR str, int nCount);
+
+
 // ==========================================================================
 
 ///+++ %20 “™‚ªg‚í‚ê‚½url‚ğ’Êí‚Ì•¶š—ñ‚É•ÏŠ·.

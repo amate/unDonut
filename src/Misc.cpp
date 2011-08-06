@@ -799,16 +799,16 @@ const std::vector<char>	urlstr_decode(const TCHAR* url)
 ///+++ %20 等が使われたurlを日本語文字コードとしておかしくないなら通常の文字列に変換.
 const CString	urlstr_decodeJpn(const TCHAR* url, int dfltCode)
 {
-	std::vector<char>	buf = urlstr_decode(url);
+	std::string	buf = urlstr_decode(url).data();
 
-	int jpnCharSet = checkSjisEucUtf8(&buf[0], dfltCode);
+	int jpnCharSet = checkSjisEucUtf8(buf.c_str(), dfltCode);
 	switch (jpnCharSet) {
 	case 1:	// sjis
-		return CString(&buf[0]);
+		return CString( buf.c_str() );
 	case 2:	// euc-jp
-		return CString( &eucjp_to_tcs(&buf[0])[0] );
+		return CString( eucjp_to_tcs(buf.c_str()).data() );
 	case 3:	// utf8
-		return CString( &utf8_to_tcs(&buf[0])[0] );
+		return CString( utf8_to_tcs(buf.c_str()).data() );
 	default:
 		;
 	}
@@ -905,7 +905,7 @@ CString	UnknownToCString(const std::vector<char>& src)
 		int Scores = 5; // 取得する候補の数
 		DetectEncodingInfo Encoding[5] = { 0 };
 		int nSize = (int)src.size();
-		hr = spMultiLang->DetectInputCodepage(MLDETECTCP_NONE, 0, (char*)src.data(), &nSize, Encoding, &Scores);
+		hr = spMultiLang->DetectInputCodepage(MLDETECTCP_DBCS, 0, (char*)src.data(), &nSize, Encoding, &Scores);
 		if (SUCCEEDED(hr)) {
 			DWORD dwMode = 0;
 			UINT nSrcSize = static_cast<UINT>(nSize);
@@ -918,8 +918,28 @@ CString	UnknownToCString(const std::vector<char>& src)
 			}
 		}
 	}
-	ATLASSERT(FALSE);
+	str = src.data();
 	return str;
+}
+
+//---------------------------------------------------
+/// strがShift-JIS文字列ならtrueを返す
+bool	IsShiftJIS(LPCSTR str, int nCount)
+{
+	UINT nCodePage = CP_SJIS;
+	CComPtr<IMultiLanguage2>	spMultiLang;
+	HRESULT hr = spMultiLang.CoCreateInstance(CLSID_CMultiLanguage);
+	if (SUCCEEDED(hr)) {
+		int Scores = 5; // 取得する候補の数
+		DetectEncodingInfo Encoding[5] = { 0 };
+		int nSize = nCount;
+		hr = spMultiLang->DetectInputCodepage(MLDETECTCP_DBCS, 0, const_cast<LPSTR>(str), &nSize, Encoding, &Scores);
+		if (SUCCEEDED(hr)) {
+			if (Encoding[0].nCodePage == CP_SJIS)
+				return true;
+		}
+	}
+	return false;
 }
 
 

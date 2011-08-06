@@ -89,7 +89,7 @@ bool MtlGetDropFileName(IDataObject *pDataObject, CSimpleArray<CString> &arrFile
 
 
 // Implementation
-bool MtlGetHGlobalText(IDataObject *pDataObject, CString &strText, CLIPFORMAT cfFormat)
+bool MtlGetHGlobalText(IDataObject *pDataObject, CString &strText, CLIPFORMAT cfFormat/* = MTL_CF_TEXT*/)
 {
 	bool	  bResult	= false;
 

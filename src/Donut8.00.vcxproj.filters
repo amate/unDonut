@@ -272,6 +272,9 @@
     <ClCompile Include="FindBar.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
+    <ClCompile Include="Download\DLListWindow.cpp">
+      <Filter>Source Files\Download</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -726,6 +729,9 @@
     </ClInclude>
     <ClInclude Include="FindBar.h">
       <Filter>Source Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Download\DLListWindow.h">
+      <Filter>Source Files\Download</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

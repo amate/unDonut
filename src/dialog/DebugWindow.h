@@ -4,6 +4,44 @@
  */
 #pragma once
 
+#define DEBUGPUT TRACE
+
+#ifdef _DEBUG
+ #ifndef TRACE
+  #define TRACE		CDebugUtility::Write
+ #endif
+ #ifndef TRACEIN
+  #define TRACEIN	CDebugUtility::WriteIn
+ #endif
+#else // NODEBUG
+ #ifndef TRACE
+  #define TRACE		__noop
+ #endif 
+ #ifndef TRACEIN
+  #define TRACEIN	__noop
+ #endif
+#endif
+
+/////////////////////////////////////////////////
+// CDebugUtility
+
+class CDebugUtility
+{
+public:
+	CDebugUtility();
+	~CDebugUtility();
+
+	static void Write(LPCTSTR pstrFormat, ...);
+	static void WriteIn(LPCTSTR pstrFormat, ...);
+	
+
+private:
+	class Impl;
+	static Impl*	pImpl;
+};
+
+
+#if 0
 #include <atlbase.h>
 #include <atlapp.h>
 #include <atlmisc.h>
@@ -80,4 +118,4 @@ public:
 	void		OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 };
 
-
+#endif

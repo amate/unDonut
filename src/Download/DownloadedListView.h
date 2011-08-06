@@ -22,6 +22,8 @@ private:
 public:
 	void	AddDownloadedItem(DLItem* pItem);
 
+	// Overrides
+	int CompareItemsCustom(LVCompareParam* pItem1, LVCompareParam* pItem2, int iSortCol);
 
 	// Message map
     BEGIN_MSG_MAP_EX(CDownloadedListView)

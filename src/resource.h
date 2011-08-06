@@ -129,6 +129,11 @@
 #define IDD_DLOPTION					314
 #define IDI_GENERIC_DOCUMENT			315
 #define IDB_FIND						316
+#define IDB_DLTOOLBAR					317
+#define IDM_DOWNLOADINGLISTVIEW			318
+#define IDD_RENAMEDIALOG				319
+#define IDD_DLLIST						320
+
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -542,6 +547,15 @@
 #define IDC_RADIO_NONE					1406
 #define IDC_RADIO_CASH					1407
 #define IDC_RADIO_ALWAYS				1408
+#define IDC_CMB_DOWNLOADFOLDER			1409
+#define IDC_CMB_IMGDOWNLOADFOLDER		1410
+#define IDC_DLSTART						1411
+#define IDC_DLFINISH					1412
+#define IDC_LIST_DL						1413
+#define IDC_GETDLFOLDER					1414
+#define IDC_COMBO_PARALLELDL			1415
+#define IDC_COMBO_DLFOLDER				1416
+#define IDC_CMB_DLLISTOPTION			1417
 
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
@@ -848,6 +862,10 @@
 #define ID_FIND_PAGEDOWN				33188
 #define ID_FIND_HIGHLIGHT				33189
 #define ID_FIND_OPTION					33190
+#define ID_SET_DLFOLDER					33191
+#define ID_OPEN_DLFOLDER				33192
+#define ID_RENAME_DLITEM				33193
+#define ID_OPEN_SAVEFOLDER				33194
 
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000

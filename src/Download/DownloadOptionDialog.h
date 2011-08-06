@@ -4,10 +4,13 @@
 
 #include <atlddx.h>
 #include "../IniFile.h"
+#include "../MtlMisc.h"
 #include "../resource.h"
 
 #define REGISTERMESSAGE_GETDEFAULTDLFOLDER	_T("Donut_DLManager_GetDefaultDLFolder")
 #define REGISTERMESSAGE_STARTDOWNLOAD		_T("Donut_DLManager_StartDownload")
+#define REGISTERMESSAGE_SETREFERER			_T("Donut_DLManager_SetReferer")
+
 struct DLStartItem {
 	LPCWSTR strURL;
 	LPCWSTR strDLFolder;
@@ -701,6 +704,8 @@ public:
 
 struct CDLOptions
 {
+	static CString	s_DLIniFilePath;
+
 	static CString	strDLFolderPath;
 	static bool		bUseSaveFileDialog;
 	static bool		bCloseAfterAllDL;
@@ -709,10 +714,14 @@ struct CDLOptions
 	static CString	strImgDLFolderPath;
 	static DWORD	dwImgExStyle;
 
+	enum { kMaxHistory = 15 };
+	static vector<CString>	s_vecDLFolderHistory;
+	static vector<CString>	s_vecImageDLFolderHistory;
+
 	static void	LoadProfile()
 	{
-		CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
-		CIniFileI	pr(strIniFile, _T("Main"));
+		s_DLIniFilePath = Misc::GetFullPath_ForExe(_T("Download.ini"));
+		CIniFileI	pr(s_DLIniFilePath, _T("Main"));
 		strDLFolderPath		= pr.GetString(_T("DLFolder"), Misc::GetExeDirectory());
 		bUseSaveFileDialog	= pr.GetValue(_T("UseSaveFileDialog"), bUseSaveFileDialog) != 0;
 		bCloseAfterAllDL	= pr.GetValue(_T("CloseAfterAllDL"), bCloseAfterAllDL) != 0;
@@ -720,31 +729,79 @@ struct CDLOptions
 
 		strImgDLFolderPath  = pr.GetString(_T("ImgDLFolder"), strDLFolderPath);
 		dwImgExStyle		= pr.GetValue(_T("ImgExStyle"), DLO_OVERWRITEPROMPT);
+
+		s_vecDLFolderHistory.clear();
+		pr.ChangeSectionName(_T("DLFolderHistory"));
+		for (int i = 0; i < kMaxHistory; ++i) {
+			CString strName;
+			strName.Append(i);
+			CString strFolder = pr.GetString(strName);
+			if (strFolder.IsEmpty())
+				break;
+			s_vecDLFolderHistory.push_back(strFolder);
+		}
+
+		s_vecImageDLFolderHistory.clear();
+		pr.ChangeSectionName(_T("ImageDLFolderHistory"));
+		for (int i = 0; i < kMaxHistory; ++i) {
+			CString strName;
+			strName.Append(i);
+			CString strFolder = pr.GetString(strName);
+			if (strFolder.IsEmpty())
+				break;
+			s_vecImageDLFolderHistory.push_back(strFolder);
+		}
 	}
 
 	static void	SaveProfile()
 	{
-		CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
-		CIniFileO pr(strIniFile, _T("Main"));
-		_AddLastSrush(strDLFolderPath);
+		CIniFileO pr(s_DLIniFilePath, _T("Main"));
+		MTL::MtlMakeSureTrailingBackSlash(strDLFolderPath);
 		pr.SetString(strDLFolderPath, _T("DLFolder"));
 		pr.SetValue(bUseSaveFileDialog, _T("UseSaveFileDialog"));
 		pr.SetValue(bCloseAfterAllDL, _T("CloseAfterAllDL"));
 		pr.SetValue(bShowWindowOnDL, _T("ShowWindowOnDL"));
 
-		_AddLastSrush(strImgDLFolderPath);
+		MTL::MtlMakeSureTrailingBackSlash(strImgDLFolderPath);
 		pr.SetString(strImgDLFolderPath, _T("ImgDLFolder"));
 		pr.SetValue(dwImgExStyle, _T("ImgExStyle"));
-	}
 
-private:
-	static void	_AddLastSrush(CString& strFolder)
-	{
-		if (strFolder[strFolder.GetLength() - 1] != _T('\\')) {
-			strFolder += _T('\\');
+		{
+			pr.ChangeSectionName(_T("DLFolderHistory"));
+			int nCount = (int)s_vecDLFolderHistory.size();
+			for (int i = 0; i < nCount; ++i) {
+				CString strName;
+				strName.Append(i);
+				pr.SetString(s_vecDLFolderHistory[i], strName);
+			}
+		}
+		{
+			pr.ChangeSectionName(_T("ImageDLFolderHistory"));
+			int nCount = (int)s_vecImageDLFolderHistory.size();
+			for (int i = 0; i < nCount; ++i) {
+				CString strName;
+				strName.Append(i);
+				pr.SetString(s_vecImageDLFolderHistory[i], strName);
+			}
 		}
 	}
+
+	static void _SavePathHistory(CString strPath, vector<CString>& vecPathHistory)
+	{
+		MTL::MtlMakeSureTrailingBackSlash(strPath);
+		int nCount = (int)vecPathHistory.size();
+		for (int i = 0; i < nCount; ++i) {
+			if (strPath == vecPathHistory[i]) {	// 重複の削除
+				vecPathHistory.erase(vecPathHistory.begin() + i);
+				break;
+			}
+		}
+		vecPathHistory.insert(vecPathHistory.begin(), strPath);
+	}
 };
+
+
+__declspec(selectany) CString	CDLOptions::s_DLIniFilePath;
 
 __declspec(selectany) CString	CDLOptions::strDLFolderPath;
 __declspec(selectany) bool		CDLOptions::bUseSaveFileDialog = false;
@@ -754,6 +811,8 @@ __declspec(selectany) bool		CDLOptions::bShowWindowOnDL = false;
 __declspec(selectany) CString	CDLOptions::strImgDLFolderPath;
 __declspec(selectany) DWORD		CDLOptions::dwImgExStyle = DLO_OVERWRITEPROMPT;
 
+__declspec(selectany) vector<CString>	CDLOptions::s_vecDLFolderHistory;
+__declspec(selectany) vector<CString>	CDLOptions::s_vecImageDLFolderHistory;
 
 
 ///////////////////////////////////////////////////////
@@ -775,12 +834,12 @@ public:
 
     // DDXマップ
     BEGIN_DDX_MAP(CDLOptionDialog)
-        DDX_TEXT(IDC_EDIT_DOWNLOADFOLDER	, strDLFolderPath)
-		DDX_CHECK(IDC_CHECK_OPENDIALOG_BEFOREDL, bUseSaveFileDialog)
-		DDX_CHECK(IDC_CHECK_CLOSEAFTERALLDL	, bCloseAfterAllDL)
-		DDX_CHECK(IDC_CHECK_SHOWWINDOW_ONDL	, bShowWindowOnDL)
-		DDX_TEXT(IDC_EDIT_IMGDOWNLOADFOLDER , strImgDLFolderPath)
-		DDX_RADIO(IDC_RADIO_OVERWRITEPROMPT , m_nRadioImg)
+        DDX_TEXT(IDC_CMB_DOWNLOADFOLDER			, strDLFolderPath)
+		DDX_CHECK(IDC_CHECK_OPENDIALOG_BEFOREDL	, bUseSaveFileDialog)
+		DDX_CHECK(IDC_CHECK_CLOSEAFTERALLDL		, bCloseAfterAllDL)
+		DDX_CHECK(IDC_CHECK_SHOWWINDOW_ONDL		, bShowWindowOnDL)
+		DDX_TEXT(IDC_CMB_IMGDOWNLOADFOLDER		, strImgDLFolderPath)
+		DDX_RADIO(IDC_RADIO_OVERWRITEPROMPT		, m_nRadioImg)
     END_DDX_MAP()
 
 	BEGIN_MSG_MAP(CDLOptionDialog)
@@ -801,18 +860,43 @@ public:
 
 		DoDataExchange(DDX_LOAD);
 
+		/* 履歴の設定 */
+		CComboBox cmbDLFolder = GetDlgItem(IDC_CMB_DOWNLOADFOLDER);
+		std::for_each(s_vecDLFolderHistory.cbegin(), s_vecDLFolderHistory.cend(), [&cmbDLFolder](const CString& strFolder) {
+			cmbDLFolder.AddString(strFolder);
+		});
+
+		CComboBox cmbImageDLFolder = GetDlgItem(IDC_CMB_IMGDOWNLOADFOLDER);
+		std::for_each(s_vecImageDLFolderHistory.cbegin(), s_vecImageDLFolderHistory.cend(), [&cmbImageDLFolder](const CString& strFolder) {
+			cmbImageDLFolder.AddString(strFolder);
+		});
+		
+
 		return TRUE;
 	}
 
 	void OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 	{
+		CString strDLFolder = strDLFolderPath;
 		DoDataExchange(DDX_SAVE);
+		if (strDLFolderPath.IsEmpty()) {
+			MessageBox(_T("既定のDLフォルダが設定されていません。"), NULL, MB_ICONWARNING);
+			strDLFolderPath = strDLFolder;
+			DoDataExchange(DDX_LOAD, IDC_CMB_DOWNLOADFOLDER);
+			return ;
+		}
+
+		/* 履歴の保存 */
+		_SavePathHistory(strDLFolderPath, s_vecDLFolderHistory);
+		_SavePathHistory(strImgDLFolderPath, s_vecImageDLFolderHistory);
+
+
 		if (m_nRadioImg == 0)
 			dwImgExStyle	= DLO_OVERWRITEPROMPT;
 		else 
 			dwImgExStyle	= DLO_USEUNIQUENUMBER;
 
-		SaveProfile();
+		SaveProfile();	// 設定を保存
 
 		EndDialog(nID);
 	}
@@ -830,23 +914,26 @@ public:
 		if (SHdlg.IsNull() == false) {
 			if (SHdlg.DoModal(m_hWnd) == IDOK) {
 				SHdlg.GetFilePath(strPath);
-				if (nID == IDC_BUTTON_FOLDERSELECT)
-					strDLFolderPath	   = strPath;
-				else 
-					strImgDLFolderPath = strPath;
-				DoDataExchange(DDX_LOAD);
 			}
 		} else {
 			CFolderDialog dlg(NULL, _T("フォルダを選択してください。"));
-
 			if (dlg.DoModal(m_hWnd) == IDOK) {
 				strPath = dlg.GetFolderPath();
-				if (nID == IDC_BUTTON_FOLDERSELECT)
-					strDLFolderPath	   = strPath;
-				else 
-					strImgDLFolderPath = strPath;
-				DoDataExchange(DDX_LOAD);
 			}
+		}
+		if (strPath.IsEmpty() == FALSE) {
+			UINT	nTargetID;
+			switch (nID) {
+			case IDC_BUTTON_FOLDERSELECT:		
+				nTargetID = IDC_CMB_DOWNLOADFOLDER; 
+				strDLFolderPath	   = strPath;
+				break;
+			case IDC_BUTTON_IMGFOLDERSELECT:	
+				nTargetID = IDC_CMB_IMGDOWNLOADFOLDER;
+				strImgDLFolderPath = strPath;
+				break;
+			}
+			DoDataExchange(DDX_LOAD, nTargetID);
 		}
 	}
 

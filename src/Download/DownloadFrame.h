@@ -37,8 +37,10 @@ public:
 		MSG_WM_CREATE	( OnCreate	)
 		MSG_WM_DESTROY	( OnDestroy	)
 		MSG_WM_CLOSE	( OnClose	)
-		COMMAND_ID_HANDLER(ID_DLAPP_ABOUT, OnAppAbout)
-		COMMAND_ID_HANDLER(ID_DLOPENOPTION,  OnOpenOption)
+		COMMAND_ID_HANDLER(ID_DLOPENOPTION	, OnOpenOption )
+		COMMAND_ID_HANDLER(ID_SET_DLFOLDER	, OnSetDLFolder )
+		COMMAND_ID_HANDLER(ID_OPEN_DLFOLDER	, OnOpenDLFolder )
+		COMMAND_ID_HANDLER(ID_DLAPP_ABOUT	, OnAppAbout )
 		CHAIN_MSG_MAP(CFrameWindowImpl<CDownloadFrame>)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
@@ -47,8 +49,11 @@ public:
 	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void	OnDestroy();
 	void	OnClose();
-	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
 	LRESULT OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnSetDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnOpenDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	LRESULT OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/);
+	
 	
 
 private:

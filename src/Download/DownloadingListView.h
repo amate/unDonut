@@ -5,8 +5,9 @@
 #include <boost/thread.hpp>
 #include <atlctrls.h>
 #include <atlscrl.h>
+#include "../MtlDragDrop.h"
 #include "CustomBindStatusCallBack.h"
-
+#include "../resource.h"
 
 class CDownloadedListView;
 
@@ -23,6 +24,7 @@ struct DLItem
 	CString strReferer;
 	CRect	rcItem;
 	CString strFileName;	// ファイル名
+	CString	strIncompleteFilePath;
 	CString strFilePath;	// ファイルパス
 	int		nImgIndex;
 	CString strText;
@@ -47,12 +49,14 @@ struct DLItem
 };
 
 
+
 ////////////////////////////////////////////////////
 // CDownloadingListView
 
 class CDownloadingListView 
 	: public CScrollWindowImpl<CDownloadingListView>
 	, public CThemeImpl<CDownloadingListView>
+	, public IDropTargetImpl<CDownloadingListView>
 {
 public:
 	//DECLARE_WND_SUPERCLASS(_T("DownloadingListView"), GetWndClassName())
@@ -60,7 +64,6 @@ public:
 	// Constants
 	enum {
 		ItemHeight = 50,
-		ItemMinWidth = 20000,
 		UnderLineHeight = 1,
 
 		cxImageMargin = 3,
@@ -72,6 +75,11 @@ public:
 		ProgressHeight = 12,
 		cyProgressMargin = 21,
 		cleftProgressMargin = 30,
+
+		cxStopLeftSpace  = 23,
+		cyStopTopMargin  = 19,
+		cxStop = 16,
+		cyStop = 16,
 
 		TOOLTIPTIMERID	= 2,
 		TOOLTIPDELAY	= 250,
@@ -89,18 +97,25 @@ public:
 	// Overrides
 	void	DoPaint(CDCHandle dc);
 
+	DROPEFFECT OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point);
+	DROPEFFECT OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect);
+	DROPEFFECT OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point);
+
 	// Message map
     BEGIN_MSG_MAP_EX(CDownloadingListView)
-        MSG_WM_CREATE	( OnCreate  )
-		MSG_WM_DESTROY	( OnDestroy )
-		MSG_WM_SIZE		( OnSize	)
-		MSG_WM_LBUTTONDOWN( OnLButtonDown )
-		MSG_WM_ERASEBKGND( OnEraseBkgnd )
-		MSG_WM_TIMER( OnTimer )
+        MSG_WM_CREATE		( OnCreate  )
+		MSG_WM_DESTROY		( OnDestroy )
+		MSG_WM_SIZE			( OnSize	)
+		MSG_WM_LBUTTONDOWN	( OnLButtonDown )
+		MSG_WM_RBUTTONUP	( OnRButtonUp )
+		MSG_WM_ERASEBKGND	( OnEraseBkgnd )
+		MSG_WM_TIMER		( OnTimer )
 		MESSAGE_HANDLER_EX( WM_USER_ADDTODOWNLOADLIST , OnAddToList	)
 		MESSAGE_HANDLER_EX( WM_USER_REMOVEFROMDOWNLIST, OnRemoveFromList )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
-		MSG_WM_MOUSEMOVE( OnMouseMove )
+		MSG_WM_MOUSEMOVE	( OnMouseMove )
+		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM, OnRenameDLItem )
+		COMMAND_ID_HANDLER_EX( ID_OPEN_SAVEFOLDER	, OnOpenSaveFolder )
         CHAIN_MSG_MAP( CScrollWindowImpl<CDownloadingListView> )
         CHAIN_MSG_MAP_ALT( CScrollWindowImpl<CDownloadingListView>, 1)
 		CHAIN_MSG_MAP(CThemeImpl<CDownloadingListView>)
@@ -111,18 +126,23 @@ public:
 	void	OnDestroy();
 	void	OnSize(UINT nType, CSize size);
 	void	OnLButtonDown(UINT nFlags, CPoint point);
+	void	OnRButtonUp(UINT nFlags, CPoint point);
 	BOOL	OnEraseBkgnd(CDCHandle dc) { return TRUE; }
 	void	OnTimer(UINT_PTR nIDEvent);
 	LRESULT OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	void	OnMouseMove(UINT nFlags, CPoint point);
+	void	OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow wndCtl);
+
 
 private:
 	void	_AddItemToList(DLItem* pItem);
 	void	_AddIcon(DLItem *pItem);
 	void	_RefreshList();
 	int		_HitTest(CPoint pt);
+	CRect	_GetItemClientRect(int nIndex);
 
 	// Data members
 	std::vector<std::unique_ptr<DLItem> >	m_vecpDLItem;
@@ -135,6 +155,7 @@ private:
 
 	CToolTipCtrl			m_ToolTip;
 	bool					m_bTimer;
+	DLItem*	m_pItemPopup;
 };
 
 

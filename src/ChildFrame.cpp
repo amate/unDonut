@@ -2725,7 +2725,6 @@ CString CChildFrame::GetSelectedTextLine()
 void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	dcfTRACE( _T("CChildFrame::OnEditOpenSelectedRef\n") );
-	m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	CSimpleArray<CString> arrUrls;
 	bool bNoAddFromMenu = false;
 	MtlForEachHTMLDocument2( m_spBrowser, [&arrUrls, &bNoAddFromMenu, this] (IHTMLDocument2 *pDocument) {
@@ -2806,6 +2805,7 @@ void CChildFrame::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND
 				bNoAddFromMenu = true;	// ‘I‘ð”ÍˆÍ‚©‚çƒŠƒ“ƒN‚ªŒ©‚Â‚©‚Á‚½‚Ì‚Å
 		}
 	});
+	m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	for (int i = 0; i < arrUrls.GetSize(); ++i) {
 		DonutOpenFile(m_hWnd, arrUrls[i], 0);
 	}

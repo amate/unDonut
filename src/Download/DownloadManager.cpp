@@ -18,6 +18,7 @@ CDownloadManager::CDownloadManager()
 {
 	WM_GETDEFAULTDLFOLDER	= ::RegisterWindowMessage(REGISTERMESSAGE_GETDEFAULTDLFOLDER);
 	WM_STARTDOWNLOAD		= ::RegisterWindowMessage(REGISTERMESSAGE_STARTDOWNLOAD);
+	WM_SETREFERER			= ::RegisterWindowMessage(REGISTERMESSAGE_SETREFERER);
 
 	s_pThis = this;
 }
@@ -131,6 +132,13 @@ STDMETHODIMP CDownloadManager::Download(
 			return S_OK;
 		}
 #endif
+		if (pszHeaders == nullptr) {
+			pCBSCB->SetReferer(s_strReferer);
+			s_strReferer.Empty();
+			IBindCtx* pBC;
+			hr = ::CreateAsyncBindCtx(0, pCBSCB, NULL, &pBC);
+			pbc = pBC;
+		}
 	}
 	if (SUCCEEDED(hr)) {
 		CComPtr<IStream>	spStream;
@@ -221,13 +229,22 @@ LRESULT CDownloadManager::OnDefaultDLFolder(UINT uMsg, WPARAM wParam, LPARAM lPa
 /// @param [in]	wParam	DLStartItemのポインタ
 LRESULT CDownloadManager::OnStartDownload(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	DLStartItem* pItem  = (DLStartItem*)wParam;
 	if (CDLControlOption::s_bUseDLManager == false)
 		return E_FAIL;
 
+	DLStartItem* pItem  = (DLStartItem*)wParam;
 	DownloadStart(pItem->strURL, pItem->strDLFolder, pItem->hWnd, pItem->dwOption);
 	return S_OK;
 }
+
+//---------------------------------------
+/// 外部からリファラを設定する
+LRESULT CDownloadManager::OnSetReferer(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	SetReferer((LPCTSTR)wParam);
+	return 0;
+}
+
 
 //--------------------------------------
 /// 別スレッドで開始されるDLの本体

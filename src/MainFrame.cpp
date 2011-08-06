@@ -117,7 +117,7 @@ LRESULT CMainFrame::OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & bHa
 	CFavoritesMenuOption::SetFuncRefreshFav(std::bind(&CMainFrame::_RefreshFavMenu, this));
 
 #ifdef _DEBUG
-	m_wndDebug.Create(m_hWnd);						// デバッグウィンドウの作成
+	//m_wndDebug.Create(m_hWnd);						// デバッグウィンドウの作成
 #endif
 	init_menus_infomation();						// メニュー情報の初期化
 
@@ -583,6 +583,19 @@ void CMainFrame::OnEndSession(BOOL wParam, UINT lParam) 						//　ShutDown minit
 		OnDestroy();
 }
 
+//------------------------------------
+/// 一時フォルダのファイルを削除してフォルダを削除する
+static void _RemoveDonutTempDirectory()
+{
+	CString strTempPath;
+	if (GetDonutTempPath(strTempPath)) {
+		MtlForEachFile( strTempPath, [](const CString& strFile) {
+				::DeleteFile(strFile);
+		});
+		::RemoveDirectory(strTempPath);
+	}
+}
+
 //---------------------------------------
 /// ウィンドウ終了時
 void CMainFrame::OnDestroy()
@@ -597,7 +610,7 @@ void CMainFrame::OnDestroy()
 	CDialogHook::UninstallHook();
 #ifdef _DEBUG
 	//デバッグウィンドウ削除
-	m_wndDebug.Destroy();
+	//m_wndDebug.Destroy();
 #endif
 	//全プラグイン解放
 	CPluginManager::Term();
@@ -624,7 +637,7 @@ void CMainFrame::OnDestroy()
 	ATLASSERT( ::IsMenu(m_hMenu) );
 	::DestroyMenu(m_hMenu);
 
-	_RemoveShortcutTmpDirectory();
+	_RemoveDonutTempDirectory();
 
 	OnMenuRefreshScript(FALSE);
 
@@ -645,20 +658,6 @@ void CMainFrame::OnDestroy()
 		ATLASSERT(FALSE);
 	}
 #endif
-}
-
-//------------------------------------
-/// ShortcutTmpフォルダの".tmp"ファイルを削除してフォルダを削除する
-void CMainFrame::_RemoveShortcutTmpDirectory()
-{
-	CString 	strTempPath = Misc::GetExeDirectory() + _T("ShortcutTmp\\");
-	if (::PathIsDirectory(strTempPath)) {
-		MtlForEachFile( strTempPath, [](const CString& strFile) {
-			if ( MtlIsExt( strFile, _T(".tmp") ) )
-				::DeleteFile(strFile);
-		});
-		::RemoveDirectory(strTempPath);
-	}
 }
 
 
@@ -879,9 +878,9 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	if (::IsWindow(hWndFind))
 		bFocus	|= ::IsChild(hWndFind, pMsg->hwnd);
 #ifdef _DEBUG
-	if (::IsWindow(m_wndDebug.m_hWnd)) {
-		bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl().m_hWnd);
-	}
+	//if (::IsWindow(m_wndDebug.m_hWnd)) {
+	//	bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl().m_hWnd);
+	//}
 #endif
   #endif
 

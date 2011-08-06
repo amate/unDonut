@@ -4,6 +4,118 @@
  */
 #include "stdafx.h"
 #include "DebugWindow.h"
+
+#ifdef _DEBUG
+static CDebugUtility	g_debugutil;
+#endif
+
+/////////////////////////////////////////////////
+// CDebugUtility::Impl
+
+class CDebugUtility::Impl
+{
+public:
+	Impl();
+	~Impl();
+
+	void	Write(LPCTSTR strFormat, va_list argList);
+	void	WriteIn(LPCTSTR strFormat, va_list argList);
+
+private:
+	void	_WriteConsole(LPCTSTR str);
+
+	HANDLE m_hOut;
+};
+
+
+//------------------------------------
+CDebugUtility::Impl::Impl()
+{
+	::AllocConsole();
+	m_hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
+}
+
+//------------------------------------
+CDebugUtility::Impl::~Impl()
+{
+	::FreeConsole();
+}
+
+//------------------------------------
+void	CDebugUtility::Impl::Write(LPCTSTR strFormat, va_list argList)
+{
+	CString str;
+	str.FormatV(strFormat, argList);
+	_WriteConsole(str);
+}
+
+
+//------------------------------------
+void	CDebugUtility::Impl::WriteIn(LPCTSTR strFormat, va_list argList)
+{
+	CString str;
+	str.FormatV(strFormat, argList);
+	str += _T("\n");
+	_WriteConsole(str);
+}
+
+//------------------------------------
+void	CDebugUtility::Impl::_WriteConsole(LPCTSTR str)
+{
+	DWORD dwWrite;
+	::WriteConsole(m_hOut, str, lstrlen(str), &dwWrite, NULL);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+/////////////////////////////////////////////////
+// CDebugUtility
+
+CDebugUtility::Impl* CDebugUtility::pImpl = NULL;
+
+//------------------------------------
+CDebugUtility::CDebugUtility()
+{ 
+	pImpl = new Impl;
+}
+
+//------------------------------------
+CDebugUtility::~CDebugUtility()
+{
+	delete pImpl;
+}
+
+//------------------------------------
+void CDebugUtility::Write(LPCTSTR pstrFormat, ...)
+{
+	va_list args;
+	va_start(args, pstrFormat);	
+	pImpl->Write(pstrFormat, args);
+	va_end(args);
+}
+
+//------------------------------------
+void CDebugUtility::WriteIn(LPCTSTR pstrFormat, ...)
+{
+	va_list args;
+	va_start(args, pstrFormat);	
+	pImpl->WriteIn(pstrFormat, args);
+	va_end(args);
+}
+
+
+
+
+#if 0
 #include "../resource.h"
 
 
@@ -142,4 +254,5 @@ void	CDebugWindow::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
 }
 
 
+#endif
 #endif

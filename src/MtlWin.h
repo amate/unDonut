@@ -101,14 +101,13 @@ enum EMtl_Translate {
 inline CString MtlGetWindowClassName(HWND hWnd)
 {
 	enum { NAME_SIZE = 0x1000/*255*/ };
-	TCHAR	name[ NAME_SIZE + 1 + 1 ];
-	name[0] = '\0';
+	TCHAR	name[ NAME_SIZE + 1 + 1 ] = _T("\0");
 	int nRetLen = ::GetClassName(hWnd, name, NAME_SIZE+1 );
 	if (nRetLen < 0)
 		nRetLen = 0;
 	else if (nRetLen > NAME_SIZE)
 		nRetLen = NAME_SIZE;
-	name[nRetLen] = '\0';
+	name[nRetLen] = _T('\0');
 	return CString(name);
 }
 
@@ -119,14 +118,13 @@ inline CString MtlGetWindowClassName(HWND hWnd)
 inline bool MtlIsKindOf(HWND hWnd, const TCHAR* pClassName)
 {
 	enum { NAME_SIZE = 0x1000/*255*/ };
-	TCHAR	name[ NAME_SIZE + 1 ];
-	name[0] = '\0';
+	TCHAR	name[ NAME_SIZE + 1 ] = _T("\0");
 	int nRetLen = ::GetClassName(hWnd, name, NAME_SIZE+1 );
 	if (nRetLen < 0)
 		nRetLen = 0;
 	else if (nRetLen > NAME_SIZE)
 		nRetLen = NAME_SIZE;
-	name[nRetLen] = '\0';
+	name[nRetLen] = _T('\0');
 	return _tcscmp(name, pClassName) == 0;
 }
 #else
@@ -149,16 +147,14 @@ inline CString MtlGetWindowText(HWND hWnd)
 	int 	nLen	= ::GetWindowTextLength(hWnd);
   #if 1	//+++ 必要以上に アロケートしないように再修正
 	enum { NAME_LEN = 0x1000 };
-	TCHAR	name[ NAME_LEN + 1 + 1];
+	TCHAR	name[ NAME_LEN + 1 + 1] = _T("\0");
 	if (nLen <= NAME_LEN) {
-		name[0]		 	= '\0';
 		int 	nRetLen = ::GetWindowText(hWnd, name, nLen + 1);
-		name[nLen]		= '\0';	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
+		name[nLen]		= _T('\0');	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
 		return CString(name);
 	} else {
-		TCHAR*	pName	= new TCHAR[ nLen + 1 + 1];
-		pName[0]		= '\0';
-		name[nLen]		= '\0';	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
+		TCHAR*	pName	= new TCHAR[ nLen + 1 + 1] = _T("\0");
+		name[nLen]		= _T('\0');	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
 		int 	nRetLen = ::GetWindowText(hWnd, pName, nLen + 1);
 		CString str( pName );
 		delete pName;

@@ -470,7 +470,8 @@ __declspec(selectany) UINT IDropTargetImplBase::s_nScrollInterval = DD_DEFSCROLL
 
 
 template <class T>
-class ATL_NO_VTABLE IDropTargetImpl : public _IDropTargetLocator, public IDropTargetImplBase {
+class ATL_NO_VTABLE IDropTargetImpl : public _IDropTargetLocator, public IDropTargetImplBase 
+{
 public:
 	// COM Identity
 	STDMETHOD	(_LocDTQueryInterface) (REFIID riid, void **ppvObject)
@@ -493,16 +494,8 @@ public:
 
 
 private:
-	virtual ULONG STDMETHODCALLTYPE 	AddRef()
-	{
-		return 1;
-	}
-
-
-	virtual ULONG STDMETHODCALLTYPE 	Release()
-	{
-		return 1;
-	}
+	STDMETHODIMP_(ULONG) AddRef()  { return 1; }
+	STDMETHODIMP_(ULONG) Release() { return 1; }
 
 
 	// Methods
@@ -512,18 +505,15 @@ private:
 
 
 	// IDropTarget
-	STDMETHOD	(DragEnter) (IDataObject * pDataObject, DWORD dwKeyState, POINTL pt, DWORD * pdwEffect)
+	STDMETHOD	(DragEnter) (IDataObject* pDataObject, DWORD dwKeyState, POINTL pt, DWORD* pdwEffect)
 	{
 		DTTRACE( _T("IDropTargetImpl::DragEnter\n") );
 		ATLASSERT(pdwEffect   != NULL);
 		ATLASSERT(pDataObject != NULL);
 
-		SCODE	   sc		  = E_UNEXPECTED;
-
 		// cache lpDataObject
 		DTTRACE( _T(" cache lpDataObject step1\n") );
 		m_spDataObject.Release();
-		ATLASSERT(m_spDataObject.p == NULL);
 		DTTRACE( _T(" cache lpDataObject step2\n") );
 		m_spDataObject = pDataObject;
 
@@ -539,25 +529,22 @@ private:
 			dropEffect = pT->OnDragEnter(pDataObject, dwKeyState, point);
 		}
 
-		*pdwEffect	   = _MtlFilterDropEffect(dropEffect, *pdwEffect);
-		sc			   = S_OK;
+		*pdwEffect = _MtlFilterDropEffect(dropEffect, *pdwEffect);
 
-		return sc;
+		return S_OK;
 	}
 
 
 	// If pdwEffect is only DROPEFFECT_COPY, you have to add DROPEFFECT_COPY to pdwEffect.
 	// That is, MFC always sucks.
-	STDMETHOD	(DragOver) (DWORD dwKeyState, POINTL pt, DWORD * pdwEffect)
+	STDMETHOD	(DragOver) (DWORD dwKeyState, POINTL pt, DWORD *pdwEffect)
 	{
 		DTTRACE( _T("IDropTargetImpl::DragOver\n") );
 		ATLASSERT(pdwEffect != NULL);
 		ATLASSERT(m_spDataObject != NULL);
 
-		SCODE	   sc		  = E_UNEXPECTED;
-
-		T * 	   pT		  = static_cast<T *>(this);
-		CPoint	   point( (int) pt.x, (int) pt.y );
+		CPoint	point( (int) pt.x, (int) pt.y );
+		T* pT = static_cast<T *>(this);
 		pT->ScreenToClient(&point);
 
 		// check first for entering scroll area
@@ -569,9 +556,8 @@ private:
 		}
 
 		*pdwEffect = _MtlFilterDropEffect(dropEffect, *pdwEffect);
-		sc		   = S_OK;
 
-		return sc;
+		return S_OK;
 	}
 
 
@@ -587,27 +573,25 @@ public:
 
 		// release cached data object
 		m_spDataObject.Release();
-		ATLASSERT(m_spDataObject.p == NULL);
 
 		return S_OK;
 	}
 
 
 private:
-	STDMETHOD	(Drop) (IDataObject * pDataObject, DWORD dwKeyState, POINTL pt, DWORD * pdwEffect)
+	STDMETHOD	(Drop) (IDataObject* pDataObject, DWORD dwKeyState, POINTL pt, DWORD* pdwEffect)
 	{
 		DTTRACE( _T("IDropTargetImpl::Drop\n") );
 		ATLASSERT(pdwEffect != NULL);
 		ATLASSERT(pDataObject != NULL);
 
-		SCODE	   sc		  = E_UNEXPECTED;
-
 		// cancel drag scrolling
 		m_nTimerID = MAKEWORD(-1, -1);
 
 		// prepare for call to OnDragOver
-		T * 	   pT		  = static_cast<T *>(this);
+		
 		CPoint	   point( (int) pt.x, (int) pt.y );
+		T* pT = static_cast<T *>(this);
 		pT->ScreenToClient(&point);
 
 		// verify that drop is legal
@@ -620,9 +604,8 @@ private:
 		m_spDataObject.Release();
 
 		*pdwEffect = dropEffect;
-		sc		   = S_OK;
 
-		return sc;
+		return S_OK;
 	}
 
 

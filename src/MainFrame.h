@@ -894,7 +894,6 @@ private:
 
 	bool	_IsSelectedTextInner();
 	void	_RefreshFavMenu();
-	void 	_RemoveShortcutTmpDirectory();
 
 
 	// Daba members
@@ -950,7 +949,7 @@ private:
 
 	HANDLE								m_hGroupThread;
 #ifdef _DEBUG
-	CDebugWindow						m_wndDebug;
+//	CDebugWindow						m_wndDebug;
 #endif
 	CSaveGroupOptionToFile				m_saveGroupOptionToFile;		//+++ é©ìÆÉZÅ[Éuèàóù.
 	CBitmap 							m_bmpBg;						//+++ BGâÊëú
