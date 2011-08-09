@@ -582,7 +582,7 @@ private:
 	//各ウィンドウへ(主にキー)メッセージを転送する
 	virtual BOOL PreTranslateMessage(MSG *pMsg);
 
-	HWND 		UserOpenFile(const CString& strFile, DWORD openFlag, int dlCtrlFlag = -1, int extendedStyleFlags = -1);
+	HWND 		UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag = -1, int extendedStyleFlags = -1);
 
 	BOOL 		 OnXButtonUp(WORD wKeys, WORD wButton, CPoint point);
 	void 		 ExplorerBarAutoShow(MSG *pMsg);

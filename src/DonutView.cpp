@@ -248,8 +248,10 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 	} else if (MTL::MtlIsDataAvailable(pDataObj, CF_SHELLURLW)) {	// タブなどから
 		CString strURL;
 		MtlGetHGlobalText(pDataObj, strURL, CF_SHELLURLW);
-		if (strURL.IsEmpty() == FALSE)
+		if (strURL.IsEmpty() == FALSE) {
+			MTL::ParseInternetShortcutFile(strURL);	// ファイルパス->URL
 			Navigate2(strURL);
+		}
 
 	} else {	// 外部から
 		CString strURL;

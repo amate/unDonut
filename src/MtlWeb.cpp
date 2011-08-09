@@ -758,7 +758,6 @@ static bool OpenLnkFile(CString &strPath, const CString &strArg)
 		return false;
 
 	CComQIPtr<IPersistFile> spPersistFile(spShellLink);
-
 	if (spPersistFile) {
 		// load shortcut
 		USES_CONVERSION;
@@ -779,19 +778,16 @@ static bool OpenLnkFile(CString &strPath, const CString &strArg)
 				return false;
 			}
 
-			TCHAR	szCmdLine[2048];
-			szCmdLine[0] = _T('\0');
-			hr			 = spShellLink->GetArguments(szCmdLine, 2048);
-
+			TCHAR	szCmdLine[2048] = _T("\0");
+			hr	= spShellLink->GetArguments(szCmdLine, 2048);
 			if ( !strArg.IsEmpty() )
 				::lstrcpyn(szCmdLine, strArg, 2048);
 
-			int 	nShowCmd = SW_SHOWNORMAL;
-			hr			 = spShellLink->GetShowCmd(&nShowCmd);
+			int nShowCmd = SW_SHOWNORMAL;
+			hr	= spShellLink->GetShowCmd(&nShowCmd);
 
-			TCHAR	szDirPath[MAX_PATH];
-			szDirPath[0] = _T('\0');
-			hr			 = spShellLink->GetWorkingDirectory(szDirPath, 2048);
+			TCHAR	szDirPath[MAX_PATH] = _T("\0");
+			hr	= spShellLink->GetWorkingDirectory(szDirPath, MAX_PATH);
 
 			::ShellExecute(NULL, _T("open"), szFilePath, szCmdLine, szDirPath, nShowCmd);
 			return true;	// handled

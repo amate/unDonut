@@ -180,14 +180,19 @@ void CChildFrame::OnNewWindow2(IDispatch **ppDisp, bool &bCancel)
 		return;
 	}
 
-	DWORD		 exStyle= _GetInheritedExtendedStyleFlags();	//+++ 新規に子供を作るときの、その子供に渡す ExtendedStyle を求める...
+	DWORD	exStyle			= _GetInheritedExtendedStyleFlags();	//+++ 新規に子供を作るときの、その子供に渡す ExtendedStyle を求める...
+	DWORD	dwDLCtrlFlags	= _GetInheritedDLControlFlags();
+	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
+		exStyle			= CDLControlOption::s_dwExtendedStyleFlags;
+		dwDLCtrlFlags	= CDLControlOption::s_dwDLControlFlags;
+	}
 
 	m_MDITab.SetLinkState(LINKSTATE_A_ON);
 	CChildFrame *pChild = CChildFrame::NewWindow(	m_hWndMDIClient,
 													m_MDITab,
 													m_AddressBar,
 													true,
-													_GetInheritedDLControlFlags(),
+													dwDLCtrlFlags,
 													exStyle );	//+++ 引数追加.
 	
 	//m_MDITab.SetLinkState(LINKSTATE_OFF);
@@ -606,7 +611,7 @@ DWORD CChildFrame::_GetInheritedDLControlFlags()
 {
 	DWORD dwDLFlags;
 
-	if (this &&  _check_flag(MAIN_EX_INHERIT_OPTIONS, CMainOption::s_dwMainExtendedStyle) )
+	if ( _check_flag(MAIN_EX_INHERIT_OPTIONS, CMainOption::s_dwMainExtendedStyle) )
 		dwDLFlags = m_view._GetDLControlFlags();
 	else
 		dwDLFlags = CDLControlOption::s_dwDLControlFlags;
@@ -621,7 +626,7 @@ DWORD CChildFrame::_GetInheritedExtendedStyleFlags()
 {
 	DWORD dwExFlags;
 
-	if (this &&  _check_flag(MAIN_EX_INHERIT_OPTIONS, CMainOption::s_dwMainExtendedStyle) ) {
+	if ( _check_flag(MAIN_EX_INHERIT_OPTIONS, CMainOption::s_dwMainExtendedStyle) ) {
 		dwExFlags = m_view._GetExtendedStypeFlags();
 	  #if 1	//+++ ナビゲートロックに関しては継承しない....
 		dwExFlags &= ~DVS_EX_OPENNEWWIN;											//+++ off

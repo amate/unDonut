@@ -2038,9 +2038,8 @@ HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 
 
 //+++ url別拡張プロパティ対応で、本来のOnUserOpenFileをUserOpenFileに変名. 引数を末に追加.
-HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtrlFlag, int extededStyleFlags)
+HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*= -1*/, int extededStyleFlags /*= -1*/)
 {
-	CString		strFile (strFile0);
 	MtlRemoveStringHeaderAndFooter(strFile);
 
 	if ( MtlIsExt( strFile, _T(".url") ) ) {	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
@@ -2072,10 +2071,8 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 	if (strFile.GetLength() > INTERNET_MAX_PATH_LENGTH)
 		return NULL;
 
-	// UH (JavaScript dont create window)
-	CString 	 strJava = strFile.Left(11);
-	strJava.MakeLower();
-	if ( strJava == _T("javascript:") ) {
+	// "javascript:"ならウィンドウを作成しないフラグを追加する
+	if ( strFile.Left(11).CompareNoCase(_T("javascript:")) == 0 ) {
 		if ( strFile == _T("javascript:location.reload()") )
 			return NULL;
 		openFlag |= D_OPENFILE_NOCREATE;
@@ -2090,7 +2087,7 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 		}
 		return NULL;
 	}
-
+	
 	if ( MtlIsExt( strFile, _T(".xml") ) && ::PathFileExists(strFile) ) {
 		if ( !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG) ) {
 			RestoreAllTab(strFile, true);
@@ -2115,16 +2112,54 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 
 	HWND	hWndActive = MDIGetActive();
 
-	int 	nCmdShow   = _check_flag(D_OPENFILE_ACTIVATE, openFlag) ? -1 : SW_SHOWNOACTIVATE;
+	int nCmdShow = _check_flag(D_OPENFILE_ACTIVATE, openFlag) ? -1 : SW_SHOWNOACTIVATE;
 	if (hWndActive == NULL) {					// no window yet
 		nCmdShow = -1;							// always default
 	}
 
+	/* openFlag が NOCREATE ならアクティブなページを移動する */
 	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlag) ) {
 		CWebBrowser2 browser = DonutGetIWebBrowser2(hWndActive);
-
 		if ( !browser.IsBrowserNull() ) {
-			browser.Navigate2(strFile);
+			if (strFile.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+				CComPtr<IDispatch>	spDisp;
+				browser.m_spBrowser->get_Document(&spDisp);
+				CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
+				if (spDoc == nullptr)
+					return NULL;
+				CComPtr<IHTMLWindow2>	spWindow;
+				spDoc->get_parentWindow(&spWindow);
+				if (spWindow == nullptr)
+					return NULL;
+				CComVariant	vRet;
+				spWindow->execScript(CComBSTR(strFile), CComBSTR(L"javascript"), &vRet);
+				TRACEIN(_T("UserOpenFile() : bookmarket実行(%s)"), (LPCTSTR)strFile.Left(45));
+
+#if 0	//\\ こっちはscriptタグを追加する
+				CComPtr<IHTMLElement>	spScriptElm;
+				spDoc->createElement(CComBSTR(L"script"), &spScriptElm);
+				if (spScriptElm == nullptr)
+					return NULL;
+
+				CComQIPtr<IHTMLScriptElement>	spScript = spScriptElm;
+				spScript->put_type(CComBSTR(L"text/javascript"));
+				spScript->put_text(CComBSTR(strFile));
+			
+
+				CComPtr<IHTMLElement>	spBodyElm;
+				spDoc->get_body(&spBodyElm);
+				CComQIPtr<IHTMLDOMNode>	spBodyNode = spBodyElm;
+				if (spBodyNode == nullptr)
+					return NULL;
+				CComQIPtr<IHTMLDOMNode>	spScriptNode = spScript;
+				CComPtr<IHTMLDOMNode>	sptempNode;
+				spBodyNode->appendChild(spScriptNode, &sptempNode);
+				TRACEIN(_T("javascript追加 正常終了!"));
+				return NULL;
+#endif
+			} else {
+				browser.Navigate2(strFile);
+			}
 
 			if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
 				// reset focus
@@ -2137,16 +2172,13 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 		}
 	}
 
- 	//+++
-	//x if (CMainOption::s_dwMainExtendedStyle & (/*MAIN_EX_NOACTIVATE_NEWWIN|*/MAIN_EX_NEWWINDOW))
+	/* 新規ウィンドウ作成 */
 	{
-		//+++ if (dlCtrlFlag < 0)
-		//+++	dlCtrlFlag = CDLControlOption::s_dwDLControlFlags;
-		CChildFrame* pChild 	  = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar, false/*true*/, dlCtrlFlag, extededStyleFlags);
+		CChildFrame* pChild = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar, false/*true*/, dlCtrlFlag, extededStyleFlags);
 		if (pChild == NULL)
 			return NULL;
 
-		if ( !strFile.IsEmpty() ) {
+		if ( strFile.IsEmpty() == FALSE ) {
 			pChild->SetWaitBeforeNavigate2Flag();			//+++ 無理やり、BeforeNavigate2()が実行されるまでの間アドレスバーを更新しないようにするフラグをon... これもう不要だろうが...
 			m_OnUserOpenFile_nCmdShow = pChild->ActivateFrame(nCmdShow);	//\\ タブに追加
 
@@ -2157,15 +2189,9 @@ HWND CMainFrame::UserOpenFile(const CString& strFile0, DWORD openFlag, int dlCtr
 			} else {
 				pChild->Navigate2(strFile);
 			}
-			//pChild->Navigate2(_T("http://www.microsofttranslator.com/Default.aspx"), 0, NULL, _T("Content-Type: application/x-www-form-urlencoded"), (LPVOID)"SourceText=marketplace", ::strlen("SourceText=marketplace"));
-
-			//CString strUrl;
-			//strUrl.Format(_T("http://api.microsofttranslator.com/v2/Http.svc/Translate?appId=%s&text=%s&from=en&to=ja"), _T("6CB08565F99A903FB046716AA865A256A122E24C"), _T("test"));
-			//pChild->Navigate2(strUrl);
-
-
 		} else {
 			m_OnUserOpenFile_nCmdShow = pChild->ActivateFrame(nCmdShow);	//\\ タブに追加
+			TRACEIN(_T("UserOpenFile() : strFile.IsEmpty()"));
 		}
 
 		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {

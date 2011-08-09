@@ -197,7 +197,7 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_ = 2, ID_LAST };
 
 		menu.InsertMenu( 0, MF_BYPOSITION | MF_ENABLED, ID_OPEN_ITEMSAVEFOLDER, _T("保存先フォルダを開く") );
-		menu.InsertMenu( 1, MF_BYPOSITION | MF_ENABLED, ID_OPEN_REFERER		  , _T("ダウンロードしたページを表示する") );
+		menu.InsertMenu( 1, MF_BYPOSITION | MF_ENABLED, ID_OPEN_REFERER_	  , _T("ダウンロードしたページを表示する") );
 
 		auto funcExeCommand = [=](int commandID) -> bool {
 			if (commandID == ID_OPEN_ITEMSAVEFOLDER) {
