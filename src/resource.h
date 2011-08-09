@@ -866,6 +866,7 @@
 #define ID_OPEN_DLFOLDER				33192
 #define ID_RENAME_DLITEM				33193
 #define ID_OPEN_SAVEFOLDER				33194
+#define ID_OPEN_REFERER					33195
 
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000

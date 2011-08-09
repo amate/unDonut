@@ -477,7 +477,8 @@ void CChildFrame::OnBeforeNavigate2(
 		return;
 	}
 	//\\ Navigate中かつjavescriptから始まるウィンドウはナビゲートしない
-	if (m_bNowNavigate && strURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {	// void
+	//if (/*m_bNowNavigate && */strURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {	// void
+	if (m_bNowNavigate && strURL.Left(15).CompareNoCase(_T("javascript:void")) == 0 || strURL.CompareNoCase(_T("javascript:;")) == 0) {
 		bCancel = true;
 		return;
 	}

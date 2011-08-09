@@ -6,6 +6,7 @@
 #include "DLListWindow.h"
 #include "../MtlWin.h"
 #include "../IniFile.h"
+#include "../HlinkDataObject.h"
 #include "DownloadOptionDialog.h"
 #include "DownloadManager.h"
 
@@ -19,6 +20,7 @@ void CDLListWindow::SetDLList(const std::vector<CString>& vecURL)
 	for (int i = 0; i < nCount; ++i) {
 		m_DLList.AddItem(i, 0, vecURL[i]);
 	}
+	_SetTitle();
 }
 
 // Overrides
@@ -33,9 +35,77 @@ BOOL CDLListWindow::PreTranslateMessage(MSG* pMsg)
 			::DispatchMessage(pMsg);
 			return TRUE;
 		}
+	} else if (m_DLList.m_hWnd == pMsg->hwnd) {
+		if (msg == WM_KEYDOWN && pMsg->wParam == VK_DELETE) {	// リストビューでdeleteキー押してアイテム削除する
+			int nIndex = -1;
+			vector<int> vecIndex;
+			int nCount = m_DLList.GetItemCount();
+			for (int i = 0; i < nCount; ++i) {
+				nIndex = m_DLList.GetNextItem(nIndex, LVNI_SELECTED);
+				if (nIndex == -1)
+					break;
+
+				vecIndex.push_back(nIndex);
+			}
+			for (auto rit = vecIndex.rbegin(); rit != vecIndex.rend(); ++rit) {
+				m_DLList.DeleteItem(*rit);
+			}
+			_SetTitle();
+		}
 	}
 	return FALSE;
 }
+
+
+DROPEFFECT CDLListWindow::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
+{
+	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
+		return DROPEFFECT_LINK;
+	return DROPEFFECT_NONE;
+}
+
+
+DROPEFFECT CDLListWindow::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
+{
+	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
+		return DROPEFFECT_LINK;
+	return DROPEFFECT_NONE;
+}
+
+
+DROPEFFECT CDLListWindow::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point)
+{
+	if (dropEffect != DROPEFFECT_LINK) 
+		return DROPEFFECT_NONE;
+
+	vector<CString>	vecUrl;
+	FORMATETC formatetc = { CF_SHELLURLW, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	STGMEDIUM stgmedium = { 0 };
+	HRESULT hr = pDataObject->GetData(&formatetc, &stgmedium);
+	if ( SUCCEEDED(hr) ) {
+		if (stgmedium.hGlobal != NULL) {
+			HGLOBAL hText = stgmedium.hGlobal;
+			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
+			while (*strList) {
+				CString strUrl = strList;
+				if (strUrl.Left(4).CompareNoCase(_T("http")) != 0)
+					break;
+				vecUrl.push_back(strUrl);
+				strList += strUrl.GetLength() + 1;				
+			}
+			::GlobalUnlock(hText);
+		}
+		::ReleaseStgMedium(&stgmedium);
+	}
+	if (vecUrl.empty() == false) {
+		SetDLList(vecUrl);
+	}
+	return DROPEFFECT_LINK;
+}
+
+
+
+
 
 BOOL	CDLListWindow::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 {
@@ -86,6 +156,7 @@ BOOL	CDLListWindow::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	m_cmbDLOption.AddString(_T("連番を付ける"));
 	m_cmbDLOption.SetCurSel(pr.GetValue(_T("DLOption"), 0));
 
+	RegisterDragDrop();
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
@@ -114,6 +185,7 @@ void	CDLListWindow::OnClose()
 
 	pr.SetValue(m_cmbDLOption.GetCurSel(), _T("DLOption"));
 
+	RevokeDragDrop();
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->RemoveMessageFilter(this);
@@ -194,8 +266,17 @@ void	CDLListWindow::_DLStart()
 		++m_nDownloading;
 		m_DLList.DeleteItem(0);
 	}
+	_SetTitle();
 }
 
+
+void	CDLListWindow::_SetTitle()
+{
+	int nCount = m_DLList.GetItemCount();
+	CString strTitle;
+	strTitle.Format(_T("アイテム数 %d - DLリスト"), nCount);
+	SetWindowText(strTitle);
+}
 
 
 

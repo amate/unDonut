@@ -21,66 +21,6 @@ class CFindBar::Impl :
 public:
 	DECLARE_WND_CLASS(_T("DonutFindBar"))
 
-	Impl();
-
-	HWND	Create(HWND hWndParent);
-	void	SetUpdateLayoutFunc(function<void (BOOL)> func) { m_funcUpdateLayout = func; }
-	void	ShowFindBar(const CString& strKeyword);
-	void	CloseFindBar();
-
-	// Overrides
-	void	DoPaint(CDCHandle dc);
-	void	OnTrackMouseLeave();
-	BOOL	PreTranslateMessage(MSG* pMsg);
-
-	// Message map
-	BEGIN_MSG_MAP_EX( Impl )
-		CHAIN_MSG_MAP( CThemeImpl<Impl> )
-		MSG_WM_DESTROY	 ( OnDestroy )
-		MSG_WM_SIZE		 ( OnSize )
-		MSG_WM_MOUSEMOVE ( OnMouseMove )
-		MSG_WM_LBUTTONDOWN( OnLButtonDown )
-		MSG_WM_LBUTTONUP  ( OnLButtonUp	)
-		MSG_WM_PARENTNOTIFY( OnParentNotify )
-		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel )
-		NOTIFY_CODE_HANDLER_EX( TBN_DROPDOWN, OnDropDownOption )
-		MSG_WM_CTLCOLOREDIT	 ( OnCtlColorEdit )
-		MSG_WM_CTLCOLORSTATIC( OnCtlColorStatic )
-		COMMAND_HANDLER_EX( IDC_EDIT, EN_CHANGE, OnEditChanged )
-		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEDOWN	, OnFindPageDown )
-		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEUP	, OnFindPageUp )
-		COMMAND_ID_HANDLER_EX( ID_FIND_HIGHLIGHT, OnFindHighlight )
-		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
-		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
-	ALT_MSG_MAP(1)	// Edit
-		MSG_WM_KEYDOWN		( OnEditKeyDown )
-		MSG_WM_LBUTTONDOWN	( OnEditLButtonDown )
-	END_MSG_MAP()
-
-	void	OnDestroy();
-	void	OnSize(UINT nType, CSize size);
-	void	OnMouseMove(UINT nFlags, CPoint point);
-	void	OnLButtonDown(UINT nFlags, CPoint point);
-	void	OnLButtonUp(UINT nFlags, CPoint point);
-	void	OnParentNotify(UINT message, UINT nChildID, LPARAM lParam);
-	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT OnDropDownOption(LPNMHDR pnmh);
-	HBRUSH	OnCtlColorEdit(CDCHandle dc, CEdit edit);
-	HBRUSH	OnCtlColorStatic(CDCHandle dc, CStatic wndStatic);
-	void	OnEditChanged(UINT uNotifyCode, int nID, CWindow wndCtl);
-	void	OnFindPageUp(UINT uNotifyCode, int nID, CWindow wndCtl);
-	void	OnFindPageDown(UINT uNotifyCode, int nID, CWindow wndCtl);
-	void	OnFindHighlight(UINT uNotifyCode, int nID, CWindow wndCtl);
-
-	// Edit
-	void	OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
-	void	OnEditLButtonDown(UINT nFlags, CPoint point);
-
-private:
-	void	_RemoveHighlight(IHTMLDocument3* pDoc3);
-	void	_HighlightKeyword(bool bNoHighlight = false, bool bEraseOld = true);
-	void	_FindKeyword(bool bFindDown);
-
 	// Constants
 	enum {
 		BarSize = 25,
@@ -101,7 +41,74 @@ private:
 
 		StaticWidth = 200,
 		StaticHeight = 22,
+
+		TimerID = 1,
+		Interval = 200,
 	};
+
+	// Constructor
+	Impl();
+
+	HWND	Create(HWND hWndParent);
+	void	SetUpdateLayoutFunc(function<void (BOOL)> func) { m_funcUpdateLayout = func; }
+	void	ShowFindBar(const CString& strKeyword);
+	void	CloseFindBar();
+
+	// Overrides
+	void	DoPaint(CDCHandle dc);
+	void	OnTrackMouseLeave();
+	BOOL	PreTranslateMessage(MSG* pMsg);
+
+	// Message map
+	BEGIN_MSG_MAP_EX( Impl )
+		CHAIN_MSG_MAP( CThemeImpl<Impl> )
+		MSG_WM_DESTROY		( OnDestroy )
+		MSG_WM_SIZE			( OnSize )
+		MSG_WM_MOUSEMOVE	( OnMouseMove )
+		MSG_WM_LBUTTONDOWN	( OnLButtonDown )
+		MSG_WM_LBUTTONUP	( OnLButtonUp	)
+		MSG_WM_PARENTNOTIFY	( OnParentNotify )
+		MSG_WM_TIMER		( OnTimer )
+		MESSAGE_HANDLER_EX	( WM_MOUSEWHEEL, OnMouseWheel )
+		NOTIFY_CODE_HANDLER_EX( TBN_DROPDOWN, OnDropDownOption )
+		MSG_WM_CTLCOLOREDIT	( OnCtlColorEdit )
+		MSG_WM_CTLCOLORSTATIC( OnCtlColorStatic )
+		COMMAND_HANDLER_EX( IDC_EDIT, EN_CHANGE, OnEditChanged )
+		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEDOWN	, OnFindPageDown )
+		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEUP	, OnFindPageUp )
+		COMMAND_ID_HANDLER_EX( ID_FIND_HIGHLIGHT, OnFindHighlight )
+		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
+		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
+	ALT_MSG_MAP(1)	// Edit
+		MSG_WM_KEYDOWN		( OnEditKeyDown )
+		MSG_WM_LBUTTONDOWN	( OnEditLButtonDown )
+	END_MSG_MAP()
+
+	void	OnDestroy();
+	void	OnSize(UINT nType, CSize size);
+	void	OnMouseMove(UINT nFlags, CPoint point);
+	void	OnLButtonDown(UINT nFlags, CPoint point);
+	void	OnLButtonUp(UINT nFlags, CPoint point);
+	void	OnParentNotify(UINT message, UINT nChildID, LPARAM lParam);
+	void	OnTimer(UINT_PTR nIDEvent);
+	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnDropDownOption(LPNMHDR pnmh);
+	HBRUSH	OnCtlColorEdit(CDCHandle dc, CEdit edit);
+	HBRUSH	OnCtlColorStatic(CDCHandle dc, CStatic wndStatic);
+	void	OnEditChanged(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnFindPageUp(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnFindPageDown(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnFindHighlight(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	// Edit
+	void	OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnEditLButtonDown(UINT nFlags, CPoint point);
+
+private:
+	void	_RemoveHighlight(IHTMLDocument3* pDoc3);
+	void	_HighlightKeyword(bool bNoHighlight = false, bool bEraseOld = true);
+	void	_FindKeyword(bool bFindDown);
+
 	// Data members
 	CContainedWindowT<CEdit>	m_Edit;
 	CToolBarCtrl	m_ToolBar;
@@ -120,6 +127,7 @@ private:
 
 	function<void (BOOL)>	m_funcUpdateLayout;
 	bool	m_bNowShowing;
+	CString	m_strEditChange;
 };
 
 //=============================
@@ -371,6 +379,21 @@ void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
 	}
 }
 
+//------------------------------------
+/// 延滞ハイライト実行
+void	CFindBar::Impl::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent != TimerID)
+		return;
+
+	CString str = MtlGetWindowText(m_Edit);
+	if (str == m_strEditChange) {
+		_HighlightKeyword(!m_bAutoHighlight);
+		_FindKeyword(true);
+
+		KillTimer(nIDEvent);
+	}
+}
 
 //---------------------------------
 /// エディットコントロールにフォーカスがある場合でもスクロールできるようにする
@@ -462,8 +485,8 @@ void	CFindBar::Impl::OnEditChanged(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if (m_bNowShowing) // ShowFindBar の方でする
 		return ;
 
-	_HighlightKeyword(!m_bAutoHighlight);
-	_FindKeyword(true);
+	m_strEditChange = MtlGetWindowText(m_Edit);
+	SetTimer(TimerID, Interval);
 }
 
 //-----------------------------

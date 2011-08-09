@@ -611,7 +611,8 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 	if ( s_bAutoComplete )
 		MtlAutoComplete( m_edit );
 
-	// GetEditCtrl().SetLimitText(0x1000);
+	m_edit.SetLimitText(INTERNET_MAX_URL_LENGTH);
+	m_comboFlat.LimitText(INTERNET_MAX_URL_LENGTH);
 
 	#if 1	//+++ エディット部分にツールTIPを追加
 	{

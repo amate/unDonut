@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../resource.h"
+#include "../MtlDragDrop.h"
 
 /////////////////////////////////////////////////////////
 // CDLListWindow
@@ -14,7 +15,8 @@ class CDLListWindow :
 	public CDialogImpl<CDLListWindow>,
 	public CWinDataExchange<CDLListWindow>,
 	public CDialogResize<CDLListWindow>,
-	public CMessageFilter
+	public CMessageFilter,
+	public IDropTargetImpl<CDLListWindow>
 {
 public:
 	enum { IDD = IDD_DLLIST };
@@ -25,6 +27,10 @@ public:
 	// Overrides
 	void OnFinalMessage(_In_ HWND /*hWnd*/) { delete this; }
 	BOOL PreTranslateMessage(MSG* pMsg);
+
+	DROPEFFECT OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point);
+	DROPEFFECT OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect);
+	DROPEFFECT OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point);
 
 	// ダイアログリサイズマップ
     BEGIN_DLGRESIZE_MAP( CDLListWindow )
@@ -64,6 +70,7 @@ public:
 
 private:
 	void	_DLStart();
+	void	_SetTitle();
 
 	// Data members
 	CComboBox	m_cmbDLFolder;

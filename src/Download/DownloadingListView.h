@@ -114,8 +114,9 @@ public:
 		MESSAGE_HANDLER_EX( WM_USER_REMOVEFROMDOWNLIST, OnRemoveFromList )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MSG_WM_MOUSEMOVE	( OnMouseMove )
-		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM, OnRenameDLItem )
+		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM		, OnRenameDLItem )
 		COMMAND_ID_HANDLER_EX( ID_OPEN_SAVEFOLDER	, OnOpenSaveFolder )
+		COMMAND_ID_HANDLER_EX( ID_OPEN_REFERER		, OnOpenReferer )
         CHAIN_MSG_MAP( CScrollWindowImpl<CDownloadingListView> )
         CHAIN_MSG_MAP_ALT( CScrollWindowImpl<CDownloadingListView>, 1)
 		CHAIN_MSG_MAP(CThemeImpl<CDownloadingListView>)
@@ -135,6 +136,7 @@ public:
 	void	OnMouseMove(UINT nFlags, CPoint point);
 	void	OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnOpenReferer(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 
 private:

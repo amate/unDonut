@@ -24,19 +24,16 @@ int MtlGetLBTextFixed(HWND hWndCombo, int nIndex, CString &strText)
 {
 	CComboBox	combo(hWndCombo);
 	ATLASSERT( combo.IsWindow() );
-	return combo.GetLBText(nIndex, strText);
-#if 0
 	//+++ CString::GetBufferSetLength(0) (GetBuffer(0), AllocBuffer(0))は、メモリ確保せず共通の空を返す...
 	//+++ ので、0チェックしないと誤deleteが発生してハングに化ける...
 	int 	nRet = combo.GetLBTextLen(nIndex) * 2;
 	if (nRet > 0) {
-		nRet = 
+		nRet = combo.GetLBText(nIndex, strText.GetBuffer(nRet + 1));
 		strText.ReleaseBuffer();
 	} else {
 		strText.Empty();	//+++ 空にする
 	}
 	return nRet;
-#endif
 }
 
 
@@ -44,13 +41,12 @@ int MtlGetLBTextFixed(HWND hWndCombo, int nIndex, CString &strText)
 int MtlListBoxGetText(HWND hWndBox, int nIndex, CString &strText)
 {
 	CListBox	box(hWndBox);
-
 	ATLASSERT( box.IsWindow() );
 	//+++ CString::GetBufferSetLength(0) (GetBuffer(0), AllocBuffer(0))は、メモリ確保せず共通の空を返す...
 	//+++ ので、0チェックしないと誤deleteが発生してハングに化ける...
 	int 		nRet = box.GetTextLen(nIndex) * 2;
 	if (nRet > 0) {
-		nRet = box.GetText( nIndex, strText.GetBufferSetLength( nRet+1 ) );
+		nRet = box.GetText( nIndex, strText.GetBuffer( nRet+1 ) );
 		strText.ReleaseBuffer();
 	} else {
 		strText.Empty();	//+++ 空にする

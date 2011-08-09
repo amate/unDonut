@@ -114,9 +114,12 @@ STDMETHODIMP CDownloadManager::Download(
 	if (FAILED(hr) && pbscbPrev) {
 		hr = pbc->RevokeObjectParam(L"_BSCB_Holder_");
 		if (SUCCEEDED(hr)) {
+			TRACEIN(_T("Download() : _BSCB_Holder_"));
 			// ¡“x‚Í¬Œ÷‚·‚é
 			hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, NULL, 0);
 			if (SUCCEEDED(hr)) {
+				pCBSCB->SetReferer(s_strReferer);
+				s_strReferer.Empty();
 				pCBSCB->SetBSCB(pbscbPrev);
 				pCBSCB->SetBindCtx(pbc);
 			}
@@ -133,6 +136,7 @@ STDMETHODIMP CDownloadManager::Download(
 		}
 #endif
 		if (pszHeaders == nullptr) {
+			TRACEIN(_T("Download() : Referer : %s"), (LPCTSTR)s_strReferer);
 			pCBSCB->SetReferer(s_strReferer);
 			s_strReferer.Empty();
 			IBindCtx* pBC;

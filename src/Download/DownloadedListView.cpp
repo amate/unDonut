@@ -194,25 +194,26 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 		::GetCursorPos(&pt);
 		CMenu menu;
 		menu.CreatePopupMenu();
-		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER = 2, ID_LAST };
+		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_ = 2, ID_LAST };
 
 		menu.InsertMenu( 0, MF_BYPOSITION | MF_ENABLED, ID_OPEN_ITEMSAVEFOLDER, _T("保存先フォルダを開く") );
 		menu.InsertMenu( 1, MF_BYPOSITION | MF_ENABLED, ID_OPEN_REFERER		  , _T("ダウンロードしたページを表示する") );
 
 		auto funcExeCommand = [=](int commandID) -> bool {
-			if (commandID == ID_OPEN_REFERER) {
+			if (commandID == ID_OPEN_ITEMSAVEFOLDER) {
+				OpenFolderAndSelectItem(path);
+
+			} else if(commandID == ID_OPEN_REFERER_) {
 				if (strReferer.IsEmpty())
 					return true;
 				DonutOpenFile(g_pMainWnd->m_hWnd, strReferer, D_OPENFILE_ACTIVATE);
-			} else if (commandID == ID_OPEN_ITEMSAVEFOLDER) {
-				OpenFolderAndSelectItem(path);
+
 			} else {
 				return false;
 			}
-
 			return true;
 		};
-		if (pItem->bAbort) {
+		if (pItem->bAbort || ::PathFileExists(path) == FALSE) {
 			int nCmd = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON | TPM_RETURNCMD, pt.x, pt.y, m_hWnd);
 			funcExeCommand(nCmd);
 			return 0;

@@ -10,6 +10,8 @@
 #include "../HlinkDataObject.h"
 #include "../DonutPFunc.h"
 #include "DLListWindow.h"
+#include "../MainFrame.h"
+
 
 namespace {
 
@@ -263,7 +265,7 @@ int CDownloadingListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	::DestroyIcon(hStopIcon);
 
 	// フォントを設定
-	CLogFont	logfont;
+	WTL::CLogFont	logfont;
 	logfont.SetMenuFont();
 	m_Font = logfont.CreateFontIndirectW();
 
@@ -590,6 +592,21 @@ void	CDownloadingListView::OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow w
 
 	m_pItemPopup = nullptr;
 }
+
+//-------------------------------------------------------------
+/// ダウンロードしたページを表示する
+void	CDownloadingListView::OnOpenReferer(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (m_pItemPopup == nullptr)
+		return ;
+
+	if (m_pItemPopup->strReferer.IsEmpty())
+		return ;
+	DonutOpenFile(g_pMainWnd->m_hWnd, m_pItemPopup->strReferer, D_OPENFILE_ACTIVATE);
+
+	m_pItemPopup = nullptr;
+}
+
 
 
 //----------------------------------------------

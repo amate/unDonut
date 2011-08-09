@@ -848,6 +848,7 @@ BEGIN
 	BEGIN
 		MENUITEM "名前の変更",						ID_RENAME_DLITEM
 		MENUITEM "保存先のフォルダを開く",			ID_OPEN_SAVEFOLDER
+		MENUITEM "ダウンロードしたページを表示する",	ID_OPEN_REFERER
 	END
 END
 

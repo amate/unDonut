@@ -970,7 +970,7 @@ public:
 		if (cchLen == CB_ERR)
 			return CB_ERR;
 		int nRet = CB_ERR;
-		LPTSTR lpstr = strText.GetBufferSetLength(cchLen);
+		LPTSTR lpstr = strText.GetBufferSetLength(cchLen + 1);	//\\+ +1しないとアサートが出るので修正
 		if (lpstr != NULL)
 		{
 			nRet = GetLBText(nIndex, lpstr);
