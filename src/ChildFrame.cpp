@@ -275,8 +275,13 @@ void CChildFrame::OnNewWindow3(IDispatch **ppDisp, bool& Cancel, DWORD dwFlags, 
 			CComBSTR strTarget;
 			spAnchor->get_target(&strTarget);
 			if (strTarget == _T("_blank") || strTarget == _T("_new")) {
-				Cancel = true;
-				Navigate2(bstrUrl);
+				CComPtr<IHTMLWindow2>	spWindow;
+				spDocument->get_parentWindow(&spWindow);
+				if (spWindow) {
+					Cancel = true;
+					spWindow->navigate(bstrUrl);
+					//Navigate2(bstrUrl);
+				}
 			}
 		}
 	}

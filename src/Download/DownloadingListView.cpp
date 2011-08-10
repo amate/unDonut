@@ -379,7 +379,6 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 	}
 
 	if (nIDEvent == 1) {
-		// SS_ICON
 		int	nMaxTotalSecondTime = 0;
 		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
 			DLItem& item = *(*it);
@@ -399,13 +398,13 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 				nTotalTime		+= itq->second;
 			}
 			
-			int KbTransferRate = nProgressMargin / nTotalTime;	// kbyte / second
-			double MbTransferRate = (double)KbTransferRate / 1000.0;
+			double dKbTransferRate = (double)nProgressMargin / (double)nTotalTime;	// kbyte / second
+			double MbTransferRate = dKbTransferRate / 1000.0;
 			if (MbTransferRate > 1) {
 				::swprintf(strTransferRate.GetBuffer(30), _T(" (%.1lf MB/sec)"), MbTransferRate);
 				strTransferRate.ReleaseBuffer();
 			} else {
-				::swprintf(strTransferRate.GetBuffer(30), _T(" (%d KB/sec)"), KbTransferRate);
+				::swprintf(strTransferRate.GetBuffer(30), _T(" (%.1lf KB/sec)"), dKbTransferRate);
 				strTransferRate.ReleaseBuffer();
 			}
 			
@@ -413,8 +412,8 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			// 残り 4 分
 			int nRestByte = item.nProgressMax - item.nProgress;
 			if (nRestByte > 0) {
-				if (KbTransferRate > 0) {
-					int nTotalSecondTime = (nRestByte / 1000) / KbTransferRate;	// 残り時間(秒)
+				if (dKbTransferRate > 0) {
+					int nTotalSecondTime = (nRestByte / 1000) / (int)dKbTransferRate;	// 残り時間(秒)
 					if (nMaxTotalSecondTime < nTotalSecondTime)
 						nMaxTotalSecondTime = nTotalSecondTime;
 					int nhourTime	= nTotalSecondTime / (60 * 60);									// 時間
@@ -432,18 +431,25 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 
 					// 10.5 / 288 MB
 					CString strDownloaded;
-					int nMByte = item.nProgressMax / (1000 * 1000);
-					if (nMByte > 0) {
-						double DownloadMByte = (double)item.nProgress / (1000 * 1000);
-						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %d MB"), DownloadMByte, nMByte);
+					double dMByte = (double)item.nProgressMax / (1000.0 * 1000.0);
+					if (dMByte > 0) {
+						double DownloadMByte = (double)item.nProgress / (1000.0 * 1000.0);
+						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf MB"), DownloadMByte, dMByte);
 						strDownloaded.ReleaseBuffer();
 					} else {
-						int nKByte = (*it)->nProgressMax / 1000;
-						double DownloadKByte = (double)item.nProgress / 1000;
-						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %d KB"), DownloadKByte, nKByte);
+						double dKByte = (double)(*it)->nProgressMax / 1000.0;
+						double DownloadKByte = (double)item.nProgress / 1000.0;
+						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf KB"), DownloadKByte, dKByte);
 						strDownloaded.ReleaseBuffer();
 					}
 					item.strText += strDownloaded + strTransferRate;
+
+					WCHAR strDomain[INTERNET_MAX_URL_LENGTH];
+					DWORD cchResult = INTERNET_MAX_URL_LENGTH;
+					if (::CoInternetParseUrl(item.strURL, PARSE_DOMAIN, 0, strDomain, INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
+						item.strText += _T(" ― ");
+						item.strText += strDomain;
+					}
 				}
 			}
 		}
@@ -527,7 +533,21 @@ LRESULT CDownloadingListView::OnTooltipGetDispInfo(LPNMHDR pnmh)
 		ScreenToClient(&pt);
 		int nIndex = _HitTest(pt);
 		if (nIndex != -1) {
-			pntdi->lpszText = m_vecpDLItem[nIndex]->strURL.GetBuffer(0);
+			CRect rcItem = _GetItemClientRect(nIndex);
+			CRect rcFileName = rcItem;
+			rcFileName.left = cxFileNameMargin;
+			rcFileName.top += cyFileNameMargin;
+			rcFileName.bottom	-= (ItemHeight + UnderLineHeight) - cyProgressMargin;
+			if (rcFileName.PtInRect(pt)) {
+				pntdi->lpszText = m_vecpDLItem[nIndex]->strFileName.GetBuffer(0);
+			} else {
+				CRect	rcStop(CPoint(rcItem.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin), CSize(cxStop, cyStop));
+				if (rcStop.PtInRect(pt)) {
+					::wcscpy_s(pntdi->szText, L"キャンセル");
+				} else {
+					pntdi->lpszText = m_vecpDLItem[nIndex]->strURL.GetBuffer(0);
+				}
+			}
 		} else {
 			pntdi->lpszText = NULL;
 		}
@@ -536,13 +556,40 @@ LRESULT CDownloadingListView::OnTooltipGetDispInfo(LPNMHDR pnmh)
     return 0;
 }
 
-void CDownloadingListView::OnMouseMove(UINT nFlags, CPoint point)
+void CDownloadingListView::OnMouseMove(UINT nFlags, CPoint pt)
 {
 	SetMsgHandled(FALSE);
+
+	enum HoldPosition {
+		HOLD_NONE = 0,
+		HOLD_NAME = 1,
+		HOLD_STOP = 2,
+	};
+	static HoldPosition OldPosition = HOLD_NONE;
 	static int nOldIndex = -1;
-	int nIndex = _HitTest(point);
-	if (nIndex != nOldIndex) {
-		nOldIndex = nIndex;
+	HoldPosition	Position = HOLD_NONE;
+	int nIndex = _HitTest(pt);
+	if (nIndex != -1) {
+		CRect rcItem = _GetItemClientRect(nIndex);
+		CRect rcFileName = rcItem;
+		rcFileName.left = cxFileNameMargin;
+		rcFileName.top += cyFileNameMargin;
+		rcFileName.bottom	-= (ItemHeight + UnderLineHeight) - cyProgressMargin;
+		if (rcFileName.PtInRect(pt)) {
+			Position = HOLD_NAME;
+		} else {
+			CRect	rcStop(CPoint(rcItem.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin), CSize(cxStop, cyStop));
+			if (rcStop.PtInRect(pt)) {
+				Position = HOLD_STOP;
+			} else {
+				
+			}
+		}
+	}
+
+	if (nIndex != nOldIndex || Position != OldPosition) {
+		nOldIndex	= nIndex;
+		OldPosition	= Position;
 		m_ToolTip.Activate(FALSE);
 		m_ToolTip.Activate(TRUE);
 	}
