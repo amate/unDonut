@@ -23,6 +23,7 @@
 namespace MTL {
 
 const UINT	CF_SHELLURLW	= ::RegisterClipboardFormat(CFSTR_INETURLW);
+const UINT	CF_DONUTURLLIST	= ::RegisterClipboardFormat(_T("DonutURLList"));
 
 // for debug
 #ifdef _DEBUG
@@ -37,9 +38,35 @@ const UINT	CF_SHELLURLW	= ::RegisterClipboardFormat(CFSTR_INETURLW);
 /// pDataObjectÇ™ÉäÉìÉNÇé¶Ç∑Ç‡ÇÃÇ≈Ç†ÇÍÇŒtrueÇï‘Ç∑
 inline bool _MtlIsHlinkDataObject(IDataObject *pDataObject)
 {
-	return    MtlIsDataAvailable(pDataObject, CF_HDROP)
+	return (  MtlIsDataAvailable(pDataObject, CF_HDROP)
 		   || MtlIsDataAvailable(pDataObject, MTL_CF_TEXT)		//+++ UNICODEëŒçÙ(MTL_CF_TEXT)
-		   || MtlIsDataAvailable(pDataObject, CF_SHELLURLW );
+		   || MtlIsDataAvailable(pDataObject, CF_SHELLURLW)
+		   || MtlIsDataAvailable(pDataObject, CF_DONUTURLLIST) );
+}
+
+//-------------------------------------------------
+/// pDataObjectÇ©ÇÁDonutURLListÇï‘Ç∑
+inline bool GetDonutURLList(IDataObject* pDataObject, std::vector<CString>&	vecUrl) 
+{
+	bool	bResult = false;
+	FORMATETC formatetc = { CF_DONUTURLLIST, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
+	STGMEDIUM stgmedium = { 0 };
+	if ( SUCCEEDED(pDataObject->GetData(&formatetc, &stgmedium)) ) {
+		if (stgmedium.hGlobal) {
+			HGLOBAL hText = stgmedium.hGlobal;
+			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
+			while (*strList) {
+				CString strUrl = strList;
+				vecUrl.push_back(strUrl);
+				strList += strUrl.GetLength() + 1;				
+			}
+			bResult = true;
+			::GlobalUnlock(hText);
+		}
+		::ReleaseStgMedium(&stgmedium);
+	}
+
+	return bResult;
 }
 
 
@@ -94,10 +121,10 @@ public:
 		HGLOBAL hGlobal = NULL;
 		static const UINT CF_FILENAME  = ::RegisterClipboardFormat(CFSTR_FILENAME);
 		const UINT format = pformatetcIn->cfFormat;
-		if (format == MTL_CF_TEXT || format == CF_FILENAME) {
+		if (format == MTL_CF_TEXT || format == CF_SHELLURLW || format == CF_FILENAME) {
 			hGlobal = _CreateText();
-		} else if (format == CF_SHELLURLW) {
-			hGlobal = _CreateURL();
+		} else if (format == CF_DONUTURLLIST) {
+			hGlobal = _CreateDonutURLList();
 		} else if (format == CF_HDROP) {
 			// next, create shortcuts
 			_InitFileNamesArrayForHDrop();
@@ -124,6 +151,7 @@ private:
 		if (   pformatetc->cfFormat == CF_HDROP 
 			|| pformatetc->cfFormat == MTL_CF_TEXT	//+++ UNICODEèCê≥(MTL_CF_TEXT)
 		    || pformatetc->cfFormat == CF_SHELLURLW 
+			|| pformatetc->cfFormat == CF_DONUTURLLIST
 			|| pformatetc->cfFormat == ::RegisterClipboardFormat(CFSTR_FILENAME) )
 			return S_OK;
 		else
@@ -156,6 +184,7 @@ private:
 				{ CF_HDROP, 								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },
 				{ MTL_CF_TEXT,								 NULL,		DVASPECT_CONTENT,	-1,   TYMED_HGLOBAL },		//+++ UNICODEëŒçÙ(MTL_CF_TEXT)
 				{ CF_SHELLURLW,								 NULL,		DVASPECT_CONTENT,	-1,   0 			},
+				{ CF_DONUTURLLIST,							 NULL,		DVASPECT_CONTENT,	-1,   0 			},
 				{ ::RegisterClipboardFormat(CFSTR_FILENAME), NULL,		DVASPECT_CONTENT,	-1,   0 			},
 			};
 			hr = pEnumFormatEtc->Init(formatetcs, formatetcs + _countof(formatetcs), NULL, AtlFlagCopy);
@@ -242,7 +271,7 @@ private:
 		return hMem;
 	}
 
-	HGLOBAL	_CreateURL()
+	HGLOBAL	_CreateDonutURLList()
 	{
 		if (m_arrNameAndUrl.GetSize() == 0)
 			return NULL;
@@ -267,7 +296,6 @@ private:
 		*lpszDest = L'\0';
 		::GlobalUnlock(hMem);
 		return hMem;
-
 	}
 
 

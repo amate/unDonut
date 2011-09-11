@@ -690,10 +690,17 @@ void	CDonutSearchBar::Impl::SearchPage(bool bForward, int nNum /*= -1*/)
 {
 	CString str;
 	CEdit	edit = GetEditCtrl();
-
+RESET:
 	if (m_bWordLock) {	// ロックされている単語を使う
-		m_wndToolBar.GetButtonText(ID_SEARCHBAR_WORD00 + nNum/*ID_SEARCHBAR_WORD00*/, str.GetBuffer(1024));
-		str.ReleaseBuffer();
+		int 	nStart = -1, nEnd = -1;
+		edit.GetSel(nStart, nEnd);
+		if (nStart == nEnd) {
+			m_wndToolBar.GetButtonText(ID_SEARCHBAR_WORD00 + nNum/*ID_SEARCHBAR_WORD00*/, str.GetBuffer(1024));
+			str.ReleaseBuffer();
+		} else {
+			m_bWordLock = false;
+			goto RESET;	// 何かしら選択されているので
+		}
 	} else {
 
 		if (nNum == -1) {

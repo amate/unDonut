@@ -5,6 +5,12 @@
 
 #include "stdafx.h"
 #include "Donut.h"
+#include <strsafe.h>
+#include <dbghelp.h>
+#include <shellapi.h>
+#include <shlobj.h>
+
+#include "MtlMisc.h"
 #include "AtlHostEx.h"
 #include "initguid.h"
 #include "DonutP.h"
@@ -13,6 +19,7 @@
 #include "ie_feature_control.h"
 #include "MainFrame.h"								//+++ "MainFrm.h"
 #include "API.h"
+#include "appconst.h"
 
 #ifdef USE_ATL3_BASE_HOSTEX /*_ATL_VER < 0x700*/	//+++
 #include "for_ATL3/AtlifaceEx_i.c"
@@ -56,8 +63,8 @@ extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandI
 
 
 CServerAppModule	_Module;
-CMainFrame *		g_pMainWnd				  = NULL;
-CAPI *				g_pAPI					  = NULL;
+CMainFrame*			g_pMainWnd				  = NULL;
+CAPI*				g_pAPI					  = NULL;
 
 
 
@@ -67,6 +74,75 @@ END_OBJECT_MAP()
 
 
 static void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine);
+
+
+typedef BOOL (WINAPI *MiniDumpWriteDump_fp)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION, PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
+
+MiniDumpWriteDump_fp	funcMiniDumpWriteDump = nullptr;
+
+int GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
+{
+	BOOL bMiniDumpSuccessful;
+	HANDLE hDumpFile;
+	SYSTEMTIME stLocalTime;
+	MINIDUMP_EXCEPTION_INFORMATION ExpParam;
+
+	GetLocalTime( &stLocalTime );
+
+	TCHAR	strExePath[MAX_PATH];
+	::GetModuleFileName(_Module.GetModuleInstance(), strExePath, MAX_PATH);
+	::PathRemoveFileSpec(strExePath);
+
+	// 以前のダンプファイルを削除する
+	MTL::MtlForEachFile(strExePath, [](const CString& strPath) {
+		if (Misc::GetFileExt(strPath) == _T("dmp"))
+			::DeleteFile(strPath);
+	});
+
+	TCHAR strDmpFilePath[MAX_PATH];
+	StringCchPrintf(strDmpFilePath, MAX_PATH, _T("%s\\%s-%s %04d%02d%02d-%02d%02d%02d-%ld-%ld.dmp"),
+		strExePath, app::cnt_AppName, app::cnt_AppVersion,
+		stLocalTime.wYear, stLocalTime.wMonth, stLocalTime.wDay, 
+		stLocalTime.wHour, stLocalTime.wMinute, stLocalTime.wSecond, 
+		GetCurrentProcessId(), GetCurrentThreadId());
+
+	hDumpFile = CreateFile(strDmpFilePath, GENERIC_READ|GENERIC_WRITE, 
+				FILE_SHARE_WRITE|FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0);
+
+	ExpParam.ThreadId = GetCurrentThreadId();
+	ExpParam.ExceptionPointers = pExceptionPointers;
+	ExpParam.ClientPointers = TRUE;
+
+	bMiniDumpSuccessful = funcMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), 
+					hDumpFile, MiniDumpWithDataSegs, &ExpParam, NULL, NULL);
+
+	CString strError = _T("強制終了しました。\n例外：");
+	switch (pExceptionPointers->ExceptionRecord->ExceptionCode) {
+	case EXCEPTION_ACCESS_VIOLATION:
+		strError += _T("スレッドが適切なアクセス権を持たない仮想アドレスに対して、読み取りまたは書き込みを試みました。");
+		break;
+	case EXCEPTION_FLT_DIVIDE_BY_ZERO:
+	case EXCEPTION_INT_DIVIDE_BY_ZERO:
+		strError += _T(" 0 で除算しようとしました。");
+		break;
+	case EXCEPTION_INT_OVERFLOW:
+		strError += _T("整数演算結果の最上位ビットが繰り上がりました。");
+		break;
+	case EXCEPTION_STACK_OVERFLOW:
+		strError += _T("スタックオーバーフローしました。");
+		break;
+	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
+		strError += _T("スレッドが範囲外の配列要素にアクセスしようとしました。使用中のハードウェアは境界チェックをサポートしています。");
+		break;
+	default:
+		strError += _T("その他の例外が発生しました。");
+		break;
+	};
+	MessageBox(NULL, strError, NULL, MB_ICONERROR);
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
 
 // コマンドラインからURLを取り出す
 static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
@@ -451,10 +527,7 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 }
 
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// _tWinMain : EntryPoint
-
-int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lpstrCmdLine, int nCmdShow)
+int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 {
 	// DLL攻撃対策
 	SetDllDirectory(_T(""));
@@ -579,14 +652,43 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 	ATLTRACE(_T("正常終了しました。\n"));
 END_APP:
 	_Module.Term();
-
 	::OleUninitialize();
 	::CoUninitialize();
 
 	CDonutSimpleEventManager::RaiseEvent(EVENT_PROCESS_END);
-
  	return nRet;
 }
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// _tWinMain : EntryPoint
+
+int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lpstrCmdLine, int nCmdShow)
+{
+#ifdef _WIN64
+	HMODULE hDll = LoadLibrary(_T("64dbghelp.dll"));
+#else
+	HMODULE hDll = LoadLibrary(_T("dbghelp.dll"));
+#endif
+	if (hDll) {
+		funcMiniDumpWriteDump = (MiniDumpWriteDump_fp)GetProcAddress(hDll, "MiniDumpWriteDump");
+		if (funcMiniDumpWriteDump) {
+			__try {
+				int nRet = RunWinMain(hInstance, lpstrCmdLine, nCmdShow);
+				FreeLibrary(hDll);
+				return nRet;
+			}
+			__except(GenerateDump(GetExceptionInformation()))
+			{
+			}
+		}
+		FreeLibrary(hDll);
+		return 0;
+	}
+
+	return RunWinMain(hInstance, lpstrCmdLine, nCmdShow);
+}
+
 
 
 

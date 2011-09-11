@@ -136,6 +136,11 @@ HRESULT CCustomBindStatusCallBack::OnProgress(
 {
 	if (ulStatusCode == BINDSTATUS_BEGINDOWNLOADDATA) {
 		m_pDLItem->strURL = szStatusText;
+		WCHAR strDomain[INTERNET_MAX_URL_LENGTH];
+		DWORD cchResult = INTERNET_MAX_URL_LENGTH;
+		if (::CoInternetParseUrl(m_pDLItem->strURL, PARSE_DOMAIN, 0, strDomain, INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
+			m_pDLItem->strDomain = strDomain;
+		}
 	}
 
 	if (ulStatusCode & BINDSTATUS_DOWNLOADINGDATA) {
@@ -159,9 +164,6 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
     /* [in] */ HRESULT hresult,
     /* [unique][in] */ LPCWSTR szError) 
 {
-	if (m_hFile != INVALID_HANDLE_VALUE) {
-		::CloseHandle(m_hFile);
-	}
 	if (m_spBinding)
 		m_spBinding.Release();
 
@@ -181,11 +183,27 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
 	::PostMessage(m_hWndDLing, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem, (LPARAM)this);
 
 	// お片付け
-	if (::PathFileExists(m_pDLItem->strIncompleteFilePath)) {
-		::DeleteFile(m_pDLItem->strIncompleteFilePath);
-		::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), nullptr);
-		TRACEIN(_T("不完全ファイルを削除しました。: %s"), (LPCTSTR)m_pDLItem->strIncompleteFilePath);
+	if (m_hFile != INVALID_HANDLE_VALUE) {
+		::CloseHandle(m_hFile);
+		m_hFile = INVALID_HANDLE_VALUE;
+
+		if (m_pDLItem->nProgress != m_pDLItem->nProgressMax && m_pDLItem->nProgressMax != 0) {
+			m_pDLItem->bAbort = true;
+			if (::PathFileExists(m_pDLItem->strIncompleteFilePath)) {
+				::DeleteFile(m_pDLItem->strIncompleteFilePath);
+				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), nullptr);
+				TRACEIN(_T("不完全ファイルを削除しました。: %s"), (LPCTSTR)m_pDLItem->strIncompleteFilePath);
+			}
+		} else {
+			TRACEIN(_T("OnStopBinding() : 正常終了しました(%s)"), (LPCTSTR)m_pDLItem->strFileName);
+			::MoveFileEx(m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath, MOVEFILE_REPLACE_EXISTING);
+			/* エクスプローラーにファイルの変更通知 */
+			::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), static_cast<LPCTSTR>(m_pDLItem->strFilePath));
+		}
 	}
+
+	
+
 
 	return S_OK;
 }
@@ -274,13 +292,13 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 			::CloseHandle(m_hFile);
 			m_hFile = INVALID_HANDLE_VALUE;
 
-			if (m_pDLItem->nProgress != m_pDLItem->nProgressMax) {
+			if (m_pDLItem->nProgress != m_pDLItem->nProgressMax && m_pDLItem->nProgressMax != 0) {
 				m_pDLItem->bAbort = true;
 				::DeleteFile(m_pDLItem->strIncompleteFilePath);
 				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), nullptr);
 				TRACEIN(_T("BSCF_LASTDATANOTIFICATION (%s): サイズが一致しません！"), (LPCTSTR)m_pDLItem->strFileName);
 			} else {
-
+				TRACEIN(_T("BSCF_LASTDATANOTIFICATION : 正常終了しました(%s)"), (LPCTSTR)m_pDLItem->strFileName);
 				::MoveFileEx(m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath, MOVEFILE_REPLACE_EXISTING);
 				/* エクスプローラーにファイルの変更通知 */
 				::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), static_cast<LPCTSTR>(m_pDLItem->strFilePath));
@@ -400,7 +418,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 						}
 					} 
 				} else {
-					if (Misc::IsShiftJIS(strtemp1.c_str(), strtemp1.length())) {
+					if (Misc::IsShiftJIS(strtemp1.c_str(), (int)strtemp1.length())) {
 						bShiftJis = true;
 						m_pDLItem->strFileName = strtemp1.c_str();
 						TRACEIN(_T("Shift-JIS文字列でした : %s"), (LPCTSTR)m_pDLItem->strFileName);

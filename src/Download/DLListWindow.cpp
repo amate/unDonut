@@ -59,48 +59,36 @@ BOOL CDLListWindow::PreTranslateMessage(MSG* pMsg)
 
 DROPEFFECT CDLListWindow::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
 {
-	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
-		return DROPEFFECT_LINK;
+	if (_MtlIsHlinkDataObject(pDataObject))
+		return DROPEFFECT_LINK | DROPEFFECT_COPY;
 	return DROPEFFECT_NONE;
 }
 
 
 DROPEFFECT CDLListWindow::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
 {
-	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
-		return DROPEFFECT_LINK;
+	if (_MtlIsHlinkDataObject(pDataObject))
+		return DROPEFFECT_LINK | DROPEFFECT_COPY;
 	return DROPEFFECT_NONE;
 }
 
 
 DROPEFFECT CDLListWindow::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point)
 {
-	if (dropEffect != DROPEFFECT_LINK) 
-		return DROPEFFECT_NONE;
-
 	vector<CString>	vecUrl;
-	FORMATETC formatetc = { CF_SHELLURLW, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-	STGMEDIUM stgmedium = { 0 };
-	HRESULT hr = pDataObject->GetData(&formatetc, &stgmedium);
-	if ( SUCCEEDED(hr) ) {
-		if (stgmedium.hGlobal != NULL) {
-			HGLOBAL hText = stgmedium.hGlobal;
-			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
-			while (*strList) {
-				CString strUrl = strList;
-				if (strUrl.Left(4).CompareNoCase(_T("http")) != 0)
-					break;
-				vecUrl.push_back(strUrl);
-				strList += strUrl.GetLength() + 1;				
-			}
-			::GlobalUnlock(hText);
+	if (GetDonutURLList(pDataObject, vecUrl) == false) {
+		CString strText;
+		if (   MtlGetHGlobalText(pDataObject, strText)
+			|| MtlGetHGlobalText(pDataObject, strText, CF_SHELLURLW))
+		{
+			vecUrl.push_back(strText);
 		}
-		::ReleaseStgMedium(&stgmedium);
 	}
+
 	if (vecUrl.empty() == false) {
 		SetDLList(vecUrl);
 	}
-	return DROPEFFECT_LINK;
+	return DROPEFFECT_LINK | DROPEFFECT_COPY;
 }
 
 

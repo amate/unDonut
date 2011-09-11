@@ -2008,6 +2008,9 @@ HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 			CString strKeyword = rt.str(2).c_str();
 			if (strKeyword.IsEmpty())
 				return NULL;
+			strKeyword.TrimLeft(_T(" \t\r\n　"));
+			strKeyword.TrimRight(_T(" \t\r\n　"));
+			TRACEIN(_T("コマンドラインからの検索:%s"), (LPCTSTR)strKeyword);
 			CString strEngine  = rt.str(1).c_str();
 			m_SearchBar.SearchWebWithEngine(strKeyword, strEngine);
 			return NULL;
@@ -3806,9 +3809,14 @@ void CMainFrame::OnMDIChild(HWND hWnd, UINT nCode)
 BOOL CMainFrame::OnBrowserCanSetFocus()
 {										// asked by browser
 	HWND hWndFocus = ::GetFocus();
-
 	if (hWndFocus == NULL)
 		return TRUE;
+
+	if (m_SearchBar.GetEditCtrl().m_hWnd == hWndFocus)
+		return FALSE;
+
+	if (m_AddressBar.GetEditCtrl().m_hWnd == hWndFocus)
+		return FALSE;
 
 	if ( ::IsChild(m_hWndToolBar, hWndFocus) )
 		return FALSE;

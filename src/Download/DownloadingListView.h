@@ -21,6 +21,7 @@ struct DLItem
 {
 
 	CString strURL;
+	CString	strDomain;
 	CString strReferer;
 	CRect	rcItem;
 	CString strFileName;	// ƒtƒ@ƒCƒ‹–¼

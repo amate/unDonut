@@ -1445,6 +1445,14 @@ bool	IsGpuRendering()
 	return bEnable != 0;
 }
 
+bool	IsVistalater()
+{
+	OSVERSIONINFO osvi = { sizeof (OSVERSIONINFO) };
+	::GetVersionEx(&osvi);
+	return osvi.dwMajorVersion >= 6;
+}
+
+
 
 /** +++ XP以降で使える、osヒープ取得で、フラグメンテーションを少なくするモードへの設定.
  *  ※ 一部 w2kでもMSのパッチによっては使えるらしい?

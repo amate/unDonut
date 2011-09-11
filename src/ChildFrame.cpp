@@ -111,7 +111,6 @@ CChildFrame::CChildFrame(  CDonutTabBar &MDITab
 	, m_bOperateDrag(false)
 	, m_bExPropLock(false)
 	, m_hWndF(NULL)
-	, m_hWndA(NULL)
 	, m_strBookmark(NULL)
 	, m_nPainBookmark(0)
 	, m_nSecureLockIcon( secureLockIconUnsecure )
@@ -686,7 +685,8 @@ void CChildFrame::OnDocumentComplete(IDispatch *pDisp, const CString &strURL)
 		m_bExPropLock		= FALSE;
 
 		if ( MDIGetActive() == m_hWnd && DonutBrowserCanSetFocus(m_hWnd) ) {
-			_SetPageFocus();
+			_SetFocusToHTML();
+			//_SetPageFocus();
 		}
 		_SetFavicon(strURL);
 	}
@@ -878,9 +878,6 @@ void CChildFrame::OnStateCompleted()
 
 	HWND hWndA2 = ::GetActiveWindow();
 	HWND hWndF2 = ::GetFocus();
-
-	if (m_hWndA)
-		::SetActiveWindow(m_hWndA);
 
 	if (m_hWndF)
 		::SetFocus(m_hWndF);
@@ -1304,7 +1301,8 @@ void CChildFrame::OnMDIActivate(HWND hwndChildDeact, HWND hwndChildAct)
 		m_AddressBar.SetWindowText( GetLocationURL() );
 	  #endif
 		//_SetPageFocus();
-		_SetFocusToHTML();
+		if (MtlIsApplicationActive(m_hWnd))
+			_SetFocusToHTML();
 		//_RestoreFocus();
 		if (CSearchBarOption::s_bSaveSearchWord) {
 			pSearchBar->SetSearchStr(m_strSearchWord); //\\ ï€ë∂ÇµÇƒÇ®Ç¢ÇΩï∂éöóÒÇåüçıÉoÅ[Ç…ñﬂÇ∑
@@ -1413,10 +1411,8 @@ void CChildFrame::SetUrlSecurityExStyle(LPCTSTR lpszFile)
 void CChildFrame::OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	if (MDIGetActive() == m_hWnd) {
-		m_hWndA = NULL;
 		m_hWndF = NULL;
 	} else {
-		m_hWndA = ::GetActiveWindow();
 		m_hWndF = ::GetFocus();
 	}
 	m_bReload = true;
@@ -1975,7 +1971,7 @@ void CChildFrame::OnSetExtendedTabStyle(DWORD dwStyle)
 	if (dwStyle & FLAG_SE_BLOCKMAILTO)		dwViewExStyle |=  DVS_EX_BLOCK_MAILTO;
 	else									dwViewExStyle &= ~DVS_EX_BLOCK_MAILTO;
 
-	int nIndex = m_MDITab.GetTabIndex(m_hWndA);
+	int nIndex = m_MDITab.GetTabIndex(m_hWnd);
 
 	if (dwStyle & FLAG_SE_VIEWED)
 		m_MDITab.SetItemActive(nIndex);

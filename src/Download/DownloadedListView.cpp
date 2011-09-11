@@ -38,15 +38,15 @@ void	CDownloadedListView::AddDownloadedItem(DLItem* pItem)
 	SetItem(&Item);
 
 	CString strFileSize;
-	int nMByte = pItem->nProgressMax / (1000 * 1000);
+	int nMByte = pItem->nProgress / (1000 * 1000);
 	if (nMByte > 0) {
 		strFileSize.Format(_T("%d MB"), nMByte);
 	} else {
-		int nKByte = pItem->nProgressMax / 1000;
+		int nKByte = pItem->nProgress / 1000;
 		if (nKByte > 0) {
 			strFileSize.Format(_T("%d KB"), nKByte);
 		} else {
-			strFileSize.Format(_T("%d Byte"), pItem->nProgressMax);
+			strFileSize.Format(_T("%d Byte"), pItem->nProgress);
 		}
 	}
 	Item.iSubItem	= 5;
@@ -81,14 +81,16 @@ int CDownloadedListView::CompareItemsCustom(LVCompareParam* pItem1, LVComparePar
 	return 0;
 }
 
-
 // Message map
 
 int CDownloadedListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	LRESULT lRes = DefWindowProc();
 
-	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_INFOTIP);
+	if (Misc::IsVistalater())
+		UxTheme_Wrap::SetWindowTheme(m_hWnd, L"Explorer", 0);
+
+	SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_HEADERDRAGDROP | LVS_EX_INFOTIP | LVS_EX_DOUBLEBUFFER);
 
 	CImageList ImageList;
 	ImageList.Create(16, 16, ILC_COLOR32 | ILC_MASK, 2, 1);

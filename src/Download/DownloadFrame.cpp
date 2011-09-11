@@ -190,7 +190,7 @@ LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 {
 	//CAboutDlg dlg;
 	//dlg.DoModal();
-	MessageBox(_T("　　　version 3.0　　　"), _T("DownloadManager"));
+	MessageBox(_T("　　　version 3.2　　　"), _T("DownloadManager"));
 	return 0;
 }
 

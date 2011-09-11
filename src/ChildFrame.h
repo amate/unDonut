@@ -465,7 +465,6 @@ private:
 	CString 									m_strStatusBar;
 	HWND										m_hWndFocus;
 	HWND										m_hWndF;
-	HWND										m_hWndA;
 	
 	CComBSTR/*BSTR*/							m_strBookmark;
 	CString										m_strOldKeyword;

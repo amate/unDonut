@@ -181,50 +181,38 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 
 DROPEFFECT CDownloadingListView::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
 {
-	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
-		return DROPEFFECT_LINK;
+	if (_MtlIsHlinkDataObject(pDataObject))
+		return DROPEFFECT_LINK | DROPEFFECT_COPY;
 	return DROPEFFECT_NONE;
 }
 
 
 DROPEFFECT CDownloadingListView::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect)
 {
-	if (MtlIsDataAvailable(pDataObject, CF_SHELLURLW))
-		return DROPEFFECT_LINK;
+	if (_MtlIsHlinkDataObject(pDataObject))
+		return DROPEFFECT_LINK | DROPEFFECT_COPY;
 	return DROPEFFECT_NONE;
 }
 
 
 DROPEFFECT CDownloadingListView::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point)
 {
-	if (dropEffect != DROPEFFECT_LINK) 
-		return DROPEFFECT_NONE;
-
 	vector<CString>	vecUrl;
-	FORMATETC formatetc = { CF_SHELLURLW, NULL, DVASPECT_CONTENT, -1, TYMED_HGLOBAL };
-	STGMEDIUM stgmedium = { 0 };
-	HRESULT hr = pDataObject->GetData(&formatetc, &stgmedium);
-	if ( SUCCEEDED(hr) ) {
-		if (stgmedium.hGlobal != NULL) {
-			HGLOBAL hText = stgmedium.hGlobal;
-			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
-			while (*strList) {
-				CString strUrl = strList;
-				if (strUrl.Left(4).CompareNoCase(_T("http")) != 0)
-					break;
-				vecUrl.push_back(strUrl);
-				strList += strUrl.GetLength() + 1;				
-			}
-			::GlobalUnlock(hText);
+	if (GetDonutURLList(pDataObject, vecUrl) == false) {
+		CString strText;
+		if (   MtlGetHGlobalText(pDataObject, strText)
+			|| MtlGetHGlobalText(pDataObject, strText, CF_SHELLURLW))
+		{
+			vecUrl.push_back(strText);
 		}
-		::ReleaseStgMedium(&stgmedium);
 	}
+
 	if (vecUrl.empty() == false) {
 		CDLListWindow* pwndDL = new CDLListWindow;
 		pwndDL->Create(m_hWnd);
 		pwndDL->SetDLList(vecUrl);
 	}
-	return DROPEFFECT_LINK;
+	return DROPEFFECT_LINK | DROPEFFECT_COPY;
 }
 
 
@@ -411,28 +399,40 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 
 			// 残り 4 分
 			int nRestByte = item.nProgressMax - item.nProgress;
-			if (nRestByte > 0) {
+			if (nRestByte <= 0) {
+				CString strDownloaded;
+				double dMByte = (double)item.nProgress / (1000.0 * 1000.0);
+				if (dMByte >= 1) {
+					::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf MB ダウンロード"), dMByte);
+					strDownloaded.ReleaseBuffer();
+				} else {
+					double dKByte = (double)item.nProgress / 1000.0;
+					::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf KB ダウンロード"), dKByte);
+					strDownloaded.ReleaseBuffer();
+				}
+				item.strText.Format(_T("残り ??? 時間 ― %s ― %s"), strDownloaded, item.strDomain);
+			} else {
 				if (dKbTransferRate > 0) {
-					int nTotalSecondTime = (nRestByte / 1000) / (int)dKbTransferRate;	// 残り時間(秒)
+					int nTotalSecondTime = static_cast<int>((nRestByte / 1000) / dKbTransferRate);	// 残り時間(秒)
 					if (nMaxTotalSecondTime < nTotalSecondTime)
 						nMaxTotalSecondTime = nTotalSecondTime;
 					int nhourTime	= nTotalSecondTime / (60 * 60);									// 時間
 					int nMinTime	= (nTotalSecondTime - (nhourTime * (60 * 60))) / 60;			// 分
 					int nSecondTime = nTotalSecondTime - (nhourTime * (60 * 60)) - (nMinTime * 60);	// 秒
-					(*it)->strText = _T("残り ");
+					item.strText = _T("残り ");
 					if (nhourTime > 0) {
-						(*it)->strText.Append(nhourTime) += _T(" 時間 ");
+						item.strText.Append(nhourTime) += _T(" 時間 ");
 					}
 					if (nMinTime > 0) {
-						(*it)->strText.Append(nMinTime) += _T(" 分 ");
+						item.strText.Append(nMinTime) += _T(" 分 ");
 					}
-					(*it)->strText.Append(nSecondTime) += _T(" 秒 ― ");
+					item.strText.Append(nSecondTime) += _T(" 秒 ― ");
 
 
 					// 10.5 / 288 MB
 					CString strDownloaded;
 					double dMByte = (double)item.nProgressMax / (1000.0 * 1000.0);
-					if (dMByte > 0) {
+					if (dMByte >= 1) {
 						double DownloadMByte = (double)item.nProgress / (1000.0 * 1000.0);
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf MB"), DownloadMByte, dMByte);
 						strDownloaded.ReleaseBuffer();
@@ -442,14 +442,7 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf KB"), DownloadKByte, dKByte);
 						strDownloaded.ReleaseBuffer();
 					}
-					item.strText += strDownloaded + strTransferRate;
-
-					WCHAR strDomain[INTERNET_MAX_URL_LENGTH];
-					DWORD cchResult = INTERNET_MAX_URL_LENGTH;
-					if (::CoInternetParseUrl(item.strURL, PARSE_DOMAIN, 0, strDomain, INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
-						item.strText += _T(" ― ");
-						item.strText += strDomain;
-					}
+					item.strText += strDownloaded + strTransferRate + _T(" ― ") + item.strDomain;
 				}
 			}
 		}
