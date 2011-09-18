@@ -181,7 +181,7 @@ STDMETHODIMP CDonutView::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POI
 	m_bTempUseDefaultDropTarget = false;
 
 	m_spDropTargetHelper->DragEnter(m_hWnd, pDataObj, (LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = m_spDefaultDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
+	HRESULT hr = S_OK;//m_spDefaultDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
 	m_bExternalDrag = MtlIsDataAvailable(pDataObj, ::RegisterClipboardFormat(CFSTR_FILENAME));
 	if (m_bExternalDrag)
 		*pdwEffect |= DROPEFFECT_LINK;
@@ -192,7 +192,7 @@ STDMETHODIMP CDonutView::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POI
 STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	m_spDropTargetHelper->DragOver((LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = m_spDefaultDropTarget->DragOver(grfKeyState, pt, pdwEffect);
+	HRESULT hr = S_OK;//m_spDefaultDropTarget->DragOver(grfKeyState, pt, pdwEffect);
 	if (*pdwEffect == DROPEFFECT_COPY) {
 		m_bTempUseDefaultDropTarget = true;
 		return hr;
@@ -215,13 +215,13 @@ STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect
 STDMETHODIMP CDonutView::DragLeave()
 {
 	m_spDropTargetHelper->DragLeave();
-	return m_spDefaultDropTarget->DragLeave();
+	return S_OK;//m_spDefaultDropTarget->DragLeave();
 }
 
 STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = m_spDefaultDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
+	HRESULT hr = S_OK;//m_spDefaultDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
 	if (m_bTempUseDefaultDropTarget)//\\ 
 		return hr;
 
