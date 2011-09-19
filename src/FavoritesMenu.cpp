@@ -232,6 +232,7 @@ void	CExplorerMenu::Impl::Init(
 BOOL	CExplorerMenu::Impl::InstallExplorerMenu(HMENU hMenu)
 {
 	ATLASSERT( ::IsMenu(hMenu) );
+	m_menu = hMenu;
 
 	auto funcFindInsertPoint = [this](CMenuHandle menu) -> int {
 		int 	nItems 			= menu.GetMenuItemCount();
@@ -255,10 +256,8 @@ BOOL	CExplorerMenu::Impl::InstallExplorerMenu(HMENU hMenu)
 
 	// save original menu infos
 	//ATLASSERT(_FindInsertPoint(hMenu) != -1); // need InsertPointMenuItem
-	m_nOriginalMenuItemCountExceptInsertPointMenuItem = ::GetMenuItemCount(hMenu) - 1;
+	m_nOriginalMenuItemCountExceptInsertPointMenuItem = m_menu.GetMenuItemCount() - 1;
 	m_nOriginalInsertPoint							  = funcFindInsertPoint(hMenu);
-
-	m_menu = hMenu;
 
 	return TRUE;
 }

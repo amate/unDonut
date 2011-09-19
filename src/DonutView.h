@@ -36,7 +36,6 @@ public:
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか
 	void	SetOperateDragDrop(BOOL bOn, int nCommand);
-	void	SetDefaultDropTarget(IDropTarget* pTarget) { m_spDefaultDropTarget = pTarget; }
 
 	// Overrides
 	BOOL	PreTranslateMessage(MSG *pMsg);
@@ -119,14 +118,11 @@ public:
 	END_UPDATE_COMMAND_UI_MAP()
 
 
-private:
-
-	// UDT DGSTR
+	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
+	void	OnDestroy();
 	void	OnMultiChg(WORD, WORD, HWND);
 	void	OnSecuChg(WORD, WORD, HWND);
 	void	OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
-	void	OnDestroy();
 
 	void	OnMultiBgsounds(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnMultiVideos(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -136,11 +132,12 @@ private:
 	void	OnSecurScritps(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-	void		OnUpdateDLCTL_ChgMulti(CCmdUI *pCmdUI);
-	void		OnUpdateDLCTL_ChgSecu(CCmdUI *pCmdUI);
-	void		OnUpdateDLCTL_DLIMAGES(CCmdUI *pCmdUI);
-	void		OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI);
-	void		OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI);
+	// UI map
+	void	OnUpdateDLCTL_ChgMulti(CCmdUI *pCmdUI);
+	void	OnUpdateDLCTL_ChgSecu(CCmdUI *pCmdUI);
+	void	OnUpdateDLCTL_DLIMAGES(CCmdUI *pCmdUI);
+	void	OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI);
+	void	OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI);
 
 
 private:
@@ -161,9 +158,8 @@ private:
 	//CAmbientDispatch			m_ExternalAmbientDispatch;
 
 	int 						m_nDDCommand;
-	CComPtr<IDropTarget>		m_spDefaultDropTarget;
 	bool						m_bUseCustomDropTarget;
-	bool						m_bTempUseDefaultDropTarget;
+	bool						m_bDragAccept;
 	bool						m_bExternalDrag;
 	CComPtr<IDropTargetHelper>	m_spDropTargetHelper;
 

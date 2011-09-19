@@ -51,10 +51,7 @@ STDMETHODIMP CDocHostUIHandlerDispatch::GetHostInfo(
 
 STDMETHODIMP CDocHostUIHandlerDispatch::GetDropTarget(/* [in] */ IUnknown* pDropTarget, /* [out] */ IUnknown** ppDropTarget)
 {
-	CComQIPtr<IDropTarget>	spDefaultDropTarget = pDropTarget;
-	m_pView->SetDefaultDropTarget(spDefaultDropTarget);
-	m_pView->QueryInterface(IID_IUnknown, (void**)ppDropTarget);
-	return S_OK;
+	return m_pView->QueryInterface(IID_IUnknown, (void**)ppDropTarget);;
 }
 
 STDMETHODIMP CDocHostUIHandlerDispatch::TranslateAccelerator(

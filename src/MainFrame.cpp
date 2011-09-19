@@ -829,7 +829,18 @@ void CMainFrame::DelHistory()
  #define XBUTTON2						0x0002
 #endif
 
+/// カーソルの下のウィンドウにホイールメッセージを通知する
+static BOOL OnMouseWheelHook(MSG *pMsg)
+{
+	CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 
+	HWND hWndTarget = ::WindowFromPoint(pt);
+	if (hWndTarget) {
+		::SendMessage(hWndTarget, pMsg->message, pMsg->wParam, MAKELPARAM(pt.x, pt.y));
+		return TRUE;
+	}
+	return FALSE;
+}
 
 //各ウィンドウへ(主にキー)メッセージを転送する
 BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
@@ -898,6 +909,10 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 		printf("%d,%d\n",pMsg->wParam, pMsg->lParam);
 	}
   #endif
+
+	// ホイール
+	if ( pMsg->message == WM_MOUSEWHEEL && OnMouseWheelHook(pMsg) )
+		return TRUE;
 
 	// 中ボタンクリックのチェック
 	if ( pMsg->message == WM_MBUTTONDOWN && hWnd != NULL && ::IsChild(hWnd, pMsg->hwnd) && OnMButtonHook(pMsg) )

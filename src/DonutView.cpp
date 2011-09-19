@@ -49,6 +49,7 @@ CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
 	//, m_ExternalAmbientDispatch()
    #endif
 	, m_bUseCustomDropTarget(false)
+	, m_bDragAccept(false)
 	, m_bExternalDrag(false)
 	, m_bLightRefresh(false)
 { }
@@ -103,7 +104,7 @@ void CDonutView::SetOperateDragDrop(BOOL bOn, int nCommand)
 	if ( FAILED(hr) )
 		return;
 
-	SetRegisterAsDropTarget(bOn != 0/*? true : false*/);	// falseだとDDを受け付けない
+	//SetRegisterAsDropTarget(bOn != 0/*? true : false*/);	// falseだとDDを受け付けない
   #if 0 //_ATL_VER >= 0x700
 	if (bOn)
 		m_ExternalUIDispatch.SetExternalDropTarget(this);	// DDを受け付ける
@@ -150,7 +151,8 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 		*ppvObject = (IDropTarget*)this;
 // IID_IUnknown	IDropTargetのため？
 	} else if (iid == IID_IUnknown) {
-		*ppvObject = (IUnknown*)(IDropTarget*)this;
+		if (m_bUseCustomDropTarget)
+			*ppvObject = (IUnknown*)(IDropTarget*)this;
 	}
 
 	if (*ppvObject == NULL)
@@ -178,55 +180,41 @@ STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** p
 // IDropTarget
 STDMETHODIMP CDonutView::DragEnter(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
-	m_bTempUseDefaultDropTarget = false;
-
 	m_spDropTargetHelper->DragEnter(m_hWnd, pDataObj, (LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = S_OK;//m_spDefaultDropTarget->DragEnter(pDataObj, grfKeyState, pt, pdwEffect);
 	m_bExternalDrag = MtlIsDataAvailable(pDataObj, ::RegisterClipboardFormat(CFSTR_FILENAME));
 	if (m_bExternalDrag)
 		*pdwEffect |= DROPEFFECT_LINK;
+	m_bDragAccept = _MtlIsHlinkDataObject(pDataObj);
+	if (m_bDragAccept && m_bUseCustomDropTarget)
+		*pdwEffect |= DROPEFFECT_LINK | DROPEFFECT_COPY;
 	//*pdwEffect |= DROPEFFECT_LINK;// | DROPEFFECT_COPY | DROPEFFECT_MOVE;
-	return hr;
+	return S_OK;
 }
 
 STDMETHODIMP CDonutView::DragOver(DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	m_spDropTargetHelper->DragOver((LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = S_OK;//m_spDefaultDropTarget->DragOver(grfKeyState, pt, pdwEffect);
-	if (*pdwEffect == DROPEFFECT_COPY) {
-		m_bTempUseDefaultDropTarget = true;
-		return hr;
-	}
 
-	if (m_bUseCustomDropTarget) {
-		if (*pdwEffect == DROPEFFECT_COPY) {
-			m_bTempUseDefaultDropTarget = true;
-		} else {
-			m_bTempUseDefaultDropTarget = false;
-		}
-		hr = S_OK;
-		*pdwEffect = DROPEFFECT_COPY | DROPEFFECT_LINK;
-	}
 	if (m_bExternalDrag)
 		*pdwEffect |= DROPEFFECT_LINK;
-	return hr;
+
+	if (m_bDragAccept && m_bUseCustomDropTarget)
+		*pdwEffect |= DROPEFFECT_LINK | DROPEFFECT_COPY;
+
+	return S_OK;
 }
 
 STDMETHODIMP CDonutView::DragLeave()
 {
 	m_spDropTargetHelper->DragLeave();
-	return S_OK;//m_spDefaultDropTarget->DragLeave();
+	return S_OK;
 }
 
 STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL pt, DWORD *pdwEffect)
 {
 	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
-	HRESULT hr = S_OK;//m_spDefaultDropTarget->Drop(pDataObj, grfKeyState, pt, pdwEffect);
-	if (m_bTempUseDefaultDropTarget)//\\ 
-		return hr;
 
-	if (m_bUseCustomDropTarget && m_bTempUseDefaultDropTarget == false) {
-		hr = S_OK;
+	if (m_bDragAccept && m_bUseCustomDropTarget) {
 		CSimpleArray<CString>	arrFiles;
 		if ( MtlGetDropFileName(pDataObj, arrFiles) ) {	// ファイルがDropされた
 			unsigned  df   = DonutGetStdOpenFlag();
@@ -253,7 +241,7 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 			Navigate2(strURL);
 		}
 
-	} else {	// 外部から
+	} else if (m_bExternalDrag) {	// 外部から
 		CString strURL;
 		MtlGetHGlobalText(pDataObj, strURL, ::RegisterClipboardFormat(CFSTR_FILENAME));
 		if (strURL.IsEmpty() == FALSE) {
@@ -261,8 +249,7 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 			Navigate2(strURL);
 		}
 	}
-
-	return hr;
+	return S_OK;
 }
 
 
@@ -408,6 +395,7 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ATLASSERT(m_ViewOption.m_dwExStyle == 0);
 		m_ViewOption.m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
 	  #endif
+		RegisterDragDrop(m_hWnd, this);
 	}
 	catch (const CAtlException& e) {
 		MessageBox(GetLastErrorString(e));
@@ -419,6 +407,8 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 void CDonutView::OnDestroy()
 {
+	RevokeDragDrop(m_hWnd);
+
 	if (m_spBrowser) {
 		HRESULT hr = m_spBrowser->Stop();
 		CComQIPtr<IOleInPlaceObject>	spInPlaceObject = m_spBrowser;
