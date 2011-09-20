@@ -341,8 +341,11 @@ CChildFrame *CChildFrame::NewWindow(
 	//bool bCreated = false;
 	//boost::thread th(boost::bind(&_threadChildFrame, pChild, hWndMDIClient, &bCreated));
 	//‚ñ[?
-	if (pChild) 
-		pChild->CreateEx(hWndMDIClient);
+	if (pChild) {
+		RECT rcClient;
+		::GetClientRect(hWndMDIClient, &rcClient);
+		pChild->CreateEx(hWndMDIClient, rcClient);
+	}
 #if 0
 	int 	ret;
 	MSG 	msg 	= { 0 };
@@ -1194,7 +1197,6 @@ void CChildFrame::OnSysCommand(UINT uCmdType, CPoint pt)
 	else
 		SetMsgHandled(FALSE);
 }
-
 
 /// PretranslateMessage‚Ì‘ã‚í‚è
 LRESULT CChildFrame::OnForwardMsg(LPMSG pMsg, DWORD)

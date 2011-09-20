@@ -830,12 +830,42 @@ void CMainFrame::DelHistory()
 #endif
 
 /// カーソルの下のウィンドウにホイールメッセージを通知する
-static BOOL OnMouseWheelHook(MSG *pMsg)
+static BOOL OnMouseWheelHook(MSG *pMsg, HWND hWndChild)
 {
 	CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 
 	HWND hWndTarget = ::WindowFromPoint(pt);
 	if (hWndTarget) {
+		if (::IsChild(hWndChild, hWndTarget)) {
+			CChildFrame* pChild = (CChildFrame *) ::SendMessage(hWndChild, WM_GET_CHILDFRAME, 0, 0);
+			UINT nFlags = (UINT)LOWORD(pMsg->wParam);
+			int	 zDelta = (short)HIWORD(pMsg->wParam);
+			// 文字を拡大する
+			if ( nFlags == MK_CONTROL ) {
+				CComVariant	vEmpty;
+				CComVariant vZoomSize;
+				//\\ 現在の文字サイズを取得
+				pChild->m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vEmpty, &vZoomSize); 
+				if ( zDelta > 0 ){	
+					vZoomSize.lVal += 1;
+				} else {
+					vZoomSize.lVal -= 1;
+				}
+				//\\ 文字サイズを変更
+				pChild->m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoomSize, &vEmpty); 
+				return TRUE;
+			}
+
+			// ページを拡大する
+			if ( ::GetKeyState(VK_MENU) & 0x80 ){
+				if ( zDelta > 0 ){
+					pChild->SetBodyStyleZoom(10, 0, true);
+				} else {
+					pChild->SetBodyStyleZoom(-10, 0, true);
+				}
+				return TRUE;
+			}
+		}
 		::SendMessage(hWndTarget, pMsg->message, pMsg->wParam, MAKELPARAM(pt.x, pt.y));
 		return TRUE;
 	}
@@ -911,7 +941,7 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
   #endif
 
 	// ホイール
-	if ( pMsg->message == WM_MOUSEWHEEL && OnMouseWheelHook(pMsg) )
+	if ( pMsg->message == WM_MOUSEWHEEL && OnMouseWheelHook(pMsg, hWnd) )
 		return TRUE;
 
 	// 中ボタンクリックのチェック
