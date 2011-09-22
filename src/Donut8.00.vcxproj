@@ -862,6 +862,7 @@
     <ClCompile Include="appconst.cpp" />
     <ClCompile Include="BingTranslatorMenu.cpp" />
     <ClCompile Include="ChildFrame.cpp" />
+    <ClCompile Include="ChildFrameCommandUIUpdater.cpp" />
     <ClCompile Include="CmbboxPrxy.cpp" />
     <ClCompile Include="CustomContextMenu.cpp" />
     <ClCompile Include="DocHostUIHandlerDispatch.cpp" />
@@ -927,7 +928,9 @@
     <ClCompile Include="ItemIDList.cpp" />
     <ClCompile Include="MainFrame.cpp" />
     <ClCompile Include="DonutTabBar.cpp" />
+    <ClCompile Include="MenuEncode.cpp" />
     <ClCompile Include="Misc.cpp" />
+    <ClCompile Include="MultiThreadManager.cpp" />
     <ClCompile Include="newdelete.cpp" />
     <ClCompile Include="option\AddressBarPropertyPage.cpp" />
     <ClCompile Include="option\MDITabDialog.cpp" />
@@ -1061,6 +1064,7 @@
     <ClCompile Include="XmlFile.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\wtl80\include\atlsplit.h" />
     <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h" />
     <ClInclude Include="..\wtl80\include\uxtheme_wrap.h" />
     <ClInclude Include="AccelManager.h" />
@@ -1070,6 +1074,7 @@
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />
     <ClInclude Include="ChildFrame.h" />
+    <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
     <ClInclude Include="CustomContextMenu.h" />
     <ClInclude Include="DialogHook.h" />
@@ -1126,6 +1131,7 @@
     <ClInclude Include="MenuControl.h" />
     <ClInclude Include="MenuDropTargetWindow.h" />
     <ClInclude Include="Misc.h" />
+    <ClInclude Include="MultiThreadManager.h" />
     <ClInclude Include="OleDragDropExpToolBarCtrl.h" />
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h" />
     <ClInclude Include="option\RightClickMenuDialog.h" />
@@ -1192,7 +1198,6 @@
     <ClInclude Include="option\UrlSecurityOption.h" />
     <ClInclude Include="AtlhostEx.h" />
     <ClInclude Include="VersionControl.h" />
-    <ClInclude Include="WtlFixed\AtlSplit.h" />
     <ClInclude Include="atltheme_d.h" />
     <ClInclude Include="..\wtl80\include\atlapp.h" />
     <ClInclude Include="..\wtl80\include\atlcrack.h" />

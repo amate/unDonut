@@ -29,6 +29,7 @@ CString CMouseOption::s_strLEngine;
 CString CMouseOption::s_strREngine;
 CString CMouseOption::s_strBEngine;
 CString CMouseOption::s_strCEngine;
+int		CMouseOption::s_nDragDropCommandID = ID_SEARCH_DIRECT;
 
 
 void	CMouseOption::GetProfile()
@@ -43,6 +44,9 @@ void	CMouseOption::GetProfile()
 	s_strREngine = pr.GetString(_T("REngine"));
 	s_strBEngine = pr.GetString(_T("BEngine"));
 	s_strCEngine = pr.GetString(_T("CEngine"));
+
+	pr.ChangeSectionName(_T("MouseCtrl"));
+	s_nDragDropCommandID = pr.GetValuei(_T("DragDrop"), s_nDragDropCommandID);
 	
 }
 
@@ -59,6 +63,9 @@ void	CMouseOption::WriteProfile()
 	pr.SetString(s_strREngine, _T("REngine"));
 	pr.SetString(s_strBEngine, _T("BEngine"));
 	pr.SetString(s_strCEngine, _T("CEngine"));
+
+	pr.ChangeSectionName(_T("MouseCtrl"));
+	pr.SetValue(s_nDragDropCommandID, _T("DragDrop"));
 }
 
 
@@ -134,8 +141,7 @@ void CMousePropertyPage::_GetData()
 		pr.SetValue(dwCommand, strKey);
 	}
 
-	DWORD		dwCommandD = DWORD( m_cmbDragDrop.GetItemData( m_cmbDragDrop.GetCurSel() ) );
-	pr.SetValue( dwCommandD, _T("DragDrop") );
+	s_nDragDropCommandID = (int)m_cmbDragDrop.GetItemData( m_cmbDragDrop.GetCurSel() );
 
 	//x pr.Close(); 	//+++
 	_SetRightDragProfile();
@@ -261,11 +267,7 @@ void CMousePropertyPage::AddDragDropItem(CComboBox &cmb)
 		{ ID_OPENLINK_DIRECT, _T("リンクを開く")  },
 	};
 
-	CIniFileI	pr( m_strPath, _T("MouseCtrl") );
-	DWORD		dwCommand = pr.GetValue( _T("DragDrop"), ID_SEARCH_DIRECT /*0*/ );		//+++ デフォルト変更.
-	pr.Close();
-
-	int 		nCommand	= dwCommand;
+	int 		nCommand	= s_nDragDropCommandID;
 	int 		nIndex		= 0;
 	int 		nCount		= 3;
 

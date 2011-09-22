@@ -18,6 +18,7 @@
 
 #include "option/MDITabDialog.h"
 #include "DropDownButton.h"
+#include "MainFrame.h"
 
 //////////////////////////////////////////////////////////
 
@@ -573,7 +574,7 @@ public:
 	Impl();
 
 	HWND	Create(HWND hWndParent);
-	void	SetMDIClient(HWND hWndMDIClient);
+	void	SetChildFrameClient(CChildFrameClient* pChildClient);
 
 	// Attributes
 	HWND	GetTabHwnd(int nIndex);
@@ -591,6 +592,7 @@ public:
 	void	SetConnecting(HWND hWnd);
 	void	SetDownloading(HWND hWnd);
 	void	SetComplete(HWND hWnd);
+	void	SetTitle(HWND hWnd, LPCTSTR strTitle);
 	void	NavigateLockTab(HWND hWnd, bool bOn);
 	void	ReloadSkin();
 
@@ -649,7 +651,6 @@ public:
 	ALT_MSG_MAP(1)							// MDI child windows messages
 		m_wndMDIChildProcessing = hWnd;
 		MSG_WM_MDIACTIVATE	( OnMDIActivate )
-		MSG_WM_SETTEXT		( OnMDISetText 	)
 		m_wndMDIChildProcessing = NULL;
 	END_MSG_MAP()
 
@@ -670,7 +671,6 @@ public:
 
 	// CChildFrameから
 	void	OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct);
-	int		OnMDISetText(LPCTSTR lpstrText);
 
 	void	OnSetCurSel(int nIndex, int nOldIndex);
 	HRESULT OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, IDataObject** ppDataObject);
@@ -719,6 +719,7 @@ private:
 	bool	_ScrollItem(bool bRight = true);
 
 	// Data members
+	CChildFrameClient*	m_pChildFrameClient;
 	vector<unique_ptr<TabItem> >	m_vecpItem;
 	vector<int>			m_vecSeparators;
 	CFont				m_font;
@@ -782,11 +783,12 @@ HWND	CDonutTabBar::Impl::Create(HWND hWndParent)
 }
 
 //--------------------------------
-void CDonutTabBar::Impl::SetMDIClient(HWND hWndMDIClient)
+void CDonutTabBar::Impl::SetChildFrameClient(CChildFrameClient* pChildClient)
 {
-	ATLASSERT( ::IsWindow(hWndMDIClient) );
-	ATLASSERT(m_wndMDIChildPopuping.m_hWndMDIClient == NULL);
-	m_wndMDIChildPopuping.m_hWndMDIClient = hWndMDIClient;
+	ATLASSERT( ::IsWindow(*pChildClient) );
+	//ATLASSERT(m_wndMDIChildPopuping.m_hWndMDIClient == NULL);
+	//:::m_wndMDIChildPopuping.m_hWndMDIClient = hWndMDIClient;
+	m_pChildFrameClient = pChildClient;
 }
 
 // Attributes
@@ -962,6 +964,15 @@ void	CDonutTabBar::Impl::SetComplete(HWND hWnd)
 }
 
 //-------------------------------------------------------
+/// タブのテキストを更新
+void	CDonutTabBar::Impl::SetTitle(HWND hWnd, LPCTSTR strTitle)
+{
+	int nIndex = GetTabIndex(hWnd);
+	if (nIndex != -1)
+		_SetTabText(nIndex, strTitle);
+}
+
+//-------------------------------------------------------
 void	CDonutTabBar::Impl::NavigateLockTab(HWND hWnd, bool bOn)
 {
 	int nIndex = GetTabIndex(hWnd);
@@ -1041,7 +1052,7 @@ void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd)
 	unique_ptr<TabItem>	pItem(new TabItem);
 	pItem->hWnd		= hWnd;
 	pItem->strItem	= LOADINGSTRING;
-	if ( m_bRedrawLocked || hWnd != m_wndMDIChildPopuping.MDIGetActive() )
+	if ( m_bRedrawLocked || hWnd != m_pChildFrameClient->GetActiveChildFrameWindow() )
 		pItem->state |= TISS_INACTIVE;
 
 	if (m_bInsertHere) {
@@ -1111,7 +1122,7 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 		int nNextIndex = funcManageClose(nCurIndex);
 		if (nNextIndex == -1) {
 			// 最後のタブが閉じられた
-			//m_funcTabChangeNotify(NULL);
+			m_pChildFrameClient->SetChildFrameWindow(NULL);
 			//return ;	// 今のところ閉じない
 		} else
 			SetCurSel(nNextIndex);
@@ -2099,19 +2110,6 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 // CChildFrameから
 
 //------------------------------
-/// タブのテキストを更新
-int		CDonutTabBar::Impl::OnMDISetText(LPCTSTR lpstrText)
-{
-	SetMsgHandled(FALSE);
-	// for new text
-	int nIndex = GetTabIndex(m_wndMDIChildProcessing);
-	if (nIndex != -1)
-		_SetTabText(nIndex, lpstrText);
-
-	return 0;
-}
-
-//------------------------------
 void	CDonutTabBar::Impl::OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct)
 {
 	SetMsgHandled(FALSE);
@@ -2137,6 +2135,8 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 	HWND	hWnd = GetTabHwnd(nIndex);
 	ATLASSERT( ::IsWindow(hWnd) );
 
+	m_pChildFrameClient->SetChildFrameWindow(hWnd);
+#if 0	//:::
 	if (Misc::IsGpuRendering()) {
 		/* 前のウィンドウの画面を更新しておく */
 		HWND	hWndOld = GetTabHwnd(nOldIndex);
@@ -2168,6 +2168,7 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 		m_wndMDIChildPopuping.MDIActivate(hWnd);
 	#endif
 	}
+#endif
 }
 
 
@@ -2195,9 +2196,9 @@ HRESULT CDonutTabBar::Impl::OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, 
 			int 		 nIndex  = arrIndex[i];
 			HWND		 hWnd	 = GetTabHwnd(nIndex);
 			ATLASSERT( ::IsWindow(hWnd) );
-			CWebBrowser2 browser = (IWebBrowser2 *) ::SendMessage(hWnd, WM_USER_GET_IWEBBROWSER, 0, 0);
+			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
 			CString 	 strName = MtlGetWindowText(hWnd);
-			CString 	 strUrl  = browser.GetLocationURL();
+			CString 	 strUrl  = pChild->GetLocationURL();
 
 			if ( strUrl.Left(5) == _T("file:") ) {	// Donut, to be explorer or not
 				strName.Empty();
@@ -3464,9 +3465,9 @@ HWND	CDonutTabBar::Create(HWND hWndParent)
 }
 
 //--------------------
-void	CDonutTabBar::SetMDIClient(HWND hWndMDIClient)
+void	CDonutTabBar::SetChildFrameClient(CChildFrameClient* pChildClient)
 {
-	pImpl->SetMDIClient(hWndMDIClient);
+	pImpl->SetChildFrameClient(pChildClient);
 }
 
 
@@ -3550,6 +3551,13 @@ void	CDonutTabBar::SetComplete(HWND hWnd)
 {
 	pImpl->SetComplete(hWnd);
 }
+
+//----------------------------------
+void	CDonutTabBar::SetTitle(HWND hWnd, LPCTSTR strTitle)
+{
+	pImpl->SetTitle(hWnd, strTitle);
+}
+
 //-------------------------------------------------------
 void	CDonutTabBar::NavigateLockTab(HWND hWnd, bool bOn)
 {

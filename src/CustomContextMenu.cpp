@@ -251,8 +251,10 @@ HRESULT CCustomContextMenu::ShowContextMenu(DWORD dwID, POINT* pptPosition, IUnk
 		&& iSelection == ID_SAVEDIALOG 
 		&& CDownloadManager::UseDownloadManager()) 
 	{	// DLManager‚É‘—‚é
+#if 0 //:::
 		CDownloadManager::GetInstance()->SetReferer(g_pMainWnd->GetActiveChildFrame()->GetLocationURL());
 		CDownloadManager::GetInstance()->DownloadStart(m_strUrl, NULL, NULL, DLO_SHOWWINDOW);
+#endif
 	} else {
 		// Send selected shortcut menu item command to shell
 		LRESULT  lRes	= S_OK;

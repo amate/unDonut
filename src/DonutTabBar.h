@@ -7,6 +7,8 @@
 
 #define PASS_MSG_MAP_MDICHILD_TO_TAB(x)		CHAIN_MSG_MAP_ALT_MEMBER(x, 1)
 
+// ëOï˚êÈåæ
+class CChildFrameClient;
 
 ///////////////////////////////////////////////////////////
 // É^ÉuÇÃèÛë‘
@@ -43,7 +45,7 @@ public:
 	~CDonutTabBar();
 
 	HWND	Create(HWND hWndParent);
-	void	SetMDIClient(HWND hWndMDIClient);
+	void	SetChildFrameClient(CChildFrameClient* pChildClient);
 
 	// Attributes
 	HWND	GetTabHwnd(int nIndex);
@@ -59,6 +61,7 @@ public:
 	void	SetConnecting(HWND hWnd);
 	void	SetDownloading(HWND hWnd);
 	void	SetComplete(HWND hWnd);
+	void	SetTitle(HWND hWnd, LPCTSTR strTitle);
 	void	NavigateLockTab(HWND hWnd, bool bOn);
 	void	ReloadSkin();
 	void	GetWindowRect(LPRECT rect);

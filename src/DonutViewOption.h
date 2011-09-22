@@ -74,20 +74,7 @@ public:
 #endif
 
 
-enum EDvs_AutoRefresh {
-	DVS_AUTOREFRESH_15SEC	= 0x00000001L,
-	DVS_AUTOREFRESH_30SEC	= 0x00000002L,
-	DVS_AUTOREFRESH_1MIN	= 0x00000004L,
-	DVS_AUTOREFRESH_2MIN	= 0x00000008L,
-	DVS_AUTOREFRESH_5MIN	= 0x00000010L,
-	DVS_AUTOREFRESH_USER	= 0x00000020L,	// UDT DGSTR ( dai
-
-	DVS_AUTOREFRESH_OR		= (    DVS_AUTOREFRESH_15SEC | DVS_AUTOREFRESH_30SEC
-								 | DVS_AUTOREFRESH_1MIN  | DVS_AUTOREFRESH_2MIN | DVS_AUTOREFRESH_5MIN
-								 | DVS_AUTOREFRESH_USER
-							  ),
-};
-
+#if 0	//:::
 
 //#define DVS_EX_OPENNEWWIN 	0x00000001L
 //#define DVS_EX_MESSAGE_FILTER 0x00000002L
@@ -96,92 +83,15 @@ enum EDvs_AutoRefresh {
 
 template <class _DonutView>
 class CDonutViewOption {
-public:
-	DWORD		m_dwAutoRefreshStyle;
-	DWORD		m_dwExStyle;
-
 private:
 	CString 	m_strURL;
 
-	_DonutView *__m_pDonutView;
-	UINT_PTR	m_nIDEvent;
-
-public:
-	CDonutViewOption(_DonutView *__pDonutView, DWORD dwExStyle);	//+++引数追加.
-
-	void	Init() { _SetTimer(); }
-	void	Uninit() { _KillTimer(); }
-
-	void	SetAutoRefreshStyle(DWORD dwStyle);
-
-public:
-	// Message map and handlers
-	BEGIN_MSG_MAP(CDonutViewOption)
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_NONE , OnAutoRefreshNone )
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_15SEC, OnAutoRefresh15sec)
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_30SEC, OnAutoRefresh30sec)
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_1MIN , OnAutoRefresh1min )
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_2MIN , OnAutoRefresh2min )
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_5MIN , OnAutoRefresh5min )
-		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_USER , OnAutoRefreshUser )		// UDT DGSTR ( dai
-		// COMMAND_ID_HANDLER_EX(ID_DOCHOSTUI_OPENNEWWIN, OnDocHostUIOpenNewWin)
-
-		// UH
-		COMMAND_ID_HANDLER_EX( ID_MESSAGE_FILTER  , OnMessageFilter   )
-		COMMAND_ID_HANDLER_EX( ID_MOUSE_GESTURE   , OnMouseGesture	  )
-		COMMAND_ID_HANDLER_EX( ID_BLOCK_MAILTO	  , OnBlockMailto	  )
-		MSG_WM_TIMER(OnTimer)
-	END_MSG_MAP()
-
-private:
-	void OnBlockMailto		  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnMouseGesture 	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnMessageFilter	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnDocHostUIOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefreshNone	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefresh15sec   (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefresh30sec   (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefresh1min	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefresh2min	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void OnAutoRefresh5min	  (WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-
-	// UDT DGSTR ( dai
-	void OnAutoRefreshUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	// ENDE
-
-	void	OnTimer(UINT_PTR wTimerID, TIMERPROC dmy = 0);
-	int 	_GetElapse();
-	void	_KillTimer();
-	void	_SetTimer();
 
 public:
 	void	WriteProfile(const CString &strFileName, int nIndex);	//+++	未使用状態
 	void	GetProfile(const CString &strFileName, int nIndex, bool bGetChildFrameState);
 	void	_GetProfile(const CString &strFileName, const CString &strSection, bool bGetChildFrameState);
 
-public:
-	// Update command UI and handlers
-	BEGIN_UPDATE_COMMAND_UI_MAP(CDonutViewOption)
-		UPDATE_COMMAND_UI(ID_AUTOREFRESH_USER, OnUpdateAutoRefreshUser) 	// UDT DGSTR ( dai
-		UPDATE_COMMAND_UI_SETCHECK_IF_PASS(ID_AUTOREFRESH_NONE, m_dwAutoRefreshStyle == 0)
-		UPDATE_COMMAND_UI_SETCHECK_FLAG(ID_AUTOREFRESH_15SEC, DVS_AUTOREFRESH_15SEC, m_dwAutoRefreshStyle)
-		UPDATE_COMMAND_UI_SETCHECK_FLAG(ID_AUTOREFRESH_30SEC, DVS_AUTOREFRESH_30SEC, m_dwAutoRefreshStyle)
-		UPDATE_COMMAND_UI_SETCHECK_FLAG(ID_AUTOREFRESH_1MIN , DVS_AUTOREFRESH_1MIN , m_dwAutoRefreshStyle)
-		UPDATE_COMMAND_UI_SETCHECK_FLAG(ID_AUTOREFRESH_2MIN , DVS_AUTOREFRESH_2MIN , m_dwAutoRefreshStyle)
-		UPDATE_COMMAND_UI_SETCHECK_FLAG(ID_AUTOREFRESH_5MIN , DVS_AUTOREFRESH_5MIN , m_dwAutoRefreshStyle)
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG(ID_DOCHOSTUI_OPENNEWWIN, DVS_EX_OPENNEWWIN, m_dwExStyle)
-
-		// UH
-		UPDATE_COMMAND_UI_SETCHECK_IF_PASS(ID_AUTO_REFRESH, m_dwAutoRefreshStyle != 0)
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG(ID_MESSAGE_FILTER, DVS_EX_MESSAGE_FILTER, m_dwExStyle)
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG(ID_MOUSE_GESTURE , DVS_EX_MOUSE_GESTURE , m_dwExStyle)
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG(ID_BLOCK_MAILTO	, DVS_EX_BLOCK_MAILTO  , m_dwExStyle)
-	END_UPDATE_COMMAND_UI_MAP()
-
-private:
-	// UDT DGSTR ( dai
-	void	OnUpdateAutoRefreshUser(CCmdUI *pCmdUI);
-	// ENDE
 
 public:
 	BOOL _OutPut_TravelLogs(SDfgSaveInfo::List& listFore, SDfgSaveInfo::List& listBack);
@@ -190,232 +100,6 @@ public:
 
 };
 
-
-
-#define DONUTVIEWOPTION_CTOR()	 \
-	template <class _DonutView>  \
-	CDonutViewOption<_DonutView>
-
-
-#define DONUTVIEWOPTION(rettype) \
-	template <class _DonutView>  \
-	rettype CDonutViewOption<_DonutView>
-
-
-template <class _DonutView>
-CDonutViewOption<_DonutView>::CDonutViewOption(_DonutView * __pDonutView, DWORD dwExStyle/*+++*/)
-	: __m_pDonutView(__pDonutView)
-	  , m_nIDEvent(0)
-	  , m_dwAutoRefreshStyle(0)
-	  , m_dwExStyle(dwExStyle)	//+++引数追加.
-	  , m_strURL()			//+++ 抜け対策で書いとく.
-{
-}
-
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::SetAutoRefreshStyle(DWORD dwStyle)
-{
-	m_dwAutoRefreshStyle = 0;
-	DWORD dwCurFlag = DVS_AUTOREFRESH_USER;
-
-	while (dwCurFlag > 0) {
-		if (dwCurFlag & dwStyle) {
-			m_dwAutoRefreshStyle = dwCurFlag;
-			break;
-		}
-
-		dwCurFlag >>= 1;
-	}
-
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnBlockMailto(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	if (m_dwExStyle & DVS_EX_BLOCK_MAILTO)
-		m_dwExStyle &= ~DVS_EX_BLOCK_MAILTO;
-	else
-		m_dwExStyle |= DVS_EX_BLOCK_MAILTO;
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnMouseGesture(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	if (m_dwExStyle & DVS_EX_MOUSE_GESTURE)
-		m_dwExStyle &= ~DVS_EX_MOUSE_GESTURE;
-	else
-		m_dwExStyle |= DVS_EX_MOUSE_GESTURE;
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnMessageFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	if (m_dwExStyle & DVS_EX_MESSAGE_FILTER)
-		m_dwExStyle &= ~DVS_EX_MESSAGE_FILTER;
-	else
-		m_dwExStyle |= DVS_EX_MESSAGE_FILTER;
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnDocHostUIOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	if (m_dwExStyle & DVS_EX_OPENNEWWIN)
-		m_dwExStyle &= ~DVS_EX_OPENNEWWIN;
-	else
-		m_dwExStyle |= DVS_EX_OPENNEWWIN;
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefreshNone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle = 0;
-	_KillTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefresh15sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_15SEC;
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefresh30sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_30SEC;
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefresh1min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_1MIN;
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefresh2min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_2MIN;
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefresh5min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_5MIN;
-	_KillTimer();
-	_SetTimer();
-}
-
-
-
-// UDT DGSTR ( dai
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnAutoRefreshUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_dwAutoRefreshStyle  = 0;
-	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_USER;
-	_KillTimer();
-	_SetTimer();
-}
-// ENDE
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnTimer(UINT_PTR wTimerID, TIMERPROC)
-{
-	ATLTRACE2( atlTraceGeneral, 4, _T("CChildFrame::OnTimer\n") );
-
-	if (wTimerID == m_nIDEvent)
-		::PostMessage(__m_pDonutView->GetParent(), WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
-	//			__m_pDonutView->m_spBrowser->Refresh();
-	else
-		SetMsgHandled(FALSE);
-}
-
-
-
-template <class _DonutView>
-int	CDonutViewOption<_DonutView>::_GetElapse()
-{
-	if (m_dwAutoRefreshStyle == 0)
-		return -1;
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_15SEC)
-		return 15 * 1000;
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_30SEC)
-		return 30 * 1000;
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_1MIN)
-		return 1 * 60 * 1000;
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_2MIN)
-		return 2 * 60 * 1000;
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_5MIN)
-		return 5 * 60 * 1000;
-	// UDT DGSTR ( dai
-	else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_USER)
-		return CMainOption::s_dwAutoRefreshTime * 1000;
-
-	// ENDE
-
-	return -1;
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::_KillTimer()
-{
-	if (m_nIDEvent != 0) {
-		MTLVERIFY( ::KillTimer(__m_pDonutView->m_hWnd, m_nIDEvent) );
-		m_nIDEvent = 0;
-	}
-}
-
-
-
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::_SetTimer()
-{
-	int nElapse = _GetElapse();
-
-	if (nElapse != -1)
-		m_nIDEvent = ::SetTimer(__m_pDonutView->m_hWnd, 1, _GetElapse(), NULL);
-}
 
 
 
@@ -484,31 +168,6 @@ void	CDonutViewOption<_DonutView>::_GetProfile(const CString &strFileName, const
 		MtlSendOnCommand(__m_pDonutView->GetParent(), ID_DOCHOSTUI_OPENNEWWIN);
 	}
 }
-
-
-
-// UDT DGSTR ( dai
-template <class _DonutView>
-void	CDonutViewOption<_DonutView>::OnUpdateAutoRefreshUser(CCmdUI * pCmdUI)
-{
-	DWORD	dwRefreshTime = CMainOption::s_dwAutoRefreshTime;
-
-	pCmdUI->Enable(!dwRefreshTime == 0 );
-	pCmdUI->SetCheck(m_dwAutoRefreshStyle == DVS_AUTOREFRESH_USER/*? 1 : 0*/);
-	CString str;
-
-	// NOTE: INUYA
-	// if using StrFromTimeInterval , Load Shlwapi.dll...
-	// dwRefreshTime is limited to 3599.
-	if (dwRefreshTime % 60 == 0)	str.Format(_T("%d分")    , dwRefreshTime / 60);
-	else if (dwRefreshTime >= 60)	str.Format(_T("%d分%d秒"), dwRefreshTime / 60, dwRefreshTime % 60);
-	else							str.Format(_T("%d秒")    , dwRefreshTime % 60);
-
-	str += "(ユーザー設定)";
-	pCmdUI->SetText(str);
-}
-// ENDE
-
 
 
 
@@ -627,3 +286,5 @@ BOOL	CDonutViewOption<_DonutView>::GetDfgSaveInfo(SDfgSaveInfo & rDfgSaveInfo, b
 }
 
 // http://msdn2.microsoft.com/en-us/library/aa768369.aspx
+
+#endif

@@ -406,7 +406,79 @@ struct _EXPROP_ARGS {
 			return TRUE; 		   \
 	}
 
+#define WM_TABCREATE	(WM_USER + 101)
+#define USER_MSG_WM_TABCREATE(func)	\
+	if (uMsg == WM_TABCREATE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam, lParam != 0);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
 
+#define WM_TABDESTROY	(WM_USER + 102)
+#define USER_MSG_WM_TABDESTROY(func)	\
+	if (uMsg == WM_TABDESTROY) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_UIUPDATE		(WM_USER + 103)
+#define USER_MSG_WM_UIUPDATE()	\
+	if (uMsg == WM_UIUPDATE) {	   \
+		SetMsgHandled(TRUE);		   \
+		OnIdle();    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_CHILDFRAMEACTIVATE	(WM_USER + 104)
+#define USER_MSG_WM_CHILDFRAMEACTIVATE(func)	\
+	if (uMsg == WM_CHILDFRAMEACTIVATE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam, (HWND)lParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
+#define WM_BROWSERTITLECHANGE	(WM_USER + 105)
+#define USER_MSG_WM_BROWSERTITLECHANGE(func)	\
+	if (uMsg == WM_BROWSERTITLECHANGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam, (LPCTSTR)lParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnAddCommandUIMap(HWND hWndChildFrame);
+#define WM_ADDCOMMANDUIMAP	(WM_USER + 106)
+#define USER_MSG_WM_ADDCOMMANDUIMAP(func)	\
+	if (uMsg == WM_ADDCOMMANDUIMAP) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnRemoveCommandUIMap(HWND hWndChildFrame);
+#define WM_REMOVECOMMANDUIMAP	(WM_USER + 106)
+#define USER_MSG_WM_REMOVECOMMANDUIMAP(func)	\
+	if (uMsg == WM_REMOVECOMMANDUIMAP) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
 
 
 //----------------------------------------------------------------------------

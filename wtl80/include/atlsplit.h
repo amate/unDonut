@@ -746,7 +746,7 @@ public:
 		{
 			bRet = false;
 		}
-
+#if 0	//:::
 		// *****added******	//+++ for (un)Donut.
 		if (m_hWndPaneParent[nPane] != NULL) {
 			const T* 	pT = static_cast<const T*>(this);
@@ -755,7 +755,7 @@ public:
 			wnd.ScreenToClient(lpRect);
 		}
 		// ****************
-
+#endif
 		return bRet;
 	}
 

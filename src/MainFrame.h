@@ -21,6 +21,7 @@
 #include "DonutLinksBarCtrl.h"
 #include "DonutToolBar.h"
 #include "DonutStatusBarCtrl.h"
+#include "DonutAddressBar.h"
 #include "DonutSearchBar.h"
 #include "DonutTabBar.h"
 #include "DonutP.h"
@@ -40,20 +41,51 @@
 #include "option/AddressBarPropertyPage.h"
 #include "option/SearchPropertyPage.h"
 #include "FindBar.h"
+#include "ChildFrameCommandUIUpdater.h"
+#include "DonutViewOption.h"
+
+
+///////////////////////////////////////////////////////////////
+// CChildFrameClient
+
+class CChildFrameClient : public CWindowImpl<CChildFrameClient>
+{
+public:
+	DECLARE_WND_CLASS_EX(_T("DonutChildFrameClient"), 0, COLOR_APPWORKSPACE)
+
+	CChildFrameClient();
+
+	HWND	Create(HWND hWndMainFrame);
+
+	void	SetChildFrameWindow(HWND hWndChildFrame);
+
+	HWND	GetActiveChildFrameWindow() const { return m_hWndChildFrame; }
+
+	// Message map
+	BEGIN_MSG_MAP( CChildFrameClient )
+		MSG_WM_SIZE( OnSize )
+	END_MSG_MAP()
+
+	void OnSize(UINT nType, CSize size);
+
+private:
+	// Data members
+	HWND	m_hWndChildFrame;
+};
 
 
 //////////////////////////////////////////////////////////////////////////////
 // CMainFrame
 
 class CMainFrame
-	:	public CMDIFrameWindowImpl			< CMainFrame >
+	:	public CFrameWindowImpl				< CMainFrame >
 	,	public CMessageFilter
 	,	public CIdleHandler
 	,	public CAppCommandHandler			< CMainFrame >
 	,	public CUpdateCmdUI 				< CMainFrame >
-	,	public CWindowMenuCommandHandler	< CMainFrame >
+	//:::,	public CWindowMenuCommandHandler	< CMainFrame >
 	,	public CDDEMessageHandler			< CMainFrame >
-	,	public CMDIFrameTitleUpsideDownMessageHandlerWeb < CMainFrame >
+	//:::,	public CMDIFrameTitleUpsideDownMessageHandlerWeb < CMainFrame >
 	,	public CHelpMessageLine 			< CMainFrame >
 	,	public CMSMouseWheelMessageHandler	< CMainFrame >
 	,	public CMainFrameFileDropTarget 	< CMainFrame >
@@ -62,6 +94,8 @@ public:
 	// Declarelations
 	DECLARE_FRAME_WND_CLASS(DONUT_WND_CLASS_NAME, IDR_MAINFRAME)
 	//DECLARE_MTL_REBAR_UPDATELAYOUT() //これは廃止してUpdateLayout関数を書き足した
+
+	typedef CFrameWindowImpl<CMainFrame>  baseClass;
 
 public:
 	// Constructor/Destructor
@@ -168,13 +202,14 @@ public:
 		CHAIN_MSG_MAP_MEMBER( m_DropScriptMenu  )
 		CHAIN_MSG_MAP_MEMBER( m_MenuEncode		)
 		CHAIN_MSG_MAP_MEMBER( m_TranslateMenu	)
+		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState )
+		USER_MSG_WM_BROWSERTITLECHANGE( OnBrowserTitleChange )
 		CHAIN_MSG_MAP		( CUpdateCmdUI<CMainFrame> )
-
+		USER_MSG_WM_UIUPDATE()
 #ifdef _DEBUG
 		COMMAND_ID_HANDLER_EX( ID_DEBUGCOMMAND, OnDebugCommand )
 #endif
-		//x MESSAGE_HANDLER		( WM_SIZE  , OnSize   )			//+++ 失敗
-		MESSAGE_HANDLER 		( WM_CREATE, OnCreate )
+		MSG_WM_CREATE			( OnCreate			)
 		MSG_WM_CLOSE			( OnClose			)
 		MSG_WM_DESTROY			( OnDestroy 		)
 		MSG_WM_ENDSESSION		( OnEndSession		)
@@ -182,7 +217,10 @@ public:
 		MSG_WM_USER_MDICHILD	( OnMDIChild		)
 		MSG_WM_PAINT			( OnPaint			)
 		MSG_WM_USER_OPENFILE	( OnUserOpenFile	)
-		MSG_WM_USER_GET_ACTIVE_IWEBBROWSER( )
+		//:::MSG_WM_USER_GET_ACTIVE_IWEBBROWSER( )
+
+		USER_MSG_WM_TABCREATE( OnTabCreate )	// CChildFrame用
+		USER_MSG_WM_TABDESTROY( OnTabDestory )	// 
 
 		USER_MSG_WM_UPDATE_TITLEBAR( UpdateTitleBar )						// UDT DGSTR
 
@@ -190,7 +228,7 @@ public:
 		COMMAND_ID_HANDLER_EX	 ( ID_GET_OUT	   , OnGetOut		 )		// UDT DGSTR
 		USER_MSG_WM_UPDATE_EXPBAR( UpdateExpBar )							// UDT DGSTR
 
-		MSG_WM_USER_GET_ACTIVE_WINDOW( )
+		//:::MSG_WM_USER_GET_ACTIVE_WINDOW( )
 		MSG_WM_USER_BROWSER_CAN_SETFOCUS( OnBrowserCanSetFocus )
 		MSG_WM_ACTIVATE 	 ( OnActivate )
 
@@ -275,7 +313,6 @@ public:
 		USER_MSG_WM_MENU_GOFORWARD		( OnMenuGoForward	)
 		USER_MEG_WM_MENU_GET_BINGTRANSLATE( OnMenuGetBingTranslate )
 
-		COMMAND_ID_HANDLER_EX( ID_RESIZED				, OnResized 			);
 		COMMAND_ID_HANDLER_EX( ID_FILE_NEW_SELECTED 	, OnFileNewSelectText	)
 
 		MSG_WM_USER_SHOW_TEXT_CHG		( OnShowTextChg  )
@@ -374,15 +411,20 @@ public:
 		CHAIN_COMMANDS_MEMBER	( m_MainOption	)
 		CHAIN_COMMANDS_MEMBER	( m_secZone 	)
 		CHAIN_MSG_MAP_MEMBER	( m_DownloadManager )
-		CHAIN_COMMANDS			( CWindowMenuCommandHandler<CMainFrame> )
+	//:::	CHAIN_COMMANDS			( CWindowMenuCommandHandler<CMainFrame> )
 		CHAIN_COMMANDS			( CAppCommandHandler<CMainFrame>		)
 		CHAIN_COMMANDS_TO_EXPLORERBAR( m_ExplorerBar		)
 
-		CHAIN_MDI_CHILD_COMMANDS( )
+		if (uMsg == WM_COMMAND) {
+			HWND  hWndChild = m_ChildFrameClient.GetActiveChildFrameWindow();				
+			if (hWndChild != NULL) 								
+				::PostMessage(hWndChild, uMsg, wParam, lParam);
+		}
+
 		COMMAND_ID_HANDLER_EX	( ID_VIEW_OPTION, OnViewOption	)
 
 		CHAIN_MSG_MAP	( CDDEMessageHandler<CMainFrame>			)
-		CHAIN_MSG_MAP	( CMDIFrameTitleUpsideDownMessageHandlerWeb<CMainFrame> )
+	//:::	CHAIN_MSG_MAP	( CMDIFrameTitleUpsideDownMessageHandlerWeb<CMainFrame> )
 		CHAIN_MSG_MAP	( CHelpMessageLine<CMainFrame>				)
 		CHAIN_MSG_MAP	( CMSMouseWheelMessageHandler<CMainFrame>	)
 
@@ -392,19 +434,17 @@ public:
 
 	ALT_MSG_MAP( 1 )
 		MSG_WM_ERASEBKGND( OnMDIClientEraseBkgnd )
-		MSG_WM_SIZE( OnMDIClientSize )
 	END_MSG_MAP()
 
 
 public:
 	BEGIN_UPDATE_COMMAND_UI_MAP( CMainFrame )
-
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_MainOption  )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_secZone	  )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ExplorerBar )
-		CHAIN_MDI_CHILD_UPDATE_COMMAND_UI() 						// first of all
+		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ChildFrameUIState )
 
-		bool bActiveChild = (MDIGetActive() != NULL);
+		bool bActiveChild = (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL);
 
 		// File menu
 		UPDATE_COMMAND_UI_SETDEFAULT_FLAG		( ID_FILE_NEW_HOME , FILENEW_HOME , CFileNewOption::s_dwFlags )
@@ -435,7 +475,7 @@ public:
 		bool  bFocus	  = (::GetFocus() == editAddress || ::GetFocus() == editSearch);
 		bool  bCut		  = false, bCopy = false, bPaste = false, bSelectAll = false;
 		if (bActiveChild) {
-			CWebBrowser2 wb = DonutGetIWebBrowser2( MDIGetActive() );
+		//:::	CWebBrowser2 wb = DonutGetIWebBrowser2( MDIGetActive() );
 		  #if 1	//+++ 実はQUeryStatusWBがバグって、失敗しててもゴミを返していた...で、たまたま表示されることが多かったのかも.
 				//+++ が、そもそも必ず失敗するのが解せない... が、不便なので、暫定対処
 			bCut = true, bCopy = true, bPaste = true, bSelectAll = true;
@@ -574,7 +614,6 @@ public:
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_HILIGHT	, bActiveChild )
 		//minit
 		//CHAIN_UPDATE_COMMAND_UI_MEMBER( m_DockingPluginManager )
-
 	END_UPDATE_COMMAND_UI_MAP()
 
 private:
@@ -594,6 +633,8 @@ private:
 	virtual BOOL OnIdle();
 	void 		 _OnIdleCritical();
 
+	void		OnTabCreate(HWND hWndChildFrame, bool bNewWindow);
+	void		OnTabDestory(HWND hWndChildFrame);	
 #ifdef _DEBUG
 	void		OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 #endif
@@ -604,6 +645,7 @@ private:
   #if 1	//+++
 	void 		ShowWindow_Restore(bool flag);
   #endif
+	void		OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
 	LRESULT 	UpdateTitleBar(LPCTSTR lpszStatusBar, DWORD dwReserved);
 
 	LRESULT 	OnMenuGetFav();
@@ -648,10 +690,12 @@ private:
 	void 		OnMDIChild(HWND hWnd, UINT nCode);
 	BOOL 		OnBrowserCanSetFocus();
 	void 		OnParentNotify(UINT fwEvent, UINT idChild, LPARAM lParam);
+
+	int			OnCreate(LPCREATESTRUCT /*lpCreateStruct*/);
 	void 		OnDestroy();
+	void 		OnClose();
 	void 		OnEndSession(BOOL wParam, UINT lParam);
 	void 		OnActivate(UINT nState, BOOL bMinimized, HWND hWndOther);
-	LRESULT 	OnCreate(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/);
 	void		OnPaint(CDCHandle /*dc*/);
 
 	void 		init_menus_infomation();
@@ -666,7 +710,7 @@ private:
 	void 		init_pluginManager();
 	void 		init_band_position( HWND cmdBar, HWND toolBar, HWND addressBar, HWND mdiTab, HWND linkBar, HWND searchBar );
 	void 		init_loadStatusBarState();
-	void 		init_mdiClientWindow();
+	void 		init_ChildFrameClientWindow();
 	void 		init_splitterWindow();
 	void 		init_explorerBar();
 	void		init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar);
@@ -681,7 +725,6 @@ private:
 	LRESULT 	OnFileRecent		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnViewIdle			(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/) { _OnIdleCritical(); return 0; }
 	void 		OnNewInstance		(ATOM nAtom);			// WM_NEWINSTANCE
-	void 		OnClose();
 	void 		SetHideTrayIcon();
 	void 		DeleteTrayIcon();		//+++ トレイ化の終了/トレイアイコンの削除.
 	void 		DelTempFiles();
@@ -704,7 +747,6 @@ private:
 #endif
 	LRESULT		OnFileOpenTabList	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	void 		OnViewHome			(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void 		OnResized			(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		ShowLinkText		(BOOL bShow);
 	void 		OnFileNewSelectText	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		OnShowTextChg		(BOOL bShow);
@@ -835,10 +877,6 @@ private:
 	void 		DrawBmpBg_Tile(HDC hDC);		//+++ bg描画(敷き詰めるタイプ)
 	//x void 	DrawBmpBg_Stretch(HDC hDC);		//+++ 元画像を拡大して表示.
 
-  #if 1	// saitama専用だったのを外部ファイル読込にして汎用化.
-	HWND 			_OpenAboutFile(CString strFile);
-  #endif
-	HRESULT 		LoadWebBrowserFromStream(IWebBrowser *pWebBrowser, IStream *pStream);
 	LRESULT 		OnShowToolBarMenu();
 	HRESULT 		OnSearchWebSelText(LPCTSTR lpstrText, LPCTSTR lpstrEngine);
 	//+++
@@ -848,7 +886,6 @@ private:
 
 
 private:
-	typedef CMDIFrameWindowImpl<CMainFrame>  baseClass;
 
 	// Constants
 	enum {
@@ -891,29 +928,27 @@ private:
 
 
 private:
-
+	void 	_OpenAboutFile(CString strFile);
 	bool	_IsSelectedTextInner();
 	void	_RefreshFavMenu();
 
 
 	// Daba members
+	CMenu		m_MainFrameMenu;
+
 	CDonutTabBar 						m_MDITab;
 	CCommandBarCtrl2					m_CmdBar;
 	CDonutToolBar						m_ToolBar;
 	CDonutLinksBarCtrl<CMainFrame>		m_LinkBar;
-
 	CDonutAddressBar					m_AddressBar;
-
 	CDonutSearchBar 					m_SearchBar;
 	CDonutReBarCtrl 					m_ReBar;
-
 	CDonutStatusBarCtrl 				m_wndStatusBar;
-
 	CFindBar							m_FindBar;
-
 
 	CMainOption 						m_MainOption;
 	CDonutSecurityZone					m_secZone;
+	CChildFrameCommandUIUpdater			m_ChildFrameUIState;
 
 	CSplitterWindow 					m_wndSplit;
 	CDonutExplorerBar					m_ExplorerBar;
@@ -934,7 +969,7 @@ private:
 	CMenuControl						m_mcCmdBar;
 	CMenuControl						m_mcToolBar;
 
-	CContainedWindow					m_wndMDIClient;
+	CChildFrameClient					m_ChildFrameClient;
 
 	UINT_PTR							m_nBackUpTimerID;
 	CMenuHandle 						m_menuWindow;
@@ -957,7 +992,6 @@ private:
 	CString 							m_strIcon;						//+++ アイコンの名前.
 	CString 							m_strIconSm;					//+++ アイコン小の名前.
 
-	int 								m_OnUserOpenFile_nCmdShow;		//+++ 直前に実行したOnUserOpenFile()で選択されたnCmdShowの控え.
 	int 								m_nMenuBarStyle;				//+++
 	int/*COLORREF*/ 					m_nBgColor; 					//+++ 背景色
 	BYTE/*bool*/						m_bTray;						//+++ トレイ化してるかどうかのフラグ.

@@ -259,18 +259,18 @@ void _The_OpenAllFiles(const CString &strFilePath, _MainFrame *__pMainFrame)
 
 
 	if ( strCheck == _T("s ") ) {
-		HWND		 hActiveWnd  = __pMainFrame->MDIGetActive();
-		CChildFrame *child		 = __pMainFrame->GetChildFrame(hActiveWnd);
-
-		if (!child)
+#if 0	//:::
+		CChildFrame *child		 = __pMainFrame->GetActiveChildFrame();
+		if (child == nullptr)
 			return;
 
 		CString 	 strFileName = MtlGetWindowText(hActiveWnd);
 		SaveInternetShortcutFile( strFileName, strPath, child->GetLocationURL() );
+#endif
 		return;
 
 	} else if ( strCheck == _T("a ") && MtlIsDirectoryPath(strPath) ) {
-		CLockRedrawMDIClient	 lock(__pMainFrame->m_hWndMDIClient);
+		CLockRedrawMDIClient	 lock(__pMainFrame->m_hWndClient);
 		CDonutTabBar::CLockRedraw lock2(__pMainFrame->mdiTab());
 		MtlForEachFile( strPath, [__pMainFrame](const CString &strFileName) {
 			DonutOpenFile(__pMainFrame->m_hWnd, strFileName);
@@ -284,14 +284,12 @@ void _The_OpenAllFiles(const CString &strFilePath, _MainFrame *__pMainFrame)
 			return;
 
 		Misc::CRegKey 	rkOrder;
-
 		if (rkOrder.Open(HKEY_CURRENT_USER, strRegKey) != ERROR_SUCCESS) {
 			CString strMsg;
 			strMsg.Format(_T("レジストリキー\n%s\nのオープンに失敗しました。キーが存在しない可能性があります。"), strRegKey);
 			MessageBox(NULL, strMsg, _T("エラー"), MB_OK);
 			return;
 		}
-
 		rkOrder.DeleteValue( _T("Order") );
 		rkOrder.Close();
 	} else {

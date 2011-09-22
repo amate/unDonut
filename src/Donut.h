@@ -274,6 +274,7 @@ HICON Donut_LoadIcon4AboutDialog();
 ///+++ CDonutExplorerBar::GetInstance()->RefreshExpBar(0); ‚ð‚·‚é‚¾‚¯.
 void  Donut_ExplorerBar_RefreshFavoriteBar();
 
+void	CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine);
 
 void 	_PrivateTerm();
 

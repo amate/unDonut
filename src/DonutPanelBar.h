@@ -49,7 +49,7 @@ private:
 	//typedef CWindowImpl< T, TBase, TWinTraits >		baseClass;
 	CToolBarCtrl					m_wndToolBar;
 	CReBarCtrl						m_wndReBar;
-	CDonutView						m_view;
+	//CDonutView						m_view;
 	CString 						m_strPanelFile;
 	BOOL							m_bInitNavi;
 
@@ -71,8 +71,8 @@ private:
 
 public:
 	CDonutPanelBarImpl()
-		: m_view(CDLControlOption::DLCTL_DEFAULT, CDLControlOption::s_dwExtendedStyleFlags)
-		, m_menuPanel(this, ID_INSERTPOINT_PANELTYPEMENU)
+		: //m_view(/*CDLControlOption::DLCTL_DEFAULT, CDLControlOption::s_dwExtendedStyleFlags*/)
+		 m_menuPanel(this, ID_INSERTPOINT_PANELTYPEMENU)
 		, m_strPanelFile("about:blank")
 		, m_bInitNavi(TRUE)
 	  #if 1 //+++
@@ -105,7 +105,7 @@ public:
 
 		CHAIN_MSG_MAP		(CChevronHandler<CDonutPanelBarImpl>)
 		CHAIN_COMMANDS		(CWebBrowserCommandHandler<CDonutPanelBarImpl>)
-		CHAIN_COMMANDS_MEMBER(m_view)		// CHAIN_CLIENT_COMMANDS() not send, why?
+		//::CHAIN_COMMANDS_MEMBER(m_view)		// CHAIN_CLIENT_COMMANDS() not send, why?
 		CHAIN_MSG_MAP_MEMBER( m_menuPanel )
 		//CHAIN_MSG_MAP(baseClass)
 		FORWARD_NOTIFICATIONS()
@@ -210,7 +210,7 @@ private:
 		bHandled   = FALSE;
 
 		//x 	DWORD dwStyle = WS_CHILD | WS_VISIBLE;
-
+#if 0	//:::
 		m_view.Create(m_hWnd, rcDefault, _T("about:blank"), WS_CHILD | WS_VISIBLE, WS_EX_CLIENTEDGE, ID_DONUTVIEW);
 		m_wndReBar = _CreateSimpleReBarCtrl(m_hWnd, ATL_SIMPLE_REBAR_NOBORDER_STYLE | CCS_NOPARENTALIGN);
 
@@ -239,7 +239,7 @@ private:
 			::_beginthread(_PanelThread, 0,(void *) &m_ThreadParams);
 			//\\ ::SetThreadPriority(m_hThread , THREAD_PRIORITY_IDLE);
 		}
-
+#endif
 		return 0;
 	}
 
@@ -312,7 +312,7 @@ private:
 		m_wndReBar.MoveWindow(0, 0, rc.Width(), rcToolBar.Height(), TRUE);
 
 		rc.top += rcToolBar.Height();
-		m_view.MoveWindow(&rc, TRUE);
+		//:::m_view.MoveWindow(&rc, TRUE);
 
 		return 0;
 	}
@@ -338,7 +338,7 @@ public:
 			bCancel = true;
 			return;
 		}
-
+#if 0	//:::
 		CChildFrame *pChild = CChildFrame::NewWindow(g_pMainWnd->m_hWndMDIClient,
 													 g_pMainWnd->mdiTab(),
 													 *CDonutAddressBar::GetInstance()/*g_pMainWnd->m_AddressBar*/,
@@ -352,6 +352,7 @@ public:
 
 		pChild->m_spBrowser->QueryInterface(IID_IDispatch, (void **) ppDisp);
 		ATLASSERT(ppDisp != NULL);
+#endif
 	}
 
 
@@ -359,14 +360,14 @@ private:
 	DWORD _GetInheritedDLControlFlags()
 	{
 		DWORD dwDLFlags;
-
+#if 0	//:::
 		if ( _check_flag(MAIN_EX_INHERIT_OPTIONS, CMainOption::s_dwMainExtendedStyle) )
 			dwDLFlags = m_view._GetDLControlFlags();
 		else
 			dwDLFlags = CDLControlOption::s_dwDLControlFlags;
 
 		// default
-
+#endif
 		return dwDLFlags;
 	}
 
@@ -396,7 +397,7 @@ public:
 			}
 		} else if (WM_KEYFIRST <= pMsg->message && pMsg->message <= WM_KEYLAST) {
 			if ( ::IsChild(m_hWnd, pMsg->hwnd) ) {
-				return m_view.PreTranslateMessage(pMsg);
+				//:::return m_view.PreTranslateMessage(pMsg);
 				//m_view.SendMessage(pMsg->message,pMsg->wParam,pMsg->lParam);
 				//m_view.SendMessage(WM_FORWARDMSG, 0, (LPARAM)pMsg);
 				return _MTL_TRANSLATE_WANT;
@@ -416,6 +417,7 @@ public:
 private:
 	void SetFocusControl()
 	{
+#if 0	//:::
 		if ( !MtlIsApplicationActive(m_hWnd) )
 			return;
 
@@ -440,6 +442,7 @@ private:
 			return;
 
 		hr = spWnd->focus();		// makes panelview active
+#endif
 	}
 
 

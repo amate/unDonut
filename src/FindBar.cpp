@@ -228,10 +228,11 @@ void	CFindBar::Impl::CloseFindBar()
 	m_CloseState = TTCS_NORMAL;
 	ShowWindow(FALSE);
 	m_funcUpdateLayout(FALSE);
-
+#if 0	//:::
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild) 
 		pChild->SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
+#endif
 }
 
 
@@ -369,11 +370,13 @@ void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
 		if (rc.PtInRect(pt)) {
 			CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 			if (pChild) {
+#if 0 //:::
 				CComPtr<IDispatch>	spDisp;
 				pChild->m_spBrowser->get_Document(&spDisp);
 				CComQIPtr<IHTMLDocument3> spDoc3 = spDisp;
 				if (spDoc3)
 					_RemoveHighlight(spDoc3);
+#endif
 			}
 		}
 	}
@@ -399,10 +402,11 @@ void	CFindBar::Impl::OnTimer(UINT_PTR nIDEvent)
 /// エディットコントロールにフォーカスがある場合でもスクロールできるようにする
 LRESULT CFindBar::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+#if 0 //:::
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild) 
 		pChild->SendMessageToDescendants(uMsg, wParam, lParam);
-	
+#endif
 	return 0;
 }
 
@@ -581,7 +585,7 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild == nullptr)
 		return;
-
+#if 0 //:::
 	CComPtr<IDispatch>	spDisp;
 	pChild->m_spBrowser->get_Document(&spDisp);
 	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
@@ -673,6 +677,7 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	}
 	m_Edit.Invalidate();
 	m_Edit.UpdateWindow();
+#endif
 }
 
 //-----------------------------------
@@ -698,6 +703,7 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild) {
+#if 0	//:::
 		BOOL bFind = (BOOL)pChild->OnFindKeyWord(strKeyword, bFindDown, Flags);
 		if (m_nMatchCount == 0)
 			return;	// 一致0ならなにもしない
@@ -723,6 +729,7 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 				m_static.SetWindowText(_T(" 見つかりませんでした"));
 			}
 		}
+#endif
 	}
 }
 

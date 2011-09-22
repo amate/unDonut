@@ -20,6 +20,7 @@
 #include "MainFrame.h"								//+++ "MainFrm.h"
 #include "API.h"
 #include "appconst.h"
+#include "MultiThreadManager.h"
 
 #ifdef USE_ATL3_BASE_HOSTEX /*_ATL_VER < 0x700*/	//+++
 #include "for_ATL3/AtlifaceEx_i.c"
@@ -73,14 +74,11 @@ BEGIN_OBJECT_MAP(ObjectMap)
 END_OBJECT_MAP()
 
 
-static void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine);
-
-
 typedef BOOL (WINAPI *MiniDumpWriteDump_fp)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION, PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
 
 MiniDumpWriteDump_fp	funcMiniDumpWriteDump = nullptr;
 
-int GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
+LONG WINAPI GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
 {
 	BOOL bMiniDumpSuccessful;
 	HANDLE hDumpFile;
@@ -115,8 +113,13 @@ int GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
 
 	bMiniDumpSuccessful = funcMiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), 
 					hDumpFile, MiniDumpWithDataSegs, &ExpParam, NULL, NULL);
+	CloseHandle(hDumpFile);
 
-	CString strError = _T("強制終了しました。\n例外：");
+	enum {
+		STATUS_INSUFFICIENT_MEM = 0xE0000001
+	};
+
+	CString strError = _T("例外が発生しました。\n例外：");
 	switch (pExceptionPointers->ExceptionRecord->ExceptionCode) {
 	case EXCEPTION_ACCESS_VIOLATION:
 		strError += _T("スレッドが適切なアクセス権を持たない仮想アドレスに対して、読み取りまたは書き込みを試みました。");
@@ -134,6 +137,9 @@ int GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
 	case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
 		strError += _T("スレッドが範囲外の配列要素にアクセスしようとしました。使用中のハードウェアは境界チェックをサポートしています。");
 		break;
+	case STATUS_INSUFFICIENT_MEM:
+		strError += _T("メモリが不足しています。");
+		break;
 	default:
 		strError += _T("その他の例外が発生しました。");
 		break;
@@ -143,6 +149,10 @@ int GenerateDump(EXCEPTION_POINTERS* pExceptionPointers)
 	return EXCEPTION_CONTINUE_SEARCH;
 }
 
+int WINAPI GenerateDumpi(EXCEPTION_POINTERS* pExceptionPointers)
+{
+	return (int)GenerateDump(pExceptionPointers);
+}
 
 // コマンドラインからURLを取り出す
 static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
@@ -180,20 +190,15 @@ static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 static bool CheckOneInstance(HINSTANCE hInstance, LPTSTR lpstrCmdLine)
 {
 	//ChangeWindowMessageFilter(WM_NEWINSTANCE, MSGFLT_ADD); //+++ ユーザーメッセージを通過させるためにvistaでの開発中は必要?(て、そもそもつかえなかった)
-	TCHAR	iniFilePath[MAX_PATH+16] = _T("\0");
-	::GetModuleFileName(hInstance, iniFilePath, MAX_PATH);
-	size_t	l = ::_tcslen(iniFilePath);
-	if (l < 5)
-		return false;
 	
-	::_tcscpy(&iniFilePath[l-4], _T(".ini"));
-	DWORD dwMainExtendedStyle = ::GetPrivateProfileInt(_T("Main"), _T("Extended_Style"), 0xABCD0123, iniFilePath);
-	if (dwMainExtendedStyle != 0xABCD0123)
-		CMainOption::s_dwMainExtendedStyle = dwMainExtendedStyle;
+	CString	strIniFilePath = Misc::GetFileBaseNoExt(Misc::GetExeFileName()) + _T(".ini");
+	CIniFileI	pr(strIniFilePath, _T("Main"));
+
+	CMainOption::s_dwMainExtendedStyle = pr.GetValue(_T("Extended_Style"), CMainOption::s_dwMainExtendedStyle);
 	if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ONEINSTANCE) { // 複数起動を許可しない
 		//x HWND hWnd = ::FindWindow(_T("WTL:Donut"), NULL);
 		HWND hWnd = ::FindWindow(DONUT_WND_CLASS_NAME, NULL);
-		if (hWnd) {
+		if (hWnd) {		// 既に起動しているunDonutが見つかった
 			std::vector<CString> strs;
 			PerseUrls(lpstrCmdLine, strs);
 
@@ -365,7 +370,7 @@ static int Run(LPTSTR lpstrCmdLine = NULL, int nCmdShow = SW_SHOWDEFAULT, bool b
 }
 
 
-static void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
+void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
 {
 	CString 	 strCmdLine = lpstrCmdLine;
 	if (strCmdLine.CompareNoCase( _T("/dde") ) != 0) {	
@@ -565,16 +570,15 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 		return 0;
 
 	g_pMainWnd	 = NULL;
-
 	//	HRESULT hRes = ::CoInitialize(NULL);
 	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-	ATLASSERT( SUCCEEDED(hRes) );
+//	ATLASSERT( SUCCEEDED(hRes) );
 	// If you are running on NT 4.0 or higher you can use the following call instead to
 	// make the EXE free threaded. This means that calls come in on a random RPC thread
 	//	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-	hRes		 = ::OleInitialize(NULL);
-	ATLASSERT( SUCCEEDED(hRes) );
+//	hRes		 = ::OleInitialize(NULL);
+//	ATLASSERT( SUCCEEDED(hRes) );
 
 	ATLTRACE(_T("tWinMain\n") _T("CommandLine : %s\n"), lpstrCmdLine);
 
@@ -634,7 +638,9 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 				if (HaveEnvFiles() == false)
 					lpstrCmdLine = _T("about:warning");
 			}
-			nRet = Run(lpstrCmdLine, nCmdShow, bTray);
+			//\\nRet = Run(lpstrCmdLine, nCmdShow, bTray);
+			nRet = MultiThreadManager::Run(lpstrCmdLine, nCmdShow, bTray);
+
 		}
 	  #if 1 //+++ WTLのメイン窓クローズが正常終了時に、終了コードとして1を返す...
 			//+++ OSに返す値なので0のほうがよいはずで、
@@ -652,7 +658,7 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	ATLTRACE(_T("正常終了しました。\n"));
 END_APP:
 	_Module.Term();
-	::OleUninitialize();
+//	::OleUninitialize();
 	::CoUninitialize();
 
 	CDonutSimpleEventManager::RaiseEvent(EVENT_PROCESS_END);
@@ -674,11 +680,13 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 		funcMiniDumpWriteDump = (MiniDumpWriteDump_fp)GetProcAddress(hDll, "MiniDumpWriteDump");
 		if (funcMiniDumpWriteDump) {
 			__try {
+				//PVOID hException = AddVectoredExceptionHandler(0, GenerateDump);
 				int nRet = RunWinMain(hInstance, lpstrCmdLine, nCmdShow);
 				FreeLibrary(hDll);
+				//RemoveVectoredExceptionHandler(hException);
 				return nRet;
 			}
-			__except(GenerateDump(GetExceptionInformation()))
+			__except(GenerateDumpi(GetExceptionInformation()))
 			{
 			}
 		}
@@ -693,18 +701,6 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
 
 /////////////////////////////////////////////////////////////////////////////
-
-
-// CChildFrame
-void CChildFrame::PreDocumentComplete( /*[in]*/ IDispatch *pDisp, /*[in]*/ VARIANT *URL)
-{
-	if (!g_pAPI)
-		return;
-
-	int nTabIndex = m_MDITab.GetTabIndex(m_hWnd);
-	g_pAPI->Fire_DocumentComplete( nTabIndex, pDisp, V_BSTR(URL) );
-}
-
 
 
 
@@ -756,7 +752,10 @@ CString Donut_GetActiveSelectedText()
 ///+++
 CString Donut_GetActiveStatusStr()
 {
+#if 0	//:::
 	return g_pMainWnd->GetActiveChildFrame()->strStatusBar();
+#endif
+	return CString();
 }
 
 

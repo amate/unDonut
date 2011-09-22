@@ -186,7 +186,7 @@ void CDLControlPropertyPage::_GetData()
 	CDLControlOption::s_bUseDLManager = m_bUseDLManager != 0;
 
 
-	SendMessage(m_hMainWnd, WM_COMMAND, ID_RESIZED, 0);
+	//\\? SendMessage(m_hMainWnd, WM_COMMAND, ID_RESIZED, 0);
 	m_edit.GetWindowText(CDLControlOption::s_szUserAgent, MAX_PATH);	// UDT DGSTR
 
 	SetUserAgent();	// ユーザーエージェント変更

@@ -7,12 +7,14 @@
 #include "DonutView.h"
 #include "mshtmdid.h"
 #include "option/DLControlOption.h"
+#include "option\MouseDialog.h"
 #include "Donut.h"
 
 #include "ScriptErrorCommandTargetImpl.h"
 #include "Download/DownloadManager.h"
 #include "AtlHostEx.h"
 #include "ParseInternetShortcutFile.h"
+#include "ChildFrameCommandUIUpdater.h"
 
 // Constants
 enum {
@@ -36,11 +38,9 @@ enum {
 // CDonutView
 
 /// Constructor
-CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
-	: m_ViewOption(this, dwExStyleFlags)						//+++ dwExStyleFlags追加.
-	, m_dwDefaultDLControlFlags(dwDefaultDLControlFlags)
-	, m_dwDLControlFlags(dwDefaultDLControlFlags)
-	//, m_dwDefaultExtendedStyleFlags(dwExStyleFlags)			//+++
+
+CDonutView::CDonutView(CChildFrameUIStateChange& UI)
+	: m_UIChange(UI)
 	, m_nDDCommand(0)
    #if _ATL_VER >= 0x700
 	, m_ExternalUIDispatch(this)
@@ -52,7 +52,34 @@ CDonutView::CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwExStyleFlags)
 	, m_bDragAccept(false)
 	, m_bExternalDrag(false)
 	, m_bLightRefresh(false)
+	, m_dwAutoRefreshStyle(0)
+	, m_dwExStyle(0)
 { }
+
+
+void	CDonutView::SetDefaultFlags(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags)
+{
+	m_dwDefaultDLControlFlags	= dwDefaultDLControlFlags;
+	m_dwDLControlFlags			= dwDefaultDLControlFlags;
+	m_dwExStyle					= dwDefaultExtendedStyleFlags;
+}
+
+/// 自動更新変更
+void	CDonutView::SetAutoRefreshStyle(DWORD dwStyle)
+{
+	m_dwAutoRefreshStyle = 0;
+	DWORD dwCurFlag = DVS_AUTOREFRESH_USER;
+	while (dwCurFlag > 0) {
+		if (dwCurFlag & dwStyle) {
+			m_dwAutoRefreshStyle = dwCurFlag;
+			break;
+		}
+		dwCurFlag >>= 1;
+	}
+
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
 
 
 /// DLコントロールを設定する
@@ -67,6 +94,7 @@ void CDonutView::PutDLControlFlags(DWORD dwDLControlFlags)
 		DISPPARAMS		   params = { 0 };
 		HRESULT hr = spDisp->Invoke(DISPID_AMBIENT_DLCONTROL, IID_NULL, 1041 /*JP*/, DISPATCH_PROPERTYPUT, &params, &varResult, NULL, NULL);
 	}
+	m_UIChange.SetDLCtrl(m_dwDLControlFlags);
 #if 0
 	HRESULT	hr;
 	CComQIPtr<IOleObject>	spOleObject = m_spBrowser;
@@ -356,7 +384,7 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		//hr = m_spAxAmbient->put_DocHostFlags(_bFlatView ? docHostUIFlagNotFlatView : docHostUIFlagDEFAULT); // UDT DGSTR ( added by dai
 	  #if 1	//+++ xp以降は themeによって平面的であることを期待して、フラットスクロールバーにしないtheme onの設定にする.
 		//BOOL	bFlatView	= (m_dwDefaultExtendedStyleFlags & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
-		BOOL	bFlatView	= (m_ViewOption.m_dwExStyle      & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
+		BOOL	bFlatView	= (m_dwExStyle      & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
 
 		unsigned flags      = DOCHOSTUIFLAG_NOT_FLATVIEW;
 		if (bFlatView) {
@@ -388,12 +416,17 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		_InitDLControlFlags();
 
+		SetIeMenuNoCstm(CMenuOption::s_bNoCustomIEMenu);
+		if (CMouseOption::s_nDragDropCommandID)
+			SetOperateDragDrop(TRUE, CMouseOption::s_nDragDropCommandID);
+
 	  #if 1	//+++
-		if (m_ViewOption.m_dwExStyle == (DWORD)-1)
-			m_ViewOption.m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
+		if (m_dwExStyle == (DWORD)-1)
+			m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
+		m_UIChange.SetExStyle(m_dwExStyle);
 	  #else
-		ATLASSERT(m_ViewOption.m_dwExStyle == 0);
-		m_ViewOption.m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
+		ATLASSERT(m_dwExStyle == 0);
+		m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
 	  #endif
 		RegisterDragDrop(m_hWnd, this);
 	}
@@ -410,6 +443,7 @@ void CDonutView::OnDestroy()
 	RevokeDragDrop(m_hWnd);
 
 	if (m_spBrowser) {
+#if 0
 		HRESULT hr = m_spBrowser->Stop();
 		CComQIPtr<IOleInPlaceObject>	spInPlaceObject = m_spBrowser;
 		ATLASSERT(spInPlaceObject);
@@ -422,14 +456,17 @@ void CDonutView::OnDestroy()
 		hr = m_spBrowser->QueryInterface(IID_IOleObject, (void**)&spOleObject);
 		ATLASSERT(SUCCEEDED(hr));
 		hr = spOleObject->Close(OLECLOSE_NOSAVE);
-
-		spOleObject.Release();
+#endif
+		//spOleObject.Release();
 		m_spBrowser.Release();
 		m_spAxAmbient.Release();
 		m_spHost.Release();
 	}
 
-	m_ViewOption.Uninit();
+	if (m_bUseCustomDropTarget)
+		SetOperateDragDrop(FALSE, 0);
+
+	KillTimer(AutoRefreshTimerID);
 
 	DefWindowProc();
 }
@@ -493,89 +530,97 @@ void CDonutView::OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*
 }
 
 
-
-DWORD CDonutView::_GetDLControlFlags()
+void	CDonutView::OnBlockMailto(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	DWORD dwDLControlFlags = m_dwDLControlFlags;
-	return dwDLControlFlags;
+	if (m_dwExStyle & DVS_EX_BLOCK_MAILTO)
+		m_dwExStyle &= ~DVS_EX_BLOCK_MAILTO;
+	else
+		m_dwExStyle |= DVS_EX_BLOCK_MAILTO;
+	m_UIChange.SetExStyle(m_dwExStyle);
 }
 
-
-//+++
-DWORD	CDonutView::_GetExtendedStypeFlags()
+void	CDonutView::OnMouseGesture(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	//return m_dwDefaultExtendedStyleFlags;
-	return m_ViewOption.m_dwExStyle;
+	if (m_dwExStyle & DVS_EX_MOUSE_GESTURE)
+		m_dwExStyle &= ~DVS_EX_MOUSE_GESTURE;
+	else
+		m_dwExStyle |= DVS_EX_MOUSE_GESTURE;
+	m_UIChange.SetExStyle(m_dwExStyle);
 }
 
-
-
-
-
-void CDonutView::OnUpdateDLCTL_ChgMulti(CCmdUI *pCmdUI)
+void	CDonutView::OnMessageFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	if (pCmdUI->m_menuSub.m_hMenu) {		// popup menu
-		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
+	if (m_dwExStyle & DVS_EX_MESSAGE_FILTER)
+		m_dwExStyle &= ~DVS_EX_MESSAGE_FILTER;
+	else
+		m_dwExStyle |= DVS_EX_MESSAGE_FILTER;
+	m_UIChange.SetExStyle(m_dwExStyle);
+}
+
+void	CDonutView::OnAutoRefreshNone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle = 0;
+	KillTimer(AutoRefreshTimerID);
+}
+
+void	CDonutView::OnAutoRefresh15sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_15SEC;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+void	CDonutView::OnAutoRefresh30sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_30SEC;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+void	CDonutView::OnAutoRefresh1min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_1MIN;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+void	CDonutView::OnAutoRefresh2min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_2MIN;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+void	CDonutView::OnAutoRefresh5min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_5MIN;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+void	CDonutView::OnAutoRefreshUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_dwAutoRefreshStyle  = 0;
+	m_dwAutoRefreshStyle |= DVS_AUTOREFRESH_USER;
+	KillTimer(AutoRefreshTimerID);
+	_SetTimer();
+}
+
+/// ページを更新する
+void	CDonutView::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent == AutoRefreshTimerID) {
+		::PostMessage(GetParent(), WM_COMMAND, ID_VIEW_REFRESH, 0);
 	} else {
-		pCmdUI->Enable();
-		enum { FLAGS = (DLCTL_DLIMAGES | DLCTL_BGSOUNDS | DLCTL_VIDEOS) };
-		pCmdUI->SetCheck ( (GetDLControlFlags() & FLAGS) == FLAGS /*? 1 : 0*/ );
+		SetMsgHandled(FALSE);
 	}
 }
 
-
-
-void CDonutView::OnUpdateDLCTL_ChgSecu(CCmdUI *pCmdUI)
-{
-	if (pCmdUI->m_menuSub.m_hMenu) {		// popup menu
-		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
-	} else {
-		pCmdUI->Enable();
-		BOOL bSts = TRUE;
-
-		if (GetDLControlFlags() & DLCTL_NO_RUNACTIVEXCTLS)	bSts = FALSE;
-		if (GetDLControlFlags() & DLCTL_NO_DLACTIVEXCTLS)	bSts = FALSE;
-		if (GetDLControlFlags() & DLCTL_NO_SCRIPTS) 		bSts = FALSE;
-		if (GetDLControlFlags() & DLCTL_NO_JAVA)			bSts = FALSE;
-
-		pCmdUI->SetCheck(bSts);
-	}
-}
-
-
-
-void CDonutView::OnUpdateDLCTL_DLIMAGES(CCmdUI *pCmdUI)
-{
-	if (pCmdUI->m_menuSub.m_hMenu) {		// popup menu
-		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
-	} else {
-		pCmdUI->Enable();
-		pCmdUI->SetCheck((GetDLControlFlags() & DLCTL_DLIMAGES) != 0 /*? 1 : 0*/);
-	}
-}
-
-
-
-void CDonutView::OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI)
-{
-	if (pCmdUI->m_menuSub.m_hMenu) {		// popup menu
-		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
-	} else {
-		pCmdUI->Enable();
-		pCmdUI->SetCheck((GetDLControlFlags() & DLCTL_NO_RUNACTIVEXCTLS) ? 0 : 1);
-	}
-}
-
-
-
-void CDonutView::OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI)
-{
-	DWORD dwDocHostFlags = 0;		//+++ 念のため初期値設定.
-
-	m_spAxAmbient->get_DocHostFlags(&dwDocHostFlags);
-	pCmdUI->Enable();
-	pCmdUI->SetCheck((dwDocHostFlags & docHostUIFlagOPENNEWWIN) != 0 /*? 1 : 0*/);
-}
 
 // Implementation
 
@@ -625,4 +670,33 @@ void CDonutView::_RemoveFlag(DWORD dwFlag)	//minit
 	dwDLControlFlags &= ~dwFlag;
 
 	PutDLControlFlags(dwDLControlFlags);
+}
+
+/// 自動更新用のタイマーを開始する
+void	CDonutView::_SetTimer()
+{
+	auto GetElapse = [this]() -> int {
+		if (m_dwAutoRefreshStyle == 0)
+			return -1;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_15SEC)
+			return 15 * 1000;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_30SEC)
+			return 30 * 1000;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_1MIN)
+			return 1 * 60 * 1000;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_2MIN)
+			return 2 * 60 * 1000;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_5MIN)
+			return 5 * 60 * 1000;
+		else if (m_dwAutoRefreshStyle & DVS_AUTOREFRESH_USER)
+			return CMainOption::s_dwAutoRefreshTime * 1000;
+
+		return -1;
+	};
+
+	int nElapse = GetElapse();
+	if (nElapse != -1)
+		SetTimer(AutoRefreshTimerID, nElapse);
+
+	m_UIChange.SetAutoRefreshStyle(m_dwAutoRefreshStyle);
 }

@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "DonutViewOption.h"
-
+#include "DonutView.h"
+#include "option\DLControlOption.h"
 
 #define DONUT_SECTION			_T("unDonut")
 #define EXPROP_KEY_ENABLED		_T("Enabled")

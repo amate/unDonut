@@ -1751,7 +1751,6 @@ void CDonutSearchBar::Impl::_AddToolBarIcon(CString strWord)
 		FilterString(str);
 
 	vector<CString> strs;
-	strs.reserve(20);
 	Misc::SeptTextToWords(strs, str);	// strを単語に分解する
 
 	// ツールバーボタンを一旦全部削除する

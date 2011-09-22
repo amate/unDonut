@@ -275,6 +275,15 @@
     <ClCompile Include="Download\DLListWindow.cpp">
       <Filter>Source Files\Download</Filter>
     </ClCompile>
+    <ClCompile Include="MultiThreadManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChildFrameCommandUIUpdater.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MenuEncode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -526,9 +535,6 @@
     <ClInclude Include="AtlhostEx.h">
       <Filter>Source Files\ATL</Filter>
     </ClInclude>
-    <ClInclude Include="WtlFixed\AtlSplit.h">
-      <Filter>Source Files\ATL</Filter>
-    </ClInclude>
     <ClInclude Include="atltheme_d.h">
       <Filter>Source Files\ATL</Filter>
     </ClInclude>
@@ -732,6 +738,15 @@
     </ClInclude>
     <ClInclude Include="Download\DLListWindow.h">
       <Filter>Source Files\Download</Filter>
+    </ClInclude>
+    <ClInclude Include="MultiThreadManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\wtl80\include\atlsplit.h">
+      <Filter>WTL</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildFrameCommandUIUpdater.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

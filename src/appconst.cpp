@@ -7,7 +7,6 @@
 
 namespace app {
 
-
 #define VERSTR			_T("1.48.83")
 
 #ifdef UNICODE

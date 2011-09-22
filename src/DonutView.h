@@ -5,11 +5,27 @@
 
 #pragma once
 
-#include "DonutViewOption.h"
 #include "DocHostUIHandlerDispatch.h"
 #include "MtlBrowser.h"
 #include "HLinkDataObject.h"
 
+
+enum EDvs_AutoRefresh {
+	DVS_AUTOREFRESH_15SEC	= 0x00000001L,
+	DVS_AUTOREFRESH_30SEC	= 0x00000002L,
+	DVS_AUTOREFRESH_1MIN	= 0x00000004L,
+	DVS_AUTOREFRESH_2MIN	= 0x00000008L,
+	DVS_AUTOREFRESH_5MIN	= 0x00000010L,
+	DVS_AUTOREFRESH_USER	= 0x00000020L,	// UDT DGSTR ( dai
+
+	DVS_AUTOREFRESH_OR		= (    DVS_AUTOREFRESH_15SEC | DVS_AUTOREFRESH_30SEC
+								 | DVS_AUTOREFRESH_1MIN  | DVS_AUTOREFRESH_2MIN | DVS_AUTOREFRESH_5MIN
+								 | DVS_AUTOREFRESH_USER
+							  ),
+};
+
+// ëOï˚êÈåæ
+class CChildFrameUIStateChange;
 
 //////////////////////////////////////////////////////////////////////
 // CDonutView
@@ -26,11 +42,15 @@ public:
 	DECLARE_WND_SUPERCLASS( NULL, CAxWindow::GetWndClassName() )
 	
 	// Constructor
-	CDonutView(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags);
+	CDonutView(CChildFrameUIStateChange& UI);
+
+	void	SetDefaultFlags(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags);
+	void	SetAutoRefreshStyle(DWORD dwStyle);
 
 	// Methods
 	DWORD	GetDLControlFlags() const { return m_dwDLControlFlags; }
 	void	PutDLControlFlags(DWORD dwDLControlFlags);
+	DWORD	GetExStyle() const { return m_dwExStyle; }
 	void	SetIeMenuNoCstm(int nStatus);
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
@@ -39,9 +59,6 @@ public:
 
 	// Overrides
 	BOOL	PreTranslateMessage(MSG *pMsg);
-
-	DWORD	_GetDLControlFlags();
-	DWORD	_GetExtendedStypeFlags();
 
     // IUnknown
     STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject);
@@ -84,41 +101,28 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_DLACTIVEXCTLS	, OnSecurDlactivexctls	)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_SCRIPTS 		, OnSecurScritps		)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_JAVA			, OnSecurJava			)
-		CHAIN_MSG_MAP_MEMBER( m_ViewOption )
+
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_CHG_MULTI		, OnMultiChg			)	// UDT DGSTR
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_CHG_SECU		, OnSecuChg 			)	// UDT DGSTR
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_ON_OFF_MULTI	, OnAllOnOff			)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_ON_OFF_SECU 	, OnAllOnOff			)
+
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_NONE , OnAutoRefreshNone )
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_15SEC, OnAutoRefresh15sec)
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_30SEC, OnAutoRefresh30sec)
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_1MIN , OnAutoRefresh1min )
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_2MIN , OnAutoRefresh2min )
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_5MIN , OnAutoRefresh5min )
+		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_USER , OnAutoRefreshUser )
+
+		COMMAND_ID_HANDLER_EX( ID_MESSAGE_FILTER  , OnMessageFilter   )
+		COMMAND_ID_HANDLER_EX( ID_MOUSE_GESTURE   , OnMouseGesture	  )
+		COMMAND_ID_HANDLER_EX( ID_BLOCK_MAILTO	  , OnBlockMailto	  )
+		MSG_WM_TIMER( OnTimer )
 	END_MSG_MAP()
 
 
-	BEGIN_UPDATE_COMMAND_UI_MAP( CDonutView )
-		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ViewOption )
-		UPDATE_COMMAND_UI( ID_DLCTL_DLIMAGES	  , OnUpdateDLCTL_DLIMAGES		 )		// with popup
-		UPDATE_COMMAND_UI( ID_DLCTL_RUNACTIVEXCTLS, OnUpdateDLCTL_RUNACTIVEXCTLS )		// with popup
-
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG( ID_DLCTL_BGSOUNDS, DLCTL_BGSOUNDS, GetDLControlFlags() )
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG( ID_DLCTL_VIDEOS, DLCTL_VIDEOS	 , GetDLControlFlags() )
-
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG_REV( ID_DLCTL_DLACTIVEXCTLS, DLCTL_NO_DLACTIVEXCTLS, GetDLControlFlags() )
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG_REV( ID_DLCTL_SCRIPTS	  , DLCTL_NO_SCRIPTS	  , GetDLControlFlags() )
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_FLAG_REV( ID_DLCTL_JAVA		  , DLCTL_NO_JAVA		  , GetDLControlFlags() )
-
-		// UH
-		UPDATE_COMMAND_UI( ID_DLCTL_CHG_MULTI, OnUpdateDLCTL_ChgMulti ) 				// with popup
-		UPDATE_COMMAND_UI( ID_DLCTL_CHG_SECU , OnUpdateDLCTL_ChgSecu  ) 				// with popup
-
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_IF( ID_DLCTL_ON_OFF_MULTI,
-				( ( GetDLControlFlags() & (DLCTL_DLIMAGES | DLCTL_BGSOUNDS | DLCTL_VIDEOS) )
-				  == (DLCTL_DLIMAGES | DLCTL_BGSOUNDS | DLCTL_VIDEOS)
-				) /*+++ ? 1 : 0*/ )
-		UPDATE_COMMAND_UI_ENABLE_SETCHECK_IF( ID_DLCTL_ON_OFF_SECU,
-				( ( GetDLControlFlags() & (DLCTL_NO_RUNACTIVEXCTLS | DLCTL_NO_DLACTIVEXCTLS | DLCTL_NO_SCRIPTS | DLCTL_NO_JAVA)) == 0 )
-				/*+++ ? 1 : 0*/ )
-	END_UPDATE_COMMAND_UI_MAP()
-
-
-	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
+	int		OnCreate(LPCREATESTRUCT /*lpCreateStruct*/);
 	void	OnDestroy();
 	void	OnMultiChg(WORD, WORD, HWND);
 	void	OnSecuChg(WORD, WORD, HWND);
@@ -132,12 +136,18 @@ public:
 	void	OnSecurScritps(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-	// UI map
-	void	OnUpdateDLCTL_ChgMulti(CCmdUI *pCmdUI);
-	void	OnUpdateDLCTL_ChgSecu(CCmdUI *pCmdUI);
-	void	OnUpdateDLCTL_DLIMAGES(CCmdUI *pCmdUI);
-	void	OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI);
-	void	OnUpdateDocHostUIOpenNewWinUI(CCmdUI *pCmdUI);
+	void	OnBlockMailto(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnMouseGesture(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnMessageFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnDocHostUIOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefreshNone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefresh15sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefresh30sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefresh1min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefresh2min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefresh5min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnAutoRefreshUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnTimer(UINT_PTR nIDEvent);
 
 
 private:
@@ -146,6 +156,9 @@ private:
 	void	_AddFlag(DWORD dwFlag);
 	void	_RemoveFlag(DWORD dwFlag);
 	void	_LightRefresh();
+	void	_SetTimer();
+
+	enum { AutoRefreshTimerID = 1 };
 
 	// Data members
 	CComQIPtr<IAxWinHostWindow>					m_spHost;
@@ -165,8 +178,12 @@ private:
 
 	DWORD						m_dwDLControlFlags;
 
+	DWORD		m_dwAutoRefreshStyle;
+	DWORD		m_dwExStyle;
+
+	CChildFrameUIStateChange&	m_UIChange;
+
 public:
-	CDonutViewOption<CDonutView>		m_ViewOption;
 	bool	m_bLightRefresh;
 };
 

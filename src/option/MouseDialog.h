@@ -21,6 +21,7 @@ public:
 	static CString s_strREngine;
 	static CString s_strBEngine;
 	static CString s_strCEngine;
+	static int	s_nDragDropCommandID;
 
 	static void	GetProfile();
 	static void	WriteProfile();
