@@ -12,6 +12,8 @@
 #include "ChildFrameCommandUIUpdater.h"
 #include "option\DLControlOption.h"
 #include "option\MouseDialog.h"
+#include "option\IgnoreURLsOption.h"
+#include "option\CloseTitleOption.h"
 
 DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 
@@ -38,17 +40,20 @@ class CChildFrame::Impl :
 	public CWebBrowserCommandHandler<Impl>,
 	public CWebBrowser2
 {
+	friend class CChildFrame;
+
 public:
 	DECLARE_WND_CLASS_EX(_T("DonutChildFrame"), 0, COLOR_APPWORKSPACE)
 
 	Impl(CChildFrame* pChild);
 
 	void	SetThreadRefCount(int* pCount) { m_pThreadRefCount = pCount; }
-	void	SetDefaultFlags(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags) {
-		m_view.SetDefaultFlags(dwDefaultDLControlFlags, dwDefaultExtendedStyleFlags);
-	}
 
 	DWORD	GetExStyle() const { return m_view.GetExStyle(); }
+	void	SetExStyle(DWORD dwStyle);
+	void	SetDLCtrl(DWORD dwDLCtrl) { m_view.PutDLControlFlags(dwDLCtrl); }
+	void	SetMarshalDLCtrl(DWORD dwDLCtrl) { m_dwMarshalDLCtrlFlags = dwDLCtrl; }
+	void	SetAutoRefreshStyle(DWORD dwAutoRefresh) { m_view.SetAutoRefreshStyle(dwAutoRefresh); }
 	void	SaveSearchWordflg(bool bSave) { m_bSaveSearchWordflg = bSave; }
 	void 	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
 
@@ -101,17 +106,31 @@ public:
 		USER_MSG_WM_MENU_GOBACK 	( OnMenuGoBack		)
 		USER_MSG_WM_MENU_GOFORWARD	( OnMenuGoForward	)
 
+		// ファイル
+		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
+		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_TEXT,OnEditOpenSelectedText	)	// URLテキストを開く
+
+		// 編集
+		COMMAND_ID_HANDLER_EX( ID_TITLE_COPY			, OnTitleCopy				)
+		COMMAND_ID_HANDLER_EX( ID_URL_COPY				, OnUrlCopy 				)
+		COMMAND_ID_HANDLER_EX( ID_COPY_TITLEANDURL		, OnTitleAndUrlCopy 		)
+
+		// 表示
+		COMMAND_ID_HANDLER_EX( ID_VIEW_SETFOCUS 		, OnViewSetFocus			)
+		
+		// ツール
+		COMMAND_ID_HANDLER_EX( ID_EDIT_IGNORE			, OnAddClosePopupUrl		)
+		COMMAND_ID_HANDLER_EX( ID_EDIT_CLOSE_TITLE		, OnAddClosePopupTitle		)
+
+		// ウィンドウ
 		COMMAND_ID_HANDLER_EX( ID_FILE_CLOSE			, OnFileClose				)
 		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_ALL		, OnWindowCloseAll			)
-		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)
-		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_TEXT,OnEditOpenSelectedText	)
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_REFRESH_EXCEPT	, OnWindowRefreshExcept 	)
 
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_BACK1   , ID_VIEW_BACK9	, OnViewBackX	)
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_FORWARD1, ID_VIEW_FORWARD9, OnViewForwardX)
 
-		COMMAND_ID_HANDLER_EX( ID_TITLE_COPY			, OnTitleCopy				)
-		COMMAND_ID_HANDLER_EX( ID_URL_COPY				, OnUrlCopy 				)
-		COMMAND_ID_HANDLER_EX( ID_COPY_TITLEANDURL		, OnTitleAndUrlCopy 		)
+
 
 		CHAIN_COMMANDS_MEMBER( m_view )
 		CHAIN_MSG_MAP( CWebBrowserCommandHandler<Impl> )
@@ -127,17 +146,30 @@ public:
 	LRESULT OnMenuGoBack(HMENU hMenu)	 { MenuChgGoBack(hMenu);	return 0; }
 	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
 
-	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void 	OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-	void	OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-	void	OnViewForwardX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-
+	// 編集
 	void	OnTitleCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnTitleAndUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+
+	// 表示
+	void	OnViewSetFocus(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { m_view.SetFocus(); }
+	void	OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnViewForwardX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+
+	// ツール
+	void 	OnAddClosePopupUrl(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void 	OnAddClosePopupTitle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+
+	// ウィンドウ
+	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void 	OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void 	OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void 	OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+
 
 private:
 	DWORD	_GetInheritedDLCtrlFlags();
@@ -150,12 +182,14 @@ private:
 	CDonutView	m_view;
 	CChildFrameUIStateChange	m_UIChange;
 	int*	m_pThreadRefCount;
+	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
 	CString	m_strSearchWord;
 	bool	m_bAutoHilight;
 	CString m_strStatusText;
 	bool	m_bExecutedNewWindow;	// for OnMButtonHook
 	bool	m_bCancelRButtonUp;		// for PreTranslateMessage
+	DWORD	m_dwMarshalDLCtrlFlags;
 };
 
 
@@ -163,11 +197,24 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_pParentChild(pChild), 
 	m_pThreadRefCount(nullptr), 
 	m_view(m_UIChange),
+	m_bNowActive(false),
 	m_bSaveSearchWordflg(false),
 	m_bAutoHilight(false),
 	m_bExecutedNewWindow(false),
-	m_bCancelRButtonUp(false)
+	m_bCancelRButtonUp(false),
+	m_dwMarshalDLCtrlFlags(0)
 {	}
+
+
+void	CChildFrame::Impl::SetExStyle(DWORD dwStyle)
+{
+	m_view.SetExStyle(dwStyle);
+
+	bool bNavigateLock = (dwStyle & DVS_EX_OPENNEWWIN) != 0;
+	//m_MDITab.NavigateLockTab(m_hWnd, bNavigateLock);
+	//m_bExPropLock					= (bNavigateLock && bExProp) /*? true : false*/;
+
+}
 
 
 void 	CChildFrame::Impl::SetSearchWordAutoHilight(const CString& str, bool bAutoHilight)
@@ -238,6 +285,10 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 										const CString&		strHeaders,
 										bool&				bCancel )
 {
+	if (m_dwMarshalDLCtrlFlags) {
+		m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
+		m_dwMarshalDLCtrlFlags = 0;
+	}
 }
 
 void	CChildFrame::Impl::OnDownloadComplete()
@@ -283,6 +334,7 @@ void	CChildFrame::Impl::OnStateCompleted()
 {
 }
 
+/// documentが操作できるようになった
 void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strURL)
 {
 }
@@ -302,14 +354,14 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 
 	CChildFrame*	pChild = new CChildFrame;
 	pChild->pImpl->SetThreadRefCount(m_pThreadRefCount);
-	pChild->pImpl->SetDefaultFlags(_GetInheritedDLCtrlFlags(), _GetInheritedExStyleFlags());
+	pChild->pImpl->m_view.SetDefaultFlags(_GetInheritedDLCtrlFlags(), _GetInheritedExStyleFlags(), 0);
 	HWND hWnd = pChild->CreateEx(GetParent());
 	ATLASSERT( ::IsWindow(hWnd) );
 
 	pChild->pImpl->m_spBrowser->get_Application(ppDisp);
 	ATLASSERT( ppDisp && *ppDisp );
 
-	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TRUE);
+	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TAB_LINK);
 }
 
 void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl)
@@ -694,9 +746,11 @@ void	CChildFrame::Impl::OnSize(UINT nType, CSize size)
 void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 {
 	if (hWndAct == m_hWnd) {
+		m_bNowActive = true;
 		if (MtlIsApplicationActive(m_hWnd))
 			m_view.SetFocus();
 	} else if (hWndDeact == m_hWnd) {
+		m_bNowActive = false;
 		// _KillFocusToHTML
 		HRESULT	hr = E_FAIL;
 		CComQIPtr<IOleInPlaceObject> spIOleInPlaceObject = m_spBrowser;
@@ -725,6 +779,16 @@ void 	CChildFrame::Impl::OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HW
 {
 	GetTopLevelWindow().SendMessage(WM_COMMAND, ID_WINDOW_CLOSE_ALL);
 }
+
+/// 自分以外のタブを閉じる
+void 	CChildFrame::Impl::OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+}
+
+void 	CChildFrame::Impl::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+}
+
 
 /// 選択範囲のリンクを開く
 void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
@@ -812,7 +876,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 #if 0	//:::
 	m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	for (int i = 0; i < arrUrls.GetSize(); ++i) {
-		DonutOpenFile(m_hWnd, arrUrls[i], 0);
+		DonutOpenFile(arrUrls[i], 0);
 	}
 	m_MDITab.SetLinkState(LINKSTATE_OFF);
 #endif
@@ -853,9 +917,25 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 	for (unsigned i = 0; i < size; ++i) {
 		CString& strUrl = lines[i];
 		Misc::StrToNormalUrl(strUrl);		//+++ 関数化
-		DonutOpenFile(m_hWnd, strUrl);
+		DonutOpenFile(strUrl);
 	}
 #endif
+}
+
+/// ポップアップ抑止に追加して閉じます。
+void 	CChildFrame::Impl::OnAddClosePopupUrl(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	CIgnoredURLsOption::Add( GetLocationURL() );
+	//m_bClosing = true;
+	PostMessage(WM_CLOSE);
+}
+
+/// タイトル抑止に追加
+void 	CChildFrame::Impl::OnAddClosePopupTitle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	CCloseTitlesOption::Add( MtlGetWindowText(m_hWnd) );
+	//m_bClosing = true;
+	PostMessage(WM_CLOSE);
 }
 
 /// nページ戻る
@@ -1162,7 +1242,7 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 		data.dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
 	if (data.dwExStyle == -1)
 		data.dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
-	pChild->pImpl->SetDefaultFlags(data.dwDLCtrl, data.dwExStyle);
+	pChild->pImpl->m_view.SetDefaultFlags(data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
 
 	MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
 }
@@ -1185,6 +1265,26 @@ void	CChildFrame::Navigate2(LPCTSTR lpszURL)
 DWORD	CChildFrame::GetExStyle() const
 {
 	return pImpl->GetExStyle();
+}
+
+void	CChildFrame::SetExStyle(DWORD dwStyle)
+{
+	pImpl->SetExStyle(dwStyle);
+}
+
+void	CChildFrame::SetDLCtrl(DWORD dwDLCtrl)
+{
+	pImpl->SetDLCtrl(dwDLCtrl);
+}
+
+void	CChildFrame::SetMarshalDLCtrl(DWORD dwDLCtrl)
+{
+	pImpl->SetMarshalDLCtrl(dwDLCtrl);
+}
+
+void	CChildFrame::SetAutoRefreshStyle(DWORD dwAutoRefresh)
+{
+	pImpl->SetAutoRefreshStyle(dwAutoRefresh);
 }
 
 void	CChildFrame::SaveSearchWordflg(bool bSave)

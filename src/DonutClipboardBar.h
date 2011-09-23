@@ -162,7 +162,7 @@ private:
 			if ( str.IsEmpty() )
 				return;
 
-			DonutOpenFile(box.m_hWnd, str, 0);
+			DonutOpenFile(str, 0);
 		}
 	};
 

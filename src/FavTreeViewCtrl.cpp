@@ -29,7 +29,7 @@ namespace {
 			CItemIDList idlFull = idlFolder + idlFile;
 
 			if ( !idlFull.IsNull() )
-				DonutOpenFile( _hWnd, idlFull.GetPath() );
+				DonutOpenFile( idlFull.GetPath() );
 		}
 	};
 
@@ -477,7 +477,7 @@ void CFavoritesTreeViewCtrl::OnTreeItemClicked(HTREEITEM hTreeItem, UINT uFlags)
 	HWND		hWnd = NULL;		//+++ 結局使われていない... 紛らわしいが...
 
 	if ( !idl.IsNull() )
-		hWnd = DonutOpenFile( m_hWnd, strPath, DonutGetStdOpenFlag() );
+		DonutOpenFile( strPath );
 
 	if (m_hWnd) {	//+++ チェック追加...
 		CWindow 	wnd(m_hWnd);

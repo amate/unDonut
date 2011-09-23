@@ -56,12 +56,12 @@ DROPEFFECT CMainFrameFileDropTarget<T>::OnDrop(
 
 	if ( MtlGetDropFileName(pDataObject, arrFiles) ) {
 		if (arrFiles.GetSize() == 1) {
-			DonutOpenFile( pT->m_hWnd, arrFiles[0], DonutGetStdOpenFlag() );
+			DonutOpenFile( arrFiles[0] );
 			return DROPEFFECT_COPY;
 		}
 
 		for (int i = 0; i < arrFiles.GetSize(); ++i) {
-			DonutOpenFile(pT->m_hWnd, arrFiles[i]);
+			DonutOpenFile(arrFiles[i]);
 		}
 
 		dropEffect = DROPEFFECT_COPY;
@@ -73,7 +73,7 @@ DROPEFFECT CMainFrameFileDropTarget<T>::OnDrop(
 	if ( MtlGetHGlobalText(pDataObject, strText)
 	   || MtlGetHGlobalText( pDataObject, strText, ::RegisterClipboardFormat(CFSTR_SHELLURL) ) )
 	{
-		DonutOpenFile( pT->m_hWnd, strText, DonutGetStdOpenFlag() );
+		DonutOpenFile( strText );
 		return DROPEFFECT_COPY;
 	}
 

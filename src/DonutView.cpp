@@ -57,11 +57,12 @@ CDonutView::CDonutView(CChildFrameUIStateChange& UI)
 { }
 
 
-void	CDonutView::SetDefaultFlags(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags)
+void	CDonutView::SetDefaultFlags(DWORD dwDefaultDLCtrl, DWORD dwDefaultExStyle, DWORD dwAutoRefresh)
 {
-	m_dwDefaultDLControlFlags	= dwDefaultDLControlFlags;
-	m_dwDLControlFlags			= dwDefaultDLControlFlags;
-	m_dwExStyle					= dwDefaultExtendedStyleFlags;
+	m_dwDefaultDLControlFlags	= dwDefaultDLCtrl;
+	m_dwDLControlFlags			= dwDefaultDLCtrl;
+	m_dwExStyle					= dwDefaultExStyle;
+	m_dwAutoRefreshStyle		= dwAutoRefresh;
 }
 
 /// 自動更新変更
@@ -110,6 +111,13 @@ void CDonutView::PutDLControlFlags(DWORD dwDLControlFlags)
 	spOleObject->SetClientSite(spOleOrgSite);
 #endif
 }
+
+void	CDonutView::SetExStyle(DWORD dwExStyle)
+{
+	m_dwExStyle	= dwExStyle;
+	m_UIChange.SetExStyle(m_dwExStyle);
+}
+
 
 
 
@@ -250,7 +258,7 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 			//if (size == 1)
 			//	df |= D_OPENFILE_NOCREATE;
 			for (unsigned i = 0; i < size; ++i)
-				DonutOpenFile(m_hWnd, arrFiles[i], df);
+				DonutOpenFile(arrFiles[i], df);
 			*pdwEffect = DROPEFFECT_COPY;
 		} else {
 			CString strText;
@@ -428,6 +436,8 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		ATLASSERT(m_dwExStyle == 0);
 		m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
 	  #endif
+		_SetTimer();	// 設定されているなら自動更新を開始
+
 		RegisterDragDrop(m_hWnd, this);
 	}
 	catch (const CAtlException& e) {

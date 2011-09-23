@@ -26,12 +26,14 @@
 
 // #define DONUT_HAS_CMDBAR
 
+enum DonutOpenFileFlags {
+	D_OPENFILE_CREATETAB	= 0x00000000,	// Normal
+	D_OPENFILE_ACTIVATE 	= 0x00000001,	// 作成したタブをアクティブにする
+	D_OPENFILE_NOCREATE 	= 0x00000002,	// 現在表示中のタブでナビゲートする
+	D_OPENFILE_NOSETFOCUS	= 0x00000004,
+};
 
-#define D_OPENFILE_ACTIVATE 	0x00000001
-#define D_OPENFILE_NOCREATE 	0x00000002
-#define D_OPENFILE_NOSETFOCUS	0x00000004
-
-// Dev studio doesn't know BEGIN_MSG_MAP_EX
+// Devstudio doesn't know BEGIN_MSG_MAP_EX
 #undef	BEGIN_MSG_MAP
 #define BEGIN_MSG_MAP			BEGIN_MSG_MAP_EX
 
@@ -406,11 +408,15 @@ struct _EXPROP_ARGS {
 			return TRUE; 		   \
 	}
 
+enum TabCreateOption {
+	TAB_ACTIVE	= 0x01,
+	TAB_LINK	= 0x02,
+};
 #define WM_TABCREATE	(WM_USER + 101)
 #define USER_MSG_WM_TABCREATE(func)	\
 	if (uMsg == WM_TABCREATE) {	   \
 		SetMsgHandled(TRUE);		   \
-		func((HWND)wParam, lParam != 0);    \
+		func((HWND)wParam, (DWORD)lParam);    \
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \

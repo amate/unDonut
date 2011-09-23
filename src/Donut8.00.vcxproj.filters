@@ -824,6 +824,27 @@
     <None Include="res\DLStop.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="res\Generic_Document.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DLOK.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DLError.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DLOptions.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DLHelp.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\Find.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\DLToolBar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Donut.rc">

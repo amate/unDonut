@@ -306,7 +306,7 @@ void CChildFrameCommandUIUpdater::OnUpdateDLCTL_RUNACTIVEXCTLS(CCmdUI *pCmdUI)
 		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
 	} else {
 		pCmdUI->Enable();
-		pCmdUI->SetCheck((m_pUIData->dwDLCtrl & DLCTL_NO_RUNACTIVEXCTLS) != 0);
+		pCmdUI->SetCheck((m_pUIData->dwDLCtrl & DLCTL_NO_RUNACTIVEXCTLS) ? 0 : 1);
 	}
 }
 

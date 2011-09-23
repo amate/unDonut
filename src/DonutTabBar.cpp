@@ -597,7 +597,7 @@ public:
 	void	ReloadSkin();
 
 	// Oparation
-	void	OnMDIChildCreate(HWND hWnd);
+	void	OnMDIChildCreate(HWND hWnd, bool bActive = false);
 	void	OnMDIChildDestroy(HWND hWnd);
 	void	InsertHere(bool bUse) { m_bInsertHere = bUse; }
 	void	SetInsertIndex(int nIndex) { m_nInsertIndex = nIndex; }
@@ -1047,7 +1047,7 @@ void	CDonutTabBar::Impl::ReloadSkin()
 // Oparation
 
 //----------------------------------------
-void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd)
+void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd, bool bActive /*= false*/)
 {
 	unique_ptr<TabItem>	pItem(new TabItem);
 	pItem->hWnd		= hWnd;
@@ -1057,7 +1057,8 @@ void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd)
 
 	if (m_bInsertHere) {
 		_InsertItem(m_nInsertIndex, std::move(pItem));
-
+		if (bActive)
+			SetCurSel(m_nInsertIndex);
 	} else {
 		ATLASSERT(GetTabIndex(hWnd) == -1);
 
@@ -1078,6 +1079,8 @@ void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd)
 			nPos = GetItemCount();
 
 		_InsertItem(nPos, std::move(pItem));
+		if (bActive || m_pChildFrameClient->GetActiveChildFrameWindow() == NULL)
+			SetCurSel(nPos);
 	}
 }
 
@@ -1591,9 +1594,8 @@ bool CDonutTabBar::Impl::OnNewTabCtrlItems(
 		m_nInsertIndex = nInsertIndex;
 		UINT	size   = arrUrls.GetSize();
 		for (UINT i = 0; i < size; ++i) {
-			HWND hWnd  = DonutOpenFile(m_hWnd, arrUrls[i]);
-			if (hWnd)
-				++m_nInsertIndex;
+			DonutOpenFile(arrUrls[i]);
+			++m_nInsertIndex;
 		}
 
 		m_nInsertIndex = -1;
@@ -1609,7 +1611,7 @@ bool CDonutTabBar::Impl::OnNewTabCtrlItems(
 	{
 		m_bInsertHere  = true;
 		m_nInsertIndex = nInsertIndex;
-		DonutOpenFile(m_hWnd, strText);
+		DonutOpenFile(strText);
 		m_nInsertIndex = -1;
 		m_bInsertHere  = false;
 		dropEffect	   = DROPEFFECT_COPY;
@@ -3579,9 +3581,9 @@ void	CDonutTabBar::GetWindowRect(LPRECT rect)
 // Operation
 
 //---------------------------------
-void	CDonutTabBar::OnMDIChildCreate(HWND hWnd)
+void	CDonutTabBar::OnMDIChildCreate(HWND hWnd, bool bActive)
 {
-	pImpl->OnMDIChildCreate(hWnd);
+	pImpl->OnMDIChildCreate(hWnd, bActive);
 }
 
 //----------------------------------

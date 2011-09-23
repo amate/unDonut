@@ -273,7 +273,7 @@ void _The_OpenAllFiles(const CString &strFilePath, _MainFrame *__pMainFrame)
 		CLockRedrawMDIClient	 lock(__pMainFrame->m_hWndClient);
 		CDonutTabBar::CLockRedraw lock2(__pMainFrame->mdiTab());
 		MtlForEachFile( strPath, [__pMainFrame](const CString &strFileName) {
-			DonutOpenFile(__pMainFrame->m_hWnd, strFileName);
+			DonutOpenFile(strFileName);
 		});
 
 	} else if ( strCheck == _T("r ") && MtlIsDirectoryPath(strPath) ) {
@@ -293,7 +293,7 @@ void _The_OpenAllFiles(const CString &strFilePath, _MainFrame *__pMainFrame)
 		rkOrder.DeleteValue( _T("Order") );
 		rkOrder.Close();
 	} else {
-		DonutOpenFile( __pMainFrame->m_hWnd, strPath, DonutGetStdOpenFlag() );
+		DonutOpenFile( strPath );
 	}
 }
 
@@ -345,7 +345,7 @@ public:
 	{
 		ATLTRACE2(atlTraceGeneral, 4, _T("CFavoriteMenu::OnExecute: %s\n"), strFilePath);
 
-		DonutOpenFile(__m_pMainFrame->m_hWnd, strFilePath);
+		DonutOpenFile(strFilePath);
 	}
 
 	void RefreshMenu()

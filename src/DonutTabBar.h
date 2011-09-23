@@ -67,7 +67,7 @@ public:
 	void	GetWindowRect(LPRECT rect);
 
 	// Operation
-	void	OnMDIChildCreate(HWND hWnd);
+	void	OnMDIChildCreate(HWND hWnd, bool bActive = false);
 	void	OnMDIChildDestroy(HWND hWnd);
 	void	InsertHere(bool bUse);
 	void	SetInsertIndex(int nIndex);

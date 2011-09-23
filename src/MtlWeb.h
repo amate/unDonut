@@ -271,7 +271,7 @@ private:
 		if (strURL[strURL.GetLength() - 2] == _T('/'))
 			return;
 
-		DonutOpenFile(pT->m_hWnd, strURL, D_OPENFILE_NOCREATE);
+		DonutOpenFile(strURL, D_OPENFILE_NOCREATE);
 	}
 
 
@@ -580,11 +580,11 @@ private:
 
 			if (pr.QueryString(szRetString, szBuff, &dwCount) == ERROR_SUCCESS) {
 				strURL = szRetString + strKeyWord;
-				DonutOpenFile( pT->m_hWnd, strURL, DonutGetStdOpenCreateFlag() );
+				DonutOpenFile( strURL, DonutGetStdOpenCreateFlag() );
 			} else {
 				if (nItem == 0) {
 					strURL = szGoogleCode + strKeyWord;
-					DonutOpenFile( pT->m_hWnd, strURL, DonutGetStdOpenCreateFlag() );
+					DonutOpenFile( strURL, DonutGetStdOpenCreateFlag() );
 				}
 
 				break;

@@ -49,7 +49,7 @@ void CDonutClipboardBar::OpenClipboardUrl()
 	MtlBuildUrlArray(arrUrl, arrExt, strText);
 
 	for (int i = 0; i < arrUrl.GetSize(); ++i) {
-		DonutOpenFile(m_hWnd, arrUrl[i], 0);
+		DonutOpenFile(arrUrl[i], 0);
 	}
 }
 
@@ -100,7 +100,7 @@ void CDonutClipboardBar::OnUpdateClipboard()
 
 	if ( _check_flag(CLPV_EX_DIRECT, m_dwExStyle) ) {
 		for (int i = 0; i < arrUrl.GetSize(); ++i) {
-			DonutOpenFile(m_hWnd, arrUrl[i], 0);
+			DonutOpenFile(arrUrl[i], 0);
 		}
 	}
 }
@@ -318,6 +318,6 @@ void CDonutClipboardBar::_OnItemOpen(int nIndex)
 	if ( str.IsEmpty() )
 		return;
 
-	DonutOpenFile(m_hWnd, str, 0);
+	DonutOpenFile(str, 0);
 }
 

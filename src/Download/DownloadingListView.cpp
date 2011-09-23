@@ -642,7 +642,7 @@ void	CDownloadingListView::OnOpenReferer(UINT uNotifyCode, int nID, CWindow wndC
 
 	if (m_pItemPopup->strReferer.IsEmpty())
 		return ;
-	DonutOpenFile(g_pMainWnd->m_hWnd, m_pItemPopup->strReferer, D_OPENFILE_ACTIVATE);
+	DonutOpenFile(m_pItemPopup->strReferer, D_OPENFILE_ACTIVATE);
 
 	m_pItemPopup = nullptr;
 }

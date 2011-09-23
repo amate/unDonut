@@ -884,23 +884,23 @@ static BOOL OnMouseWheelHook(MSG *pMsg, HWND hWndChild)
 				CComVariant	vEmpty;
 				CComVariant vZoomSize;
 				//\\ 現在の文字サイズを取得
-				pChild->m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vEmpty, &vZoomSize); 
+				pChild->GetMarshalIWebBrowser()->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vEmpty, &vZoomSize); 
 				if ( zDelta > 0 ){	
 					vZoomSize.lVal += 1;
 				} else {
 					vZoomSize.lVal -= 1;
 				}
 				//\\ 文字サイズを変更
-				pChild->m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoomSize, &vEmpty); 
+				pChild->GetMarshalIWebBrowser()->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoomSize, &vEmpty); 
 				return TRUE;
 			}
 
 			// ページを拡大する
 			if ( ::GetKeyState(VK_MENU) & 0x80 ){
 				if ( zDelta > 0 ){
-					pChild->SetBodyStyleZoom(10, 0, true);
+					//pChild->SetBodyStyleZoom(10, 0, true);
 				} else {
-					pChild->SetBodyStyleZoom(-10, 0, true);
+					//pChild->SetBodyStyleZoom(-10, 0, true);
 				}
 				return TRUE;
 			}
@@ -2087,6 +2087,7 @@ bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
 #if 1	//+++ url別拡張プロパティの処理を追加
 HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 {
+#if 0
   #if 0	//+++ CChildFrame::OnBeforeNavigate2側で処理するように変更したので、これでok ...としたい...
 	return UserOpenFile(strUrl, dwOpenFlag);
   #else	//+++ CChildFrame::OnBeforeNavigate2側で処理するようにしたので、2重に検索がかかってしまうが、
@@ -2131,34 +2132,70 @@ HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 		return UserOpenFile(str, dwOpenFlag);
 	}
   #endif
+#endif
+	return nullptr;
 }
 #endif
 
 
 
 //+++ url別拡張プロパティ対応で、本来のOnUserOpenFileをUserOpenFileに変名. 引数を末に追加.
-HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*= -1*/, int extededStyleFlags /*= -1*/)
+/// @param openFlag		DonutOpenFileFlags
+HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetStdOpenFlag()*/, int dlCtrlFlag /*= -1*/, int extededStyleFlags /*= -1*/)
 {
-	MtlRemoveStringHeaderAndFooter(strFile);
+	MtlRemoveStringHeaderAndFooter(strFileOrURL);
 
-	if ( MtlIsExt( strFile, _T(".url") ) )	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
-		return OpenInternetShortcut(strFile, openFlag);
+	if ( MtlIsExt( strFileOrURL, _T(".url") ) ) {	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
+		// OpenInternetShortcut
+		if ( !MTL::ParseInternetShortcutFile(strFileOrURL) )
+			return NULL;
 
-	if (  !MtlIsProtocol( strFile, _T("http") )
-	   && !MtlIsProtocol( strFile, _T("https") ) )
+		//:::return OpenUrlWithExProp(strFileOrURL, openFlag, strFileOrURL);
+		CChildFrame *pActiveChild = GetActiveChildFrame();
+
+		NewChildFrameData	data(m_ChildFrameClient);
+		data.strURL		= strFileOrURL;
+		DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
+		DWORD dwExProp2= 0x8;			//+++ 拡張プロパティを増設.
+		if (CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, strFileOrURL)) {
+			CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, dwExProp, dwExProp2);
+			data.dwDLCtrl	= ExProp.GetDLControlFlags();
+			data.dwExStyle	= ExProp.GetExtendedStyleFlags();
+			data.dwAutoRefresh = ExProp.GetAutoRefreshFlag();
+		}
+
+		if (pActiveChild && _check_flag(D_OPENFILE_NOCREATE, openFlag)) {
+			// 既存のタブをナビゲート
+			if (data.dwDLCtrl != -1)
+				pActiveChild->SetMarshalDLCtrl(data.dwDLCtrl);
+			if (data.dwExStyle != -1)
+				pActiveChild->SetExStyle(data.dwExStyle);
+			pActiveChild->Navigate2(data.strURL);
+			if (data.dwAutoRefresh)
+				pActiveChild->SetAutoRefreshStyle(data.dwAutoRefresh);
+		} else {
+			// 新規タブを作成する
+			data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE);
+			CChildFrame::AsyncCreate(data);
+		}
+		return NULL;
+	}
+
+	if (  !MtlIsProtocol( strFileOrURL, _T("http") )
+	   && !MtlIsProtocol( strFileOrURL, _T("https") ) )
 	{
-		if ( MtlPreOpenFile(strFile) )
+		if ( MtlPreOpenFile(strFileOrURL) )
 			return NULL;	// handled
 	  #if 1	//+++	タブがあるとき
 		if (m_MDITab.GetItemCount() > 0) {
-			if (strFile.Find(':') < 0 && strFile.Left(1) != _T("/") && strFile.Left(1) != _T("\\")) {	// すでに具体的なパスでないとき、
+			if (strFileOrURL.Find(':') < 0 && strFileOrURL.Left(1) != _T("/") && strFileOrURL.Left(1) != _T("\\")) {	// すでに具体的なパスでないとき、
 				HWND			hWndChild 	= m_MDITab.GetTabHwnd(m_MDITab.GetCurSel());
 				CChildFrame*	pChild 		= GetChildFrame(hWndChild);
 				if (pChild) {		//+++ アクティブページをみて
 					CString strBase  = pChild->GetLocationURL();
 					CString str7     = strBase.Left(7);
 					if (str7 == "file://") {	//+++ file://だったらば、ローカルでのディレクトリ移動だろうとみなして
-						strFile = Misc::MakeFullPath( strBase, strFile );	//+++ フルパス化
+						strFileOrURL = Misc::MakeFullPath( strBase, strFileOrURL );	//+++ フルパス化
 					}
 				}
 			}
@@ -2166,23 +2203,23 @@ HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*
 	  #endif
 	}
 
-	if (strFile.GetLength() > INTERNET_MAX_PATH_LENGTH)
+	if (strFileOrURL.GetLength() > INTERNET_MAX_PATH_LENGTH)
 		return NULL;
 
 	// "javascript:"ならウィンドウを作成しないフラグを追加する
-	if ( strFile.Left(11).CompareNoCase(_T("javascript:")) == 0 ) {
-		if ( strFile == _T("javascript:location.reload()") )
+	if ( strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0 ) {
+		if ( strFileOrURL == _T("javascript:location.reload()") )
 			return NULL;
 		openFlag |= D_OPENFILE_NOCREATE;
 	}
 
 	// dfg files
-	if ( MtlIsExt( strFile, _T(".dfg") ) && ::PathFileExists(strFile)) {
-		_LoadGroupOption(strFile, !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG));
+	if ( MtlIsExt( strFileOrURL, _T(".dfg") ) && ::PathFileExists(strFileOrURL)) {
+		_LoadGroupOption(strFileOrURL, !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG));
 		return NULL;
 	}
-	if ( MtlIsExt( strFile, _T(".xml") ) && ::PathFileExists(strFile) ) {
-		RestoreAllTab(strFile, !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG));
+	if ( MtlIsExt( strFileOrURL, _T(".xml") ) && ::PathFileExists(strFileOrURL) ) {
+		RestoreAllTab(strFileOrURL, !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG));
 		return NULL;
 	}
 
@@ -2190,24 +2227,19 @@ HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*
 	//+++	だったがunDonut+より、ちゃんと機能していないようだし?、わざわざ復活する必要もないかな、と)
 	//+++   ちょっと気が変わったので条件付の暫定復活
 	// minit(about:* pages)
-	if ( strFile.Left(6) == _T("about:") && strFile != _T("about:blank") ) {
-		_OpenAboutFile(strFile);
+	if ( strFileOrURL.Left(6) == _T("about:") && strFileOrURL != _T("about:blank") ) {
+		_OpenAboutFile(strFileOrURL);
 		return NULL;
 	}
 
 	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
 
-	int nCmdShow = _check_flag(D_OPENFILE_ACTIVATE, openFlag) ? -1 : SW_SHOWNOACTIVATE;
-	if (hWndActive == NULL) {					// no window yet
-		nCmdShow = -1;							// always default
-	}
-
-	/* openFlag が NOCREATE ならアクティブなページを移動する */
+	/* openFlag が D_OPENFILE_NOCREATE ならアクティブなページを移動する */
 	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlag) ) {
 		CChildFrame* pChild  = GetActiveChildFrame();
 		CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
 		if ( spBrowser ) {
-			if (strFile.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+			if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
 				CComPtr<IDispatch>	spDisp;
 				spBrowser->get_Document(&spDisp);
 				CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
@@ -2218,33 +2250,10 @@ HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*
 				if (spWindow == nullptr)
 					return NULL;
 				CComVariant	vRet;
-				spWindow->execScript(CComBSTR(strFile), CComBSTR(L"javascript"), &vRet);
-				TRACEIN(_T("UserOpenFile() : bookmarket実行(%s)"), (LPCTSTR)strFile.Left(45));
-
-#if 0	//\\ こっちはscriptタグを追加する
-				CComPtr<IHTMLElement>	spScriptElm;
-				spDoc->createElement(CComBSTR(L"script"), &spScriptElm);
-				if (spScriptElm == nullptr)
-					return NULL;
-
-				CComQIPtr<IHTMLScriptElement>	spScript = spScriptElm;
-				spScript->put_type(CComBSTR(L"text/javascript"));
-				spScript->put_text(CComBSTR(strFile));
-			
-
-				CComPtr<IHTMLElement>	spBodyElm;
-				spDoc->get_body(&spBodyElm);
-				CComQIPtr<IHTMLDOMNode>	spBodyNode = spBodyElm;
-				if (spBodyNode == nullptr)
-					return NULL;
-				CComQIPtr<IHTMLDOMNode>	spScriptNode = spScript;
-				CComPtr<IHTMLDOMNode>	sptempNode;
-				spBodyNode->appendChild(spScriptNode, &sptempNode);
-				TRACEIN(_T("javascript追加 正常終了!"));
-				return NULL;
-#endif
+				spWindow->execScript(CComBSTR(strFileOrURL), CComBSTR(L"javascript"), &vRet);
+				TRACEIN(_T("UserOpenFile() : bookmarket実行(%s)"), (LPCTSTR)strFileOrURL.Left(45));
 			} else {
-				pChild->Navigate2(strFile);
+				pChild->Navigate2(strFileOrURL);
 			}
 
 			if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
@@ -2260,9 +2269,10 @@ HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*
 
 	/* 新規ChildFrame作成 */
 	NewChildFrameData	data(m_ChildFrameClient);
-	data.strURL		= strFile;
+	data.strURL		= strFileOrURL;
 	data.dwDLCtrl	= dlCtrlFlag;
 	data.dwExStyle	= extededStyleFlags;
+	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE);
 	CChildFrame::AsyncCreate(data);
 	return NULL;
 #if 0	//:::
@@ -2304,61 +2314,57 @@ HWND CMainFrame::UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag /*
 }
 
 
-
+/// 検索バーから呼ばれる 検索したときに飛んでくる関数
 LRESULT CMainFrame::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 {
 	if (pArgs == NULL) 
 		return 0;
 
-	//\\ たぶん検索したときに飛んでくる関数
 	CChildFrame *pActiveChild = GetActiveChildFrame();
 	if( pActiveChild)
 		pActiveChild->SaveSearchWordflg(false); //\\ 検索バーで検索したときアクティブなタブの検索文字列を保存しないようにする
 	
 	bool bOldSaveFlag = CSearchBarOption::s_bSaveSearchWord;	// 検索バーの文字列が消える件に一応の対処
 	CSearchBarOption::s_bSaveSearchWord = false;				// 本当はこんなことしちゃダメ
-	{
-		DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
-		DWORD dwExProp2= 0x8;			//+++ 拡張プロパティを増設.
-		CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, pArgs->strIniFile, pArgs->strSection);
-		CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, dwExProp, dwExProp2);
 
-		CString str = pArgs->strSearchWord;
-#if 0
-		if (pActiveChild && _check_flag(D_OPENFILE_NOCREATE, pArgs->dwOpenFlag)) {
-			
-		}
-#endif
-		NewChildFrameData	data(m_ChildFrameClient);
-		data.strURL		= pArgs->strUrl;
+	NewChildFrameData	data(m_ChildFrameClient);
+	data.strURL		= pArgs->strUrl;
+	DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
+	DWORD dwExProp2= 0x8;			//+++ 拡張プロパティを増設.
+	if (CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, pArgs->strIniFile, pArgs->strSection)) {
+		CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, dwExProp, dwExProp2);
 		data.dwDLCtrl	= ExProp.GetDLControlFlags();
 		data.dwExStyle	= ExProp.GetExtendedStyleFlags();
+		data.dwAutoRefresh = ExProp.GetAutoRefreshFlag();
+	}
+
+	if (pActiveChild && _check_flag(D_OPENFILE_NOCREATE, pArgs->dwOpenFlag)) {
+		// 既存のタブをナビゲート
+		if (data.dwDLCtrl != -1)
+			pActiveChild->SetMarshalDLCtrl(data.dwDLCtrl);
+		if (data.dwExStyle != -1)
+			pActiveChild->SetExStyle(data.dwExStyle);
+		pActiveChild->Navigate2(data.strURL);
+		if (data.dwAutoRefresh)
+			pActiveChild->SetAutoRefreshStyle(data.dwAutoRefresh);
+	} else {
+		// 新規タブを作成する
+		CString str = pArgs->strSearchWord;
 		data.funcCallAfterCreated = [str, bOldSaveFlag](CChildFrame* pChild) {
 			CSearchBarOption::s_bSaveSearchWord = bOldSaveFlag;
-
 	  		//+++ 子窓に検索設定を反映 (関数化)
 			if (CSearchBarOption::s_bAutoHilight)
 				pChild->SetSearchWordAutoHilight(str, true);
 		};
+		data.bActive	= !_check_flag(CMainOption::s_dwMainExtendedStyle, MAIN_EX_NOACTIVATE);
 		CChildFrame::AsyncCreate(data);
 	}
-	//HWND hWndNew = OpenUrlWithExProp(pArgs->strUrl, pArgs->dwOpenFlag, pArgs->strIniFile, pArgs->strSection);
 
 	return 0;
 }
 
 
-HWND CMainFrame::OpenInternetShortcut(CString strUrlFile, DWORD dwOpenFlag)
-{
-	CString strUrl = strUrlFile;
-
-	if ( !MTL::ParseInternetShortcutFile(strUrl) )
-		return NULL;
-
-	return OpenUrlWithExProp(strUrl, dwOpenFlag, strUrlFile);
-}
-
-
+#if 0	//:::
 HWND CMainFrame::OpenUrlWithExProp(CString strUrl, DWORD dwOpenFlag, DWORD dwExProp, DWORD dwExProp2)
 {
 	if ( _check_flag(D_OPENFILE_NOCREATE, dwOpenFlag) ) {
@@ -2507,7 +2513,7 @@ HWND CMainFrame::OpenExPropertyNot(CString &strUrl, DWORD dwOpenFlag)
 #endif
 	return NULL;
 }
-
+#endif
 
 
 LRESULT CMainFrame::OnFileRecent(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
@@ -2603,14 +2609,13 @@ void CMainFrame::OnNewInstance(ATOM nAtom)			// WM_NEWINSTANCE
 //ポームページ
 void CMainFrame::OnFileNewHome(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	HWND hWndChild = OnUserOpenFile( _T("about:home"), DonutGetStdOpenActivateFlag() );
-
-	if (hWndChild) {
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWndChild);
-
-		if (browser.m_spBrowser != NULL)
-			browser.GoHome();
-	}
+	NewChildFrameData	data(m_ChildFrameClient);
+	data.strURL		= _T("about:blank");
+	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);
+	data.funcCallAfterCreated	= [](CChildFrame* pChild) {
+		pChild->GetIWebBrowser()->GoHome();
+	};
+	CChildFrame::AsyncCreate(data);
 }
 
 
@@ -2792,11 +2797,11 @@ void CMainFrame::_OpenAboutFile(CString strFile)
 			HRSRC	hRes = ::FindResource(_Module.GetModuleInstance(), MAKEINTRESOURCE(IDR_TEXT_WARNING/*IDR_TEXT_SAITAMA*/), _T("TEXT") );
 			HGLOBAL hMem = ::LoadResource(_Module.GetModuleInstance(), hRes);
 			pText 		 = (LPSTR) ::LockResource(hMem);
-			nSize		 = strlen(pText);
+			nSize		 = (UINT)strlen(pText);
 		} else {		//+++ 通常は help/about/下のファイルを読み込む
 			Misc::FileLoad( strFile, vecText );
 			pText  = vecText.data();
-			nSize  = vecText.size();
+			nSize  = (UINT)vecText.size();
 		}
 
 		HGLOBAL hHTMLText = ::GlobalAlloc(GPTR, (nSize + 16/*気持ち*/) );
@@ -3653,11 +3658,13 @@ LRESULT CMainFrame::UpdateTitleBar(LPCTSTR lpszStatusBar, DWORD /*dwReserved*/)
 // ENDE
 
 
-void	CMainFrame::OnTabCreate(HWND hWndChildFrame, bool bNewWindow)
+void	CMainFrame::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 {
-	if (bNewWindow)
+	if (dwOption & TAB_LINK)
 		m_MDITab.SetLinkState(LINKSTATE_A_ON);
-	m_MDITab.OnMDIChildCreate(hWndChildFrame);
+	if (!_check_flag(MAIN_EX_NOACTIVATE_NEWWIN, CMainOption::s_dwMainExtendedStyle))
+		dwOption |= TAB_ACTIVE;
+	m_MDITab.OnMDIChildCreate(hWndChildFrame, (dwOption & TAB_ACTIVE) != 0);
 }
 
 void	CMainFrame::OnTabDestory(HWND hWndChildFrame)
@@ -4027,16 +4034,6 @@ void CMainFrame::ShowLinkText(BOOL bShow)
 }
 // END
 
-
-
-// U.H
-void CMainFrame::OnFileNewSelectText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	SendMessage(WM_COMMAND, MAKEWPARAM(ID_EDIT_COPY, 0), 0);
-	SendMessage(WM_COMMAND, MAKEWPARAM(ID_FILE_NEW_CLIPBOARD, 0), 0);
-}
-
-
 // U.H
 void CMainFrame::OnShowTextChg(BOOL bShow)
 {
@@ -4200,52 +4197,102 @@ LRESULT CMainFrame::OnCookiesIE6(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	return 0;
 }
 
+// ウィンドウ
 
-LRESULT CMainFrame::OnWindowCloseAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+/// 全てのウィンドウを閉じる(すべて閉じる)
+void CMainFrame::OnWindowCloseAll(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-#if 0	//:::
 	if ( !CDonutConfirmOption::OnCloseAll(m_hWnd) )
-		return 0;
+		return ;
 
 	CWaitCursor 		 cur;
-	CLockRedrawMDIClient lock(m_hWndMDIClient);
+	//CLockRedrawMDIClient lock(m_hWndMDIClient);
 	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
-	MtlCloseAllMDIChildren(m_hWndMDIClient);
+	m_MDITab.ForEachWindow([](HWND hWnd) {
+		::PostMessage(hWnd, WM_CLOSE, 0, 0);
+	});
+	//MtlCloseAllMDIChildren(m_hWndMDIClient);
 
 	RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
-#endif
-	return 0;
 }
 
-
-
-LRESULT CMainFrame::OnWindowCloseCmp(int nTarIndex, BOOL bLeft)
+/// タブの右側/左側をすべて閉じる
+void	CMainFrame::OnLeftRightClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-#if 0	//:::
-	HWND			   hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	bool	bLeft	= (nID == ID_LEFT_CLOSE);
+	if ( !CDonutConfirmOption::OnCloseLeftRight( GetTopLevelParent(), bLeft ) )
+		return ;
 
-	if (hWndActive == NULL)
-		return 0;
+	CWaitCursor cur;
+
+	HWND		hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	int 		nCurSel    = m_MDITab.GetTabIndex(hWndActive);
+	if (nCurSel == -1 || hWndActive == NULL)
+		return ;
 
 	CSimpleArray<HWND> arrWnd;
-	int 			   ii;
-
-	for (ii = 0; ii < m_MDITab.GetItemCount(); ii++) {
+	int nCount = m_MDITab.GetItemCount();
+	for (int ii = 0; ii < nCount; ++ii) {
 		HWND hWnd = m_MDITab.GetTabHwnd(ii);
 
-		if (bLeft && ii < nTarIndex)
+		if (bLeft && ii < nCurSel)
 			arrWnd.Add(hWnd);
-		else if (bLeft == FALSE && ii > nTarIndex)
+		else if (bLeft == false && ii > nCurSel)
 			arrWnd.Add(hWnd);
 	}
 
-	for (ii = 0; ii < arrWnd.GetSize(); ii++) {
-		SendMessage(arrWnd[ii], WM_CLOSE, 0, 0);
+	for (int ii = 0; ii < arrWnd.GetSize(); ++ii) {
+		::PostMessage(arrWnd[ii], WM_CLOSE, 0, 0);
 	}
-#endif
-	return 1;
 }
 
+/// このウィンドウ以外を閉じる
+void	CMainFrame::OnWindowCloseExcept(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if ( !CDonutConfirmOption::OnCloseAllExcept( m_hWnd ) )
+		return ;
+
+	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	CWaitCursor 		 cur;
+	//CLockRedrawMDIClient lock(m_hWndMDIClient);
+	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
+	m_MDITab.ForEachWindow([hWndActive](HWND hWnd) {
+		if (hWndActive != hWnd)
+			::PostMessage(hWnd, WM_CLOSE, 0, 0);
+	});
+}
+
+
+void CMainFrame::OnTabLeft(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
+{
+	m_MDITab.LeftTab();
+}
+
+
+void CMainFrame::OnTabRight(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
+{
+	m_MDITab.RightTab();
+}
+
+
+#if 0 //+++
+//+++ 先頭タブから1..8選択. 9は最後のタブを選択
+LRESULT CMainFrame::OnTabIdx(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl, BOOL & /*bHandled*/)
+{
+	ATLASSERT(wID >= ID_TAB_IDX_1 && wID <= ID_TAB_IDX_LAST);
+	int nCount = m_MDITab.GetItemCount();
+
+	if (wID == ID_TAB_IDX_LAST) {
+		wID =  nCount - 1;
+	} else {
+		wID -= ID_TAB_IDX_1;
+		if (wID < 0 || wID >=8 || wID >= nCount)
+			return 0;
+	}
+	m_MDITab.SetCurSel(wID);
+	return 0;
+}
+#endif
 
 #ifndef NO_STYLESHEET
 LRESULT CMainFrame::OnChangeCSS(LPCTSTR lpszStyleSheet)
@@ -4699,30 +4746,41 @@ void CMainFrame::ShowNewStyleDonutOption()
 	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 }
 
-
+/// IEのオプションを表示する?
 void CMainFrame::OnViewOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
 		MtlShowInternetOptions();
 }
 
-
-void CMainFrame::OnViewRefreshAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-#if 0	//:::
-	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
-	MtlForEachMDIChild( m_hWndMDIClient, CPostCommand(ID_VIEW_REFRESH) );
-#endif
-}
-
-
+/// すべてのウィンドウを中止
 void CMainFrame::OnViewStopAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-#if 0	//:::
-	MtlForEachMDIChild( m_hWndMDIClient, CPostCommand(ID_VIEW_STOP) );
-	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
-#endif
+	m_MDITab.ForEachWindow([](HWND hWnd) {
+		::PostMessage(hWnd, ID_VIEW_STOP, 0, 0);
+	});
 }
+
+/// すべてのウィンドウを更新
+void CMainFrame::OnViewRefreshAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_MDITab.ForEachWindow([](HWND hWnd) {
+		::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+	});
+}
+
+/// このウィンドウ以外を更新
+void	CMainFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	m_MDITab.ForEachWindow([hWndActive](HWND hWnd) {
+		if (hWndActive != hWnd)
+			::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+	});
+}
+
+
+
 
 
 // Implementation
@@ -5386,38 +5444,6 @@ LRESULT CMainFrame::OnViewTabBarMulti(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 
 
 
-void CMainFrame::OnTabLeft(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
-{
-	m_MDITab.LeftTab();
-}
-
-
-void CMainFrame::OnTabRight(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
-{
-	m_MDITab.RightTab();
-}
-
-
-#if 1 //+++
-//+++ 先頭タブから1..8選択. 9は最後のタブを選択
-LRESULT CMainFrame::OnTabIdx(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl, BOOL & /*bHandled*/)
-{
-	ATLASSERT(wID >= ID_TAB_IDX_1 && wID <= ID_TAB_IDX_LAST);
-	int nCount = m_MDITab.GetItemCount();
-
-	if (wID == ID_TAB_IDX_LAST) {
-		wID =  nCount - 1;
-	} else {
-		wID -= ID_TAB_IDX_1;
-		if (wID < 0 || wID >=8 || wID >= nCount)
-			return 0;
-	}
-	m_MDITab.SetCurSel(wID);
-	return 0;
-}
-#endif
-
-
 
 LRESULT CMainFrame::OnTabListDefault(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
@@ -5935,7 +5961,7 @@ LRESULT CMainFrame::OnCommandDirect(int nCommand, LPCTSTR lpstr)
 	  #endif
 	){
 		Misc::StrToNormalUrl(str);		//+++
-		DonutOpenFile( m_hWnd, str, DonutGetStdOpenFlag() );
+		DonutOpenFile( str );
 	} else {
 		if (nCommand == ID_SEARCH_DIRECT) {				// 即検索
 			CEdit edit = m_SearchBar.GetEditCtrl();

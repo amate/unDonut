@@ -700,8 +700,18 @@ int WINAPI _tWinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, LPTSTR lp
 
 
 
-/////////////////////////////////////////////////////////////////////////////
+//-------------------------------------------------------------------------
 
+
+void	DonutOpenFile(const CString &strFileOrURL)
+{
+	g_pMainWnd->UserOpenFile(strFileOrURL, DonutGetStdOpenFlag());
+}
+
+void	DonutOpenFile(const CString &strFileOrURL, DWORD dwOpenFlag)
+{
+	g_pMainWnd->UserOpenFile(strFileOrURL, dwOpenFlag);
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -207,7 +207,7 @@ public:
 				strSearch.TrimRight(strExcept);
 				if (MTL::ParseInternetShortcutFile_SearchMode(strLink, strSearch) > 1) {
 					//+++ 暫定：あとで拡張プロパティ対応版に変更しないと駄目.
-					DonutOpenFile(GetTopLevelParent(), strLink, D_OPENFILE_ACTIVATE);
+					DonutOpenFile(strLink, D_OPENFILE_ACTIVATE);
 				}
 			}
 		}

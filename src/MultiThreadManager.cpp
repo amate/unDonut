@@ -161,7 +161,10 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 	CWindow wnd = pData->pChild->CreateEx(pData->ConstructData.hWndParent);
 	pData->pChild->Navigate2(pData->ConstructData.strURL);
 
-	wnd.GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd);
+	DWORD dwOption = 0;
+	if (pData->ConstructData.bActive)
+		dwOption = TAB_ACTIVE;
+	wnd.GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
 	
 	if (pData->ConstructData.funcCallAfterCreated)
 		pData->ConstructData.funcCallAfterCreated(pData->pChild);

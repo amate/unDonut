@@ -12,11 +12,15 @@ struct NewChildFrameData {
 	CString	strURL;
 	DWORD	dwDLCtrl;
 	DWORD	dwExStyle;
+	DWORD	dwAutoRefresh;
+	bool	bActive;
 	function<void (CChildFrame*)>	funcCallAfterCreated;
 
-	NewChildFrameData(HWND Parent) : hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1)
+	NewChildFrameData(HWND Parent) : 
+		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), bActive(false)
 	{	}
 };
+
 
 /////////////////////////////////////////////////////////////
 // CChildFrame
@@ -32,6 +36,10 @@ public:
 	void	Navigate2(LPCTSTR lpszURL);
 
 	DWORD	GetExStyle() const;
+	void	SetExStyle(DWORD dwStyle);
+	void	SetDLCtrl(DWORD dwDLCtrl);
+	void	SetMarshalDLCtrl(DWORD dwDLCtrl);
+	void	SetAutoRefreshStyle(DWORD dwAutoRefresh);
 	void	SaveSearchWordflg(bool bSave);
 	void	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
 

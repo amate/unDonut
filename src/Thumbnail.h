@@ -77,7 +77,7 @@ public:
 	int DoModal(HWND hWndParent, LPARAM dwInitParam = NULL)
 	{
 		m_hParent = (HWND) dwInitParam;
-		return CDialogImpl<CThumbnailDlg>::DoModal(hWndParent, dwInitParam);
+		return (int)CDialogImpl<CThumbnailDlg>::DoModal(hWndParent, dwInitParam);
 	}
 
 

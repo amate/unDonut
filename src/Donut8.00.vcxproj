@@ -1228,13 +1228,20 @@
       <FileType>Document</FileType>
     </ClCompile>
     <None Include="res\API.rgs" />
+    <None Include="res\DLError.bmp" />
+    <None Include="res\DLHelp.bmp" />
+    <None Include="res\DLOK.bmp" />
+    <None Include="res\DLOptions.bmp" />
     <None Include="res\DLStop.ico" />
+    <None Include="res\DLToolBar.bmp" />
     <None Include="res\DonutDoc.ico" />
     <None Include="res\DonutP.rgs" />
     <None Include="DonutP.rgs" />
     <None Include="res\ExpBar.bmp" />
     <None Include="res\FavBar.bmp" />
     <None Include="res\FavBarHot.bmp" />
+    <None Include="res\Find.bmp" />
+    <None Include="res\Generic_Document.ico" />
     <None Include="res\Go.bmp" />
     <None Include="res\GoHot.bmp" />
     <None Include="res\Icon_100.ico" />

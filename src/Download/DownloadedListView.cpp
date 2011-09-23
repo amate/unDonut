@@ -208,7 +208,7 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 			} else if(commandID == ID_OPEN_REFERER_) {
 				if (strReferer.IsEmpty())
 					return true;
-				DonutOpenFile(g_pMainWnd->m_hWnd, strReferer, D_OPENFILE_ACTIVATE);
+				DonutOpenFile(strReferer, D_OPENFILE_ACTIVATE);
 
 			} else {
 				return false;

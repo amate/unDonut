@@ -134,6 +134,7 @@
 
 #define WM_USER_SIZE_CHG_EX 		(WM_USER + 44)
 
+//-------------------------------------------------------------------------------------
 
 
 inline IWebBrowser2 *DonutGetIWebBrowser2(HWND hWnd)
@@ -147,12 +148,9 @@ inline HWND 	DonutGetActiveWindow(HWND hWnd)
 	return (HWND) ::SendMessage(hWnd, WM_USER_GET_ACTIVE_WINDOW, 0, 0);
 }
 
-
-inline HWND 	DonutOpenFile(HWND hWnd, const CString &strFile, DWORD dwOpenFlag = 0)
-{
-	CWindow 	wnd(hWnd);
-	return (HWND) ::SendMessage(wnd.GetTopLevelParent(), WM_USER_OPENFILE,(WPARAM) (LPCTSTR) strFile, (LPARAM) dwOpenFlag);
-}
+/// DonutでファイルやURLを開く
+void	DonutOpenFile(const CString &strFileOrURL);
+void	DonutOpenFile(const CString &strFileOrURL, DWORD dwOpenFlag);
 
 
 inline bool 	DonutBrowserCanSetFocus(HWND hWnd)
@@ -177,19 +175,16 @@ inline void 	DonutToggleOpenFlag(DWORD &dwFlag)
 	}
 }
 
-
+/// オプションで指定された標準のオープン方法を返す
 inline DWORD	DonutGetStdOpenFlag()
 {
 	DWORD	dwFlag = 0;
-
 	if ( !_check_flag(MAIN_EX_NEWWINDOW, CMainOption::s_dwMainExtendedStyle) )
 		dwFlag |= D_OPENFILE_NOCREATE;
-
 	if ( !_check_flag(MAIN_EX_NOACTIVATE, CMainOption::s_dwMainExtendedStyle) )
 		dwFlag |= D_OPENFILE_ACTIVATE;
 
 	DonutToggleOpenFlag(dwFlag);
-
 	return dwFlag;
 }
 

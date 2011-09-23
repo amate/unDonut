@@ -367,7 +367,8 @@ void	CDonutAddressBar::Impl::OnItemSelected(const CString &str)
 		dwOpenFlags |= D_OPENFILE_ACTIVATE;
 
 	DonutToggleOpenFlag(dwOpenFlags);
-	HWND  hWndNew	  = DonutOpenFile(m_hWnd, str, dwOpenFlags);
+
+	DonutOpenFile(str, dwOpenFlags);
 }
 
 
@@ -396,7 +397,7 @@ void	CDonutAddressBar::Impl::OnItemSelectedEx(const CString &str)
 		}
 	}
 
-	HWND  hWndNew = DonutOpenFile(m_hWnd, str, dwOpenFlags);
+	DonutOpenFile(str, dwOpenFlags);
 }
 
 
@@ -526,7 +527,7 @@ DROPEFFECT	CDonutAddressBar::Impl::OnDrop(IDataObject *pDataObject, DROPEFFECT d
 
 		// files
 		for (int i = 0; i < arrFiles.GetSize(); ++i) {
-			DonutOpenFile(m_hWnd, arrFiles[i]);
+			DonutOpenFile(arrFiles[i]);
 		}
 		return DROPEFFECT_COPY;
 	}

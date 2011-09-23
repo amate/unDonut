@@ -35,67 +35,41 @@ END
 
 
 /////////////////////////////////////////////////////////////////////////////
-#ifdef USE_INNER_MANIFEST
- #ifdef UNICODE
-  #define CREATEPROCESS_MANIFEST_RESOURCE_ID      1
-  #define RT_MANIFEST                             24
-  #ifdef WIN64
-//CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST  "res\\64undonut.exe.manifest"
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST  "res64\\64undonut.exe.manifest"
-  #else
-CREATEPROCESS_MANIFEST_RESOURCE_ID RT_MANIFEST  "res\\undonut.exe.manifest"
-  #endif
- #endif
-#endif
+//
+// Icon
+//
 
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
+IDR_MDICHILD            ICON                    "res\\DonutDoc.ico"
+IDI_DLSTOP              ICON                    "res\\DLStop.ico"
+IDI_GENERIC_DOCUMENT    ICON                    "res\\Generic_Document.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
-// Bitmap & ICON
+// Bitmap
 //
-//#if defined(_WIN64) || (defined WIN64)
-#ifdef WIN64
-IDR_MAINFRAME             ICON                    "res64\\Icon_64.ico"
-IDR_MDICHILD              ICON                    "res64\\DonutDoc.ico"
-IDB_GOBUTTON              BITMAP                  "res64\\Go.bmp"
-IDB_GOBUTTON_HOT          BITMAP                  "res64\\GoHot.bmp"
-IDB_MDITAB                BITMAP                  "res64\\tab.bmp"
-IDB_FAVBAR                BITMAP                  "res64\\FavBar.bmp"
-IDB_FAVBAR_HOT            BITMAP                  "res64\\FavBarHot.bmp"
-IDB_SEARCHBUTTON          BITMAP                  "res64\\SearchBar.bmp"
-IDB_SEARCHBUTTON_HOT      BITMAP                  "res64\\SearchBarHot.bmp"
-IDB_SEARCHBUTTON_DIS      BITMAP                  "res64\\SearchBarDis.bmp"
-IDB_MAINFRAME_TOOLBAR     BITMAP                  "res64\\Small.bmp"
-IDB_MAINFRAME_TOOLBAR_HOT BITMAP                  "res64\\SmallHot.bmp"
-IDB_MAINFRAME_TOOLBAR_DIS BITMAP                  "res64\\SmallDisable.bmp"
-IDB_SECURE                BITMAP                  "res64\\Secure.bmp"
-IDB_EXPBAR                BITMAP                  "res64\\ExpBar.bmp"
-#else
-IDR_MAINFRAME             ICON                    "res\\Icon_100.ico"
-IDR_MDICHILD              ICON                    "res\\DonutDoc.ico"
-IDB_GOBUTTON              BITMAP                  "res\\Go.bmp"
-IDB_GOBUTTON_HOT          BITMAP                  "res\\GoHot.bmp"
-IDB_MDITAB                BITMAP                  "res\\tab.bmp"
-IDB_FAVBAR                BITMAP                  "res\\FavBar.bmp"
-IDB_FAVBAR_HOT            BITMAP                  "res\\FavBarHot.bmp"
-IDB_SEARCHBUTTON          BITMAP                  "res\\SearchBar.bmp"
-IDB_SEARCHBUTTON_HOT      BITMAP                  "res\\SearchBarHot.bmp"
-IDB_SEARCHBUTTON_DIS      BITMAP                  "res\\SearchBarDis.bmp"
-IDB_MAINFRAME_TOOLBAR     BITMAP                  "res\\Small.bmp"
+
+IDB_GOBUTTON            BITMAP                  "res\\Go.bmp"
+IDB_GOBUTTON_HOT        BITMAP                  "res\\GoHot.bmp"
+IDB_MDITAB              BITMAP                  "res\\tab.bmp"
+IDB_FAVBAR              BITMAP                  "res\\FavBar.bmp"
+IDB_FAVBAR_HOT          BITMAP                  "res\\FavBarHot.bmp"
+IDB_SEARCHBUTTON        BITMAP                  "res\\SearchBar.bmp"
+IDB_SEARCHBUTTON_HOT    BITMAP                  "res\\SearchBarHot.bmp"
+IDB_SEARCHBUTTON_DIS    BITMAP                  "res\\SearchBarDis.bmp"
+IDB_MAINFRAME_TOOLBAR   BITMAP                  "res\\Small.bmp"
 IDB_MAINFRAME_TOOLBAR_HOT BITMAP                  "res\\SmallHot.bmp"
 IDB_MAINFRAME_TOOLBAR_DIS BITMAP                  "res\\SmallDisable.bmp"
-IDB_SECURE                BITMAP                  "res\\Secure.bmp"
-IDB_EXPBAR                BITMAP                  "res\\ExpBar.bmp"
-#endif
-IDI_DLSTOP				  ICON					  "res\\DLStop.ico"
-IDB_DLOK				  BITMAP				  "res\\DLOK.bmp"
-IDB_DLERROR				  BITMAP				  "res\\DLError.bmp"
-IDB_DLOPTIONS			  BITMAP				  "res\\DLOptions.bmp"
-IDB_DLHELP				  BITMAP				  "res\\DLHelp.bmp"
-IDI_GENERIC_DOCUMENT	  ICON					  "res\\Generic_Document.ico"
-IDB_FIND				  BITMAP				  "res\\Find.bmp"
-IDB_DLTOOLBAR			  BITMAP				  "res\\DLToolBar.bmp"
-
+IDB_SECURE              BITMAP                  "res\\Secure.bmp"
+IDB_EXPBAR              BITMAP                  "res\\ExpBar.bmp"
+IDB_DLOK                BITMAP                  "res\\DLOK.bmp"
+IDB_DLERROR             BITMAP                  "res\\DLError.bmp"
+IDB_DLOPTIONS           BITMAP                  "res\\DLOptions.bmp"
+IDB_DLHELP              BITMAP                  "res\\DLHelp.bmp"
+IDB_FIND                BITMAP                  "res\\Find.bmp"
+IDB_DLTOOLBAR           BITMAP                  "res\\DLToolBar.bmp"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -188,7 +162,7 @@ BEGIN
             MENUITEM "エクスプローラバーを自動で表示(&A)",         ID_EXPLORERBAR_AUTOSHOW
             MENUITEM "タブ表示(&T)",                    ID_VIEW_EXPLORERBAR_TAB
         END
-		MENUITEM "ダウンロードマネージャー",				ID_SHOW_DLMANAGER
+        MENUITEM "ダウンロードマネージャー",                ID_SHOW_DLMANAGER
         MENUITEM SEPARATOR
         POPUP "フォーカス(&Z)"
         BEGIN
@@ -370,7 +344,7 @@ BEGIN
         MENUITEM "ヘルプ(&H)",                     ID_APP_HELP
         MENUITEM SEPARATOR
         MENUITEM "プログラム・フォルダを開く",               ID_OPEN_EXE_DIR
-        MENUITEM "unDonut置き場へ(&D)",         ID_JUMP_WEBSITE
+        MENUITEM "unDonut置き場へ(&D)",             ID_JUMP_WEBSITE
         MENUITEM SEPARATOR
         MENUITEM "バージョン情報(&A)...",              ID_APP_ABOUT
     END
@@ -728,8 +702,8 @@ BEGIN
             MENUITEM "アルファベット順",                    ID_TABLIST_ALPHABET
         END
         MENUITEM "ウィンドウ・サムネイル表示",               ID_WINDOW_THUMBNAIL
-		MENUITEM "Bing Translator",							ID_BINGTRANSLATOR_MENU
-		MENUITEM "画像を保存",								ID_SAVEIMAGE
+        MENUITEM "Bing Translator",             ID_BINGTRANSLATOR_MENU
+        MENUITEM "画像を保存",                       ID_SAVEIMAGE
         MENUITEM SEPARATOR
         MENUITEM "検索バー・エンジンリスト再読み込み",           ID_SPECIAL_REFRESH_SEARCHENGIN
         MENUITEM "検索エンジン・メニュー",                 ID_SEARCHENGINE_MENU
@@ -844,12 +818,12 @@ END
 
 IDM_DOWNLOADINGLISTVIEW MENU
 BEGIN
-	POPUP "p"
-	BEGIN
-		MENUITEM "名前の変更",						ID_RENAME_DLITEM
-		MENUITEM "保存先のフォルダを開く",			ID_OPEN_SAVEFOLDER
-		MENUITEM "ダウンロードしたページを表示する",	ID_OPEN_REFERER
-	END
+    POPUP "p"
+    BEGIN
+        MENUITEM "名前の変更",                       ID_RENAME_DLITEM
+        MENUITEM "保存先のフォルダを開く",                 ID_OPEN_SAVEFOLDER
+        MENUITEM "ダウンロードしたページを表示する",            ID_OPEN_REFERER
+    END
 END
 
 
@@ -859,153 +833,171 @@ END
 //
 
 IDD_ABOUTBOX DIALOGEX 0, 0, 215, 159
-STYLE DS_MODALFRAME | DS_SETFONT | WS_CAPTION | WS_POPUP | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "Donutのバージョン情報"
-FONT 10, "ＭＳ Ｐゴシック", 0, 0, 1
+FONT 10, "ＭＳ Ｐゴシック", 0, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK", IDOK, 162, 141, 48, 15, BS_FLAT
-    ICON            IDR_MAINFRAME, IDC_STATIC, 175, 7, 9, 10, SS_ICON
-    LTEXT           "ここにappconst.cppのcnt_AppVersionが表示される。", IDC_STATIC_VERSION, 7, 7, 164, 9, SS_LEFT
-    LTEXT           "Donut 2.52", IDC_STATIC, 5, 90, 48, 9, SS_LEFT
-    LTEXT           "Copyright (C)2000 MB", IDC_STATIC, 95, 90, 111, 9, SS_LEFT
-    LTEXT           "DonutP 5.0β3", IDC_STATIC, 5, 100, 57, 9, SS_LEFT
-    LTEXT           "Copyright (C)2001-2003 UH", IDC_STATIC, 95, 100, 111, 9, SS_LEFT
-    EDITTEXT        IDC_EDITINFO, 7, 45, 201, 42, ES_MULTILINE | ES_READONLY | ES_WANTRETURN
-    LTEXT           "unDonut Release13 test", IDC_STATIC, 5, 110, 87, 9, SS_LEFT
-    LTEXT           "Copyright (C)2003-2006 ミニット", IDC_STATIC, 95, 110, 111, 9, SS_LEFT
-    LTEXT           "unDonut R13 test +4", IDC_STATIC, 5, 120, 81, 9, SS_LEFT
-    LTEXT           "Copyright (C)2007 座布団", IDC_STATIC, 95, 120, 111, 9, SS_LEFT
-    LTEXT           """No Support""", IDC_STATIC, 119, 28, 48, 9, SS_LEFT
-    LTEXT           "Copyright (C)2007-2009 +mod", IDC_STATIC, 95, 130, 111, 9, SS_LEFT
-    LTEXT           "unDonut+mod", IDC_STATIC, 5, 130, 60, 9, SS_LEFT
+    DEFPUSHBUTTON   "OK",IDOK,162,141,48,15,BS_FLAT
+    ICON            IDR_MAINFRAME,IDC_STATIC,175,7,9,10
+    LTEXT           "ここにappconst.cppのcnt_AppVersionが表示される。",IDC_STATIC_VERSION,7,7,164,9
+    LTEXT           "Donut 2.52",IDC_STATIC,5,90,48,9
+    LTEXT           "Copyright (C)2000 MB",IDC_STATIC,95,90,111,9
+    LTEXT           "DonutP 5.0β3",IDC_STATIC,5,100,57,9
+    LTEXT           "Copyright (C)2001-2003 UH",IDC_STATIC,95,100,111,9
+    EDITTEXT        IDC_EDITINFO,7,45,201,42,ES_MULTILINE | ES_READONLY | ES_WANTRETURN
+    LTEXT           "unDonut Release13 test",IDC_STATIC,5,110,87,9
+    LTEXT           "Copyright (C)2003-2006 ミニット",IDC_STATIC,95,110,111,9
+    LTEXT           "unDonut R13 test +4",IDC_STATIC,5,120,81,9
+    LTEXT           "Copyright (C)2007 座布団",IDC_STATIC,95,120,111,9
+    LTEXT           """No Support""",IDC_STATIC,119,28,48,9
+    LTEXT           "Copyright (C)2007-2009 +mod",IDC_STATIC,95,130,111,9
+    LTEXT           "unDonut+mod",IDC_STATIC,5,130,60,9
 END
 
 IDD_PROPPAGE_MDITAB DIALOGEX 0, 0, 280, 304
-STYLE DS_SETFONT | WS_CAPTION | WS_CHILDWINDOW | WS_DISABLED
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "タブバー"
-FONT 9, "ＭＳ Ｐゴシック", 0, 0, 1
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x1
 BEGIN
-    COMBOBOX        IDC_COMBO_MDITAB_ADDPOS, 106, 18, 85, 54, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    COMBOBOX        IDC_COMBO_ONCLOSE, 106, 33, 85, 60, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    AUTOCHECKBOX    "リンクを開くときはアクティブの右側へ追加(&L)", IDC_CHECK_ADDLINKACTIVERIGHT, 12, 48, 144, 8, BS_FLAT
-    AUTOCHECKBOX    "マウス左ボタンを押したときにタブを切り替える(&V)", IDC_CHECK_MOUSEDOWNSELECT, 12, 60, 156, 8, BS_FLAT
-    COMBOBOX        IDC_COMBO_MDITAB_RIGHTCLICK, 106, 135, 85, 144, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    COMBOBOX        IDC_COMBO_MDITAB_DOUBLECLICK, 106, 150, 85, 130, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    COMBOBOX        IDC_COMBO_MDITAB_MCLICK, 106, 165, 85, 118, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    AUTOCHECKBOX    "マウスホイールで切り替え(&H)", IDC_CHECK_WHEEL, 12, 180, 101, 8, WS_GROUP | BS_FLAT
-    AUTOCHECKBOX    "複数列表示にする(&M)", IDC_CHECK_MDITAB_MULTILINE, 12, 208, 79, 8, WS_GROUP | BS_FLAT
-    AUTOCHECKBOX    "タブの大きさを指定する(&S):", IDC_CHECK_MDITAB_FIXEDSIZE, 12, 220, 90, 8, BS_FLAT
-    EDITTEXT        IDC_EDIT_MDITAB_FIXEDSIZEX, 104, 218, 21, 12, ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MDITAB_FIXEDSIZEY, 135, 218, 21, 12, ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_TABTEXTMAX, 104, 231, 21, 12, ES_AUTOHSCROLL
-    AUTOCHECKBOX    "未表示./表示済みを色分けする(&N)", IDC_CHECK_MDITAB_ANCHORCOLOR, 12, 244, 116, 8, BS_FLAT
-    LTEXT           "タブの最大文字数(&T):", IDC_STATIC, 36, 232, 63, 9, SS_LEFT | SS_CENTERIMAGE, WS_EX_RIGHT
-    CTEXT           "×", IDC_STATIC, 126, 220, 8, 8, SS_CENTER | SS_CENTERIMAGE
-    LTEXT           "(10-500)", IDC_STATIC, 159, 220, 26, 8, SS_LEFT | SS_CENTERIMAGE
-    LTEXT           "(10-255)", IDC_STATIC, 129, 233, 26, 8, SS_LEFT | SS_CENTERIMAGE
-    LTEXT           "新規タブの追加位置(&P):", IDC_STATIC, 28, 21, 72, 8, SS_LEFT, WS_EX_RIGHT
-    LTEXT           "右クリック(&R):", IDC_STATIC, 61, 139, 40, 8, SS_LEFT, WS_EX_RIGHT
-    LTEXT           "ダブルクリック(&D):", IDC_STATIC, 49, 154, 52, 8, SS_LEFT, WS_EX_RIGHT
-    LTEXT           "ホイールクリック(&W):", IDC_STATIC, 42, 168, 59, 8, SS_LEFT, WS_EX_RIGHT
-    LTEXT           "アクティブなタブを閉じた時(&C):", IDC_STATIC, 12, 36, 89, 9, SS_LEFT, WS_EX_RIGHT
-    LTEXT           "動作", IDC_STATIC, 8, 8, 270, 9, SS_LEFT | SS_SUNKEN
-    LTEXT           "マウス操作", IDC_STATIC, 8, 124, 270, 9, SS_LEFT | SS_SUNKEN
-    LTEXT           "表示", IDC_STATIC, 8, 196, 270, 9, SS_LEFT | SS_SUNKEN
-    LTEXT           "※ONにするとタブバーでのドラッグドロップは効かなくなります", IDC_STATIC, 22, 72, 178, 8, SS_LEFT
-    AUTOCHECKBOX    "CTRL(+SHIFT)+TABでの移動をMDIでの順番にする", IDC_CHECK_CTRLTAB_MDI, 12, 84, 160, 8, BS_FLAT
-    LTEXT           "Drag＆Dropを受け入れるタブの境界幅:", IDC_STATIC, 12, 96, 115, 8, SS_LEFT | SS_CENTERIMAGE | SS_NOPREFIX
-    EDITTEXT        IDC_EDIT_TABSEPARATORWIDTH, 127, 94, 20, 12, ES_AUTOHSCROLL
-    AUTOCHECKBOX    "Drag＆Dropでのタブの移動をFireFox風にする", IDC_CHECK_FIREFOXLIKE, 12, 108, 144, 8
-    AUTOCHECKBOX    "Faviconを表示する", IDC_SHOWFAVICON, 12, 256, 69, 8
-    LTEXT           "(5-125)", IDC_STATIC, 150, 96, 23, 8, SS_LEFT
-    AUTOCHECKBOX    "タイトルがタブの大きさに収まるとき中央揃えにする", IDC_CHECK_CENTERALIGN, 12, 267, 163, 8
-    GROUPBOX        "タイトルのオフセット位置", IDC_STATIC, 186, 210, 90, 93
-    LTEXT           "アクティブ", IDC_STATIC, 195, 222, 30, 8, SS_LEFT
-    LTEXT           "ノーマル", IDC_STATIC, 195, 246, 26, 8, SS_LEFT
-    LTEXT           "複数選択", IDC_STATIC, 195, 273, 28, 8, SS_LEFT
-    LTEXT           "X:", IDC_STATIC, 196, 232, 6, 8, SS_LEFT
-    LTEXT           "Y:", IDC_STATIC, 225, 231, 6, 8, SS_LEFT
-    LTEXT           "X:", IDC_STATIC, 195, 258, 8, 8, SS_LEFT
-    LTEXT           "Y:", IDC_STATIC, 225, 258, 6, 8, SS_LEFT
-    LTEXT           "X:", IDC_STATIC, 195, 285, 8, 8, SS_LEFT
-    LTEXT           "Y:", IDC_STATIC, 225, 285, 6, 8, SS_LEFT
-    EDITTEXT        IDC_EDIT_OFFSETACTIVEX, 204, 231, 12, 12
-    EDITTEXT        IDC_EDIT_OFFSETACTIVEY, 234, 231, 12, 12
-    EDITTEXT        IDC_EDIT_OFFSETNORMALX, 204, 258, 12, 12
-    EDITTEXT        IDC_EDIT_OFFSETNORMALY, 234, 258, 12, 12
-    EDITTEXT        IDC_EDIT_OFFSETMSELECTX, 204, 285, 12, 12
-    EDITTEXT        IDC_EDIT_OFFSETMSELECTY, 234, 285, 12, 12
+    COMBOBOX        IDC_COMBO_MDITAB_ADDPOS,106,18,85,54,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_ONCLOSE,106,33,85,60,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "リンクを開くときはアクティブの右側へ追加(&L)",IDC_CHECK_ADDLINKACTIVERIGHT,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,12,48,144,8
+    CONTROL         "マウス左ボタンを押したときにタブを切り替える(&V)",IDC_CHECK_MOUSEDOWNSELECT,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,12,60,156,8
+    COMBOBOX        IDC_COMBO_MDITAB_RIGHTCLICK,106,135,85,144,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_MDITAB_DOUBLECLICK,106,150,85,130,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    COMBOBOX        IDC_COMBO_MDITAB_MCLICK,106,165,85,118,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "マウスホイールで切り替え(&H)",IDC_CHECK_WHEEL,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_GROUP | WS_TABSTOP,12,180,101,8
+    CONTROL         "複数列表示にする(&M)",IDC_CHECK_MDITAB_MULTILINE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_GROUP | WS_TABSTOP,12,208,79,8
+    CONTROL         "タブの大きさを指定する(&S):",IDC_CHECK_MDITAB_FIXEDSIZE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,12,220,90,8
+    EDITTEXT        IDC_EDIT_MDITAB_FIXEDSIZEX,104,218,21,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MDITAB_FIXEDSIZEY,135,218,21,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_TABTEXTMAX,104,231,21,12,ES_AUTOHSCROLL
+    CONTROL         "未表示./表示済みを色分けする(&N)",IDC_CHECK_MDITAB_ANCHORCOLOR,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,12,244,116,8
+    LTEXT           "タブの最大文字数(&T):",IDC_STATIC,36,232,63,9,SS_CENTERIMAGE,WS_EX_RIGHT
+    CTEXT           "×",IDC_STATIC,126,220,8,8,SS_CENTERIMAGE
+    LTEXT           "(10-500)",IDC_STATIC,159,220,26,8,SS_CENTERIMAGE
+    LTEXT           "(10-255)",IDC_STATIC,129,233,26,8,SS_CENTERIMAGE
+    LTEXT           "新規タブの追加位置(&P):",IDC_STATIC,28,21,72,8,0,WS_EX_RIGHT
+    LTEXT           "右クリック(&R):",IDC_STATIC,61,139,40,8,0,WS_EX_RIGHT
+    LTEXT           "ダブルクリック(&D):",IDC_STATIC,49,154,52,8,0,WS_EX_RIGHT
+    LTEXT           "ホイールクリック(&W):",IDC_STATIC,42,168,59,8,0,WS_EX_RIGHT
+    LTEXT           "アクティブなタブを閉じた時(&C):",IDC_STATIC,12,36,89,9,0,WS_EX_RIGHT
+    LTEXT           "動作",IDC_STATIC,8,8,270,9,SS_SUNKEN
+    LTEXT           "マウス操作",IDC_STATIC,8,124,270,9,SS_SUNKEN
+    LTEXT           "表示",IDC_STATIC,8,196,270,9,SS_SUNKEN
+    LTEXT           "※ONにするとタブバーでのドラッグドロップは効かなくなります",IDC_STATIC,22,72,178,8
+    CONTROL         "CTRL(+SHIFT)+TABでの移動をMDIでの順番にする",IDC_CHECK_CTRLTAB_MDI,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,12,84,160,8
+    LTEXT           "Drag＆Dropを受け入れるタブの境界幅:",IDC_STATIC,12,96,115,8,SS_NOPREFIX | SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_TABSEPARATORWIDTH,127,94,20,12,ES_AUTOHSCROLL
+    CONTROL         "Drag＆Dropでのタブの移動をFireFox風にする",IDC_CHECK_FIREFOXLIKE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,108,144,8
+    CONTROL         "Faviconを表示する",IDC_SHOWFAVICON,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,256,69,8
+    LTEXT           "(5-125)",IDC_STATIC,150,96,23,8
+    CONTROL         "タイトルがタブの大きさに収まるとき中央揃えにする",IDC_CHECK_CENTERALIGN,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,267,163,8
+    GROUPBOX        "タイトルのオフセット位置",IDC_STATIC,186,210,90,93
+    LTEXT           "アクティブ",IDC_STATIC,195,222,30,8
+    LTEXT           "ノーマル",IDC_STATIC,195,246,26,8
+    LTEXT           "複数選択",IDC_STATIC,195,273,28,8
+    LTEXT           "X:",IDC_STATIC,196,232,6,8
+    LTEXT           "Y:",IDC_STATIC,225,231,6,8
+    LTEXT           "X:",IDC_STATIC,195,258,8,8
+    LTEXT           "Y:",IDC_STATIC,225,258,6,8
+    LTEXT           "X:",IDC_STATIC,195,285,8,8
+    LTEXT           "Y:",IDC_STATIC,225,285,6,8
+    EDITTEXT        IDC_EDIT_OFFSETACTIVEX,204,231,12,12
+    EDITTEXT        IDC_EDIT_OFFSETACTIVEY,234,231,12,12
+    EDITTEXT        IDC_EDIT_OFFSETNORMALX,204,258,12,12
+    EDITTEXT        IDC_EDIT_OFFSETNORMALY,234,258,12,12
+    EDITTEXT        IDC_EDIT_OFFSETMSELECTX,204,285,12,12
+    EDITTEXT        IDC_EDIT_OFFSETMSELECTY,234,285,12,12
 END
 
 IDD_PROPPAGE_DLCONTROL DIALOGEX 0, 0, 280, 288
-STYLE DS_SETFONT | WS_CAPTION | WS_CHILDWINDOW | WS_DISABLED
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "ブラウザ"
-FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    LTEXT			"マルチメディアのデフォルト", IDC_STATIC, 6, 6, 123, 9, SS_LEFTNOWORDWRAP | SS_SUNKEN
-    AUTOCHECKBOX    "サウンドの再生(&S)", IDC_CHECK_DLCTL_BGSOUNDS, 13, 17, 69, 10, BS_FLAT
-    AUTOCHECKBOX    "画像のダウンロード(&I)", IDC_CHECK_DLCTL_DLIMAGES, 13, 29, 78, 10, BS_FLAT
-    AUTOCHECKBOX    "ビデオの再生(&V)", IDC_CHECK_DLCTL_VIDEOS, 13, 41, 60, 10, BS_FLAT
-    LTEXT           "セキュリティのデフォルト", IDC_STATIC, 141, 6, 132, 9, SS_LEFT | SS_SUNKEN
-    AUTOCHECKBOX    "ActiveXコントロールの実行(&E)", IDC_CHECK_DLCTL_RUNACTIVEXCTLS, 148, 17, 103, 10, BS_FLAT
-    AUTOCHECKBOX    "ActiveXコントロールのダウンロード(&D)", IDC_CHECK_DLCTL_DLACTIVEXCTLS, 148, 28, 126, 10, BS_FLAT
-    AUTOCHECKBOX    "スクリプトの実行(&C)", IDC_CHECK_DLCTL_SCRIPTS, 148, 40, 74, 10, BS_FLAT
-    AUTOCHECKBOX    "Javaの実行(&J)", IDC_CHECK_DLCTL_JAVA, 148, 52, 60, 10, BS_FLAT
-    LTEXT           "操作オプションのデフォルト", IDC_STATIC, 6, 66, 268, 9, SS_LEFT | SS_SUNKEN
-    AUTOCHECKBOX    "ナビゲートロック(&L)", IDC_CHECK_NAVILOCK, 13, 78, 71, 10, BS_FLAT
-    AUTOCHECKBOX    "ページを平面的に表示する(&F)", IDC_CHECK_SCROLLBAR, 13, 90, 103, 10, BS_FLAT
-    AUTOCHECKBOX    "ステータスバーをフィルターする", IDC_CHK_MSG_FILTER, 13, 102, 108, 10, BS_FLAT
-    AUTOCHECKBOX    "マウス・ジェスチャーを使用する", IDC_CHK_MOUSE_GESTURE, 13, 114, 107, 10, BS_FLAT
-    AUTOCHECKBOX    "mailto:無効", IDC_CHK_BLOCK_MAILTO, 13, 126, 49, 10, BS_FLAT
-    LTEXT           "その他", IDC_STATIC, 6, 141, 268, 9, SS_LEFT | SS_SUNKEN
-    AUTOCHECKBOX    "ナビゲートロックされたページは閉じない", IDC_CHECK_NOCLOSE_NAVILOCK, 13, 153, 132, 10, BS_FLAT
-    AUTOCHECKBOX    "UserAgent(&U) を下記にする", IDC_CHK_USER_AGENT, 13, 167, 160, 10, BS_FLAT
-    EDITTEXT        IDC_EDIT_USER_AGENT, 24, 179, 250, 14, ES_AUTOHSCROLL
-    AUTOCHECKBOX    "ダウンロードマネージャーを使用する", IDC_CHK_DLMANAGER, 12, 222, 122, 10
-    EDITTEXT        IDC_EDIT_DEFAULT_USER_AGENT, 24, 205, 250, 14, ES_AUTOHSCROLL | ES_READONLY
-    LTEXT           "デフォルトのUserAgent", IDC_STATIC, 21, 195, 68, 9, SS_LEFT
-    GROUPBOX        "GPUレンダリング有効時", IDC_STATIC, 6, 237, 192, 39
-    AUTORADIOBUTTON "何もしない", IDC_RADIO_NONE, 12, 261, 42, 8, WS_GROUP
-    AUTORADIOBUTTON "画面をキャッシュする", IDC_RADIO_CASH, 57, 261, 72, 8
-    AUTORADIOBUTTON "常時画面更新", IDC_RADIO_ALWAYS, 138, 261, 54, 8
-    LTEXT           "タブ切り替え時のページのちらつきについて", IDC_STATIC, 12, 249, 126, 8, NOT WS_GROUP | SS_LEFT
+    CONTROL         "マルチメディアのデフォルト",IDC_STATIC,"Static",SS_LEFTNOWORDWRAP | SS_SUNKEN | WS_GROUP,6,6,123,9
+    CONTROL         "サウンドの再生(&S)",IDC_CHECK_DLCTL_BGSOUNDS,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,17,69,10
+    CONTROL         "画像のダウンロード(&I)",IDC_CHECK_DLCTL_DLIMAGES,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,29,78,10
+    CONTROL         "ビデオの再生(&V)",IDC_CHECK_DLCTL_VIDEOS,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,41,60,10
+    LTEXT           "セキュリティのデフォルト",IDC_STATIC,141,6,132,9,SS_SUNKEN
+    CONTROL         "ActiveXコントロールの実行(&E)",IDC_CHECK_DLCTL_RUNACTIVEXCTLS,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,148,17,103,10
+    CONTROL         "ActiveXコントロールのダウンロード(&D)",IDC_CHECK_DLCTL_DLACTIVEXCTLS,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,148,28,126,10
+    CONTROL         "スクリプトの実行(&C)",IDC_CHECK_DLCTL_SCRIPTS,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,148,40,74,10
+    CONTROL         "Javaの実行(&J)",IDC_CHECK_DLCTL_JAVA,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,148,52,60,10
+    LTEXT           "操作オプションのデフォルト",IDC_STATIC,6,66,268,9,SS_SUNKEN
+    CONTROL         "ナビゲートロック(&L)",IDC_CHECK_NAVILOCK,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,78,71,10
+    CONTROL         "ページを平面的に表示する(&F)",IDC_CHECK_SCROLLBAR,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,90,103,10
+    CONTROL         "ステータスバーをフィルターする",IDC_CHK_MSG_FILTER,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,102,108,10
+    CONTROL         "マウス・ジェスチャーを使用する",IDC_CHK_MOUSE_GESTURE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,114,107,10
+    CONTROL         "mailto:無効",IDC_CHK_BLOCK_MAILTO,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,126,49,10
+    LTEXT           "その他",IDC_STATIC,6,141,268,9,SS_SUNKEN
+    CONTROL         "ナビゲートロックされたページは閉じない",IDC_CHECK_NOCLOSE_NAVILOCK,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,153,132,10
+    CONTROL         "UserAgent(&U) を下記にする",IDC_CHK_USER_AGENT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,13,167,160,10
+    EDITTEXT        IDC_EDIT_USER_AGENT,24,179,250,14,ES_AUTOHSCROLL
+    CONTROL         "ダウンロードマネージャーを使用する",IDC_CHK_DLMANAGER,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,222,122,10
+    EDITTEXT        IDC_EDIT_DEFAULT_USER_AGENT,24,205,250,14,ES_AUTOHSCROLL | ES_READONLY
+    LTEXT           "デフォルトのUserAgent",IDC_STATIC,21,195,68,9
+    GROUPBOX        "GPUレンダリング有効時",IDC_STATIC,6,237,192,39
+    CONTROL         "何もしない",IDC_RADIO_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,261,42,8
+    CONTROL         "画面をキャッシュする",IDC_RADIO_CASH,"Button",BS_AUTORADIOBUTTON,57,261,72,8
+    CONTROL         "常時画面更新",IDC_RADIO_ALWAYS,"Button",BS_AUTORADIOBUTTON,138,261,54,8
+    LTEXT           "タブ切り替え時のページのちらつきについて",IDC_STATIC,12,249,126,8,NOT WS_GROUP
 END
 
 IDD_PROPPAGE_MAIN DIALOGEX 0, 0, 280, 275
-STYLE DS_SETFONT | WS_CAPTION | WS_CHILDWINDOW
+STYLE DS_SETFONT | WS_CHILD | WS_CAPTION
 CAPTION "全般"
-FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    AUTOCHECKBOX    "お気に入りやファイルを新しいウィンドウで開く(&N)", IDC_CHECK_MAIN_NEWWINDOW, 8, 16, 155, 10, BS_FLAT
-    AUTOCHECKBOX    "お気に入りやファイルを開くとき、アクティブにしない(&F)", IDC_CHECK_MAIN_NOACTIVATE, 8, 28, 171, 10, BS_FLAT
-    AUTOCHECKBOX    "リンクを開くとき、アクティブにしない(&R)", IDC_CHECK_MAIN_NOACTIVATE_NEWWIN, 8, 40, 127, 10, BS_FLAT
-    AUTOCHECKBOX    "お気に入りグループを開くとき、他のウィンドウを閉じない(&D)", IDC_CHECK_MAIN_NOCLOSEDFG, 8, 52, 182, 10, BS_FLAT
-    AUTOCHECKBOX    "お気に入りの追加に、コモンダイアログボックスを使う(&C)", IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL, 8, 64, 177, 10, BS_FLAT
-    AUTOCHECKBOX    "お気に入りの整理に、エクスプローラを使う(&E)", IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL, 8, 76, 147, 10, BS_FLAT
-    AUTOCHECKBOX    "リンクのターゲット名を考慮する(&M)", IDC_CHECK_MAIN_REGISTER_AS_BROWSER, 8, 88, 117, 10, BS_FLAT
-    AUTOCHECKBOX    "複数起動を許可しない(&O)", IDC_CHECK_ONEINSTANCE, 8, 140, 85, 10, BS_FLAT
-    AUTOCHECKBOX    "タブモードで起動する(&T)", IDC_CHECK_MAIN_NOMDI, 8, 152, 86, 10, BS_FLAT
-    AUTOCHECKBOX    "ウィンドウの数を制限する(&L):", IDC_CHECK_MAIN_LIMIT, 8, 180, 95, 10, BS_FLAT
-    EDITTEXT        IDC_EDIT_MAIN_LIMITEDCOUNT, 143, 179, 25, 12, ES_AUTOHSCROLL
-    AUTOCHECKBOX    "状態をTabList.xmlへ定期的に保存する(&S):", IDC_CHECK_MAIN_BACKUP, 8, 192, 131, 10, BS_FLAT
-    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME, 143, 192, 25, 12, ES_AUTOHSCROLL
-    AUTOCHECKBOX    "オン/オフラインの状態を保存する(&G)", IDC_CHECK_MAIN_LOADGLOBALOFFLINE, 8, 204, 122, 10, BS_FLAT
-    AUTOCHECKBOX    "警告ダイアログを自動的に閉じる(&K)", IDC_CHECK_MAIN_KILLDIALOG, 8, 216, 119, 10, BS_FLAT
-    LTEXT           "(0-255個)", IDC_STATIC, 170, 181, 30, 8, SS_LEFT | SS_CENTERIMAGE
-    LTEXT           "(1-120分)", IDC_STATIC, 170, 194, 30, 8, SS_LEFT
-    AUTOCHECKBOX    "ウィンドウのオプションを継承する(&I)", IDC_CHECK_MAIN_INHERIT_OPTIONS, 8, 228, 118, 10, BS_FLAT
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN, 126, 245, 25, 12, ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC, 161, 245, 25, 12, ES_AUTOHSCROLL
-    LTEXT           "自動更新のユーザ設定(&A):", IDC_STATIC, 17, 248, 80, 8, SS_LEFT
-    LTEXT           "分", IDC_STATIC, 152, 247, 8, 8, SS_LEFT
-    LTEXT           "秒", IDC_STATIC, 189, 247, 8, 8, SS_LEFT
-    PUSHBUTTON      "フォント(&F)...", IDC_BUTTON_BAR_FONT, 8, 259, 44, 12, BS_FLAT
-    LTEXT           "(ﾊﾞｰに対してのﾌｫﾝﾄ、ｱﾌﾟﾘｹｰｼｮﾝ再起動後有効)", IDC_STATIC, 56, 261, 142, 8, SS_LEFT
-    LTEXT           "動作", IDC_STATIC, 4, 4, 269, 9, SS_LEFT | SS_SUNKEN
-    LTEXT           "システム", IDC_STATIC, 4, 128, 269, 9, SS_LEFT | SS_SUNKEN
-    LTEXT           "その他", IDC_STATIC, 4, 168, 269, 9, SS_LEFT | SS_SUNKEN
-    AUTOCHECKBOX    "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)", IDC_CHK_IGNORE_BLANK, 8, 100, 253, 10
-    AUTOCHECKBOX    "独自ページ内検索バーを使用する", IDC_CHK_USECUSTOMFINDBAR, 8, 112, 115, 9
+    CONTROL         "お気に入りやファイルを新しいウィンドウで開く(&N)",IDC_CHECK_MAIN_NEWWINDOW,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,16,155,10
+    CONTROL         "お気に入りやファイルを開くとき、アクティブにしない(&F)",IDC_CHECK_MAIN_NOACTIVATE,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,28,171,10
+    CONTROL         "リンクを開くとき、アクティブにしない(&R)",IDC_CHECK_MAIN_NOACTIVATE_NEWWIN,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,40,127,10
+    CONTROL         "お気に入りグループを開くとき、他のウィンドウを閉じない(&D)",IDC_CHECK_MAIN_NOCLOSEDFG,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,52,182,10
+    CONTROL         "お気に入りの追加に、コモンダイアログボックスを使う(&C)",IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,64,177,10
+    CONTROL         "お気に入りの整理に、エクスプローラを使う(&E)",IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,76,147,10
+    CONTROL         "リンクのターゲット名を考慮する(&M)",IDC_CHECK_MAIN_REGISTER_AS_BROWSER,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,88,117,10
+    CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,140,85,10
+    CONTROL         "タブモードで起動する(&T)",IDC_CHECK_MAIN_NOMDI,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,152,86,10
+    CONTROL         "ウィンドウの数を制限する(&L):",IDC_CHECK_MAIN_LIMIT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,180,95,10
+    EDITTEXT        IDC_EDIT_MAIN_LIMITEDCOUNT,143,179,25,12,ES_AUTOHSCROLL
+    CONTROL         "状態をTabList.xmlへ定期的に保存する(&S):",IDC_CHECK_MAIN_BACKUP,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,192,131,10
+    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,143,192,25,12,ES_AUTOHSCROLL
+    CONTROL         "オン/オフラインの状態を保存する(&G)",IDC_CHECK_MAIN_LOADGLOBALOFFLINE,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,122,10
+    CONTROL         "警告ダイアログを自動的に閉じる(&K)",IDC_CHECK_MAIN_KILLDIALOG,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,119,10
+    LTEXT           "(0-255個)",IDC_STATIC,170,181,30,8,SS_CENTERIMAGE
+    LTEXT           "(1-120分)",IDC_STATIC,170,194,30,8
+    CONTROL         "ウィンドウのオプションを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,228,118,10
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,126,245,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,161,245,25,12,ES_AUTOHSCROLL
+    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,17,248,80,8
+    LTEXT           "分",IDC_STATIC,152,247,8,8
+    LTEXT           "秒",IDC_STATIC,189,247,8,8
+    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,259,44,12,BS_FLAT
+    LTEXT           "(ﾊﾞｰに対してのﾌｫﾝﾄ、ｱﾌﾟﾘｹｰｼｮﾝ再起動後有効)",IDC_STATIC,56,261,142,8
+    LTEXT           "動作",IDC_STATIC,4,4,269,9,SS_SUNKEN
+    LTEXT           "システム",IDC_STATIC,4,128,269,9,SS_SUNKEN
+    LTEXT           "その他",IDC_STATIC,4,168,269,9,SS_SUNKEN
+    CONTROL         "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)",IDC_CHK_IGNORE_BLANK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,100,253,10
+    CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,112,115,9
 END
 
 IDD_PROPPAGE_EXPMENU DIALOGEX 0, 0, 280, 256
@@ -1063,13 +1055,13 @@ STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "新規作成"
 FONT 9, "ＭＳ Ｐゴシック"
 BEGIN
-    LTEXT           "新規作成ボタンとCtrl+Nショートカットの標準動作", IDC_STATIC, 6, 5, 269, 9, SS_LEFT | SS_SUNKEN
-    AUTORADIOBUTTON "空白ページを追加する(&B)", IDC_RADIO_BLANK, 13, 20, 90, 10, WS_GROUP | WS_TABSTOP | BS_FLAT
-    AUTORADIOBUTTON "現在のページを追加する(&C)", IDC_RADIO_COPY, 13, 32, 97, 10, BS_FLAT
-    AUTORADIOBUTTON "ホームページを追加する(&H)", IDC_RADIO_HOME, 13, 44, 97, 10, BS_FLAT
-    AUTORADIOBUTTON "指定のページを追加する(&U)", IDC_RADIO_START_USER, 13, 56, 97, 10, BS_FLAT
-    EDITTEXT        IDC_EDIT_NEWPAGE_USER, 23, 68, 210, 12, WS_GROUP | ES_AUTOHSCROLL
-    PUSHBUTTON      "...", IDC_BTN_NEWPAGE_USER, 238, 68, 16, 12, BS_FLAT
+    LTEXT           "新規作成ボタンとCtrl+Nショートカットの標準動作",IDC_STATIC,6,5,269,9,SS_SUNKEN
+    CONTROL         "空白ページを追加する(&B)",IDC_RADIO_BLANK,"Button",BS_AUTORADIOBUTTON | BS_FLAT | WS_GROUP | WS_TABSTOP,13,20,90,10
+    CONTROL         "現在のページを追加する(&C)",IDC_RADIO_COPY,"Button",BS_AUTORADIOBUTTON | BS_FLAT,13,32,97,10
+    CONTROL         "ホームページを追加する(&H)",IDC_RADIO_HOME,"Button",BS_AUTORADIOBUTTON | BS_FLAT,13,44,97,10
+    CONTROL         "指定のページを追加する(&U)",IDC_RADIO_START_USER,"Button",BS_AUTORADIOBUTTON | BS_FLAT,13,56,97,10
+    EDITTEXT        IDC_EDIT_NEWPAGE_USER,23,68,210,12,ES_AUTOHSCROLL | WS_GROUP
+    PUSHBUTTON      "...",IDC_BTN_NEWPAGE_USER,238,68,16,12,BS_FLAT
 END
 
 IDD_DIALOG_OPENURL DIALOG 0, 0, 215, 70
@@ -1279,22 +1271,20 @@ BEGIN
     CONTROL         "List1",IDC_LISTBOX1,"SysListView32",LVS_REPORT | WS_BORDER | WS_TABSTOP,3,98,274,158
 END
 
-
 IDD_PROPPAGE_TOOLBAR DIALOG 0, 0, 280, 291
-STYLE DS_SETFONT | WS_CAPTION | WS_CHILDWINDOW | WS_DISABLED
+STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "ツールバー"
 FONT 9, "ＭＳ Ｐゴシック"
 BEGIN
-    COMBOBOX        IDC_CMB_CATEGORY, 30, 21, 84, 102, WS_TABSTOP | WS_VSCROLL | WS_TABSTOP | CBS_DROPDOWNLIST
-    LTEXT           "コマンド", IDC_STATIC, 6, 39, 23, 9, SS_LEFT
-    LISTBOX         IDC_LIST_ICON, 165, 51, 111, 237, WS_TABSTOP | WS_VSCROLL | LBS_NOINTEGRALHEIGHT | LBS_OWNERDRAWVARIABLE | LBS_NOTIFY
-    LTEXT           "カテゴリ", IDC_STATIC, 6, 21, 24, 12, SS_LEFT | SS_CENTERIMAGE
-    AUTOCHECKBOX    "右側テキスト表示", IDC_CHKBTN_TXT, 213, 36, 63, 10, WS_DISABLED | BS_FLAT
-	LISTBOX         IDC_LIST_COMMAND, 6, 51, 108, 237, WS_TABSTOP | WS_VSCROLL | LBS_NOINTEGRALHEIGHT | LBS_NOTIFY
-    LTEXT           "ツールバーアイコンとコマンドの関連付けを変更します", IDC_STATIC, 6, 6, 270, 9, SS_LEFT | SS_SUNKEN
-    PUSHBUTTON      "コマンド変更", IDC_BTN_CHANGE_COMMAND, 118, 51, 42, 237
+    COMBOBOX        IDC_CMB_CATEGORY,30,21,84,102,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "コマンド",IDC_STATIC,6,39,23,9
+    LISTBOX         IDC_LIST_ICON,165,51,111,237,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "カテゴリ",IDC_STATIC,6,21,24,12,SS_CENTERIMAGE
+    CONTROL         "右側テキスト表示",IDC_CHKBTN_TXT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_DISABLED | WS_TABSTOP,213,36,63,10
+    LISTBOX         IDC_LIST_COMMAND,6,51,108,237,LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "ツールバーアイコンとコマンドの関連付けを変更します",IDC_STATIC,6,6,270,9,SS_SUNKEN
+    PUSHBUTTON      "コマンド変更",IDC_BTN_CHANGE_COMMAND,118,51,42,237
 END
-
 
 IDD_PROPPAGE_EXPLORERBAR DIALOGEX 0, 0, 280, 256
 STYLE DS_SETFONT | WS_CHILD | WS_CAPTION
@@ -1347,14 +1337,15 @@ BEGIN
     LTEXT           "ページ内ドラッグドロップ",IDC_STATIC,10,192,72,10
     COMBOBOX        IDC_COMBO_DRAGDROP,84,189,95,110,CBS_DROPDOWNLIST | CBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
     LTEXT           "※次のウィンドウから有効",IDC_STATIC,185,192,85,9
-    GROUPBOX        "", IDC_STATIC, 8, 208, 264, 85
-    AUTOCHECKBOX    "選択文字列を右ボタンドラッグドロップで検索する", IDC_CHECK_RIGHT_DRAGDROP, 12, 208, 152, 9
-    AUTOCHECKBOX    "上下左右に割り当てる", IDC_CHECK_USERECT, 20, 220, 76, 9
-    COMBOBOX        IDC_COMBO_TSEARCH, 92, 232, 72, 100, CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_HASSTRINGS | WS_VSCROLL
-    COMBOBOX        IDC_COMBO_LSEARCH, 16, 252, 72, 100, CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_HASSTRINGS | WS_VSCROLL
-    COMBOBOX        IDC_COMBO_CSEARCH, 92, 252, 72, 100, CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_HASSTRINGS | WS_VSCROLL
-    COMBOBOX        IDC_COMBO_RSEARCH, 168, 252, 72, 100, CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_HASSTRINGS | WS_VSCROLL
-    COMBOBOX        IDC_COMBO_BSEARCH, 92, 272, 72, 100, CBS_DROPDOWNLIST | CBS_HASSTRINGS | CBS_HASSTRINGS | WS_VSCROLL
+    GROUPBOX        "",IDC_STATIC,8,208,264,85
+    CONTROL         "選択文字列を右ボタンドラッグドロップで検索する",IDC_CHECK_RIGHT_DRAGDROP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,12,208,152,9
+    CONTROL         "上下左右に割り当てる",IDC_CHECK_USERECT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,220,76,9
+    COMBOBOX        IDC_COMBO_TSEARCH,92,232,72,100,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    COMBOBOX        IDC_COMBO_LSEARCH,16,252,72,100,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    COMBOBOX        IDC_COMBO_CSEARCH,92,252,72,100,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    COMBOBOX        IDC_COMBO_RSEARCH,168,252,72,100,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
+    COMBOBOX        IDC_COMBO_BSEARCH,92,272,72,100,CBS_DROPDOWNLIST | CBS_HASSTRINGS | WS_VSCROLL
 END
 
 IDD_PROPPAGE_SEARCHBAR DIALOGEX 0, 0, 279, 257
@@ -1646,7 +1637,7 @@ BEGIN
     LTEXT           "",IDC_STATIC_TITLE,38,7,266,11
     PUSHBUTTON      "URL",IDC_BTN_EXPROP_URL,7,21,17,12,BS_FLAT
     EDITTEXT        IDC_EDIT_EXPROP_URL,27,22,277,12,ES_AUTOHSCROLL | NOT WS_BORDER,WS_EX_STATICEDGE
-    AUTOCHECKBOX    "正規表現を使う(&P)", IDC_CHK_URLSEC_REGEX, 7, 42, 64, 10
+    CONTROL         "正規表現を使う(&P)",IDC_CHK_URLSEC_REGEX,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,42,64,10
     LTEXT           "ダウンロードコントロール",IDC_STATIC,8,59,119,9,SS_SUNKEN | NOT WS_GROUP
     CONTROL         "ビデオの再生(&A)",IDC_CHECK_VIDEO,"Button",BS_AUTO3STATE | WS_TABSTOP,8,75,64,9
     CONTROL         "サウンドの再生(&B)",IDC_CHECK_SOUND,"Button",BS_AUTO3STATE | WS_TABSTOP,8,87,68,9
@@ -1675,7 +1666,7 @@ BEGIN
     PUSHBUTTON      "標準設定任せ",IDC_BTN_DFLTBASE,105,225,55,14
     DEFPUSHBUTTON   "OK",IDOK,201,225,50,14,WS_GROUP
     PUSHBUTTON      "ｷｬﾝｾﾙ",IDCANCEL,254,225,50,14
-    AUTOCHECKBOX    "このURLでのみ有効(&O)", IDC_CHK_ONLYTHISURL, 75, 42, 80, 10
+    CONTROL         "このURLでのみ有効(&O)",IDC_CHK_ONLYTHISURL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,75,42,80,10
 END
 
 IDD_DIALOG_EXPROPERTY DIALOGEX 0, 0, 310, 246
@@ -1683,56 +1674,58 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "拡張プロパティ"
 FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    LTEXT           "タイトル：", IDC_STATIC, 7, 7, 30, 11, SS_LEFT
-    LTEXT           "", IDC_STATIC_TITLE, 38, 7, 266, 11, SS_LEFT
-    PUSHBUTTON      "URL", IDC_BTN_EXPROP_URL, 7, 21, 17, 12, BS_FLAT
-    EDITTEXT        IDC_EDIT_EXPROP_URL, 27, 22, 277, 12, NOT WS_BORDER | ES_AUTOHSCROLL, WS_EX_STATICEDGE
-    AUTOCHECKBOX    "拡張プロパティを有効にする(&P)", IDC_CHECK_ENABLE, 7, 42, 100, 10
-    LTEXT           "ダウンロードコントロール", IDC_STATIC, 8, 59, 119, 9, NOT WS_GROUP | SS_LEFT | SS_SUNKEN
-    AUTO3STATE      "ビデオの再生(&A)", IDC_CHECK_VIDEO, 8, 75, 64, 9, NOT WS_TABSTOP
-    AUTO3STATE      "サウンドの再生(&B)", IDC_CHECK_SOUND, 8, 87, 68, 9, NOT WS_TABSTOP
-    AUTO3STATE      "画像のダウンロード(&C)", IDC_CHECK_IMAGE, 8, 99, 80, 9, NOT WS_TABSTOP
-    AUTO3STATE      "ActiveXコントロールの実行(&E)", IDC_CHECK_RUNACTIVEXCTLS, 8, 110, 104, 10, NOT WS_TABSTOP
-    AUTO3STATE      "ActiveXコントロールのダウンロード(&D)", IDC_CHECK_DLACTIVEXCTLS, 8, 123, 121, 10, NOT WS_TABSTOP
-    AUTO3STATE      "スクリプトの実行(&F)", IDC_CHECK_SCRIPTS, 8, 135, 73, 10, NOT WS_TABSTOP
-    AUTO3STATE      "Javaの実行(&G)", IDC_CHECK_JAVA, 8, 148, 60, 10, NOT WS_TABSTOP
-    LTEXT           "操作オプション", IDC_STATIC, 129, 59, 110, 9, NOT WS_GROUP | SS_LEFT | SS_SUNKEN
-    AUTO3STATE      "ナビゲートロック(&H)", IDC_CHECK_NAVILOCK, 129, 75, 110, 10, NOT WS_TABSTOP
-    AUTO3STATE      "ページを平面的に表示する(&I)", IDC_CHECK_SCROLLBAR, 129, 87, 103, 10, NOT WS_TABSTOP
-    AUTO3STATE      "ステータスバーをフィルターする(&J)", IDC_CHK_MSG_FILTER, 129, 99, 110, 10, NOT WS_TABSTOP
-    AUTO3STATE      "マウス・ジェスチャーを使用する(&K)", IDC_CHK_MOUSE_GESTURE, 129, 111, 110, 10, NOT WS_TABSTOP
-    AUTO3STATE      "mailto:無効(&L)", IDC_CHK_BLOCK_MAILTO, 129, 123, 110, 10, NOT WS_TABSTOP
-    LTEXT           "自動更新", IDC_STATIC, 244, 59, 60, 9, NOT WS_GROUP | SS_LEFT | SS_SUNKEN
-    AUTORADIOBUTTON "なし(&1)", IDC_RADIO_RELOAD_NONE, 242, 75, 56, 8, WS_GROUP | WS_TABSTOP
-    AUTORADIOBUTTON "15秒(&2)", IDC_RADIO_RELOAD_15SEC, 242, 87, 56, 8
-    AUTORADIOBUTTON "30秒(&3)", IDC_RADIO_RELOAD_30SEC, 242, 99, 56, 8
-    AUTORADIOBUTTON "1分(&4)", IDC_RADIO_RELOAD_1MIN, 242, 111, 56, 8
-    AUTORADIOBUTTON "2分(&5)", IDC_RADIO_RELOAD_2MIN, 242, 123, 56, 8
-    AUTORADIOBUTTON "5分(&6)", IDC_RADIO_RELOAD_5MIN, 242, 135, 56, 8
-    AUTORADIOBUTTON "ユーザー設定(&7)", IDC_RADIO_RELOAD_USER, 242, 147, 62, 8
-    LTEXT           "検索用URL設定　※拡張プロパティを有効にしなくても反映されます", IDC_STATIC_EXSEARCH, 7, 163, 297, 9, SS_LEFT | SS_SUNKEN
-    AUTOCHECKBOX    "検索バーでなくアドレスバーの文字列を使用", IDC_CHECK_EXSEARCH_ADDRESSBAR, 7, 175, 142, 10
-    LTEXT           "Encode", IDC_STATIC_EXSEARCH_ENCODE, 7, 187, 25, 10, SS_LEFT
-    AUTORADIOBUTTON "none", IDC_RADIO_EXSEARCH_NONE, 35, 186, 25, 10, WS_GROUP | WS_TABSTOP
-    AUTORADIOBUTTON "sjis", IDC_RADIO_EXSEARCH_SJIS, 59, 186, 23, 10
-    AUTORADIOBUTTON "euc", IDC_RADIO_EXSEARCH_EUC, 83, 186, 20, 10
-    AUTORADIOBUTTON "utf8", IDC_RADIO_EXSEARCH_UTF8, 106, 186, 22, 10
-    LTEXT           "FrontKeyword", IDC_STATIC_EXSEARCH_FRONTKEYWORD, 150, 175, 40, 10, SS_LEFT
-    EDITTEXT        IDC_EDIT_EXSEARCH_FRONTKEYWORD, 194, 174, 110, 12, ES_AUTOHSCROLL
-    LTEXT           "BackKeyword", IDC_STATIC_EXSEARCH_BACKKEYWORD, 150, 187, 40, 10, SS_LEFT
-    EDITTEXT        IDC_EDIT_EXSEARCH_BACKKEYWORD, 194, 186, 110, 12, ES_AUTOHSCROLL
-    LTEXT           "FrontURL", IDC_STATIC_EXSEARCH_FRONTURL, 7, 201, 30, 10, SS_LEFT
-    EDITTEXT        IDC_EDIT_EXSEARCH_FRONTURL, 40, 200, 264, 12, ES_AUTOHSCROLL
-    LTEXT           "BackURL", IDC_STATIC_EXSEARCH_BACKURL, 7, 213, 30, 10, SS_LEFT
-    EDITTEXT        IDC_EDIT_EXSEARCH_BACKURL, 40, 212, 177, 12, ES_AUTOHSCROLL
-    PUSHBUTTON      "消去", IDC_BUTTON_DELETE, 6, 228, 43, 14
-    PUSHBUTTON      "現在の標準設定", IDC_BUTTON_DEFAULT, 49, 228, 55, 14
-    PUSHBUTTON      "標準設定任せ", IDC_BTN_DFLTBASE, 104, 228, 55, 14
-    DEFPUSHBUTTON   "OK", IDOK, 200, 228, 50, 14, WS_GROUP
-    PUSHBUTTON      "ｷｬﾝｾﾙ", IDCANCEL, 253, 228, 50, 14
-    AUTOCHECKBOX    "POSTを使う", IDC_CHECK_USEPOST, 115, 42, 44, 10
-    LTEXT           "ショートカットコード", IDC_STATIC, 228, 213, 56, 10, SS_LEFT
-    EDITTEXT        IDC_EDIT_SHORTCUTCODE, 285, 212, 18, 12, ES_AUTOHSCROLL
+    LTEXT           "タイトル：",IDC_STATIC,7,7,30,11
+    LTEXT           "",IDC_STATIC_TITLE,38,7,266,11
+    PUSHBUTTON      "URL",IDC_BTN_EXPROP_URL,7,21,17,12,BS_FLAT
+    EDITTEXT        IDC_EDIT_EXPROP_URL,27,22,277,12,ES_AUTOHSCROLL | NOT WS_BORDER,WS_EX_STATICEDGE
+    CONTROL         "拡張プロパティを有効にする(&P)",IDC_CHECK_ENABLE,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,42,100,10
+    LTEXT           "ダウンロードコントロール",IDC_STATIC,8,59,119,9,SS_SUNKEN | NOT WS_GROUP
+    CONTROL         "ビデオの再生(&A)",IDC_CHECK_VIDEO,"Button",BS_AUTO3STATE,8,75,64,9
+    CONTROL         "サウンドの再生(&B)",IDC_CHECK_SOUND,"Button",BS_AUTO3STATE,8,87,68,9
+    CONTROL         "画像のダウンロード(&C)",IDC_CHECK_IMAGE,"Button",BS_AUTO3STATE,8,99,80,9
+    CONTROL         "ActiveXコントロールの実行(&E)",IDC_CHECK_RUNACTIVEXCTLS,"Button",BS_AUTO3STATE,8,110,104,10
+    CONTROL         "ActiveXコントロールのダウンロード(&D)",IDC_CHECK_DLACTIVEXCTLS,
+                    "Button",BS_AUTO3STATE,8,123,121,10
+    CONTROL         "スクリプトの実行(&F)",IDC_CHECK_SCRIPTS,"Button",BS_AUTO3STATE,8,135,73,10
+    CONTROL         "Javaの実行(&G)",IDC_CHECK_JAVA,"Button",BS_AUTO3STATE,8,148,60,10
+    LTEXT           "操作オプション",IDC_STATIC,129,59,110,9,SS_SUNKEN | NOT WS_GROUP
+    CONTROL         "ナビゲートロック(&H)",IDC_CHECK_NAVILOCK,"Button",BS_AUTO3STATE,129,75,110,10
+    CONTROL         "ページを平面的に表示する(&I)",IDC_CHECK_SCROLLBAR,"Button",BS_AUTO3STATE,129,87,103,10
+    CONTROL         "ステータスバーをフィルターする(&J)",IDC_CHK_MSG_FILTER,"Button",BS_AUTO3STATE,129,99,110,10
+    CONTROL         "マウス・ジェスチャーを使用する(&K)",IDC_CHK_MOUSE_GESTURE,"Button",BS_AUTO3STATE,129,111,110,10
+    CONTROL         "mailto:無効(&L)",IDC_CHK_BLOCK_MAILTO,"Button",BS_AUTO3STATE,129,123,110,10
+    LTEXT           "自動更新",IDC_STATIC,244,59,60,9,SS_SUNKEN | NOT WS_GROUP
+    CONTROL         "なし(&1)",IDC_RADIO_RELOAD_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,242,75,56,8
+    CONTROL         "15秒(&2)",IDC_RADIO_RELOAD_15SEC,"Button",BS_AUTORADIOBUTTON,242,87,56,8
+    CONTROL         "30秒(&3)",IDC_RADIO_RELOAD_30SEC,"Button",BS_AUTORADIOBUTTON,242,99,56,8
+    CONTROL         "1分(&4)",IDC_RADIO_RELOAD_1MIN,"Button",BS_AUTORADIOBUTTON,242,111,56,8
+    CONTROL         "2分(&5)",IDC_RADIO_RELOAD_2MIN,"Button",BS_AUTORADIOBUTTON,242,123,56,8
+    CONTROL         "5分(&6)",IDC_RADIO_RELOAD_5MIN,"Button",BS_AUTORADIOBUTTON,242,135,56,8
+    CONTROL         "ユーザー設定(&7)",IDC_RADIO_RELOAD_USER,"Button",BS_AUTORADIOBUTTON,242,147,62,8
+    LTEXT           "検索用URL設定　※拡張プロパティを有効にしなくても反映されます",IDC_STATIC_EXSEARCH,7,163,297,9,SS_SUNKEN
+    CONTROL         "検索バーでなくアドレスバーの文字列を使用",IDC_CHECK_EXSEARCH_ADDRESSBAR,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,7,175,142,10
+    LTEXT           "Encode",IDC_STATIC_EXSEARCH_ENCODE,7,187,25,10
+    CONTROL         "none",IDC_RADIO_EXSEARCH_NONE,"Button",BS_AUTORADIOBUTTON | WS_GROUP | WS_TABSTOP,35,186,25,10
+    CONTROL         "sjis",IDC_RADIO_EXSEARCH_SJIS,"Button",BS_AUTORADIOBUTTON,59,186,23,10
+    CONTROL         "euc",IDC_RADIO_EXSEARCH_EUC,"Button",BS_AUTORADIOBUTTON,83,186,20,10
+    CONTROL         "utf8",IDC_RADIO_EXSEARCH_UTF8,"Button",BS_AUTORADIOBUTTON,106,186,22,10
+    LTEXT           "FrontKeyword",IDC_STATIC_EXSEARCH_FRONTKEYWORD,150,175,40,10
+    EDITTEXT        IDC_EDIT_EXSEARCH_FRONTKEYWORD,194,174,110,12,ES_AUTOHSCROLL
+    LTEXT           "BackKeyword",IDC_STATIC_EXSEARCH_BACKKEYWORD,150,187,40,10
+    EDITTEXT        IDC_EDIT_EXSEARCH_BACKKEYWORD,194,186,110,12,ES_AUTOHSCROLL
+    LTEXT           "FrontURL",IDC_STATIC_EXSEARCH_FRONTURL,7,201,30,10
+    EDITTEXT        IDC_EDIT_EXSEARCH_FRONTURL,40,200,264,12,ES_AUTOHSCROLL
+    LTEXT           "BackURL",IDC_STATIC_EXSEARCH_BACKURL,7,213,30,10
+    EDITTEXT        IDC_EDIT_EXSEARCH_BACKURL,40,212,177,12,ES_AUTOHSCROLL
+    PUSHBUTTON      "消去",IDC_BUTTON_DELETE,6,228,43,14
+    PUSHBUTTON      "現在の標準設定",IDC_BUTTON_DEFAULT,49,228,55,14
+    PUSHBUTTON      "標準設定任せ",IDC_BTN_DFLTBASE,104,228,55,14
+    DEFPUSHBUTTON   "OK",IDOK,200,228,50,14,WS_GROUP
+    PUSHBUTTON      "ｷｬﾝｾﾙ",IDCANCEL,253,228,50,14
+    CONTROL         "POSTを使う",IDC_CHECK_USEPOST,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,115,42,44,10
+    LTEXT           "ショートカットコード",IDC_STATIC,228,213,56,10
+    EDITTEXT        IDC_EDIT_SHORTCUTCODE,285,212,18,12,ES_AUTOHSCROLL
 END
 
 IDD_DIALOG_CONTEXTMENU DIALOG 0, 0, 187, 41
@@ -1799,53 +1792,53 @@ BEGIN
 END
 
 IDD_DLOPTION DIALOGEX 0, 0, 236, 196
-STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SETFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "オプション"
-FONT 9, "MS UI Gothic"
+FONT 9, "MS UI Gothic", 0, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "OK", IDOK, 120, 176, 52, 16
-    PUSHBUTTON      "キャンセル", IDCANCEL, 180, 176, 52, 16
-    PUSHBUTTON      "...", IDC_BUTTON_FOLDERSELECT, 204, 13, 16, 17
-    GROUPBOX        "既定のダウンロードフォルダ", IDC_STATIC, 5, 5, 220, 28
-    AUTOCHECKBOX    "DL開始前に名前を付けて保存ダイアログを開く", IDC_CHECK_OPENDIALOG_BEFOREDL, 8, 56, 141, 10
-    AUTOCHECKBOX    "全てのダウンロードが終わった時に終了する", IDC_CHECK_CLOSEAFTERALLDL, 8, 72, 125, 10
-    AUTOCHECKBOX    "DL開始前にダウンロードマネージャーを自動的に表示する", IDC_CHECK_SHOWWINDOW_ONDL, 8, 40, 164, 10
-    GROUPBOX        "画像を保存", IDC_STATIC, 4, 88, 228, 84
-    PUSHBUTTON      "...", IDC_BUTTON_IMGFOLDERSELECT, 208, 108, 16, 17
-    GROUPBOX        "既定のダウンロードフォルダ", IDC_STATIC, 8, 100, 220, 28
-    AUTORADIOBUTTON "上書きの確認をする", IDC_RADIO_OVERWRITEPROMPT, 12, 141, 68, 10, WS_GROUP
-    AUTORADIOBUTTON "連番を付ける", IDC_RADIO_USEUNIQUENUMBER, 12, 153, 48, 10
-    GROUPBOX        "ファイルが既に存在する時", IDC_STATIC, 8, 132, 84, 36, WS_GROUP
-    COMBOBOX        IDC_CMB_DOWNLOADFOLDER, 9, 15, 191, 80, CBS_DROPDOWN | CBS_HASSTRINGS
-    COMBOBOX        IDC_CMB_IMGDOWNLOADFOLDER, 12, 110, 192, 84, CBS_DROPDOWN | CBS_HASSTRINGS
+    DEFPUSHBUTTON   "OK",IDOK,120,176,52,16
+    PUSHBUTTON      "キャンセル",IDCANCEL,180,176,52,16
+    PUSHBUTTON      "...",IDC_BUTTON_FOLDERSELECT,204,13,16,17
+    GROUPBOX        "既定のダウンロードフォルダ",IDC_STATIC,5,5,220,28
+    CONTROL         "DL開始前に名前を付けて保存ダイアログを開く",IDC_CHECK_OPENDIALOG_BEFOREDL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,56,141,10
+    CONTROL         "全てのダウンロードが終わった時に終了する",IDC_CHECK_CLOSEAFTERALLDL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,72,125,10
+    CONTROL         "DL開始前にダウンロードマネージャーを自動的に表示する",IDC_CHECK_SHOWWINDOW_ONDL,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,40,164,10
+    GROUPBOX        "画像を保存",IDC_STATIC,4,88,228,84
+    PUSHBUTTON      "...",IDC_BUTTON_IMGFOLDERSELECT,208,108,16,17
+    GROUPBOX        "既定のダウンロードフォルダ",IDC_STATIC,8,100,220,28
+    CONTROL         "上書きの確認をする",IDC_RADIO_OVERWRITEPROMPT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,141,68,10
+    CONTROL         "連番を付ける",IDC_RADIO_USEUNIQUENUMBER,"Button",BS_AUTORADIOBUTTON,12,153,48,10
+    GROUPBOX        "ファイルが既に存在する時",IDC_STATIC,8,132,84,36,WS_GROUP
+    COMBOBOX        IDC_CMB_DOWNLOADFOLDER,9,15,191,80,CBS_DROPDOWN | CBS_HASSTRINGS
+    COMBOBOX        IDC_CMB_IMGDOWNLOADFOLDER,12,110,192,84,CBS_DROPDOWN | CBS_HASSTRINGS
 END
-
 
 IDD_RENAMEDIALOG DIALOGEX 0, 0, 213, 50
-STYLE DS_3DLOOK | DS_CENTER | DS_MODALFRAME | DS_SHELLFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_SYSMENU
+STYLE DS_SETFONT | DS_MODALFRAME | DS_3DLOOK | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU
 CAPTION "名前を変更"
-FONT 9, "ＭＳ Ｐゴシック", 400, 0, 1
+FONT 9, "ＭＳ Ｐゴシック", 400, 0, 0x1
 BEGIN
-    EDITTEXT        IDC_EDIT, 5, 5, 200, 12, ES_AUTOHSCROLL
-    DEFPUSHBUTTON   "OK", IDOK, 88, 24, 55, 20
-    PUSHBUTTON      "キャンセル", IDCANCEL, 152, 24, 55, 20
+    EDITTEXT        IDC_EDIT,5,5,200,12,ES_AUTOHSCROLL
+    DEFPUSHBUTTON   "OK",IDOK,88,24,55,20
+    PUSHBUTTON      "キャンセル",IDCANCEL,152,24,55,20
 END
 
-
 IDD_DLLIST DIALOGEX 0, 0, 204, 132
-STYLE DS_SETFONT | WS_CAPTION | WS_VISIBLE | WS_POPUP | WS_THICKFRAME | WS_SYSMENU
+STYLE DS_SETFONT | WS_POPUP | WS_VISIBLE | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
 CAPTION "DLリスト"
-FONT 9, "ＭＳ Ｐゴシック", 0, 0, 1
+FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x1
 BEGIN
-    DEFPUSHBUTTON   "DL開始", IDC_DLSTART, 4, 20, 36, 16
-    PUSHBUTTON      "終了", IDC_DLFINISH, 44, 20, 24, 16
-    CONTROL         "", IDC_LIST_DL, "SysListView32", WS_TABSTOP | LVS_SHOWSELALWAYS | LVS_REPORT, 0, 40, 204, 92
-    LTEXT           "DLフォルダ", IDC_STATIC, 4, 4, 36, 12, SS_LEFT | SS_CENTERIMAGE
-    PUSHBUTTON      "...", IDC_GETDLFOLDER, 184, 4, 16, 14
-    COMBOBOX        IDC_COMBO_PARALLELDL, 104, 21, 20, 60, CBS_DROPDOWNLIST | CBS_HASSTRINGS
-    LTEXT           "同時DL数", IDC_STATIC, 72, 20, 28, 16, SS_LEFT | SS_CENTERIMAGE
-    COMBOBOX        IDC_COMBO_DLFOLDER, 40, 4, 140, 128, CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_HASSTRINGS
-    COMBOBOX        IDC_CMB_DLLISTOPTION, 128, 21, 76, 44, CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    DEFPUSHBUTTON   "DL開始",IDC_DLSTART,4,20,36,16
+    PUSHBUTTON      "終了",IDC_DLFINISH,44,20,24,16
+    CONTROL         "",IDC_LIST_DL,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | WS_TABSTOP,0,40,204,92
+    LTEXT           "DLフォルダ",IDC_STATIC,4,4,36,12,SS_CENTERIMAGE
+    PUSHBUTTON      "...",IDC_GETDLFOLDER,184,4,16,14
+    COMBOBOX        IDC_COMBO_PARALLELDL,104,21,20,60,CBS_DROPDOWNLIST | CBS_HASSTRINGS
+    LTEXT           "同時DL数",IDC_STATIC,72,20,28,16,SS_CENTERIMAGE
+    COMBOBOX        IDC_COMBO_DLFOLDER,40,4,140,128,CBS_DROPDOWN | CBS_AUTOHSCROLL | CBS_HASSTRINGS
+    COMBOBOX        IDC_CMB_DLLISTOPTION,128,21,76,44,CBS_DROPDOWNLIST | CBS_HASSTRINGS
 END
 
 
@@ -2515,8 +2508,14 @@ STRINGTABLE
 BEGIN
     ID_VIEW_TOOLBAR         "ツール バーの表示/非表示を切り替えます。\t標準のボタンでツール バーを表示します。\n標準ボタン"
     ID_VIEW_STATUS_BAR      "表示を変更するコマンドです。\tステータス バーを表示します。\nステータスバー"
-	ID_SHOW_DLMANAGER		"ダウンロードマネージャーを表示します\nダウンロードマネージャー"
     ID_VIEW_REFRESH         "最新の情報に更新\t現在のページのコンテンツを最新の情報に更新します。\n更新"
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_OPEN_TABLIST    "TabList.xmlを開く\nTabList.xmlを開く"
+    ID_SHOW_DLMANAGER       "ダウンロードマネージャーを表示します\nダウンロードマネージャー"
+    ID_BINGTRANSLATOR_MENU  "BingTranslatorで英文を翻訳します。\nBing Translator"
 END
 
 STRINGTABLE
@@ -2810,8 +2809,11 @@ BEGIN
     ID_SETFOCUS_SEARCHBAR_ENGINE "検索バーの検索エンジンへフォーカスを移します。\n検索エンジンへ"
     ID_VIEW_SEARCHBUTTON    "検索バーのボタンの表示・非表示を切り替えます。\n検索バーのボタン"
     ID_WINDOW_THUMBNAIL     "開いているウィンドウの一覧サムネイルを表示します。\nサムネイル表示"
-	ID_BINGTRANSLATOR_MENU	"BingTranslatorで英文を翻訳します。\nBing Translator"
-	ID_SAVEIMAGE			"画像を保存します。\n画像を保存"
+END
+
+STRINGTABLE
+BEGIN
+    ID_SAVEIMAGE            "画像を保存します。\n画像を保存"
 END
 
 STRINGTABLE
@@ -2898,11 +2900,6 @@ BEGIN
     ID_FILE_MRU_FILE7       "最後に閉じたファイル-7\n最後ファイル-7"
     ID_FILE_MRU_FILE8       "最後に閉じたファイル-8\n最後ファイル-8"
     ID_FILE_MRU_FILE9       "最後に閉じたファイル-9\n最後ファイル-9"
-END
-
-STRINGTABLE
-BEGIN
-    ID_FILE_OPEN_TABLIST    "TabList.xmlを開く\nTabList.xmlを開く"
 END
 
 #endif    // 日本語 (日本) resources

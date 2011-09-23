@@ -189,6 +189,9 @@ public:
 		}																	   \
 	}
 
+	// Overrides
+	virtual BOOL PreTranslateMessage(MSG *pMsg);	// 各ウィンドウへ(主にキー)メッセージを転送する
+
 	// Message map
 	BEGIN_MSG_MAP( CMainFrame )
 
@@ -246,6 +249,7 @@ public:
 		DEBUG_CHECK_FOCUS_COMMAND_ID_HANDLER_EX()
 
 		COMMAND_ID_HANDLER	 ( ID_APP_ABOUT 			, OnAppAbout			)
+		// ファイル
 		COMMAND_RANGE_HANDLER( ID_RECENTDOCUMENT_FIRST, ID_RECENTDOCUMENT_LAST, OnFileRecent )
 		COMMAND_RANGE_HANDLER( ID_FILE_MRU_FIRST	  , ID_FILE_MRU_LAST	  , OnFileRecent )
 		COMMAND_ID_HANDLER	 ( ID_FILE_NEW				, OnFileNew 			)
@@ -257,26 +261,21 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_FILE_NEW_BLANK		, OnFileNewBlank		)
 		COMMAND_ID_HANDLER_EX( ID_FILE_NEW_COPY 		, OnFileNewCopy 		)
 		COMMAND_ID_HANDLER_EX( ID_FILE_WORKOFFLINE		, OnFileWorkOffline 	)
-
+		// 編集
 		COMMAND_ID_HANDLER_EX( ID_EDIT_CUT				, OnEditCut 			)
 		COMMAND_ID_HANDLER_EX( ID_EDIT_COPY 			, OnEditCopy			)
 		COMMAND_ID_HANDLER_EX( ID_EDIT_PASTE			, OnEditPaste			)
 		COMMAND_ID_HANDLER_EX( ID_EDIT_SELECT_ALL		, OnEditSelectAll		)
-
+		// お気に入り
+		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ADD			, OnFavoriteAdd 		)
+		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ORGANIZE 	, OnFavoriteOrganize	)
 		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_SAVE	, OnFavoriteGroupSave	)
 		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ADD	, OnFavoriteGroupAdd	)	//+++ 追加
 		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ORGANIZE, OnFavoriteGroupOrganize )
 
-		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH_ALL		, OnViewRefreshAll		)
-		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP_ALL 		, OnViewStopAll 		)
-		COMMAND_ID_HANDLER_EX( ID_VIEW_FULLSCREEN		, OnViewFullScreen		)
-
 		COMMAND_ID_HANDLER_EX( ID_BACKUPOPTION_CHANGED	, OnBackUpOptionChanged )
 
-		COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabLeft 			)
-		COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabRight			)
-		COMMAND_RANGE_HANDLER( ID_TAB_IDX_1				, ID_TAB_IDX_LAST, OnTabIdx )	//+++ 先頭タブから1..8選択. 9は最後のタブを選択
-
+		// 表示
 		COMMAND_ID_HANDLER	 ( ID_VIEW_SEARCHBAR		, OnViewSearchBar		)	// U.H
 		COMMAND_ID_HANDLER	 ( ID_VIEW_COMMANDBAR		, OnViewCommandBar		)	// U.H
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TOOLBAR			, OnViewToolBar 		)
@@ -284,7 +283,6 @@ public:
 		COMMAND_ID_HANDLER	 ( ID_VIEW_LINKBAR			, OnViewLinkBar 		)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TABBAR			, OnViewTabBar			)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_STATUS_BAR		, OnViewStatusBar		)
-
 		COMMAND_ID_HANDLER	 ( ID_VIEW_GOBUTTON 		, OnViewGoButton		)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TOOLBAR_CUST 	, OnViewToolBarCust 	)
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TABBAR_MULTI 	, OnViewTabBarMulti 	)
@@ -292,36 +290,20 @@ public:
 		COMMAND_ID_HANDLER	 ( ID_VIEW_TOOLBAR_LOCK 	, OnViewToolBarLock 	)	// minit
 		COMMAND_ID_HANDLER_EX( ID_EXPLORERBAR_AUTOSHOW	, OnExplorerBarAutoShow )
 
-		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut 	)
-
-		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ADD			, OnFavoriteAdd 		)
-		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ORGANIZE 	, OnFavoriteOrganize	)
-
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_ADDRESSBAR	, OnSetFocusAddressBar	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR	, OnSetFocusSearchBar	)
+		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE, OnSetFocusSearchBarEngine )
 
-		COMMAND_ID_HANDLER	 ( ID_WINDOW_CLOSE_ALL		, OnWindowCloseAll		)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP_ALL 		, OnViewStopAll 		)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH_ALL		, OnViewRefreshAll		)
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_REFRESH_EXCEPT	, OnWindowRefreshExcept )
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FULLSCREEN		, OnViewFullScreen		)
 
 		COMMAND_ID_HANDLER	 ( ID_VIEW_IDLE 			, OnViewIdle			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_HOME 			, OnViewHome			)
 
-		// UH
-		USER_MEG_WM_MENU_GET_FAV		( OnMenuGetFav		)
-		USER_MEG_WM_MENU_GET_FAV_GROUP	( OnMenuGetFavGroup )
-		USER_MEG_WM_MENU_GET_SCRIPT 	( OnMenuGetScript	)
-		USER_MSG_WM_MENU_GOBACK 		( OnMenuGoBack		)
-		USER_MSG_WM_MENU_GOFORWARD		( OnMenuGoForward	)
-		USER_MEG_WM_MENU_GET_BINGTRANSLATE( OnMenuGetBingTranslate )
-
-		COMMAND_ID_HANDLER_EX( ID_FILE_NEW_SELECTED 	, OnFileNewSelectText	)
-
-		MSG_WM_USER_SHOW_TEXT_CHG		( OnShowTextChg  )
-
-		COMMAND_ID_HANDLER_EX( ID_GO_ADDRESSBAR 		, OnGoAddressBar )
-
-		MSG_WM_SYSCOMMAND				( OnSysCommand	  )
-		MSG_WM_INITMENUPOPUP			( OnInitMenuPopup )
-
+		// ツール
+		COMMAND_ID_HANDLER_EX( ID_REGISTER_AS_BROWSER	, OnRegisterAsBrowser )
 		COMMAND_ID_HANDLER_EX( ID_POPUP_CLOSE			 , OnPopupClose  )
 		COMMAND_ID_HANDLER_EX( ID_TITLE_CLOSE			 , OnTitleClose  )
 		COMMAND_ID_HANDLER_EX( ID_DOUBLE_CLOSE			 , OnDoubleClose )
@@ -331,10 +313,35 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_URLACTION_COOKIES_MID  , OnCookiesIE6  )
 		COMMAND_ID_HANDLER_EX( ID_URLACTION_COOKIES_LOW  , OnCookiesIE6  )
 		COMMAND_ID_HANDLER_EX( ID_URLACTION_COOKIES_ALL  , OnCookiesIE6  )
+		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION			, OnViewOption	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut )
+
+		// ウィンドウ
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_ALL		, OnWindowCloseAll		)
+		COMMAND_ID_HANDLER_EX( ID_LEFT_CLOSE			, OnLeftRightClose		)
+		COMMAND_ID_HANDLER_EX( ID_RIGHT_CLOSE			, OnLeftRightClose		)
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_EXCEPT	, OnWindowCloseExcept	)
+		COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabLeft 			)
+		COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabRight			)
+		//COMMAND_RANGE_HANDLER( ID_TAB_IDX_1				, ID_TAB_IDX_LAST, OnTabIdx )	//+++ 先頭タブから1..8選択. 9は最後のタブを選択
+
+		// UH
+		USER_MEG_WM_MENU_GET_FAV		( OnMenuGetFav		)
+		USER_MEG_WM_MENU_GET_FAV_GROUP	( OnMenuGetFavGroup )
+		USER_MEG_WM_MENU_GET_SCRIPT 	( OnMenuGetScript	)
+		USER_MSG_WM_MENU_GOBACK 		( OnMenuGoBack		)
+		USER_MSG_WM_MENU_GOFORWARD		( OnMenuGoForward	)
+		USER_MEG_WM_MENU_GET_BINGTRANSLATE( OnMenuGetBingTranslate )
+
+		MSG_WM_USER_SHOW_TEXT_CHG		( OnShowTextChg  )
+
+		COMMAND_ID_HANDLER_EX( ID_GO_ADDRESSBAR 		, OnGoAddressBar )
+
+		MSG_WM_SYSCOMMAND				( OnSysCommand	  )
+		MSG_WM_INITMENUPOPUP			( OnInitMenuPopup )
 
 		MSG_WM_USER_HILIGHT 			( OnHilight 	   );
 		MSG_WM_USER_FIND_KEYWORD		( OnFindKeyWord    );
-		MSG_WM_USER_WINDOWS_CLOSE_CMP	( OnWindowCloseCmp );
 
 		COMMAND_ID_HANDLER( ID_SEARCHBAR_SEL_DOWN, OnSearchBarCmd )
 		COMMAND_ID_HANDLER( ID_SEARCHBAR_SEL_UP  , OnSearchBarCmd )
@@ -352,7 +359,6 @@ public:
 		COMMAND_ID_HANDLER( ID_SPECIAL_UP		, OnSpecialKeys    )
 		COMMAND_ID_HANDLER( ID_SPECIAL_DOWN 	, OnSpecialKeys    )
 		COMMAND_ID_HANDLER( ID_SECURITYREPORT	, OnSecurityReport )
-		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE, OnSetFocusSearchBarEngine )
 
 		USER_MEG_WM_MENU_REFRESH_SCRIPT 	( OnMenuRefreshScript	)
 		USER_MSG_WM_MENU_RESTRICT_MESSAGE	( OnRestrictMessage 	)
@@ -390,7 +396,7 @@ public:
 
 		#define WM_PLUGIN_COMMAND	ID_PLUGIN_COMMAND
 		MESSAGE_HANDLER 			( WM_PLUGIN_COMMAND, OnPluginCommand )
-		USER_MSG_WM_OPEN_WITHEXPROP ( OnOpenWithExProp	)
+		USER_MSG_WM_OPEN_WITHEXPROP ( OnOpenWithExProp	)	// SearchBarから
 		USER_MSG_WM_GET_SEARCHBAR	( OnGetSearchBar	)
 		USER_MSG_WM_SHOW_TOOLBARMENU( OnShowToolBarMenu )
 		COMMAND_ID_HANDLER			( ID_SHOW_ACTIVEMENU, OnShowActiveMenu )
@@ -404,7 +410,7 @@ public:
 		COMMAND_ID_HANDLER( ID_FAVTREE_BAR_HISTORY	 , OnFavoriteExpBar )
 		COMMAND_ID_HANDLER( ID_FILE_OPEN_TABLIST	 , OnFileOpenTabList)
 		COMMAND_ID_HANDLER( ID_OPEN_EXE_DIR			 , OnOpenExeDir 	)
-		COMMAND_ID_HANDLER_EX( ID_REGISTER_AS_BROWSER, OnRegisterAsBrowser )
+		// Special Command
 		COMMAND_ID_HANDLER_EX( ID_SAVEIMAGE			 , OnSaveImage )
 
 		CHAIN_COMMANDS_MEMBER	( m_ReBar		)
@@ -420,8 +426,6 @@ public:
 			if (hWndChild != NULL) 								
 				::PostMessage(hWndChild, uMsg, wParam, lParam);
 		}
-
-		COMMAND_ID_HANDLER_EX	( ID_VIEW_OPTION, OnViewOption	)
 
 		CHAIN_MSG_MAP	( CDDEMessageHandler<CMainFrame>			)
 	//:::	CHAIN_MSG_MAP	( CMDIFrameTitleUpsideDownMessageHandlerWeb<CMainFrame> )
@@ -616,12 +620,6 @@ public:
 		//CHAIN_UPDATE_COMMAND_UI_MEMBER( m_DockingPluginManager )
 	END_UPDATE_COMMAND_UI_MAP()
 
-private:
-	// Overrides
-	//各ウィンドウへ(主にキー)メッセージを転送する
-	virtual BOOL PreTranslateMessage(MSG *pMsg);
-
-	HWND 		UserOpenFile(CString strFile, DWORD openFlag, int dlCtrlFlag = -1, int extendedStyleFlags = -1);
 
 	BOOL 		 OnXButtonUp(WORD wKeys, WORD wButton, CPoint point);
 	void 		 ExplorerBarAutoShow(MSG *pMsg);
@@ -633,7 +631,7 @@ private:
 	virtual BOOL OnIdle();
 	void 		 _OnIdleCritical();
 
-	void		OnTabCreate(HWND hWndChildFrame, bool bNewWindow);
+	void		OnTabCreate(HWND hWndChildFrame, DWORD dwOption);
 	void		OnTabDestory(HWND hWndChildFrame);	
 #ifdef _DEBUG
 	void		OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -664,14 +662,19 @@ private:
 	LRESULT 	OnRefreshExpBar(int nType);
 
 	LRESULT 	OnGetSearchBar() { return (LRESULT) &m_SearchBar; }
+	//------------------
+	// open
+	HWND 		UserOpenFile(CString strFileOrURL, DWORD openFlag = DonutGetStdOpenFlag(), int dlCtrlFlag = -1, int extendedStyleFlags = -1);
 	LRESULT 	OnOpenWithExProp(_EXPROP_ARGS *pArgs);
-	HWND 		OpenInternetShortcut(CString strUrlFile, DWORD dwOpenFlag);
+#if 0
 	HWND 		OpenUrlWithExProp(CString strUrl, DWORD dwOpenFlag, DWORD dwExProp, DWORD dwExProp2);
 	HWND 		OpenUrlWithExProp(CString strUrl, DWORD dwOpenFlag, CString strIniFile, CString strSection = DONUT_SECTION);
 
 	HWND 		OpenExPropertyActive(CString &strUrl, DWORD dwExProp, DWORD dwExProp2, DWORD dwOpenFlag);
 	HWND 		OpenExPropertyNew(CString &strUrl, DWORD dwExProp, DWORD dwExProp2, DWORD dwOpenFlag);
 	HWND 		OpenExPropertyNot(CString &strUrl, DWORD dwOpenFlag);
+#endif
+	//^^^^^^^^^^^^^^^^^^
 
 	LRESULT 	OnMenuDrag(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 	LRESULT 	OnMenuGetObject(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
@@ -721,6 +724,10 @@ private:
 	BOOL 		_IsRebarBandLocked();
 	LRESULT 	OnViewToolBarLock	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	void 		OnExplorerBarAutoShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void 		OnSetFocusAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
+	void 		OnSetFocusSearchBar	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
+	void 		OnSetFocusSearchBarEngine(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
+
 	LRESULT 	OnMouseWheel		(UINT fwKeys, short zDelta, CPoint point);
 	LRESULT 	OnFileRecent		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnViewIdle			(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/) { _OnIdleCritical(); return 0; }
@@ -748,7 +755,6 @@ private:
 	LRESULT		OnFileOpenTabList	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	void 		OnViewHome			(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		ShowLinkText		(BOOL bShow);
-	void 		OnFileNewSelectText	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		OnShowTextChg		(BOOL bShow);
 	void 		OnGoAddressBar		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	LRESULT 	OnSysCommand		(UINT nID, CPoint point);
@@ -759,10 +765,9 @@ private:
 	LRESULT 	OnCookiesIE6		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	LRESULT 	OnHilight			(LPCTSTR lpszKeyWord);
 	LRESULT 	OnFindKeyWord		(LPCTSTR lpszKeyWord, BOOL bBack, long Flags = 0);
-	LRESULT 	OnWindowCloseCmp	(int nTarIndex, BOOL bLeft);
-   #ifndef NO_STYLESHEET
+
 	LRESULT 	OnChangeCSS			(LPCTSTR lpszStyleSheet);
-   #endif
+
 	LRESULT 	OnSearchBarCmd		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnInitMenuPopup		(HMENU hMenuPopup, UINT uPos, BOOL bSystemMenu);
 	LRESULT 	OnFavoriteExpBar	(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -795,7 +800,13 @@ private:
 	void 		OnViewOptionDonut	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		ShowNewStyleDonutOption();
 	void 		OnViewOption		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	LRESULT 	OnWindowCloseAll	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
+	// ウィンドウ
+	void		OnWindowCloseAll(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void		OnLeftRightClose(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void		OnWindowCloseExcept(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void 		OnTabLeft(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
+	void 		OnTabRight(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
 
 	void 		_ShowBandsFullScreen(BOOL bOn, bool bInit = false);
 	void 		_FullScreen			(BOOL bOn);
@@ -804,15 +815,12 @@ private:
 	void 		OnFavoriteGroupSave	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		OnFavoriteGroupAdd	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		OnFavoriteGroupOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void 		OnViewRefreshAll	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 		OnViewStopAll		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void 		OnSetFocusAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
-	void 		OnSetFocusSearchBar	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
-	void 		OnSetFocusSearchBarEngine(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
-	void 		OnTabLeft			(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
-	void 		OnTabRight			(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
+	void 		OnViewRefreshAll	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void		OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-  #if 1 //+++
+
+  #if 0 //+++
 	//+++ 先頭タブから1..8選択. 9は最後のタブを選択
 	LRESULT 	OnTabIdx		(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl, BOOL & /*bHandled*/);
   #endif
@@ -855,10 +863,10 @@ private:
 	LRESULT 	OnMainFrameMinimize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnMainFrameMaximize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnMainFrameNormMaxSize(WORD/*wNotifyCode*/,WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-   #ifndef NO_STYLESHEET
+
 	LRESULT 	OnUseUserStyleSheet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnSetUserStyleSheet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-   #endif
+
 	LRESULT 	OnShowExMenu		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnSelectUserFolder	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT 	OnSearchHistory		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);

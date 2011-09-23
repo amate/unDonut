@@ -44,13 +44,15 @@ public:
 	// Constructor
 	CDonutView(CChildFrameUIStateChange& UI);
 
-	void	SetDefaultFlags(DWORD dwDefaultDLControlFlags, DWORD dwDefaultExtendedStyleFlags);
+	void	SetDefaultFlags(DWORD dwDefaultDLCtrl, DWORD dwDefaultExStyle, DWORD dwAutoRefresh);
 	void	SetAutoRefreshStyle(DWORD dwStyle);
 
 	// Methods
 	DWORD	GetDLControlFlags() const { return m_dwDLControlFlags; }
 	void	PutDLControlFlags(DWORD dwDLControlFlags);
+
 	DWORD	GetExStyle() const { return m_dwExStyle; }
+	void	SetExStyle(DWORD dwExStyle);
 	void	SetIeMenuNoCstm(int nStatus);
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
