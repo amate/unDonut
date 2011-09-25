@@ -27,6 +27,8 @@ struct ChildFrameUIData {
 	bool	bNavigateBack;
 	bool	bNavigateForward;
 	CString strTitle;
+	CString strLocationURL;
+	CString strFaviconURL;
 	CString	strStatusBar;
 	long	nProgress;
 	long	nProgressMax;
@@ -186,6 +188,8 @@ public:
 	void	SetNavigateBack(bool b);
 	void	SetNavigateForward(bool b);
 	void	SetTitle(LPCTSTR strTitle);
+	void	SetLocationURL(LPCTSTR strURL);
+	void	SetFaviconURL(LPCTSTR strURL);
 	void	SetStatusText(LPCTSTR strText);
 	void	SetProgress(long nProgress, long nProgressMax);
 	void	SetSecureLockIcon(int nIcon);

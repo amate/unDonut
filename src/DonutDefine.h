@@ -486,6 +486,40 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
+// void	OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData)
+#define WM_ADDRECENTCLOSEDTAB	(WM_USER + 107)
+#define USER_MSG_WM_ADDRECENTCLOSEDTAB(func)	\
+	if (uMsg == WM_ADDRECENTCLOSEDTAB) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((ChildFrameDataOnClose*)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon)
+#define WM_BROWSERLOCATIONCHANGE	(WM_USER + 108)
+#define USER_MSG_WM_BROWSERLOCATIONCHANGE(func)	\
+	if (uMsg == WM_BROWSERLOCATIONCHANGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((LPCTSTR)wParam, (HICON)lParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnSetSearchText(LPCTSTR strText, bool bHilightOn)
+#define WM_SETSEARCHTEXT	(WM_USER + 109)
+#define USER_MSG_WM_SETSEARCHTEXT(func)	\
+	if (uMsg == WM_SETSEARCHTEXT) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((LPCTSTR)wParam, lParam != 0);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_COMMAND_FROM_CHILDFRAME	(WM_USER + 110)
 
 //----------------------------------------------------------------------------
 #define BEGIN_MSG_MAP_EX_decl(theClass) 				\

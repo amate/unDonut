@@ -35,7 +35,7 @@ void SeptTextToLines(std::vector<CString>& strs, const TCHAR* text);
 unsigned	eseHankakuStrLen(const TCHAR* s);
 
 ///+++ —”ñ”¼Špw’è‚Åw’è‚³‚ê‚½•¶š”‚Ü‚Å‚Ì•¶š—ñ‚ğ•Ô‚·.
-const CString eseHankakuStrLeft(const CString& str, unsigned len);
+const CString eseHankakuStrLeft(const CString& str, int len);
 
 
 // ==========================================================================

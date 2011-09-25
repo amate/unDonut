@@ -600,7 +600,7 @@ void MtlWriteProfileReBarBandsState( _Profile &__profile, CReBarCtrl rebar, cons
 struct CReBarBandInfo {
 	UINT		nIndex; 	// must be filled, cause stable_sort requires CRT
 	HWND		hWnd;
-	UINT_PTR	nID;
+	UINT		nID;
 	UINT		fStyle;
 	LPTSTR		lpText;
 	UINT		cx; 		// can be 0

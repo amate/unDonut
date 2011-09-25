@@ -109,7 +109,7 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 		break;
 
 	case STARTUP_GOHOME:
-		hWndChild = __frame.OnUserOpenFile(CString(), 0);
+		hWndChild = __frame.UserOpenFile(CString(), 0);
 		if (hWndChild) {
 			CWebBrowser2	browser = DonutGetIWebBrowser2(hWndChild);
 			if (browser.m_spBrowser != NULL)
@@ -126,7 +126,7 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 		{
 			CString 	strPath(s_szDfgPath);
 			if ( !strPath.IsEmpty() )
-				__frame.OnUserOpenFile(s_szDfgPath, 0);
+				__frame.UserOpenFile(s_szDfgPath, 0);
 		}
 		break;
 

@@ -6,7 +6,7 @@
 #include "stdafx.h"
 #include "ChildFrameCommandUIUpdater.h"
 #include "ChildFrame.h"
-
+#include "FaviconManager.h"
 
 // Data members
 vector<unique_ptr<ChildFrameUIData> >	CChildFrameCommandUIUpdater::s_vecpUIData;
@@ -29,6 +29,7 @@ void	CChildFrameCommandUIUpdater::RemoveCommandUIMap(HWND hWndChildFrame)
 
 void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 {
+	s_hWndActiveChildFrame = hWndChildFrame;
 	if (hWndChildFrame == NULL) {
 		s_nActiveUIIndex = -1;
 
@@ -36,6 +37,7 @@ void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 		strapp.LoadString(IDR_MAINFRAME);
 		::SetWindowText(s_hWndMainFrame, strapp);
 		CWindow(s_hWndMainFrame).GetDlgItem(ATL_IDW_STATUS_BAR).SetWindowText(_T(""));
+		::SendMessage(s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)_T("\0"), 0);
 	} else {
 		s_nActiveUIIndex = _GetIndexFromHWND(hWndChildFrame);
 
@@ -44,6 +46,9 @@ void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 		CString strMainTitle;
 		strMainTitle.Format(_T("%s - %s"), s_vecpUIData[s_nActiveUIIndex]->strTitle, strapp);
 		::SetWindowText(s_hWndMainFrame, strMainTitle);
+
+		HICON hFavicon = CFaviconManager::GetFavicon(s_vecpUIData[s_nActiveUIIndex]->strFaviconURL);
+		::SendMessage(s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)(LPCTSTR)s_vecpUIData[s_nActiveUIIndex]->strLocationURL, (LPARAM)hFavicon);
 	}
 	_UIUpdate();
 }
@@ -355,7 +360,8 @@ void	CChildFrameUIStateChange::SetNavigateBack(bool b)
 	ChildFrameUIData& data = GetUIData();
 	if (data.bNavigateBack != b) {
 		data.bNavigateBack = b;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 
@@ -364,7 +370,8 @@ void	CChildFrameUIStateChange::SetNavigateForward(bool b)
 	ChildFrameUIData& data = GetUIData();
 	if (data.bNavigateForward != b) {
 		data.bNavigateForward = b;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 
@@ -372,16 +379,32 @@ void	CChildFrameUIStateChange::SetTitle(LPCTSTR strTitle)
 {
 	ChildFrameUIData& data = GetUIData();
 	data.strTitle	= strTitle;
-	SendMessage(CChildFrameCommandUIUpdater::s_hWndMainFrame, WM_BROWSERTITLECHANGE, (WPARAM)m_hWndChildFrame, (LPARAM)strTitle);
+	::SendMessage(CChildFrameCommandUIUpdater::s_hWndMainFrame, WM_BROWSERTITLECHANGE, (WPARAM)m_hWndChildFrame, (LPARAM)strTitle);
 }
 
+void	CChildFrameUIStateChange::SetLocationURL(LPCTSTR strURL)
+{
+	ChildFrameUIData& data = GetUIData();
+	if (data.strLocationURL != strURL) {
+		data.strLocationURL	= strURL;
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			::SendMessage(CChildFrameCommandUIUpdater::s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)strURL, 0);
+	}
+}
+
+void	CChildFrameUIStateChange::SetFaviconURL(LPCTSTR strURL)
+{
+	ChildFrameUIData& data = GetUIData();
+	data.strFaviconURL = strURL;
+}
 
 void	CChildFrameUIStateChange::SetStatusText(LPCTSTR strText)
 {
 	ChildFrameUIData& data = GetUIData();
 	if (data.strStatusBar != strText) {
 		data.strStatusBar = strText;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 
 }
@@ -392,7 +415,8 @@ void	CChildFrameUIStateChange::SetProgress(long nProgress, long nProgressMax)
 	if (data.nProgress != nProgress || data.nProgressMax != nProgressMax) {
 		data.nProgress		= nProgress;
 		data.nProgressMax	= nProgressMax;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 
@@ -401,7 +425,8 @@ void	CChildFrameUIStateChange::SetSecureLockIcon(int nIcon)
 	ChildFrameUIData& data = GetUIData();
 	if (data.nSecureLockIcon != nIcon) {
 		data.nSecureLockIcon = nIcon;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 
@@ -410,7 +435,8 @@ void	CChildFrameUIStateChange::SetPrivacyImpacted(bool b)
 	ChildFrameUIData& data = GetUIData();
 	if (data.bPrivacyImpacted != b) {
 		data.bPrivacyImpacted = b;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 
@@ -419,7 +445,8 @@ void	CChildFrameUIStateChange::SetDLCtrl(DWORD dw)
 	ChildFrameUIData& data = GetUIData();
 	if (data.dwDLCtrl != dw) {
 		data.dwDLCtrl = dw;
-		CChildFrameCommandUIUpdater::_UIUpdate();
+		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
+			CChildFrameCommandUIUpdater::_UIUpdate();
 	}
 }
 

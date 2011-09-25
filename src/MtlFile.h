@@ -252,9 +252,9 @@ inline LPTSTR _MtlMakeFileOperationBuffer(const CSimpleArray<CString> &arrFiles)
 	::memset(lpsz, 0, nLen);
 
 	LPTSTR lpszRunner = lpsz;
-
+	LPTSTR	pEnd	= lpsz + nLen;
 	for (i = 0; i < arrFiles.GetSize(); ++i) {
-		::lstrcpy(lpszRunner, arrFiles[i]);
+		::_tcscpy_s(lpszRunner, (pEnd - lpszRunner) / sizeof(TCHAR), arrFiles[i]);
 		lpszRunner += arrFiles[i].GetLength() + 1;
 	}
 
@@ -319,19 +319,16 @@ inline CString MtlGetShortcutLink(const CString &strPath)
 	HRESULT hr = ::CoCreateInstance(CLSID_ShellLink, NULL, CLSCTX_ALL, IID_IShellLink, (void **) &spShellLink);
 	if ( SUCCEEDED(hr) ) {
 		CComQIPtr<IPersistFile> spPersistFile(spShellLink);
-
 		if (spPersistFile) {
 			// load shortcut
 			USES_CONVERSION;
 			hr = spPersistFile->Load(T2COLE(strPath), STGM_READ);
-
 			if ( SUCCEEDED(hr) ) {
 				// get link
-				TCHAR			szFilePath[MAX_PATH];
-				::lstrcpy(szFilePath, strPath);
+				TCHAR	szFilePath[MAX_PATH];
+				::_tcscpy_s(szFilePath, strPath);
 				WIN32_FIND_DATA wfd;
 				hr = spShellLink->GetPath(szFilePath, MAX_PATH, &wfd, SLGP_UNCPRIORITY);
-
 				if ( SUCCEEDED(hr) )
 					return szFilePath;
 			}
@@ -425,7 +422,7 @@ inline void _MtlRemoveHeaderNonAlpha(CString &str)
 
 	int 	nLen = str.GetLength() + 1;
 	LPTSTR	lpsz = (LPTSTR) _alloca( nLen * sizeof (TCHAR) );
-	::lstrcpy(lpsz, str);
+	::_tcscpy_s(lpsz, nLen, str);
 
 	LPCTSTR lpszRunner;
 

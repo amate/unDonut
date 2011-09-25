@@ -69,7 +69,7 @@ const CString GetStrWord(const TCHAR* str, const TCHAR** ppNext)
 	if (ppNext)
 		*ppNext = p;
 	size_t l = end - bgn;
-	return CString(bgn, l);
+	return CString(bgn, (int)l);
 	#undef IS_SPACE
 	#undef IS_SPACE_EOS
 }
@@ -99,7 +99,7 @@ void SeptTextToLines(std::vector<CString>& strs, const TCHAR* text)
 		if (c == '\r' || c == '\n' || c == '\0') {
 			ptrdiff_t l = p - t - 1;
 			if (l > 0)
-				strs.push_back(CString(t, l));
+				strs.push_back(CString(t, (int)l));
 			if (c == 0)
 				break;
 			if (c == '\r' && *p == '\n')
@@ -135,12 +135,12 @@ unsigned	eseHankakuStrLen(const TCHAR* s)
 
 /** éóîÒîºäpéwíËÇ≈éwíËÇ≥ÇÍÇΩï∂éöêîÇ‹Ç≈ÇÃï∂éöóÒÇï‘Ç∑.
  */
-const CString eseHankakuStrLeft(const CString& str, unsigned len)
+const CString eseHankakuStrLeft(const CString& str, int len)
 {
   #ifdef UNICODE
 	LPCTSTR		t = LPCTSTR(str);
 	LPCTSTR		s = t;
-	unsigned l = 0;
+	int		 l = 0;
 	unsigned b = 0;
 	while (*s) {
 		unsigned c = *s;
@@ -155,7 +155,7 @@ const CString eseHankakuStrLeft(const CString& str, unsigned len)
 		b = l;
 		++s;
 	}
-	l = s - t;
+	l = static_cast<int>(s - t);
 	return str.Left(l);
   #else	//+++ SJISÇ»ÇÁÇªÇÃÇ‹Ç‹ï∂éöêîÇ≈Ç¢Ç¢Ç‚
 	return str.Left(len);
@@ -225,7 +225,7 @@ const std::vector<char> sjis_to_eucjp(const char* pSjis)
 	if (pSjis == NULL)
 		return vecEucjp;
 	const unsigned char* s = (const unsigned char*)pSjis;
-	unsigned			 l = 0;
+	int				 l = 0;
 	int					 c;
 	while ((c = *s++) != 0) {
 		++l;
@@ -255,7 +255,7 @@ const std::vector<char> sjis_to_eucjp(const char* pSjis)
 			*d++ = (unsigned char)c;
 		}
 	} while (c);
-	l = (char*)d - (char*)&vecEucjp[0];
+	l = static_cast<int>((char*)d - (char*)&vecEucjp[0]);
 	vecEucjp.resize(l);
 	return vecEucjp;
 }
@@ -269,7 +269,7 @@ const std::vector<char>	eucjp_to_sjis(const char* pEucjp)
 	std::vector<char>	vecSjis;
 	if (pEucjp== NULL)
 		return vecSjis;
-	unsigned l = strlen(pEucjp);
+	unsigned l = (unsigned)strlen(pEucjp);
 	if (l == 0)
 		return vecSjis;
 	vecSjis.resize( l + 1 );
@@ -296,7 +296,7 @@ const std::vector<char>	eucjp_to_sjis(const char* pEucjp)
 			}
 		}
 	} while (c);
-	l = (char*)d - (char*)&vecSjis[0];
+	l = static_cast<unsigned>((char*)d - (char*)&vecSjis[0]);
 	if (l != vecSjis.size())
 		vecSjis.resize(l);
 	return vecSjis;
@@ -412,7 +412,7 @@ const std::vector<char> sjis_to_sjis(const char* pSjis)
 {
 	std::vector<char> vecSjis;
 	if (pSjis && pSjis[0]) {
-		unsigned l = strlen(pSjis) + 1;
+		unsigned l = static_cast<unsigned>(strlen(pSjis) + 1);
 		vecSjis.resize( l );
 		memcpy(&vecSjis[0], pSjis, l);
 	}
@@ -426,7 +426,7 @@ const std::vector<wchar_t> wcs_to_wcs(const wchar_t* pWcs)
 {
 	std::vector<wchar_t> vecWcs;
 	if (pWcs && pWcs[0]) {
-		unsigned l = wcslen(pWcs) + 1;
+		unsigned l = (unsigned)wcslen(pWcs) + 1;
 		vecWcs.resize( l );
 		memcpy(&vecWcs[0], pWcs, l * 2);
 	}
@@ -1040,7 +1040,7 @@ const CString	GetFileNameNoExt(const CString& strFileName)
 	if (p) {
 		if (p == baseName)
 			return CString();
-		return CString(name, p - name);
+		return CString(name, static_cast<int>(p - name));
 	}
 	return strFileName;
   #else
@@ -1500,10 +1500,10 @@ bool mallocHeapCompact()
 {
   #if 1	//
 	INT_PTR 	hCrtHeap 	= _get_heap_handle();
-	UINT		rc			= ::HeapCompact((PVOID)hCrtHeap, 0);
+	SIZE_T		rc			= ::HeapCompact((PVOID)hCrtHeap, 0);
 	HANDLE hProcessHeap		= GetProcessHeap();
-	UINT		rc2			= ::HeapCompact(hProcessHeap, 0);
-	return (rc|rc2) > 0;
+	SIZE_T		rc2			= ::HeapCompact(hProcessHeap, 0);
+	return (rc | rc2) > 0;
   #endif
 	return false;
 }

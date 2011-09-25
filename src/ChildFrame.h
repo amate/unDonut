@@ -21,6 +21,17 @@ struct NewChildFrameData {
 	{	}
 };
 
+struct ChildFrameDataOnClose {
+	CString strURL;
+	CString strTitle;
+	vector<std::pair<CString, CString> > TravelLogFore;
+	vector<std::pair<CString, CString> > TravelLogBack;
+	DWORD	dwDLCtrl;
+
+	ChildFrameDataOnClose() : dwDLCtrl(0)
+	{	}
+};
+
 
 /////////////////////////////////////////////////////////////
 // CChildFrame
@@ -35,6 +46,7 @@ public:
 	HWND	CreateEx(HWND hWndParent);
 	void	Navigate2(LPCTSTR lpszURL);
 
+	HWND	GetHwnd() const;
 	DWORD	GetExStyle() const;
 	void	SetExStyle(DWORD dwStyle);
 	void	SetDLCtrl(DWORD dwDLCtrl);
@@ -42,6 +54,7 @@ public:
 	void	SetAutoRefreshStyle(DWORD dwAutoRefresh);
 	void	SaveSearchWordflg(bool bSave);
 	void	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
+	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back);
 
 	CComPtr<IWebBrowser2>	GetIWebBrowser();
 	CComPtr<IWebBrowser2>	GetMarshalIWebBrowser();

@@ -100,10 +100,9 @@ BEGIN
         MENUITEM "印刷プレビュー(&V)...",              ID_FILE_PRINT_PREVIEW
         MENUITEM SEPARATOR
         MENUITEM "プロパティ(&R)",                   ID_FILE_PROPERTIES
-        MENUITEM "オフライン作業(&W)",                 ID_FILE_WORKOFFLINE
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM SEPARATOR
-        POPUP "最近閉じたファイル(&F)"
+        POPUP "最近閉じたタブ(&F)"
         BEGIN
             MENUITEM "(なし)",                        ID_RECENTDOCUMENT_FIRST, INACTIVE
         END
@@ -321,23 +320,6 @@ BEGIN
         MENUITEM "左のタブ(&X)",                    ID_TAB_LEFT
         MENUITEM "右のタブ(&V)",                    ID_TAB_RIGHT
         MENUITEM SEPARATOR
-        POPUP "アクティブなウィンドウ(&E)"
-        BEGIN
-            MENUITEM "元のサイズに戻す(&R)",                ID_WINDOW_RESTORE
-            MENUITEM "移動(&M)",                      ID_WINDOW_MOVE
-            MENUITEM "サイズ変更(&S)",                   ID_WINDOW_SIZE
-            MENUITEM "最小化(&N)",                     ID_WINDOW_MINIMIZE
-            MENUITEM "最大化(&X)",                     ID_WINDOW_MAXIMIZE
-            MENUITEM SEPARATOR
-            MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
-            MENUITEM SEPARATOR
-            MENUITEM "次のウィンドウ(&T)",                 ATL_IDS_SCNEXTWINDOW
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "重ねて表示(&A)",                   ID_WINDOW_CASCADE
-        MENUITEM "上下に並べて表示(&H)",                ID_WINDOW_TILE_HORZ
-        MENUITEM "左右に並べて表示(&T)",                ID_WINDOW_TILE_VERT
-        MENUITEM "アイコンの整列(&I)",                 ID_WINDOW_ARRANGE
     END
     POPUP "ヘルプ(&H)"
     BEGIN

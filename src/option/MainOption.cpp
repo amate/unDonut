@@ -8,6 +8,7 @@
 #include "../MtlWeb.h"
 #include "../DonutPFunc.h"
 #include "../ie_feature_control.h"
+#include "../RecentClosedTabList.h"
 
 
 #if defined USE_ATLDBGMEM
@@ -35,20 +36,24 @@ bool		CMainOption::s_bTabMode 				= false;
 volatile bool CMainOption::s_bAppClosing			= false;
 volatile bool CMainOption::s_bIgnoreUpdateClipboard	= false;
 
-CRecentDocumentListFixed *		CMainOption::s_pMru = NULL;
 
+DWORD	CMainOption::s_dwErrorBlock 			= 0;
 
-DWORD		CMainOption::s_dwErrorBlock 			= 0;
+CString	CMainOption::s_strExplorerUserDirectory;
 
-CString *	CMainOption::s_pstrExplorerUserDirectory= NULL;
+bool	CMainOption::s_bTravelLogGroup			= false;
+bool	CMainOption::s_bTravelLogClose			= false;
 
-bool		CMainOption::s_bTravelLogGroup			= false;
-bool		CMainOption::s_bTravelLogClose			= false;
+bool	CMainOption::s_bStretchImage			= false;
 
-bool		CMainOption::s_bStretchImage			= false;
+bool	CMainOption::s_bIgnore_blank			= false;
+bool	CMainOption::s_bUseCustomFindBar		= false;
 
-bool		CMainOption::s_bIgnore_blank			= false;
-bool		CMainOption::s_bUseCustomFindBar		= false;
+int		CMainOption::s_nMaxRecentClosedTabCount		= 16;
+int		CMainOption::s_RecentClosedTabMenuType		= RECENTDOC_MENUTYPE_URL;
+
+int		CMainOption::s_nAutoImageResizeType	= AUTO_IMAGE_RESIZE_LCLICK;
+
 
 CMainOption::CMainOption()
 {
@@ -58,10 +63,8 @@ CMainOption::CMainOption()
 
 void CMainOption::GetProfile()
 {
-	DWORD			dwTravelLogGroup = 0;
-	DWORD			dwTravelLogClose = 0;
+	CIniFileI	pr( g_szIniFileName, _T("Main") );
 	{
-		CIniFileI	pr( g_szIniFileName, _T("Main") );
 		pr.QueryValue( s_dwMainExtendedStyle	, _T("Extended_Style")		);
 		pr.QueryValue( s_dwMainExtendedStyle2	, _T("Extended_Style2") 	);
 		pr.QueryValue( s_dwMaxWindowCount		, _T("Max_Window_Count")	);
@@ -69,21 +72,14 @@ void CMainOption::GetProfile()
 		pr.QueryValue( s_dwAutoRefreshTime		, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
 		pr.QueryValue( s_dwExplorerBarStyle 	, _T("ExplorerBar_Style")	);	// UH
 		pr.QueryValue( s_dwErrorBlock			, _T("ErrorBlock")			);	//minit
-		pr.QueryValue( dwTravelLogGroup 		, _T("TravelLogGroup")		);
-		pr.QueryValue( dwTravelLogClose 		, _T("TravelLogClose")		);
-		pr.Close();
+		s_bTravelLogGroup	= pr.GetValue(_T("TravelLogGroup"), s_bTravelLogGroup) != 0;
+		s_bTravelLogClose	= pr.GetValue(_T("TravelLogClose"), s_bTravelLogClose) != 0;
+		pr.QueryValue( s_nMaxRecentClosedTabCount, _T("MaxRecentClosedTabCount"));
+		pr.QueryValue( s_RecentClosedTabMenuType , _T("RecentClosedTabMenuType"));
 	}
 
-	s_bTravelLogGroup			= dwTravelLogGroup != 0;		//+++ ? true : false;
-	s_bTravelLogClose			= dwTravelLogClose != 0;		//+++ ? true : false;
-
-	ATLASSERT(s_pMru == 0);
-	s_pMru	= new CRecentDocumentListFixed;
-	s_pMru->SetMaxEntries(9);
-	s_pMru->ReadFromIniFile();
-
-	s_bTabMode		= (s_dwMainExtendedStyle & MAIN_EX_NOMDI) != 0;
-	s_bIgnore_blank	= (s_dwMainExtendedStyle & MAIN_EX_IGNORE_BLANK) != 0;
+	s_bTabMode			= (s_dwMainExtendedStyle & MAIN_EX_NOMDI) != 0;
+	s_bIgnore_blank		= (s_dwMainExtendedStyle & MAIN_EX_IGNORE_BLANK) != 0;
 	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
 
 	// NOTE. If all the Web Browser server on your desktop is unloaded, some OS automatically goes online.
@@ -92,16 +88,11 @@ void CMainOption::GetProfile()
 		MtlSetGlobalOffline( _check_flag(MAIN_EX_GLOBALOFFLINE, s_dwMainExtendedStyle) );
 	}
 
-	//メモリ確保するんでちゃんと消すように
-	{
-		CIniFileI	pr( g_szIniFileName, _T("Explorer_Bar") );
-		ATLASSERT(s_pstrExplorerUserDirectory == NULL);
-		s_pstrExplorerUserDirectory = new CString( pr.GetStringUW(_T("UserDirectory")) );
-	}
+	pr.QueryValue(s_nAutoImageResizeType, _T("AutoImageResizeType"));
 
-	DWORD dwAutoResize = 0;
-	CIniFileI	pr( g_szIniFileName, _T("Main") );
-	pr.QueryValue( dwAutoResize, _T("AutoResize") );
+
+	pr.ChangeSectionName( _T("Explorer_Bar") );
+	s_strExplorerUserDirectory = pr.GetStringUW(_T("UserDirectory"));	
 }
 
 
@@ -113,8 +104,6 @@ void CMainOption::WriteProfile()
 	else
 		s_dwMainExtendedStyle &= ~MAIN_EX_GLOBALOFFLINE;
 
-	DWORD		dwTravelLogGroup = s_bTravelLogGroup != 0;		//+++ ? 1 : 0;
-	DWORD		dwTravelLogClose = s_bTravelLogClose != 0;		//+++ ? 1 : 0;
 	CIniFileO	pr( g_szIniFileName, _T("Main") );
 	{
 		pr.SetValue( s_dwMainExtendedStyle	, _T("Extended_Style")		);
@@ -123,65 +112,31 @@ void CMainOption::WriteProfile()
 		pr.SetValue( s_dwMaxWindowCount 	, _T("Max_Window_Count")	);
 		pr.SetValue( s_dwBackUpTime 		, _T("BackUp_Time") 		);
 		pr.SetValue( s_dwAutoRefreshTime	, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
-		pr.SetValue( dwTravelLogGroup		, _T("TravelLogGroup")		);
-		pr.SetValue( dwTravelLogClose		, _T("TravelLogClose")		);
+		pr.SetValue( s_bTravelLogGroup		, _T("TravelLogGroup")		);
+		pr.SetValue( s_bTravelLogClose		, _T("TravelLogClose")		);
+		pr.SetValue( s_nMaxRecentClosedTabCount, _T("MaxRecentClosedTabCount"));
+		pr.SetValue( s_RecentClosedTabMenuType , _T("RecentClosedTabMenuType"));
 	}
 
-	ATLASSERT(s_pMru != NULL);
-	if (s_pMru) {									//+++ 念のためチェック.
-		s_pMru->WriteToIniFile();
+	pr.SetValue(s_nAutoImageResizeType, _T("AutoImageResizeType"));
 
-		if (s_dwMainExtendedStyle2 & MAIN_EX2_DEL_RECENTCLOSE)
-			s_pMru->DeleteIniKeys();
 
-		delete	s_pMru;
-		s_pMru	= 0;								//+++ deleteしたらクリア.
-	}
-
-	//確保した分はちゃんと消す
-	if (s_pstrExplorerUserDirectory) {			//+++ 念のため先にチェック.
-		pr.ChangeSectionName(_T("Explorer_Bar"));
-		pr.SetStringUW( *s_pstrExplorerUserDirectory, _T("UserDirectory") );
-		delete s_pstrExplorerUserDirectory;
-		s_pstrExplorerUserDirectory = 0;		//+++ deleteしたらクリア.
-	}
+	pr.ChangeSectionName(_T("Explorer_Bar"));
+	pr.SetStringUW( s_strExplorerUserDirectory, _T("UserDirectory") );
 }
-
-
 
 void CMainOption::SetExplorerUserDirectory(const CString &strPath)
 {
-	ATLASSERT(s_pstrExplorerUserDirectory != NULL);
-	if (s_pstrExplorerUserDirectory)
-		*s_pstrExplorerUserDirectory	= strPath;
+	s_strExplorerUserDirectory = strPath;
+
+	CIniFileO pr(g_szIniFileName, _T("Explorer_Bar"));
+	pr.SetStringUW( s_strExplorerUserDirectory, _T("UserDirectory") );
 }
-
-
 
 const CString& CMainOption::GetExplorerUserDirectory()
 {
-	ATLASSERT(s_pstrExplorerUserDirectory != NULL);
-	return *s_pstrExplorerUserDirectory;
+	return s_strExplorerUserDirectory;
 }
-
-
-
-void CMainOption::SetMRUMenuHandle(HMENU hMenu, int nPos)
-{
-	HMENU hFileMenu = ::GetSubMenu(hMenu, 0);
-
-  #ifdef _DEBUG
-	// absolute position, can change if menu changes
-	TCHAR 	szMenuString[256];
-	szMenuString[0] = 0;	//+++
-	::GetMenuString(hFileMenu, nPos, szMenuString, sizeof (szMenuString), MF_BYPOSITION);
-	ATLASSERT(lstrcmp( szMenuString, _T("最近閉じたファイル(&F)") ) == 0);
-  #endif	//_DEBUG
-	HMENU hMruMenu	= ::GetSubMenu(hFileMenu, nPos);
-	CMainOption::s_pMru->SetMenuHandle(hMruMenu);
-	CMainOption::s_pMru->UpdateMenu();
-}
-
 
 
 bool CMainOption::IsQualify(int nWindowCount)
@@ -331,6 +286,8 @@ void CMainPropertyPage::_GetData()
 
 	CIniFileO pr( g_szIniFileName, _T("Main") );
 	m_lf.WriteProfile(pr);
+
+	WriteProfile();
 }
 
 
@@ -393,8 +350,7 @@ int CALLBACK CMainPropertyPage2::BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM
 
 CString CMainPropertyPage2::BrowseForFolder(const CString& strTitle, const CString& strNowPath)
 {
-	TCHAR		szDisplayName[MAX_PATH];
-	ZeroMemory(szDisplayName, sizeof szDisplayName);
+	TCHAR		szDisplayName[MAX_PATH] = _T("\0");
 
 	BROWSEINFO	bi = {
 		m_hWnd,
@@ -416,7 +372,9 @@ CString CMainPropertyPage2::BrowseForFolder(const CString& strTitle, const CStri
 
 
 // Constructor
-CMainPropertyPage2::CMainPropertyPage2(HWND hWnd) : m_wnd(hWnd)
+CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent) : 
+	m_wnd(hWnd), 
+	m_rRecentClosedTabList(rRecent)
 {
 	m_bInit 	     = FALSE;
 
@@ -439,9 +397,6 @@ CMainPropertyPage2::CMainPropertyPage2(HWND hWnd) : m_wnd(hWnd)
 	m_nMRUCountMax   = 64;
 	m_nMRUMenuType   = 0;
 	m_nMinBtn2Tray   = 0;		//+++
-  #ifndef USE_DIET
-	m_nImgAutoResize = 0;		//+++
-  #endif
 
 	_SetData();
 }
@@ -503,10 +458,10 @@ void CMainPropertyPage2::_GetData()
 	CMainOption::s_bTravelLogGroup = m_nTravelLogGroup != 0;	//+++ ? true : false;
 	CMainOption::s_bTravelLogClose = m_nTravelLogClose != 0;	//+++ ? true : false;
 
-	CMainOption::s_pMru->ResetMenu();
-	CMainOption::s_pMru->SetMaxEntries(m_nMRUCount);
-	CMainOption::s_pMru->SetMenuType(m_nMRUMenuType);
-	CMainOption::s_pMru->UpdateMenu();
+	m_rRecentClosedTabList.ResetMenu();
+	m_rRecentClosedTabList.SetMaxEntries(m_nMRUCount);
+	m_rRecentClosedTabList.SetMenuType(m_nMRUMenuType);
+	m_rRecentClosedTabList.UpdateMenu();
 
   #if 0	//+++ 失敗
 	if (m_nTitleBarStrSwap)	CMainOption::s_dwMainExtendedStyle2 	 |=  MAIN_EX2_TITLEBAR_STR_SWAP;	//+++ 追加.
@@ -520,12 +475,7 @@ void CMainPropertyPage2::_GetData()
 		CMainOption::s_dwMainExtendedStyle2 |= MAIN_EX2_MINBTN2TRAY;
   #endif
 
-  #ifndef USE_DIET	//+++ 画像ファイルの自動リサイズの設定
-	pr.ChangeSectionName( _T("ETC") );
-	pr.SetValue( m_nImgAutoResize == 0, _T("ImageAutoSize_NouseLClick") );
-	pr.SetValue( m_nImgAutoResize == 1, _T("ImageAutoSize_FirstOn")     );
-	pr.Close();
-  #endif
+	WriteProfile();
 }
 
 
@@ -557,10 +507,10 @@ void CMainPropertyPage2::_SetData()
 	m_nTravelLogGroup = CMainOption::s_bTravelLogGroup != 0;	//+++ ? 1 : 0;
 	m_nTravelLogClose = CMainOption::s_bTravelLogClose != 0;	//+++ ? 1 : 0;
 
-	m_nMRUCountMin	  = CMainOption::s_pMru->m_nMaxEntries_Min;
-	m_nMRUCountMax	  = CMainOption::s_pMru->m_nMaxEntries_Max;
-	m_nMRUCount 	  = CMainOption::s_pMru->GetMaxEntries();
-	m_nMRUMenuType	  = CMainOption::s_pMru->GetMenuType();
+	m_nMRUCountMin	  = CRecentClosedTabList::kMaxEntries_Min;
+	m_nMRUCountMax	  = CRecentClosedTabList::kMaxEntries_Max;
+	m_nMRUCount 	  = m_rRecentClosedTabList.GetMaxEntries();
+	m_nMRUMenuType	  = m_rRecentClosedTabList.GetMenuType();
 
   #if 0	//+++ 失敗
 	m_nTitleBarStrSwap= (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_TITLEBAR_STR_SWAP) != 0;	//+++ 追加.
@@ -571,14 +521,6 @@ void CMainPropertyPage2::_SetData()
 		m_nMinBtn2Tray = 2;
 	else if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY)
 		m_nMinBtn2Tray = 1;
-  #endif
-
-  #ifndef USE_DIET	//+++ 画像ファイルの自動リサイズの設定
-	pr.ChangeSectionName( _T("ETC") );
-	bool bImgAuto_NouseLClk	= pr.GetValue(_T("ImageAutoSize_NouseLClick")) != 0;
-	bool nImgSclSw			= pr.GetValue(_T("ImageAutoSize_FirstOn")) != 0;
-	m_nImgAutoResize		= bImgAuto_NouseLClk ? 0 : nImgSclSw ? 1 : 2;
-	pr.Close();
   #endif
 }
 

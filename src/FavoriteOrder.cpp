@@ -103,7 +103,7 @@ int CFavoriteOrderHandler::ReadData(const CString &strDirPath)
 BOOL CFavoriteOrderHandler::AddData(CString strSrcFileName, DWORD dwPosition)
 {
 	if (dwPosition == -1)
-		dwPosition = m_aryData.size();
+		dwPosition = (int)m_aryData.size();
 
 	if (dwPosition < 0 || m_aryData.size() < dwPosition)
 		return FALSE;
@@ -377,12 +377,11 @@ BOOL CFavoriteOrderHandler::SaveData()
 	pHeader->dwFullSizem8 = dwFullSize - pHeader->dwSize8;
 	pHeader->dwUnknown	  = IE_MENUORDER_UNKNOWN1;
 	pHeader->dwUnknown2   = IE_MENUORDER_UNKNOWN2;
-	pHeader->dwItemCount  = m_aryData.size();
+	pHeader->dwItemCount  = (int)m_aryData.size();
 	lpData				 += sizeof (OrderDataHeader);
 
 	//アイテムデータをコピー
-	int 			 nCount 	= m_aryData.size();
-
+	int nCount = (int)m_aryData.size();
 	for (int i = 0; i < nCount; i++) {
 		LPBYTE		   lpStart = lpData;
 		OrderItemData *pItem   = &m_aryData[i];
@@ -439,7 +438,7 @@ BOOL CFavoriteOrderHandler::SaveData()
 BOOL CFavoriteOrderHandler::ReConstructData(CString strDirPath)
 {
 	//フォルダのファイルを列挙してデータに含まれていないものを探して追加
-	int 							nFirstCount = m_aryData.size();
+	int 							nFirstCount = (int)m_aryData.size();
 	FavoriteDataArray::iterator 	it;
 
 	for (it = m_aryData.begin(); it != m_aryData.end(); ++it)
@@ -471,7 +470,7 @@ BOOL CFavoriteOrderHandler::ReConstructData(CString strDirPath)
 
 	//追加したデータに番号をつける
 	int 						j			= nValidCount;
-	int 						nCount		= m_aryData.size();
+	int 						nCount		= (int)m_aryData.size();
 
 	for (int i = 0; i < nCount; i++) {
 		if (m_aryData[i].dwPosition == FAVORITESORDER_NOTFOUND) {
@@ -489,7 +488,7 @@ BOOL CFavoriteOrderHandler::ReConstructData(CString strDirPath)
 int CFavoriteOrderHandler::FindName(const CString &strFileName)
 {
 	CString 	strName = MtlGetFileName(strFileName);
-	int 		nCount	= m_aryData.size();
+	int 		nCount	= (int)m_aryData.size();
 
 	for (int i = 0; i < nCount; i++) {
 		if (strName == m_aryData[i].strName)
@@ -504,8 +503,7 @@ int CFavoriteOrderHandler::FindName(const CString &strFileName)
 /// 指定した位置にある項目の番号を返す
 int CFavoriteOrderHandler::FindPosition(DWORD dwPosition)
 {
-	int 	nCount = m_aryData.size();
-
+	int nCount = (int)m_aryData.size();
 	for (int i = 0; i < nCount; i++) {
 		if (dwPosition == m_aryData[i].dwPosition)
 			return i;

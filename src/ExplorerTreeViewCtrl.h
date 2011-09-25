@@ -854,11 +854,10 @@ private:
 
 			LPTSTR			lpszText	 = NULL;
 			ATLTRY(lpszText = new TCHAR[strText.GetLength() + 1]);
-
 			if (lpszText == NULL)
 				return;
 
-			::lstrcpy(lpszText, strText);
+			::_tcscpy_s(lpszText, strText.GetLength() + 1, strText);
 			TV_INSERTSTRUCT tvis = {0};
 			tvis.hParent			 = _hItemParent;
 			tvis.hInsertAfter		 = TVI_LAST;

@@ -8,6 +8,8 @@
 #include "MtlBrowser.h"
 #include "option/AddressBarPropertyPage.h"
 #include "FlatComboBox.h"
+#include "MainFrame.h"
+
 
 //////////////////////////////////////////////////////////////
 // CDonutAddressBar::Impl
@@ -447,19 +449,12 @@ HRESULT CDonutAddressBar::Impl::OnGetAddressBarCtrlDataObject(IDataObject **ppDa
 	hr = (*ppDataObject)->QueryInterface(IID_NULL, (void **) &pHlinkDataObject);
 
 	if ( SUCCEEDED(hr) ) {
-		HWND		 hWnd	 = DonutGetActiveWindow( GetTopLevelParent() );
-
-		if (hWnd == NULL)
+		CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
+		if (pChild == NULL)
 			return E_NOTIMPL;
 
-		ATLASSERT( ::IsWindow(hWnd) );
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWnd);
-
-		if ( browser.IsBrowserNull() )
-			return E_NOTIMPL;
-
-		CString 	 strName = MtlGetWindowText(hWnd);
-		CString 	 strUrl  = browser.GetLocationURL();
+		CString 	 strName =  MtlGetWindowText(pChild->GetHwnd());
+		CString 	 strUrl  = pChild->GetLocationURL();
 
 		if ( strUrl.IsEmpty() )
 			return E_NOTIMPL;

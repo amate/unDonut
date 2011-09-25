@@ -574,7 +574,7 @@ private:
 		TCHAR		szBuff[32];
 
 		for (int nItem = 0; nItem < nMaxCount; nItem++) {
-			wsprintf(szBuff, _T("Engine%i"), nItem);
+			::_stprintf_s(szBuff, _T("Engine%i"), nItem);
 			szRetString[0]= 0;
 			DWORD dwCount = INTERNET_MAX_PATH_LENGTH;	//+++ * sizeof (TCHAR);
 

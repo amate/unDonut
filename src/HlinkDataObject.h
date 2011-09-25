@@ -288,9 +288,10 @@ private:
 			return NULL;
 
 		LPWSTR	lpszDest = (LPWSTR)::GlobalLock(hMem);
+		LPWSTR	pEnd = lpszDest + dwSize;
 		for (int i = 0; i < nCount; ++i) {
 			const CString& strUrl = m_arrNameAndUrl[i].second;
-			::wcscpy(lpszDest, strUrl);
+			::_tcscpy_s(lpszDest, (pEnd -  lpszDest) / sizeof(WCHAR), strUrl);
 			lpszDest += strUrl.GetLength() + 1;
 		}
 		*lpszDest = L'\0';

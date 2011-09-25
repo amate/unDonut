@@ -938,7 +938,7 @@
     <ClCompile Include="option\UrlSecurityExPropDialog.cpp" />
     <ClCompile Include="ParseInternetShortcutFile.cpp" />
     <ClCompile Include="PluginManager.cpp" />
-    <ClCompile Include="RecentDocumentListFixed.cpp" />
+    <ClCompile Include="RecentClosedTabList.cpp" />
     <ClCompile Include="stdafx.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">Disabled</Optimization>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -1142,7 +1142,7 @@
     <ClInclude Include="Include\PluginInfo.h" />
     <ClInclude Include="PluginManager.h" />
     <ClInclude Include="DonutOption.h" />
-    <ClInclude Include="RecentDocumentListFixed.h" />
+    <ClInclude Include="RecentClosedTabList.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
     <ClInclude Include="SearchHistoryDialog.h" />

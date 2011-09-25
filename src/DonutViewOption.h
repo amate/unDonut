@@ -94,7 +94,6 @@ public:
 
 
 public:
-	BOOL _OutPut_TravelLogs(SDfgSaveInfo::List& listFore, SDfgSaveInfo::List& listBack);
 
 	BOOL GetDfgSaveInfo(SDfgSaveInfo & rDfgSaveInfo, bool bSaveFB);
 
@@ -168,100 +167,6 @@ void	CDonutViewOption<_DonutView>::_GetProfile(const CString &strFileName, const
 		MtlSendOnCommand(__m_pDonutView->GetParent(), ID_DOCHOSTUI_OPENNEWWIN);
 	}
 }
-
-
-
-//+++ CComPtr<ITravelLogStg>pTLStg をフレームのある頁に使うとハングする... でいろいろテスト中
-template <class _DonutView>
-BOOL	CDonutViewOption<_DonutView>::_OutPut_TravelLogs(SDfgSaveInfo::List& listFore, SDfgSaveInfo::List& listBack)
-{
-	CComPtr<IWebBrowser2>		 pWB2 = 0;
-	__m_pDonutView->QueryControl(IID_IWebBrowser2, (void **) &pWB2);
-	if (pWB2 == NULL)
-		return FALSE;
-
-	CComPtr<IServiceProvider>	 pISP = 0;
-	HRESULT 					 hr;
-	hr	= pWB2->QueryInterface(IID_IServiceProvider, (void **) &pISP);
-	if (FAILED(hr) || pISP == NULL)
-		return FALSE;
-
-	CComPtr<ITravelLogStg>		 pTLStg = 0;
-	hr	= pISP->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void **) &pTLStg);
-	if (FAILED(hr) || pTLStg == NULL)
-		return FALSE;
-
-	DWORD	dwCount[2] = { 0, 0};
-	try {
-		hr	= pTLStg->GetCount(TLEF_RELATIVE_FORE/*|TLEF_RELATIVE_INCLUDE_CURRENT*/, &dwCount[0]);
-		if (FAILED(hr))
-			return FALSE;
-		hr	= pTLStg->GetCount(TLEF_RELATIVE_BACK/*|TLEF_RELATIVE_INCLUDE_CURRENT*/, &dwCount[1]);
-		if (FAILED(hr))
-			return FALSE;
-	} catch (...) {
-		ErrorLogPrintf(_T("ERROR: _OutPut_TravelLog: ..\n"));
-		return FALSE;
-	}
-	if (dwCount[0] == 0 && dwCount[1] == 0) // 単に履歴がないだけの状態ならtrue.
-		return TRUE;
-	//--dwCount[0];
-	//--dwCount[1];
-
-	CComPtr<IEnumTravelLogEntry> pTLEnum[2] = {0, 0};
-	try {
-		hr	= pTLStg->EnumEntries(TLEF_RELATIVE_FORE, &pTLEnum[0]);
-		if (FAILED(hr) || pTLEnum[0] == NULL)
-			return FALSE;
-		hr	= pTLStg->EnumEntries(TLEF_RELATIVE_BACK, &pTLEnum[1]);
-		if (FAILED(hr) || pTLEnum[1] == NULL)
-			return FALSE;
-	} catch (...) {
-		ErrorLogPrintf(_T("ERROR: _OutPut_TravelLog: ...\n"));
-		return FALSE;
-	}
-	listFore.reserve(10);
-	listBack.reserve(10);
-	for (unsigned i = 0; i < 2; ++i) {
-		int 	count = 0;
-		for (unsigned j = 0; j < dwCount[i]; ++j) {
-			CComPtr<ITravelLogEntry>  pTLEntry	= NULL;
-			LPOLESTR				  szURL 	= NULL;
-			LPOLESTR				  szTitle	= NULL;
-			try {
-				DWORD	dummy = 0;
-				hr = pTLEnum[i]->Next(1, &pTLEntry, &dummy);
-			} catch (...) { //+++
-				ErrorLogPrintf(_T("ERROR: _OutPut_TravelLog n=%d: ...\n"), count);
-				hr		 = -1;
-				pTLEntry = 0;
-			}
-			if (pTLEntry == NULL || FAILED(hr))
-				break;
-
-			if ( SUCCEEDED( pTLEntry->GetTitle(&szTitle) ) && szTitle
-			  && SUCCEEDED( pTLEntry->GetURL  (&szURL  ) ) && szURL  )
-			{
-				SDfgSaveInfo::List& arrData = (i == 0) ? listFore : listBack;
-				arrData.push_back( std::make_pair( CString(szTitle), CString(szURL) ) );
-				++count;
-			}
-
-		  #if 1 //+++	開放忘れ( http://donut.blog.shinobi.jp/Entry/4/ RAPTのブログ メモリーリーク修正 を元に)
-			if (szTitle)
-				::CoTaskMemFree( szTitle );
-			if (szURL)
-				::CoTaskMemFree( szURL );
-		  #endif
-
-			if (count >= 10)
-				break;
-		}
-	}
-
-	return TRUE;
-}
-
 
 
 /// 自動バックアップでの、_WrilteProfileの代わり.

@@ -174,7 +174,7 @@ int CPluginManager::GetCount(PLUGIN_TYPE nKind)
 	if (nKind <= 0 || PLUGIN_TYPECNT < nKind)
 		return -1;
 
-	return m_arrPluginData[nKind].size();
+	return (int)m_arrPluginData[nKind].size();
 }
 
 
@@ -515,7 +515,7 @@ void CPluginManager::Call_ShowToolBarMenu(int nKind, int nIndex, UINT uID)						
 void CPluginManager::BroadCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam)
 {
 	for (int nKind = 1; nKind <= PLUGIN_TYPECNT; nKind++) {
-		int nCount = m_arrPluginData[nKind].size();
+		int nCount = (int)m_arrPluginData[nKind].size();
 
 		for (int i = 0; i < nCount; i++) {
 			Call_PluginEvent(nKind, i, uMsg, fParam, sParam);
@@ -529,7 +529,7 @@ void CPluginManager::BroadCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sPar
 int CPluginManager::ChainCast_PluginEvent(UINT uMsg, FPARAM fParam, SPARAM sParam)
 {
 	for (int nKind = 1; nKind <= PLUGIN_TYPECNT; nKind++) {
-		int nCount = m_arrPluginData[nKind].size();
+		int nCount = (int)m_arrPluginData[nKind].size();
 
 		for (int i = 0; i < nCount; i++) {
 			int nRet = Call_PluginEvent(nKind, i, uMsg, fParam, sParam);

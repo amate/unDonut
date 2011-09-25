@@ -275,7 +275,6 @@ static bool _PrivateInit()
 // iniファイルに設定を保存する
 void _PrivateTerm()
 {
-	CMainOption::WriteProfile();
 	CDLControlOption::WriteProfile();
 	CIgnoredURLsOption::WriteProfile();
 	CCloseTitlesOption::WriteProfile();
@@ -384,7 +383,7 @@ void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
 		PerseUrls(strCmdLine, vecUrls);
 
 		std::for_each(vecUrls.cbegin(), vecUrls.cend(), [&wndMain](const CString& strUrl) {
-			wndMain.OnUserOpenFile(strUrl, 0);
+			wndMain.UserOpenFile(strUrl, DonutGetStdOpenActivateFlag());
 		});
 	}
 }
@@ -767,15 +766,6 @@ CString Donut_GetActiveStatusStr()
 #endif
 	return CString();
 }
-
-
-#if 0
-///+++ Aboutダイアログ用にアイコンロード (あとでなんとかする>自分)
-HICON Donut_LoadIcon4AboutDialog()
-{
-	return g_pMainWnd->LoadIcon4AboutDialog();
-}
-#endif
 
 
 ///+++

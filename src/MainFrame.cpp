@@ -68,6 +68,9 @@ CChildFrameClient::CChildFrameClient() : m_hWndChildFrame(NULL)
 
 HWND	CChildFrameClient::Create(HWND hWndMainFrame)
 {
+	CString strPath = _GetSkinDir() + _T("bg.bmp");
+	m_bmpBackground = AtlLoadBitmapImage(strPath.GetBuffer(0), LR_LOADFROMFILE);
+
 	return __super::Create(hWndMainFrame, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN);
 }
 
@@ -102,6 +105,46 @@ void CChildFrameClient::OnSize(UINT nType, CSize size)
 		::SetWindowPos(m_hWndChildFrame, NULL, 0, 0, size.cx, size.cy, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
 }
 
+BOOL CChildFrameClient::OnEraseBkgnd(CDCHandle dc)
+{
+	if (m_hWndChildFrame && CMainOption::s_bTabMode)
+		return 1;
+
+	//*+++ BG描画指定.
+	if (m_bmpBackground) {		// bg画像を敷き詰めて表示
+		CRect	rc;
+		GetClientRect(&rc);
+
+		CDC 	dcSrc;
+		dcSrc.CreateCompatibleDC(dc);
+		HBITMAP hOldbmpSrc	= dcSrc.SelectBitmap(m_bmpBackground);
+		SIZE	size;
+		m_bmpBackground.GetSize(size);
+		DWORD	srcW = size.cx;
+		DWORD	srcH = size.cy;
+		DWORD	dstW = rc.Width();
+		DWORD	dstH = rc.Height();
+		for (unsigned y = 0; y < dstH; y += srcH) {
+			for (unsigned x = 0; x < dstW; x += srcW) {
+				::BitBlt(dc, x, y, srcW, srcH, dcSrc, 0, 0, SRCCOPY);
+			}
+		}
+		dcSrc.SelectBitmap(hOldbmpSrc);
+		return 1;
+	} else if (CSkinOption::s_nMainFrameBgColor >= 0) {	// 色指定があれば、その色でべた塗り
+		HBRUSH	hBrushBg = CreateSolidBrush(COLORREF(CSkinOption::s_nMainFrameBgColor));
+		RECT	rect;
+		GetClientRect(&rect);
+		::FillRect( dc, &rect, hBrushBg );
+		DeleteObject(hBrushBg);
+		return 1;
+	}
+
+	// no need to erase it
+	SetMsgHandled(FALSE);
+	return 0;
+}
+
 
 
 
@@ -133,14 +176,12 @@ CMainFrame::CMainFrame()
 	, m_bShow(FALSE)
 	, m_hGroupThread(NULL)
 	, m_nMenuBarStyle(-1)		//+++
-	, m_nBgColor(-1)			//+++
 	, m_bTray(0)				//+++
 	, m_bFullScreen(0)			//+++
 	, m_bOldMaximized(0)		//+++
 	//, m_bMinimized(0)			//+++
 //	, m_DownloadManager(this)
 	, m_TranslateMenu(this)
-	, m_bCancelRButtonUp(false)
 	, m_styleSheetMenu(m_hWnd)
 	, m_bWM_TIMER(false)
 {
@@ -194,8 +235,6 @@ int		CMainFrame::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 
 	//SetAutoBackUp();//OnBackUpOptionChanged(0,0,0);// OnCreate後の処理で別途呼び出すようにした.
 	RegisterDragDrop();	//DragAcceptFiles();		// ドラッグ＆ドロップ準備
-
-	//\\?CCriticalIdleTimer::InstallCriticalIdleTimer(m_hWnd, ID_VIEW_IDLE);
 
 	init_sysMenu();									// システムメニューに追加
 
@@ -258,8 +297,12 @@ void CMainFrame::init_menus_infomation()
 	CMenuHandle 	   menuEncode	  = menu.GetSubMenu(_nPosEncodeMenu);
 	m_MenuEncode.Init(menuEncode, _nPosEncodeMenuSub);
 
-	// MRU list
-	CMainOption::SetMRUMenuHandle(menu, _nPosMRU);
+	// 最近閉じたタブのメニューの設定やオプションの設定を行う
+	m_RecentClosedTabList.SetMenuHandle(menu.GetSubMenu(0).GetSubMenu(_nPosMRU));
+	m_RecentClosedTabList.SetMaxEntries(CMainOption::s_nMaxRecentClosedTabCount);
+	m_RecentClosedTabList.SetMenuType(CMainOption::s_RecentClosedTabMenuType);
+	m_RecentClosedTabList.ReadFromXmlFile();
+	m_RecentClosedTabList.UpdateMenu();
 
 	//MenuDropTaget
 	m_wndMenuDropTarget.Create(m_hWnd, rcDefault, _T("MenuDropTargetWindow"), WS_POPUP, 0);
@@ -287,7 +330,6 @@ HWND	CMainFrame::init_commandBarWindow()
 	}
 
 	m_CmdBar.AttachMenu(m_MainFrameMenu);
-	m_CmdBar.EnableButton(_nPosWindowMenu, false);
 
 	return hWndCmdBar;
 }
@@ -604,8 +646,6 @@ void CMainFrame::init_loadPlugins()
   #endif
 }
 
-
-
 // ===========================================================================
 // 終了処理
 #if 1
@@ -642,6 +682,11 @@ void CMainFrame::OnDestroy()
 	SetMsgHandled(FALSE);
 
 	_PrivateTerm();		// 設定の保存
+
+	if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_RECENTCLOSE)
+		m_RecentClosedTabList.DeleteRecentClosedTabFile();
+	else 
+		m_RecentClosedTabList.WriteToXmlFile();
 
 	//\\MtlSendCommand(m_hWnd, ID_VIEW_STOP_ALL);									// added by DOGSTORE
 
@@ -899,7 +944,9 @@ static BOOL OnMouseWheelHook(MSG *pMsg, HWND hWndChild)
 			if ( ::GetKeyState(VK_MENU) & 0x80 ){
 				if ( zDelta > 0 ){
 					//pChild->SetBodyStyleZoom(10, 0, true);
+					::PostMessage(pChild->GetHwnd(), WM_COMMAND, ID_HTMLZOOM_ADD, 0);
 				} else {
+					::PostMessage(pChild->GetHwnd(), WM_COMMAND, ID_HTMLZOOM_SUB, 0);
 					//pChild->SetBodyStyleZoom(-10, 0, true);
 				}
 				return TRUE;
@@ -957,11 +1004,6 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	HWND hWndFind = m_FindBar.GetHWND();
 	if (::IsWindow(hWndFind))
 		bFocus	|= ::IsChild(hWndFind, pMsg->hwnd);
-#ifdef _DEBUG
-	//if (::IsWindow(m_wndDebug.m_hWnd)) {
-	//	bFocus |= (::GetFocus() == m_wndDebug.GetEditCtrl().m_hWnd);
-	//}
-#endif
   #endif
 
 	// 基底クラス
@@ -969,34 +1011,11 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 		return TRUE;
 
 	// アクティブ・チャイルド・ウィンドウ
-	HWND hWnd = 0;
-	hWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
-#if 0 //:::
-	if (m_hWndMDIClient && ::IsWindow(m_hWndMDIClient))
-		hWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
-#endif
-  #if 0	//+++ 左ボタンクリックのテスト
-	if ( pMsg->message == WM_LBUTTONDOWN) {
-		printf("%d,%d\n",pMsg->wParam, pMsg->lParam);
-	}
-  #endif
+	HWND hWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
+
 
 	// ホイール
 	if ( pMsg->message == WM_MOUSEWHEEL && OnMouseWheelHook(pMsg, hWnd) )
-		return TRUE;
-
-	// 中ボタンクリックのチェック
-	if ( pMsg->message == WM_MBUTTONDOWN && hWnd != NULL && ::IsChild(hWnd, pMsg->hwnd) && OnMButtonHook(pMsg) )
-		return TRUE;
-
-	// 右ドラッグキャンセル用
-	if ( pMsg->message == WM_RBUTTONUP && m_bCancelRButtonUp ) {
-		m_bCancelRButtonUp = false;
-		return TRUE;
-	}
-
-	// マウスジェスチャーへ
-	if ( pMsg->message == WM_RBUTTONDOWN && OnRButtonHook(pMsg) )
 		return TRUE;
 
 	// サイドボタン
@@ -1007,14 +1026,14 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	}
 
 	// エクスプローラバーを自動で表示
-	if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_AUTOSHOW) == MAIN_EXPLORER_AUTOSHOW )
+	if (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_AUTOSHOW)
 		ExplorerBarAutoShow(pMsg);
 
 	// BHO プラグインへ
-	if (bFocus == 0 && TranslateMessageToBHO(pMsg) )											//+++ bFocusチェック
+	if (bFocus == false && TranslateMessageToBHO(pMsg) )											//+++ bFocusチェック
 		return TRUE;
 
-	if (bFocus == 0 && hWnd != NULL && ::SendMessage(hWnd, WM_FORWARDMSG, 0, (LPARAM) pMsg) )	//+++ bFocusチェック
+	if (bFocus == false && hWnd && ::SendMessage(hWnd, WM_FORWARDMSG, 0, (LPARAM) pMsg) )	//+++ bFocusチェック
 		return TRUE;
 
 	return FALSE; // IsDialogMessage(pMsg);
@@ -1127,403 +1146,6 @@ void CMainFrame::ExplorerBarAutoShow(MSG *pMsg)
 			m_ExplorerBar.ShowBar(m_ExplorerBar.m_dwExStyle, true);
 		}
 	}
-}
-
-//-----------------------------------------
-/// リンク上をミドルクリックで新規タブを開く
-BOOL CMainFrame::OnMButtonHook(MSG* pMsg)
-{
-	DWORD	dwLinkOpenBtnM;
-	{
-		CIniFileI	 pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-		dwLinkOpenBtnM = pr.GetValue(_T("LinkOpenBtnM"), 0);
-	}
-
-	// ボタンが設定されていなかったら、終わり.
-	if (dwLinkOpenBtnM == 0)
-		return FALSE;
-	//+++ メモ：デフォルトでは dwLinkOpenBtmM = IDM_FOLLOWLINKN
-	// ATLASSERT(dwLinkOpenBtnM == IDM_FOLLOWLINKN);
-
-  #if 0
-	//+++ メモ:この部分の処理は、DonutPやDonutRAPT,unDonutでさほどソースに違いがあるわけでなさそう.
-	::SendMessage(pMsg->hwnd, WM_LBUTTONDOWN, 0, pMsg->lParam); 	//+++ おまじない.
-	int 	nTabCnt = m_MDITab.GetItemCount();						//+++ リンクをクリックしたかどうかのチェック用.
-	::SendMessage(pMsg->hwnd, WM_COMMAND, dwLinkOpenBtnM, 0);		//+++ リンクを新しい窓にひらく
-	if (m_MDITab.GetItemCount() != nTabCnt) 						//+++ タブが増えていたら、リンクをクリックしたのだろう
-		return TRUE;												//+++ trueを返して中ボタンクリックの処理をやったことにする.
-	::SendMessage(pMsg->hwnd, WM_LBUTTONUP, 0, pMsg->lParam);		//+++ リンク以外をクリックした場合おまじないの左クリック押しを終了しておく.
-	return FALSE;													//+++ falseを返すことで、IEコンポーネントにウィールクリックの処理を任せる.
-
-	//+++ メモ: おそらく上記の右に書いたコメントのような動作を想定したものだと思われる.
-	//		"おまじない"、は、WM_COMMAND+IDM_FOLLOWLINKNのみを送った場合、
-	//		なぜか開く挙動が1クリックずれるようで、それの辻褄あわせとして
-	//		左クリックを押したことにしているようだ(...よくわからないけれど、たぶん).
-	//		ただ、リンク以外の箇所をクリックしたときは、範囲選択の開始として機能してしまうため、
-	//		その場合は、速攻左ボタンクリックを終了させる処理をしている。
-	//
-	//		問題は、クリックしたかどうかの判定で、タブの個数がIDM_FOLLOWLINKNによって
-	//		増えた(変動した)かどうかを見てるのだが...
-	//		ミニット氏以前の開発者の環境では有効のようだが、undonut+や+modの開発環境では、
-	//		リンクの有無にかかわらずこの時点ではタブ個数が変わらない模様... で
-	//		FALSEを返す処理に流れ、左クリックキャンセルの処理が窓開クリックと同様に作用して
-	//		しまい、結果的に同じページを２つ開けてしまう、というバグに化けてしまっている.
-	//
-	//		状況的には::SendMessage(pMsg->hwnd, WM_COMMAND, dwLinkOpenBtnM, 0);の実行が
-	//		新しいタブができてから復帰してたモノが、リクエストだけ発行してすぐ戻ってくる処理
-	//		に変わってしまった、ということに思われる。
-	//
-	//		生成されるCChildFrame側では メンバーのActivateFrame()の処理の中でタブへの追加が
-	//		発生するのだが、WM_COMMAND+dwLinkOpenBtnMでCChildFrameが作られる場合、
-	//		CChildFrame::OnNewWindow2() が呼ばれ、このルートではActivateFrame()は直には呼ばれず、
-	//		あとでActivateFrame()が呼ばれるようにしている。この状態でOnNewWindow2は終わるので、
-	//		SendMessageが終わってもタブの数は変わらない、という今の状態は、
-	//		ソース的には当然に思えるのだが... (このへんの大筋はdonutPにさかのぼっても同じ)
-	//
-	//		で、ActivateFrameをあとで誰が呼ぶかといえば CChildFrame::OnBeforeNavigate2() で、
-	//		これは MtlBrawser.hのIWebBrowserEvents2Impl::OnBeforeNavigate2から呼ばれていて
-	//		つまり、うまく動いている開発環境では、Donutソース中で明示的にこの関数を呼んでいないけれど、
-	//		SendMessageが終了するまでにこれも実行される、ということなのだろう.
-	//		(※ ひょっとすると、そもそも OnNewWindow2以外でChildFrame作られていた可能性もあるかもだけど)
-	//
-	//		OS,IE,PSDK/ATL,WTL, unDonut のどこかの処理がそうなったのだろうが、正直よくわからない
-	//		(2007-11-23)
-	//		どうやら AtlHost(Ex)でのCreateControlLicEx 中の,Navigate2()を含むelse文が残っているのが
-	//		まずかった模様。このelseを削除したら直る. (2008-01-01)
-  #else //+++ リンクを押したかどうかの判定にステータスバーにリンク先が設定されているかどうか、を用いるようにした.
-#if 0 //:::
-	HWND			hWnd	= m_ChildFrameClient.GetActiveChildFrameWindow();
-	if ( ::IsWindow(hWnd) == 0 )
-		return FALSE;
-	CChildFrame*	pChild	= GetChildFrame(hWnd);
-	bool			bLink	= 0;
-	if (pChild) {														//+++ カーソルがリンクをさしていたらstatusBar用のメッセージがあることを利用.
-		const CString& str = pChild->strStatusBar();
-		if (   str.IsEmpty() == FALSE
-			&& (str.Compare(_T("ページが表示されました")) != 0 && str.Compare(_T("完了")) != 0))			//+++ リンクのないページでは"ページが表示されました"というメッセージが設定されているので除外.
-			bLink = true;
-
-		::SendMessage(pMsg->hwnd, WM_LBUTTONDOWN, 0, pMsg->lParam); 				//+++ おまじない.
-		int 	nTabCnt = m_MDITab.GetItemCount();									//+++ リンクをクリックしたかどうかのチェック用.
-		pChild->m_bAllowNewWindow = true;
-		::SendMessage(pMsg->hwnd, WM_COMMAND, dwLinkOpenBtnM, 0);					//+++ リンクを新しい窓にひらく
-		pChild->m_bAllowNewWindow = false;
-		int 	nTabCnt2 = m_MDITab.GetItemCount();
-		if (nTabCnt != nTabCnt2 || bLink)											//+++ リンクメッセージがあるか、タブが増えていたら、リンクをクリックしたとする.
-			return TRUE;															//+++ trueを返して中ボタンクリックの処理をやったことにする.
-
-		::SendMessage(pMsg->hwnd, WM_LBUTTONUP, 0, pMsg->lParam);					//+++ リンク以外をクリックした場合おまじないの左クリック押しを終了しておく.
-		return FALSE;																//+++ falseを返すことで、IEコンポーネントにウィールクリックの処理を任せる.
-	}
-#endif
-	return FALSE;
-  #endif
-}
-
-//----------------------------------------------
-/// Mouse Gesture
-BOOL CMainFrame::OnRButtonHook(MSG *pMsg)
-{
-	HWND		hChildWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
-
-	if (hChildWnd) {
-		BOOL	bUsedMouseGesture = ::SendMessage(hChildWnd, WM_USER_USED_MOUSE_GESTURE, 0, 0) != 0;
-		if (bUsedMouseGesture == FALSE)
-			return FALSE;
-	}
-
-	::SetCapture(m_hWnd);
-
-	CPoint		ptDown;
-	ptDown.x = GET_X_LPARAM(pMsg->lParam);
-	ptDown.y = GET_Y_LPARAM(pMsg->lParam);
-	::ClientToScreen(pMsg->hwnd, &ptDown);
-
-	CPoint		ptBefor   = ptDown;
-	CPoint		ptUp	  = ptDown;
-	int 		nAng1	  = -1;
-	CString 	strMove;
-	CString 	strMark1;
-	CString 	strMark2;
-	DWORD		dwTime	  = -1;
-	HWND		hWndHist  = m_hWnd;
-	HWND		hWnd	  = NULL;
-	BOOL		bNoting   = TRUE;
-	MSG 		msg		  = { 0 };
-	BOOL		bInner	  = CMouseOption::s_bUseRightDragSearch && _IsSelectedTextInner();
-	HMODULE		hModule	  = ::LoadLibrary(_T("ole32.dll"));
-	ATLASSERT(hModule);
-	CString		strSearchEngine;
-	int 		nDiff	  = 0;
-
-	do {
-		if (::GetCapture() != hWndHist)
-			break;
-
-		if (::GetMessage(&msg, NULL, 0, 0) == FALSE)
-			continue;
-
-		
-		DWORD	dwCommand	= 0;
-		BOOL	bNeedFresh	= FALSE,
-				bBreak		= FALSE;
-
-		switch (msg.message) {
-		case WM_MOUSEWHEEL:
-			dwCommand = GetMouseWheelCmd( (short) HIWORD(msg.wParam) );
-			break;
-
-		case WM_LBUTTONUP:
-		case WM_MBUTTONUP:
-			dwCommand = GetMouseButtonUpCmd(msg.message);
-			break;
-
-		case WM_XBUTTONUP:
-			dwCommand = GetMouseButtonUpCmd( msg.message, GET_XBUTTON_WPARAM(msg.wParam) );
-			break;
-
-		case WM_MOUSEMOVE:
-			if (bInner) {
-				ptUp.x	  = GET_X_LPARAM(msg.lParam);
-				ptUp.y	  = GET_Y_LPARAM(msg.lParam);
-				::ClientToScreen(msg.hwnd, &ptUp);
-
-				if (nDiff < 10) {
-					// 距離を求める
-					nDiff	  = (int) ( sqrt( pow(float (ptBefor.x - ptUp.x), 2.0f) + pow(float (ptBefor.y - ptUp.y), 2.0f) ) );
-					if (nDiff < 10)
-						break;
-				}
-				// カーソルを変更
-				::SetCursor(::LoadCursor(hModule, MAKEINTRESOURCE(3)));
-
-				CString strMark;
-				if (CMouseOption::s_bUseRect) {
-					// 角度を求める
-					int nAng  = (int) _GetAngle(ptBefor, ptUp);
-					if		(nAng <  45 || nAng >  315) {
-						strSearchEngine = CMouseOption::s_strREngine;	
-						strMark = _T("[→] ");
-					} else if (nAng >= 45 && nAng <= 135) {
-						strSearchEngine = CMouseOption::s_strTEngine;	
-						strMark = _T("[↑] ");
-					} else if (nAng > 135 && nAng <  225) {
-						strSearchEngine = CMouseOption::s_strLEngine;	
-						strMark = _T("[←] ");
-					} else if (nAng >= 225 && nAng <= 315) {
-						strSearchEngine = CMouseOption::s_strBEngine;
-						strMark = _T("[↓] ");
-					}
-				} else {
-					strSearchEngine = CMouseOption::s_strCEngine;
-				}
-				if (strSearchEngine.IsEmpty() == FALSE) {
-					CString strMsg;
-					strMsg.Format(_T("検索 %s: %s"), strMark, strSearchEngine);
-					::SetWindowText(m_hWndStatusBar, strMsg);
-				} else {
-					::SetWindowText(m_hWndStatusBar, _T(""));
-				}
-			} else {
-				ptUp.x	  = GET_X_LPARAM(msg.lParam);
-				ptUp.y	  = GET_Y_LPARAM(msg.lParam);
-				::ClientToScreen(msg.hwnd, &ptUp);
-				// 距離を求める
-				nDiff	  = (int) ( sqrt( pow(float (ptBefor.x - ptUp.x), 2.0f) + pow(float (ptBefor.y - ptUp.y), 2.0f) ) );
-				if (nDiff < 10)
-					break;
-				// 角度を求める
-				nAng1	  = (int) _GetAngle(ptBefor, ptUp);
-				ptBefor   = ptUp;
-
-				if		(nAng1 <  45 || nAng1 >  315)
-					strMark1 = _T("→");
-				else if (nAng1 >= 45 && nAng1 <= 135)
-					strMark1 = _T("↑");
-				else if (nAng1 > 135 && nAng1 <  225)
-					strMark1 = _T("←");
-				else if (nAng1 >= 225 && nAng1 <= 315)
-					strMark1 = _T("↓");
-
-				// 同じ方向に動かして、かつ300ms以上経ったなら有効
-				if (strMark1 == strMark2) {
-					DWORD dwTimeNow = ::GetTickCount();
-					if ( (dwTimeNow - dwTime) > 300 ) {
-						strMark2 = _T("");
-						dwTime	 = dwTimeNow;
-					}
-				}
-
-				if (strMark1 != strMark2) {
-					strMove += strMark1;
-					strMark2 = strMark1;
-
-					DWORD	dwCommand = 0;
-					CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-					pr.QueryValue(dwCommand, strMove);
-					pr.Close();
-					CString strCmdName;
-
-					if (dwCommand != 0) {
-						// 合致するコマンドがあれば表示
-						CString strTemp;
-						CToolTipManager::LoadToolTipText(dwCommand, strTemp);
-						strCmdName.Format(_T("[ %s ]"), strTemp);
-					}
-
-					// ステータスバーに表示
-					CString 	strMsg;
-					strMsg.Format(_T("ジェスチャー : %s %s"), strMove, strCmdName);
-					::SetWindowText(m_hWndStatusBar, strMsg);
-				}
-
-				dwTime = ::GetTickCount();
-			}
-			break;
-
-		case WM_KEYDOWN:
-			hWnd   = m_ChildFrameClient.GetActiveChildFrameWindow();
-			if (hWnd != NULL)
-				SendMessage(hWnd, WM_FORWARDMSG, 0, (LPARAM) &msg);
-
-			break;
-
-		case WM_LBUTTONDOWN:
-			if (bInner && nDiff >= 10) {	// キャンセルする
-				msg.message = WM_RBUTTONUP;
-				bNoting	= FALSE;
-				strSearchEngine.Empty();
-				::SetWindowText(m_hWndStatusBar, _T(""));
-				bInner = -1;
-			}
-			break;
-
-		default:
-			DispatchMessage(&msg);
-			break;
-		}
-
-		switch (dwCommand) {
-		case ID_FILE_CLOSE:
-			hWnd	   = m_ChildFrameClient.GetActiveChildFrameWindow();
-			if (hWnd == NULL)
-				break;
-
-			::PostMessage(hWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
-			//::PostMessage(hWnd, WM_CLOSE, 0, 0);
-			bNoting    = FALSE;
-			bNeedFresh = TRUE;
-			//goto NEXT;
-			break;
-
-		case ID_GET_OUT:				// 退避
-		case ID_VIEW_FULLSCREEN:		// 全体表示
-		case ID_VIEW_UP:				// 上へ
-		case ID_VIEW_BACK:				// 前に戻る
-		case ID_VIEW_FORWARD:			// 次に進む
-		case ID_VIEW_STOP_ALL:			// すべて中止
-		case ID_VIEW_REFRESH_ALL:		// すべて更新
-		case ID_WINDOW_CLOSE_ALL:		// すべて閉じる
-		case ID_WINDOW_CLOSE_EXCEPT:	// これ以外閉じる
-			::PostMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
-			bNoting    = FALSE;
-			bBreak	   = TRUE;
-			break;
-
-		case 0:
-			break;
-
-		default:
-			::PostMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
-			bNoting    = FALSE;
-			bNeedFresh = TRUE;
-			break;
-		}
-
-		if (bNeedFresh) {
-			hWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
-			if (hWnd)
-				::RedrawWindow(hWnd, NULL, NULL, RDW_UPDATENOW);
-		}
-
-		if (!(GetAsyncKeyState(VK_RBUTTON) & 0x80000000) && msg.message != WM_RBUTTONUP) {
-			MSG msgR;
-			if (::PeekMessage(&msgR, NULL, 0, 0, PM_NOREMOVE) == 0) {
-				break;
-			}
-		}
-	} while (msg.message != WM_RBUTTONUP);
-
-	::ReleaseCapture();
-	::FreeLibrary(hModule);
-	::SetCursor(::LoadCursor(NULL, IDC_ARROW));	// カーソルを元に戻す
-	if (bInner && strSearchEngine.IsEmpty() == FALSE) {
-		::SetWindowText(m_hWndStatusBar, _T(""));
-		CString str = GetActiveSelectedText();
-		m_SearchBar.SearchWebWithEngine(str, strSearchEngine);
-		bNoting = FALSE;
-	}
-	if (bInner == -1) {
-		m_bCancelRButtonUp = true;
-		return TRUE;
-	}
-
-	if (bNoting) {
-		ptUp.x = GET_X_LPARAM(msg.lParam);
-		ptUp.y = GET_Y_LPARAM(msg.lParam);
-		::ClientToScreen(msg.hwnd, &ptUp);
-
-		::SetWindowText( m_hWndStatusBar, _T("") );
-
-		DWORD dwCommand = 0;
-		CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-		pr.QueryValue(dwCommand, strMove);
-		pr.Close();
-
-		if (dwCommand != 0) {
-			::SendMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
-			bNoting = FALSE;
-		} else if (dwCommand == -1)
-			return TRUE;
-	}
-
-	if ( bNoting && strMove.IsEmpty() ) {
-		::ScreenToClient(pMsg->hwnd, &ptUp);
-		pMsg->lParam = MAKELONG(ptUp.x, ptUp.y);
-
-		::PostMessage(pMsg->hwnd, WM_RBUTTONUP, pMsg->wParam, pMsg->lParam);
-	}
-
-	return !bNoting;
-}
-
-
-DWORD CMainFrame::GetMouseWheelCmd(short nWheel)
-{
-	CString 	strKey;
-	if (nWheel > 0)
-		strKey = _T("WHEEL_UP");
-	else
-		strKey = _T("WHEEL_DOWN");
-
-	CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-	DWORD		dwCommand = pr.GetValue(strKey, 0);
-	return dwCommand;
-}
-
-
-DWORD CMainFrame::GetMouseButtonUpCmd(UINT uMsg, UINT nXButton/* = 0*/)
-{
-	CString 	strKey;
-	switch (uMsg) {
-	case WM_LBUTTONUP:	strKey = _T("LButtonUp");					break;
-	case WM_MBUTTONUP:	strKey = _T("MButtonUp");					break;
-	case WM_XBUTTONUP:	strKey.Format(_T("XButtonUp%d"), nXButton); break;
-	}
-
-	CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-	DWORD		dwCommand = pr.GetValue(strKey, 0);
-	return dwCommand;
 }
 
 //------------------------------------
@@ -1793,7 +1415,6 @@ void CMainFrame::InitSkin()
 	m_wndStatusBar.SetProxyComboBoxFont(CSkinOption::s_lfProxyComboBox.CreateFontIndirect());
 
 	/* スキン */
-	setMainFrameBg(CSkinOption::s_nMainFrameBgColor);			//+++ メインフレームのBg設定.
 	initCurrentIcon();											//+++ アイコン
 	m_CmdBar.setMenuBarStyle(m_hWndToolBar, false); 			//+++ メニュー (FEVATWHの短名にするか否か)
 	m_CmdBar.InvalidateRect(NULL, TRUE);						//メニューバー
@@ -1902,133 +1523,6 @@ void CMainFrame::initCurrentIcon()
 }
 
 
-//+++ メインフレームのBg設定.
-void CMainFrame::setMainFrameBg(int bgColor)
-{
-	m_nBgColor = bgColor;
-
-	CString 	strPath = _GetSkinDir() + _T("bg.bmp");
-	m_bmpBg.Attach( AtlLoadBitmapImage(strPath.GetBuffer(0), LR_LOADFROMFILE) );
-}
-
-
-///+++ bg描画
-bool CMainFrame::drawMainFrameBg(HDC hDC)
-{
-  #if 1 //+++ bgタイルのみ
-	if (m_bmpBg.m_hBitmap) {		// bg画像を敷き詰めて表示
-		DrawBmpBg_Tile(hDC);
-		return 1;
-	} else if (m_nBgColor >= 0) {	// 色指定があれば、その色でべた塗り
-		HBRUSH	hBrushBg = CreateSolidBrush(COLORREF(m_nBgColor));
-		RECT	rect;
-		GetClientRect(&rect);
-		::FillRect( hDC, &rect, hBrushBg );
-		DeleteObject(hBrushBg);
-		return 1;
-	}
-	return 0;
-  #else //+++ 背景色とbgが同時に表示される必要があるとき
-	if (m_nBgColor < 0 || m_bmpBg.m_hBitmap == 0)
-		return 0;
-
-	if (m_nBgColor >= 0) {
-		HBRUSH	hBrushBg = CreateSolidBrush(COLORREF(m_nBgColor));
-		RECT	rect;
-		GetClientRect(&rect);
-		::FillRect( hDC, &rect, hBrushBg );
-		DeleteObject(hBrushBg);
-	}
-	if (m_bmpBg.m_hBitmap) {
-		//if (m_nBgStyle == SKIN_BG_STYLE_TILE)
-		DrawBmpBg_Tile(hDC);
-		//else if (m_nBGStyle == SKN_BG_STYLE_STRETCH)
-		//DrawBmpBg_Stretch(hDC);
-	}
-	return 1;
-  #endif
-}
-
-
-//+++ bg描画(敷き詰めるタイプ)
-void CMainFrame::DrawBmpBg_Tile(HDC hDC)
-{
-	CRect	rc;
-	GetClientRect(&rc);
-
-	CDC 	dcSrc;
-	dcSrc.CreateCompatibleDC(hDC);
-
-	HBITMAP hOldbmpSrc	= dcSrc.SelectBitmap(m_bmpBg.m_hBitmap);
-	SIZE	size;
-	m_bmpBg.GetSize(size);
-	DWORD	srcW = size.cx;
-	DWORD	srcH = size.cy;
-	DWORD	dstW = rc.Width();
-	DWORD	dstH = rc.Height();
-	for (unsigned y = 0; y < dstH; y += srcH) {
-		for (unsigned x = 0; x < dstW; x += srcW) {
-			::BitBlt(hDC, x, y, srcW, srcH, dcSrc, 0, 0, SRCCOPY);
-		}
-	}
-
-	dcSrc.SelectBitmap(hOldbmpSrc);
-}
-
-
-#if 0 //+++ 画面の更新がようわからないので、拡縮は止め
-//+++ 元画像を拡大して表示.
-void CMainFrame::DrawBmpBg_Stretch(HDC hDC)
-{
-	CRect	rc;
-	GetClientRect(&rc);
-  #if 0
-	InvalidateRect(rc, TRUE);
-	UpdateWindow();
-  #endif
-
-	CDC 	dcSrc;
-	dcSrc.CreateCompatibleDC(hDC);
-
-	HBITMAP hOldbmpSrc	= dcSrc.SelectBitmap(m_bmpBg.m_hBitmap);
-	SIZE	size;
-	m_bmpBg.GetSize(size);
-	DWORD	srcW = size.cx;
-	DWORD	srcH = size.cy;
-	double	srcR = double(srcW) / double(srcH);
-	DWORD	dstW = rc.Width();
-	DWORD	dstH = rc.Height();
-	double	dstR = double(dstW) / double(dstH);
-	if (dstR > srcR) {			//+++ 描画範囲のほうが、元画像よりも横長
-		srcH = DWORD( srcH * srcR / dstR );
-	} else if (dstR < srcR) {	//+++ 描画範囲のほうが、元画像よりも縦長
-		srcW = DWORD( srcW * dstR / srcR );
-	}
-	::StretchBlt(hDC, 0, 0, dstW, dstH, dcSrc , 0, 0, srcW, srcH, SRCCOPY);
-	dcSrc.SelectBitmap(hOldbmpSrc);
-	//ValidateRect(NULL);
-}
-#endif
-
-
-//public:
-#if 0 //+++ あとで
-HICON	CMainFrame::LoadIcon4AboutDialog()
-{
-	int 	w = ::GetSystemMetrics(SM_CXICON);
-	int 	h = ::GetSystemMetrics(SM_CYICON);
-	HICON	hIcon = 0;
-  #if 1
-	if (IsExistFile(m_strIcon))
-		hIcon = (HICON)::LoadImage(ModuleHelper::GetResourceInstance(), m_strIcon, IMAGE_ICON, w, h, LR_SHARED|LR_LOADFROMFILE);
-	if (hIcon == 0)
-  #endif
-		hIcon = (HICON)::LoadImage(ModuleHelper::GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME), IMAGE_ICON, w, h, LR_DEFAULTCOLOR );
-	return hIcon;
-}
-#endif
-
-
 void	CMainFrame::OpenBingTranslator(const CString& strText)
 {
 #if 0	//:::
@@ -2058,8 +1552,7 @@ bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
 {
 	//dmfTRACE(_T("CMainFrame::OnDDEOpenFile(%s)\n"), strFileName);
   #if 1 //+++ トレイ状態からの復帰でのバグ対策.
-	DWORD flags = DonutGetStdOpenFlag();
-	OnUserOpenFile( strFileName, flags );
+	UserOpenFile( strFileName, DonutGetStdOpenFlag() );
 	if (CStartUpOption::s_dwActivate) {
 		IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
@@ -2084,7 +1577,7 @@ bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
 // Message handlers
 // alternates OpenFile
 
-#if 1	//+++ url別拡張プロパティの処理を追加
+#if 0	//+++ url別拡張プロパティの処理を追加
 HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 {
 #if 0
@@ -2228,8 +1721,8 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 	//+++   ちょっと気が変わったので条件付の暫定復活
 	// minit(about:* pages)
 	if ( strFileOrURL.Left(6) == _T("about:") && strFileOrURL != _T("about:blank") ) {
-		_OpenAboutFile(strFileOrURL);
-		return NULL;
+		if (_OpenAboutFile(strFileOrURL))
+			return NULL;
 	}
 
 	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
@@ -2515,30 +2008,26 @@ HWND CMainFrame::OpenExPropertyNot(CString &strUrl, DWORD dwOpenFlag)
 }
 #endif
 
-
+/// 最近閉じたタブを開く
 LRESULT CMainFrame::OnFileRecent(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	// get file name from the MRU list
 	if (ID_FILE_MRU_FIRST <= wID && wID <= ID_FILE_MRU_LAST)						//旧範囲IDから新範囲IDへ変換
 		wID = wID - ID_FILE_MRU_FIRST + ID_RECENTDOCUMENT_FIRST;
 
-	CRecentDocumentListFixed::RecentDocEntry Entry;
+	ChildFrameDataOnClose*	pdata = nullptr;
+	if ( m_RecentClosedTabList.GetFromList(wID, &pdata) ) {
+		NewChildFrameData	data(m_ChildFrameClient);
+		data.strURL		= pdata->strURL;
+		data.dwDLCtrl	= pdata->dwDLCtrl;
+		data.bActive	= _check_flag(DonutGetStdOpenCreateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
+		data.funcCallAfterCreated	= [pdata, this, wID](CChildFrame* pChild) {
+			if (CMainOption::s_bTravelLogClose) 
+				pChild->SetTravelLog(pdata->TravelLogFore, pdata->TravelLogBack);
+			m_RecentClosedTabList.RemoveFromList(wID);
+		};
+		CChildFrame::AsyncCreate(data);
 
-	if ( CMainOption::s_pMru->GetFromList(wID, &Entry) ) {
-		DWORD dwOpenFlag = DonutGetStdOpenCreateFlag(); /*DonutGetStdOpenFlag()*/	// Force New Window // UDT DGSTR
-		HWND  hWndNew	 = OnUserOpenFile(Entry.szDocName, dwOpenFlag);
-
-		if ( ::IsWindow(hWndNew) ) {
-			if (CMainOption::s_bTravelLogClose) {
-				CChildFrame *pChild = GetChildFrame(hWndNew);
-
-				if (pChild) {
-					_Load_OptionalData2(pChild, Entry.arrFore, Entry.arrBack);
-				}
-			}
-		}
-
-		CMainOption::s_pMru->RemoveFromList(wID);									// UDT DGSTR
 	} else {
 		::MessageBeep(MB_ICONERROR);
 	}
@@ -2584,7 +2073,7 @@ void CMainFrame::OnNewInstance(ATOM nAtom)			// WM_NEWINSTANCE
 			}
 		}
 #endif
-		OnUserOpenFile( strPath, DonutGetStdOpenFlag() );
+		UserOpenFile( strPath, DonutGetStdOpenFlag() );
 		::GlobalDeleteAtom(nAtom);
 	}
 
@@ -2619,31 +2108,22 @@ void CMainFrame::OnFileNewHome(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 }
 
 
-//現在のページ
+/// 現在のページ
 void CMainFrame::OnFileNewCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-
-	if (hWndActive) {
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWndActive);
-
-		if (browser.m_spBrowser != NULL) {
-			CString strURL = browser.GetLocationURL();
-
-			if ( !strURL.IsEmpty() )
-				OnUserOpenFile( strURL, DonutGetStdOpenActivateFlag() );
-		}
-	}
+	CChildFrame* pChild = GetActiveChildFrame();
+	if (pChild) 
+		UserOpenFile(pChild->GetLocationURL(), DonutGetStdOpenActivateFlag());
 }
 
-
+// オプションで指定した既定の新規タブ作成
 LRESULT CMainFrame::OnFileNew(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	if (CFileNewOption::s_dwFlags == FILENEW_BLANK) {
 		OnFileNewBlank(0, 0, 0);
 	} else if (CFileNewOption::s_dwFlags == FILENEW_COPY) {
 		if (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL)
-			SendMessage(WM_COMMAND, MAKEWPARAM(ID_FILE_NEW_COPY, 0), 0);
+			OnFileNewCopy(0, 0, 0);
 		else
 			OnFileNewBlank(0, 0, 0);
 	} else if (CFileNewOption::s_dwFlags == FILENEW_HOME) {
@@ -2654,7 +2134,7 @@ LRESULT CMainFrame::OnFileNew(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 		//pr.Close();
 		CString&	str	= CFileNewOption::s_strUsr;
 		if ( !str.IsEmpty() )
-			OnUserOpenFile(str, 0);
+			UserOpenFile(str, DonutGetStdOpenActivateFlag());
 		else
 			OnFileNewBlank(0, 0, 0);
 	} else {
@@ -2666,66 +2146,50 @@ LRESULT CMainFrame::OnFileNew(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 }
 
 
-//空白ページ
+/// 空白ページ
 void CMainFrame::OnFileNewBlank(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	OnUserOpenFile( _T("about:blank"), DonutGetStdOpenActivateFlag() );
+	UserOpenFile( _T("about:blank"), DonutGetStdOpenActivateFlag() );
 	PostMessage(WM_COMMAND, ID_SETFOCUS_ADDRESSBAR, 0);
 }
 
 
-//クリップボード
+/// クリップボード
 void CMainFrame::OnFileNewClipBoard(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	CString strText = MtlGetClipboardText();
-
 	if ( strText.IsEmpty() )
 		return;
 
-	OnUserOpenFile( strText, DonutGetStdOpenActivateFlag() );
+	UserOpenFile( strText, DonutGetStdOpenActivateFlag() );
 }
 
-
-//Default.dfg
-// UDT DGSTR
-#if 0
-LRESULT CMainFrame::OnFileOpenDef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	CString 	strPath = Misc::GetExeDirectory() + _T("Default.dfg");
-	ATLTRACE2( atlTraceGeneral, 4, _T("CMainFrame::OnFileOpenDef\n") );
-	OnUserOpenFile( strPath, DonutGetStdOpenCreateFlag() );
-	return 0;
-}
-#endif
-// ENDE
-
+/// TabList.xmlを開く
 LRESULT	CMainFrame::OnFileOpenTabList	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	CString strPath = Misc::GetExeDirectory() + _T("TabList.xml");
-	OnUserOpenFile( strPath, DonutGetStdOpenCreateFlag() );
+	UserOpenFile( strPath, DonutGetStdOpenCreateFlag() );
 	return 0;
 }
 
-
+/// クリップボードから開く(標準のオープン方法で)
 void CMainFrame::OnFileNewClipBoard2(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	CString strText = MtlGetClipboardText();
-
 	if ( strText.IsEmpty() )
 		return;
 
-	OnUserOpenFile( strText, DonutGetStdOpenFlag() );	// allow the option
+	UserOpenFile( strText, DonutGetStdOpenFlag() );	// allow the option
 }
 
 
-
+/// 開く
 LRESULT CMainFrame::OnFileOpen(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	//dmfTRACE( _T("CMainFrame::OnFileOpen\n") );
 	COpenURLDlg dlg;
 
 	if ( dlg.DoModal() == IDOK && !dlg.m_strEdit.IsEmpty() ) {
-		OnUserOpenFile( dlg.m_strEdit, DonutGetStdOpenFlag() );
+		UserOpenFile( dlg.m_strEdit, DonutGetStdOpenFlag() );
 	}
 
 	return 0;
@@ -2741,9 +2205,9 @@ LRESULT CMainFrame::OnJumpToWebSite(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 	//CString strSite = _T("http://tekito.genin.jp/undonut+.html"); //unDonut+
 	//CString strSite = _T("http://ichounonakano.sakura.ne.jp/64/undonut/"); //unDonut+mod.	旧
 	//CString strSite = _T("http://undonut.undo.jp/"); //unDonut+mod.
-	CString strSite = _T("http://cid-8830de058eedff85.skydrive.live.com/browse.aspx/%e5%85%ac%e9%96%8b/unDonut"); //Risotto.
+	CString strSite = _T("http://cid-8830de058eedff85.skydrive.live.com/browse.aspx/%e5%85%ac%e9%96%8b/unDonut"); // amate.
 
-	OnUserOpenFile( strSite, DonutGetStdOpenFlag() );
+	UserOpenFile( strSite, DonutGetStdOpenFlag() );
 	return 0;
 }
 
@@ -2757,18 +2221,18 @@ LRESULT CMainFrame::OnOpenExeDir(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 }
 
 
-
-//+++ saitama専用だったのを外部ファイル読込にして汎用化.
-void CMainFrame::_OpenAboutFile(CString strFile)
+/// unDonutのあるフォルダ\\help\\about\\ 以下にあるabout:「～」ファイルを開く
+///+++ saitama専用だったのを外部ファイル読込にして汎用化.
+bool CMainFrame::_OpenAboutFile(CString strFile)
 {
 	if (strFile.Left(6) != _T("about:"))
-		return ;
+		return false;
 	strFile     = strFile.Mid(6);		// about:"～"
 	bool  bWarn = (strFile == "warning");
 	if (bWarn == false) {
 		strFile = Misc::GetFullPath_ForExe( "help\\about\\" + strFile );	//
 		if (::PathFileExists(strFile) == FALSE)	//ファイルがなかったらかえる
-			return ;
+			return false;
 	}
 
 	NewChildFrameData	data(m_ChildFrameClient);
@@ -2819,7 +2283,7 @@ void CMainFrame::_OpenAboutFile(CString strFile)
 					if ( SUCCEEDED(hr) ) {
 						// Query for IPersistStreamInit.
 						CComQIPtr<IPersistStreamInit> pPersistStreamInit = pHtmlDoc;
-						if ( pPersistStreamInit ) {
+						if ( pPersistStreamInit.p ) {
 							// Initialize the document.
 							hr = pPersistStreamInit->InitNew();
 							if ( SUCCEEDED(hr) ) {
@@ -2831,8 +2295,9 @@ void CMainFrame::_OpenAboutFile(CString strFile)
 				}
 			}
 		}
-	};
+	};	// lamda
 	CChildFrame::AsyncCreate(data);
+	return true;
 }
 
 
@@ -3548,78 +3013,13 @@ BOOL CMainFrame::OnIdle()
 	CmdUIUpdateStatusBar	(m_hWndStatusBar, ID_PRIVACY_PANE	);
 	CmdUIUpdateChildWindow	(m_hWndStatusBar, IDC_PROGRESS		);
 	m_mcCmdBar.UpdateMDIMenuControl();
-	//\\?_FocusChecker();
+
 #if 0
 	if ( _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle) )
 		CDialogKiller2::KillDialog();
 #endif
 	return FALSE;
 }
-
-
-void CMainFrame::_OnIdleCritical()
-{
-	if ( MtlIsApplicationActive(m_hWnd) ) {
-		CmdUIUpdateToolBars();
-		CmdUIUpdateChildWindow(m_hWndStatusBar, IDC_PROGRESS);
-	}
-
-	_FocusChecker();
-#if 0
-	if ( _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle) )
-		CDialogKiller2::KillDialog();
-#endif
-}
-
-
-void CMainFrame::_FocusChecker()
-{
-	// Note. On idle time, give focus back to browser window...
-	dmfTRACE( _T("_FocusChecker\n") );
-
-	HWND hWndActive 				 = m_ChildFrameClient.GetActiveChildFrameWindow();
-	if (hWndActive == NULL)
-		return;
-
-	HWND hWndForeground 			 = ::GetForegroundWindow();
-	bool bMysteriousWindowForeground = MtlIsKindOf( hWndForeground, _T("Internet Explorer_Hidden") );
-
-	if ( bMysteriousWindowForeground && MtlIsWindowCurrentProcess(hWndForeground) ) {
-		IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
-		if (m_bOldMaximized == 0 && m_bFullScreen == 0) //+++
-			ShowWindow_Restore(1);		//ShowWindow(SW_RESTORE);		//+++ サイズを戻す
-		MtlSetForegroundWindow(m_hWnd);
-	}
-
-	if ( !MtlIsApplicationActive(m_hWnd) ) {
-		dmfTRACE(_T(" application is not active\n"), hWndForeground);
-		return;
-	}
-
-	HWND hWndFocus					 = ::GetFocus();
-	if ( hWndFocus != NULL && !MtlIsFamily(m_hWnd, hWndFocus) ) {
-		dmfTRACE(_T(" not family(focus=%x)\n"), hWndFocus);
-		return;
-	}
-
-	if ( ::IsChild(m_hWndToolBar, hWndFocus) ) {
-		dmfTRACE( _T(" on rebar\n") );
-		return;
-	}
-
-	if ( ::IsChild(m_ExplorerBar, hWndFocus) ) {
-		dmfTRACE( _T(" on explorer bar\n") );
-		return;
-	}
-
-	if ( hWndFocus == NULL || m_hWnd == hWndFocus || hWndActive == hWndFocus
-	   || MtlIsKindOf( hWndFocus, _T("Shell DocObject View") ) )
-	{
-		dmfTRACE( _T(" Go!!!!!\n") );
-		MtlSendCommand(hWndActive, ID_VIEW_SETFOCUS);
-	}
-}
-
 
 // リバーとビューの間の横線を書く
 void		CMainFrame::OnPaint(CDCHandle /*dc*/)
@@ -3657,7 +3057,7 @@ LRESULT CMainFrame::UpdateTitleBar(LPCTSTR lpszStatusBar, DWORD /*dwReserved*/)
 }
 // ENDE
 
-
+/// ChildFrameが作成されたのでタブを作成
 void	CMainFrame::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 {
 	if (dwOption & TAB_LINK)
@@ -3665,11 +3065,26 @@ void	CMainFrame::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 	if (!_check_flag(MAIN_EX_NOACTIVATE_NEWWIN, CMainOption::s_dwMainExtendedStyle))
 		dwOption |= TAB_ACTIVE;
 	m_MDITab.OnMDIChildCreate(hWndChildFrame, (dwOption & TAB_ACTIVE) != 0);
+	
+	//if ( _check_flag(m_view.m_ViewOption.m_dwExStyle, DVS_EX_OPENNEWWIN)) {
+	//	m_MDITab.NavigateLockTab(m_hWnd, true);
+	//}
+
+	// Raise Plugin Event
+	int nNewIndex = m_MDITab.GetTabIndex(hWndChildFrame);
+	CPluginManager::ChainCast_PluginEvent(DEVT_TAB_OPENED, nNewIndex, 0);
 }
 
+/// ChildFrameが破棄されたのでタブを破棄
 void	CMainFrame::OnTabDestory(HWND hWndChildFrame)
 {
 	m_MDITab.OnMDIChildDestroy(hWndChildFrame);
+}
+
+/// 最近閉じたタブに追加
+void	CMainFrame::OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData)
+{
+	m_RecentClosedTabList.AddToList(pClosedTabData);
 }
 
 void	CMainFrame::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
@@ -3684,6 +3099,18 @@ void	CMainFrame::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
 		strMainTitle.Format(_T("%s - %s"), strTitle, strapp);
 		SetWindowText(strMainTitle);
 	}
+}
+
+void	CMainFrame::OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon)
+{
+	m_AddressBar.SetWindowText(strURL);
+	m_AddressBar.ReplaceIcon(hFavicon);
+}
+
+void	CMainFrame::OnSetSearchText(LPCTSTR strText, bool bHilightOn)
+{
+	m_SearchBar.SetSearchStr(strText);
+	m_SearchBar.ForceSetHilightBtnOn(bHilightOn);
 }
 
 
@@ -3761,7 +3188,7 @@ LRESULT CMainFrame::OnRestrictMessage(BOOL bOn)
 	return S_OK;
 }
 
-// お気に入りメニューからリンクのパスを返す
+/// お気に入りメニューからリンクのパスを返す
 LRESULT	CMainFrame::OnGetFavoriteFilePath(int nID)
 {
 	return (LRESULT)(LPCTSTR)m_FavoriteMenu.GetFilePath(nID);
@@ -3778,34 +3205,6 @@ LRESULT CMainFrame::OnMenuDrag(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bH
 LRESULT CMainFrame::OnMenuGetObject(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
 	return m_wndMenuDropTarget.OnMenuGetObject(uMsg, wParam, lParam, bHandled);
-}
-
-
-
-//////////////////////////////////////////////////////////////////
-// to avoid the flicker on resizing
-
-BOOL CMainFrame::OnMDIClientEraseBkgnd(CDCHandle dc)
-{
-  #if 0 //+++ 描画範囲の更新がちゃんと制御できていないので駄目
-	BOOL	bMaximized = 0;
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow(&bMaximized);
-	if (hWndActive != NULL && (CMainOption::s_bTabMode || bMaximized))
-		return 1;
-  #else
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-	if (hWndActive != NULL && CMainOption::s_bTabMode)
-		return 1;
-  #endif
-
-  #if 1 //*+++ BG描画指定.
-	if (drawMainFrameBg(dc))
-		return 1;
-  #endif
-
-	// no need to erase it
-	SetMsgHandled(FALSE);
-	return 0;
 }
 
 
@@ -3851,9 +3250,9 @@ void CMainFrame::OnMDIChild(HWND hWnd, UINT nCode)
 	if (nCode == MDICHILD_USER_ALLCLOSED) {
 		m_AddressBar.SetWindowText( _T("") );
 		::SetWindowText( m_hWndStatusBar, _T("レディ") );
-		m_CmdBar.EnableButton(_nPosWindowMenu, false);
+		//m_CmdBar.EnableButton(_nPosWindowMenu, false);
 	} else if (nCode == MDICHILD_USER_FIRSTCREATED) {
-		m_CmdBar.EnableButton(_nPosWindowMenu, true);
+		//m_CmdBar.EnableButton(_nPosWindowMenu, true);
 	} else if (nCode == MDICHILD_USER_ACTIVATED) {
 		_OnMDIActivate(hWnd);
 		OnIdle();						// make sure when cpu is busy
@@ -3932,11 +3331,8 @@ void CMainFrame::OnActivate(UINT nState, BOOL bMinimized, HWND hWndOther)
 BOOL CMainFrame::_IsRebarBandLocked()
 {
 	CReBarCtrl	  rebar(m_hWndToolBar);
-	REBARBANDINFO rbbi = { 0 };
-
-	rbbi.cbSize = sizeof (REBARBANDINFO);
+	REBARBANDINFO rbbi = { sizeof (REBARBANDINFO) };
 	rbbi.fMask	= RBBIM_STYLE;
-
 	if ( !rebar.GetBandInfo(0, &rbbi) )
 		return FALSE;
 
@@ -3947,10 +3343,6 @@ BOOL CMainFrame::_IsRebarBandLocked()
 LRESULT CMainFrame::OnViewToolBarLock(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	m_ReBar.LockBands(!_IsRebarBandLocked());
-	//CReBarSupport RebarSup(m_hWndToolBar);
-
-	//RebarSup.SetBandsLock( !_IsRebarBandLocked() );
-
 	return 0;
 }
 
@@ -3974,13 +3366,6 @@ void CMainFrame::_RefreshFavMenu()
 }
 
 
-//LRESULT CMainFrame::OnViewIdle(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-//{
-//	_OnIdleCritical();
-//	return 0;
-//}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //ファイルメニュー
 //　コマンドハンドラ
@@ -3998,21 +3383,20 @@ void CMainFrame::OnViewHome(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/
 }
 
 
-// U.H
+/// bShow == TRUE で各リバーバンドの左端にテキストを表示する
 void CMainFrame::ShowLinkText(BOOL bShow)
 {
+	CReBarCtrl	rebar(m_hWndToolBar);
+	if (rebar.IsWindow() == FALSE)
+		return ;
+
 	REBARBANDINFO rbBand = { sizeof (REBARBANDINFO) };
-
-	int 		  nCount = int ( ::SendMessage(m_hWndToolBar, RB_GETBANDCOUNT, 0, 0) );
-
+	int nCount = rebar.GetBandCount();
 	for (int ii = 0; ii < nCount; ii++) {
 		rbBand.fMask = RBBIM_ID;
-		::SendMessage(m_hWndToolBar, RB_GETBANDINFO, (WPARAM) ii, (LPARAM) (LPREBARBANDINFO) &rbBand);
-
+		rebar.GetBandInfo(ii, &rbBand);
 		if (rbBand.wID != IDC_LINKBAR && rbBand.wID != IDC_SEARCHBAR && rbBand.wID != IDC_ADDRESSBAR)
 			continue;
-
-		rbBand.fMask = RBBIM_TEXT;
 
 		if (bShow) {
 			switch (rbBand.wID) {
@@ -4024,17 +3408,16 @@ void CMainFrame::ShowLinkText(BOOL bShow)
 				rbBand.lpText = _T("リンク");
 				break;
 
-			default:
+			case IDC_SEARCHBAR:
 				rbBand.lpText = _T("検索");
+				break;
 			}
 		}
-
-		::SendMessage(m_hWndToolBar, RB_SETBANDINFO, (WPARAM) ii, (LPARAM) (LPREBARBANDINFO) &rbBand);
+		rbBand.fMask = RBBIM_TEXT;
+		rebar.SetBandInfo(ii, &rbBand);
 	}
 }
-// END
 
-// U.H
 void CMainFrame::OnShowTextChg(BOOL bShow)
 {
 	ShowLinkText(bShow);
@@ -4042,7 +3425,7 @@ void CMainFrame::OnShowTextChg(BOOL bShow)
 }
 
 
-// U.H
+
 LRESULT CMainFrame::OnSysCommand(UINT nID, CPoint point)
 {
 	switch (nID) {
@@ -4060,13 +3443,6 @@ LRESULT CMainFrame::OnSysCommand(UINT nID, CPoint point)
 			SetMsgHandled(TRUE);
 			break;
 		}
-#if 0 //:::
-		{
-			CChildFrame* pChild = GetActiveChildFrame();
-			if (pChild)	//最小化するときにビューにフォーカスを当てる(そうするとCPU使用率がなぜか下がるようなので)
-				pChild->SetFocus();
-		}
-#endif
 		SetMsgHandled(FALSE);
 		break;
 
@@ -4090,21 +3466,21 @@ LRESULT CMainFrame::OnSysCommand(UINT nID, CPoint point)
 	return 0;
 }
 
-
+/// ポップアップ抑止をトグル
 LRESULT CMainFrame::OnPopupClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	CIgnoredURLsOption::s_bValid = !CIgnoredURLsOption::s_bValid;
 	return 0;
 }
 
-
+/// タイトル抑止をトグル
 LRESULT CMainFrame::OnTitleClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	CCloseTitlesOption::s_bValid = !CCloseTitlesOption::s_bValid;
 	return 0;
 }
 
-
+/// ポップアップとタイトル抑止両方をトグル
 LRESULT CMainFrame::OnDoubleClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	CIgnoredURLsOption::s_bValid = !CIgnoredURLsOption::s_bValid;
@@ -4112,61 +3488,54 @@ LRESULT CMainFrame::OnDoubleClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWn
 	return 0;
 }
 
-
+/// プライバシーレポートを表示
 LRESULT CMainFrame::OnPrivacyReport(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-	if (hWndActive == NULL)
+	CChildFrame* pChild = GetActiveChildFrame();
+	if (pChild == NULL)
 		return 0;
 
-	CWebBrowser2	browser    = DonutGetIWebBrowser2(hWndActive);
-	CString 		strURL	   = browser.GetLocationURL();
+	CString 		strURL	   = pChild->GetLocationURL();
 	CComBSTR		bstrURL(strURL);
 
-	CComPtr<IServiceProvider>		spSP;
-	browser.m_spBrowser->QueryInterface(IID_IServiceProvider, (void **) &spSP);
-
+	CComQIPtr<IServiceProvider>		spSP = pChild->GetMarshalIWebBrowser();
 	if (spSP == NULL)
 		return 0;
 
 	CComPtr<IEnumPrivacyRecords>	spEnumRecords;
 	spSP->QueryService(CLSID_IEnumPrivacyRecords, &spEnumRecords);
-
-	// UH
-	// spSP->QueryInterface(IID_IEnumPrivacyRecords, (void**) &spEnumRecords);
-	// spSP->QueryInterface(CLSID_IEnumPrivacyRecords, (void**) &spEnumRecords);
 	if (spEnumRecords == NULL)
 		return 0;
 
 	HINSTANCE		hInstDLL;
-	DWORD			(WINAPI * __DoPrivacyDlg)(HWND, LPOLESTR, IEnumPrivacyRecords *, BOOL) = NULL;
+	typedef DWORD	(WINAPI* FuncDoPrivacyDlg)(HWND, LPOLESTR, IEnumPrivacyRecords*, BOOL);
+	FuncDoPrivacyDlg pfnDoPrivacyDlg = NULL;
 
 	if (Misc::getIEMejourVersion() >= 8 && _CheckOsVersion_VistaLater() == 0){//\\ XP+IE8の場合
 		hInstDLL = ::LoadLibrary( _T("ieframe.dll") );
 	} else {//vista+IE8の場合
 		hInstDLL = ::LoadLibrary( _T("shdocvw.dll") );
 	}
-
 	if ( hInstDLL == NULL )
 		return 0;
 
-	__DoPrivacyDlg	= ( DWORD (WINAPI *)(HWND, LPOLESTR, IEnumPrivacyRecords *, BOOL) )
-						GetProcAddress( hInstDLL, "DoPrivacyDlg" );
-	if (__DoPrivacyDlg == NULL)
+	pfnDoPrivacyDlg	= (FuncDoPrivacyDlg)GetProcAddress( hInstDLL, "DoPrivacyDlg" );
+	if (pfnDoPrivacyDlg == NULL) {
+		::FreeLibrary(hInstDLL);
 		return 0;
+	}
 
 	BOOL	bPrivacyImpacted = FALSE;
 	spEnumRecords->GetPrivacyImpacted(&bPrivacyImpacted);
-	__DoPrivacyDlg(m_hWnd, bstrURL, spEnumRecords, !bPrivacyImpacted);
+	pfnDoPrivacyDlg(m_hWnd, bstrURL, spEnumRecords, !bPrivacyImpacted);
 
-	//\\ 解放し忘れてる？
 	::FreeLibrary( hInstDLL );
 
 	return 1;
 }
 
 
-// UH
+/// クッキーの制限を設定
 LRESULT CMainFrame::OnCookiesIE6(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 {
 	DWORD	  dwLv = 0;
@@ -4181,19 +3550,21 @@ LRESULT CMainFrame::OnCookiesIE6(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 	}
 
 	HINSTANCE	hInstDLL;
-	DWORD		(WINAPI * __PrivacySetZonePreferenceW)(DWORD, DWORD, DWORD, LPCWSTR) = NULL;
+	typedef DWORD	(WINAPI* FuncPrivacySetZonePreferenceW)(DWORD, DWORD, DWORD, LPCWSTR);
+	FuncPrivacySetZonePreferenceW	pfnPrivacySetZonePreferenceW = nullptr;
 
-	if ( ( hInstDLL = LoadLibrary(_T("wininet.dll")) ) == NULL )
+	if ( ( hInstDLL = ::LoadLibrary(_T("wininet.dll")) ) == NULL )
 		return 0;
 
-	__PrivacySetZonePreferenceW = ( DWORD (WINAPI *)(DWORD, DWORD, DWORD, LPCWSTR) )
-										GetProcAddress( hInstDLL, "PrivacySetZonePreferenceW" );
-
-	if (__PrivacySetZonePreferenceW == NULL)
+	pfnPrivacySetZonePreferenceW = (FuncPrivacySetZonePreferenceW)GetProcAddress( hInstDLL, "PrivacySetZonePreferenceW" );
+	if (pfnPrivacySetZonePreferenceW == NULL) {
+		::FreeLibrary( hInstDLL );
 		return 0;
+	}
 
-	__PrivacySetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_FIRST_PARTY, dwLv, NULL);
-	__PrivacySetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_THIRD_PARTY, dwLv, NULL);
+	pfnPrivacySetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_FIRST_PARTY, dwLv, NULL);
+	pfnPrivacySetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_THIRD_PARTY, dwLv, NULL);
+	::FreeLibrary( hInstDLL );
 	return 0;
 }
 
@@ -4262,13 +3633,13 @@ void	CMainFrame::OnWindowCloseExcept(UINT uNotifyCode, int nID, CWindow wndCtl)
 	});
 }
 
-
+/// 左のタブをアクティブに
 void CMainFrame::OnTabLeft(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
 {
 	m_MDITab.LeftTab();
 }
 
-
+/// 右のタブをアクティブに
 void CMainFrame::OnTabRight(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
 {
 	m_MDITab.RightTab();
@@ -4294,7 +3665,7 @@ LRESULT CMainFrame::OnTabIdx(WORD /*wNotifyCode*/, WORD wID, HWND hWndCtl, BOOL 
 }
 #endif
 
-#ifndef NO_STYLESHEET
+
 LRESULT CMainFrame::OnChangeCSS(LPCTSTR lpszStyleSheet)
 {
 	if (CStyleSheetOption::s_bSetUserSheet)
@@ -4303,17 +3674,15 @@ LRESULT CMainFrame::OnChangeCSS(LPCTSTR lpszStyleSheet)
 	//minit
 
 	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-
 	if (hWndActive == NULL)
 		return 0;
 
 	return SendMessage(hWndActive, WM_USER_CHANGE_CSS, (WPARAM) lpszStyleSheet, 0);
 }
-#endif
 
 
-// U.H
-// メニューの右端にショートカットキーを表示するように設定する
+
+/// メニューの右端にショートカットキーを表示するように設定する
 LRESULT CMainFrame::OnInitMenuPopup(HMENU hMenuPopup, UINT uPos, BOOL bSystemMenu)
 {
 	// システムメニューは、処理しない
@@ -4345,7 +3714,6 @@ LRESULT CMainFrame::OnInitMenuPopup(HMENU hMenuPopup, UINT uPos, BOOL bSystemMen
 		menu.GetMenuString(nID, strCmd, MF_BYCOMMAND);
 
 		if ( strCmd.IsEmpty() ) {
-			// NT4用かな
 			if (strCmd.LoadString(nID) == FALSE)
 				continue;
 		}
@@ -4477,22 +3845,7 @@ void	CMainFrame::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 }
 
 
-
-void CMainFrame::OnFileWorkOffline(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-#if 0	//:::
-	MtlSetGlobalOffline( !MtlIsGlobalOffline() );
-	UpdateTitleBarUpsideDown();
-#endif
-}
-
-
-LRESULT CMainFrame::OnFileExit(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	PostMessage(WM_CLOSE);
-	return 0;
-}
-
+// 編集
 
 void CMainFrame::OnEditCut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
@@ -4558,7 +3911,8 @@ void CMainFrame::OnEditSelectAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 }
 
 
-// U.H
+// 表示
+
 LRESULT CMainFrame::OnViewCommandBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	MtlToggleBandVisible(m_hWndToolBar, ATL_IDW_COMMAND_BAR);
@@ -4623,6 +3977,36 @@ LRESULT CMainFrame::OnViewToolBarCust(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 }
 
 
+
+/// すべてのウィンドウを中止
+void CMainFrame::OnViewStopAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_MDITab.ForEachWindow([](HWND hWnd) {
+		::PostMessage(hWnd, ID_VIEW_STOP, 0, 0);
+	});
+}
+
+/// すべてのウィンドウを更新
+void CMainFrame::OnViewRefreshAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_MDITab.ForEachWindow([](HWND hWnd) {
+		::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+	});
+}
+
+/// このウィンドウ以外を更新
+void	CMainFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	m_MDITab.ForEachWindow([hWndActive](HWND hWnd) {
+		if (hWndActive != hWnd)
+			::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+	});
+}
+
+
+// お気に入り
+
 void CMainFrame::OnFavoriteAdd(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	::SendMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, (WPARAM) ID_FAVORITE_ADD, 0);
@@ -4639,29 +4023,22 @@ void CMainFrame::OnFavoriteOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 }
 
 
-//public:
-///+++	オートバックアップの開始設定.
-//void CMainFrame::SetAutoBackUp() {
-//	OnBackUpOptionChanged(0,0,0);
-//}
-
-
-//private:
-void CMainFrame::OnViewOptionDonut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+/// IEのオプションを表示する?
+void CMainFrame::OnViewOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	ShowNewStyleDonutOption();
-	return;
+	if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
+		MtlShowInternetOptions();
 }
 
-
-void CMainFrame::ShowNewStyleDonutOption()
+/// Donutのオプションを表示
+void CMainFrame::OnViewOptionDonut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	BOOL							bSkinChange = FALSE;
 
 	CMenu							menu		= CExMenuManager::LoadFullMenu();
 
 	CMainPropertyPage				pageMain(m_hWnd);
-	CMainPropertyPage2				pageMain2(m_hWnd);
+	CMainPropertyPage2				pageMain2(m_hWnd, m_RecentClosedTabList);
 	CDLControlPropertyPage			pageDLC(m_hWnd);
 	CMDITabPropertyPage 			pageTab(&m_MDITab, menu.m_hMenu);
 	CDonutAddressBarPropertyPage	pageAddress(m_AddressBar, m_SearchBar);
@@ -4746,49 +4123,9 @@ void CMainFrame::ShowNewStyleDonutOption()
 	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 }
 
-/// IEのオプションを表示する?
-void CMainFrame::OnViewOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
-		MtlShowInternetOptions();
-}
-
-/// すべてのウィンドウを中止
-void CMainFrame::OnViewStopAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_MDITab.ForEachWindow([](HWND hWnd) {
-		::PostMessage(hWnd, ID_VIEW_STOP, 0, 0);
-	});
-}
-
-/// すべてのウィンドウを更新
-void CMainFrame::OnViewRefreshAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_MDITab.ForEachWindow([](HWND hWnd) {
-		::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
-	});
-}
-
-/// このウィンドウ以外を更新
-void	CMainFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-	m_MDITab.ForEachWindow([hWndActive](HWND hWnd) {
-		if (hWndActive != hWnd)
-			::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
-	});
-}
-
-
-
-
 
 // Implementation
 
-//private:
-
-
-//public:
 BOOL CMainFrame::AddSimpleReBarBandCtrl(
 	HWND	hWndReBar,
 	HWND	hWndBand,
@@ -4874,23 +4211,14 @@ BOOL CMainFrame::AddSimpleReBarBandCtrl(
 }
 
 
-// UPDATE_COMMAND_UI_MAP()
+// UI map Handler
 
-
-
-
-
-
-// UDT DGSTR
 bool CMainFrame::_IsExistHTMLHelp(void)
 {
-	return ( 0xFFFFFFFF != GetFileAttributes( MtlGetHTMLHelpPath() ) );
+	return ::PathFileExists( MtlGetHTMLHelpPath() ) != 0;
 }
-// ENDE
 
-
-
-bool CMainFrame::ChkCookies(UINT nID)
+bool CMainFrame::_CheckCookies(UINT nID)
 {
 	HINSTANCE	hInstDLL = LoadLibrary(_T("wininet.dll"));
 	if (hInstDLL == NULL)
@@ -4899,8 +4227,10 @@ bool CMainFrame::ChkCookies(UINT nID)
 	DWORD (WINAPI * __PrivacyGetZonePreferenceW)(DWORD, DWORD, LPDWORD, LPWSTR, LPDWORD) = NULL;
 	__PrivacyGetZonePreferenceW = ( DWORD (WINAPI *)(DWORD,DWORD,LPDWORD,LPWSTR, LPDWORD) )
 									GetProcAddress(hInstDLL,"PrivacyGetZonePreferenceW");
-	if (__PrivacyGetZonePreferenceW == NULL)
+	if (__PrivacyGetZonePreferenceW == NULL) {
+		FreeLibrary(hInstDLL);
 		return false;
+	}
 
 	DWORD	dwCookie1 = 0;
 	DWORD	dwCookie2 = 0;
@@ -4948,21 +4278,8 @@ bool CMainFrame::ChkCookies(UINT nID)
 			bSts = true;
 		break;
 	}
-
+	FreeLibrary(hInstDLL);
 	return bSts;
-}
-
-
-void CMainFrame::OnUpdateWindowArrange(CCmdUI *pCmdUI)
-{
-#if 0	//:::
-	// toolbar has not this command button, called only on menu popuping
-	MDIRefreshMenu();
-	MtlCompactMDIWindowMenuDocumentList( m_menuWindow, _nWindowMenuItemCount,
-										CFavoritesMenuOption::GetMaxMenuItemTextLength() );
-
-	pCmdUI->Enable(m_ChildFrameClient.GetActiveChildFrameWindow() != NULL && !CMainOption::s_bTabMode);
-#endif
 }
 
 
@@ -5168,23 +4485,18 @@ LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl
 }
 
 
+/// 証明書情報表示
 LRESULT CMainFrame::OnSecurityReport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-	if (hWndActive == NULL)
+	CChildFrame* pChild = GetActiveChildFrame();
+	if (pChild == nullptr)
 		return 0;
 
-	//With Internet Explorer 6 for Microsoft Windows XP Service Pack 2 (SP2) and later
-	//↑だってさ
-	CWebBrowser2	   browser	  = DonutGetIWebBrowser2(hWndActive);
-	IOleCommandTarget *pct;
-
-	if ( SUCCEEDED( browser.m_spBrowser->QueryInterface(IID_IOleCommandTarget, (void **) &pct) ) ) {
+	CComQIPtr<IOleCommandTarget> pct = pChild->GetMarshalIWebBrowser();
+	if (pct) {
 		pct->Exec(&CGID_ShellDocView, SHDVID_SSLSTATUS, 0, NULL, NULL);
-		pct->Release();
 	}
-
-	return S_OK;
+	return 0;
 }
 
 
@@ -5230,7 +4542,7 @@ LRESULT CMainFrame::_OnMDIActivate(HWND hWndActive)
 	return 0;
 }
 
-
+/// アクティブなタブのメニューを表示する
 LRESULT CMainFrame::OnShowActiveMenu(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
 	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
@@ -5353,14 +4665,8 @@ BOOL CMainFrame::_Load_OptionalData2(CChildFrame *pChild,
 
 LRESULT CMainFrame::OnMenuRecentDocument(HMENU hMenu)
 {
-	CRecentDocumentListFixed *pList;
-	pList = CMainOption::s_pMru;
-	CMenuHandle 			  menu	 = hMenu;
-
+	CMenuHandle menu = hMenu;
 	if (menu.m_hMenu == NULL)
-		return 0;
-
-	if (pList == NULL)
 		return 0;
 
 	if (menu.GetMenuItemCount() == 0)
@@ -5368,12 +4674,12 @@ LRESULT CMainFrame::OnMenuRecentDocument(HMENU hMenu)
 	else if (menu.GetMenuItemID(0) != ID_RECENTDOCUMENT_FIRST)
 		return 0;
 
-	HMENU					  hMenuT = pList->GetMenuHandle();
-	pList->SetMenuHandle(menu);
-	pList->UpdateMenu();
-	pList->SetMenuHandle(hMenuT);
+	HMENU	hMenuT = m_RecentClosedTabList.GetMenuHandle();
+	m_RecentClosedTabList.SetMenuHandle(menu);
+	m_RecentClosedTabList.UpdateMenu();
+	m_RecentClosedTabList.SetMenuHandle(hMenuT);
 
-	return 1;
+	return TRUE;
 }
 
 
@@ -5385,7 +4691,7 @@ LRESULT CMainFrame::OnMenuRecentLast(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 
 int CMainFrame::_GetRecentCount()
 {
-	return CMainOption::s_pMru->GetRecentCount();
+	return m_RecentClosedTabList.GetRecentCount();
 }
 
 
@@ -5896,13 +5202,6 @@ LRESULT CMainFrame::OnSelectUserFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 
 // ===========================================================================
 // アドレスバー
-
-
-// U.H
-void CMainFrame::OnGoAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	m_AddressBar.SetFocus();
-}
 
 
 LRESULT CMainFrame::OnViewGoButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)

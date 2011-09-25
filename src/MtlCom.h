@@ -109,10 +109,10 @@ HDROP MtlCreateDropFile(_InputStringIter __first, _InputStringIter __last)
 	lpDropFiles->fWide	= FALSE;
   #endif
 
-	TCHAR * 		 psz   = (TCHAR *) (lpDropFiles + 1);
-
+	TCHAR* 	psz = (TCHAR *) (lpDropFiles + 1);
+	TCHAR*	pEnd = psz + (nLen * sizeof (TCHAR));
 	for (it = __first; it != __last; ++it) {
-		::lstrcpy( psz, (*it) );
+		::_tcscpy_s( psz, (pEnd - psz) / sizeof(TCHAR), (*it) );
 		psz += ::lstrlen(*it) + 1;	// skip a '\0' separator
 	}
 

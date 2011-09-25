@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "../RecentDocumentListFixed.h"
 #include "../MtlUpdateCmdUI.h"
 #include "../MtlProfile.h"
 #include "../MtlUser.h"
@@ -55,6 +54,21 @@ enum EMain_Ex2 {
   #endif
 };
 
+// 前方宣言
+class CRecentClosedTabList;
+
+enum ERecentDoc {
+	RECENTDOC_MENUTYPE_URL		= 0,
+	RECENTDOC_MENUTYPE_TITLE	= 1,
+	RECENTDOC_MENUTYPE_DOUBLE	= 2,
+};
+
+enum EAutoImageResize {
+	AUTO_IMAGE_RESIZE_NONE		= 0,
+	AUTO_IMAGE_RESIZE_FIRSTON	= 1,
+	AUTO_IMAGE_RESIZE_LCLICK	= 2,
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CMainOption
 
@@ -63,33 +77,37 @@ class CMainOption {
 	friend class CMainPropertyPage2;
 
 public:
-	static DWORD						s_dwMainExtendedStyle;
-	static DWORD						s_dwMainExtendedStyle2;
-	static DWORD						s_dwExplorerBarStyle;
+	static DWORD	s_dwMainExtendedStyle;
+	static DWORD	s_dwMainExtendedStyle2;
+	static DWORD	s_dwExplorerBarStyle;
 
 private:
-	static DWORD						s_dwMaxWindowCount;
+	static DWORD	s_dwMaxWindowCount;
 
 public:
-	static DWORD						s_dwBackUpTime;
-	static DWORD						s_dwAutoRefreshTime;		// UDT DGSTR ( dai
-	static bool 						s_bTabMode;
-	static volatile bool				s_bAppClosing;
+	static DWORD	s_dwBackUpTime;
+	static DWORD	s_dwAutoRefreshTime;		// UDT DGSTR ( dai
+	static bool 	s_bTabMode;
+	static volatile bool	s_bAppClosing;
 
-	static volatile bool 				s_bIgnoreUpdateClipboard;	// for insane WM_DRAWCLIBOARD
-	static CRecentDocumentListFixed*	s_pMru;
+	static volatile bool 	s_bIgnoreUpdateClipboard;	// for insane WM_DRAWCLIBOARD
 
 private:
-	static DWORD						s_dwErrorBlock;
+	static DWORD		s_dwErrorBlock;
 
-	static CString *					s_pstrExplorerUserDirectory;
+	static CString		s_strExplorerUserDirectory;
 public:
-	static bool 						s_bTravelLogGroup;
-	static bool 						s_bTravelLogClose;
-	static bool 						s_bStretchImage;
+	static bool 	s_bTravelLogGroup;
+	static bool 	s_bTravelLogClose;
+	static bool 	s_bStretchImage;
 
-	static bool							s_bIgnore_blank;
-	static bool							s_bUseCustomFindBar;
+	static bool		s_bIgnore_blank;
+	static bool		s_bUseCustomFindBar;
+
+	static int		s_nMaxRecentClosedTabCount;
+	static int		s_RecentClosedTabMenuType;
+
+	static int		s_nAutoImageResizeType;
 
 public:
 	// Constructor
@@ -99,10 +117,9 @@ public:
 	static void 	WriteProfile();
 	static void 	SetExplorerUserDirectory(const CString &strPath);
 	static const CString&	GetExplorerUserDirectory();
-	static void 	SetMRUMenuHandle(HMENU hMenu, int nPos);
 	static bool 	IsQualify(int nWindowCount);
 
-public:
+
 	// Message map and handlers
 	BEGIN_MSG_MAP(CMainFrame)
 		COMMAND_ID_HANDLER_EX( ID_MAIN_EX_NEWWINDOW 		, OnMainExNewWindow 		)
@@ -110,12 +127,12 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_MAIN_EX_NOACTIVATE_NEWWIN , OnMainExNoActivateNewWin	)
 	END_MSG_MAP()
 
-private:
+
 	void	OnMainExNewWindow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnMainExNoActivate(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnMainExNoActivateNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
-public:
+
 	// Update command UI and handlers
 	BEGIN_UPDATE_COMMAND_UI_MAP(CMainOption)
 		UPDATE_COMMAND_UI_SETCHECK_FLAG( ID_MAIN_EX_NEWWINDOW		 , MAIN_EX_NEWWINDOW		  , s_dwMainExtendedStyle)
@@ -139,35 +156,15 @@ public:
 	// Constants
 	enum { IDD = IDD_PROPPAGE_MAIN };
 
-private:
-	// Data members
-	bool			m_bInit;
+	// Constructor
+	CMainPropertyPage(HWND hWnd);
 
-	int 			m_nNewWindow;
-	int 			m_nNoActivate;
-	int 			m_nNoActivateNewWin;
-	int 			m_nOneInstance;
-	int 			m_nLimit;
-	int 			m_nNoCloseDFG;
-	int 			m_nNoMDI;
-	int 			m_nBackUp;
-	int 			m_nAddFavoriteOldShell;
-	int 			m_nOrgFavoriteOldShell;
-	int 			m_nRegisterAsBrowser;
-	int 			m_nMaxWindowCount;
-	int 			m_nBackUpTime;
-	int 			m_nAutoRefreshTime;
-	int 			m_nAutoRefTimeMin;
-	int 			m_nAutoRefTimeSec; // UDT DGSTR ( dai
-	int 			m_nLoadGlobalOffline;
-	int 			m_nKillDialog;
-	int 			m_nInheritOptions;
-	//+++ int		m_nNoCloseNL;			//+++ ナビロック時閉じれなくするフラグ
+	// Overrides
+	BOOL	OnSetActive();
+	BOOL	OnKillActive();
+	BOOL	OnApply();
 
-	CWindow 		m_wnd;
-	MTL::CLogFont	m_lf;
 
-public:
 	// DDX map
 	BEGIN_DDX_MAP( CMainPropertyPage )
 		DDX_CHECK( IDC_CHECK_MAIN_NEWWINDOW 			, m_nNewWindow			)
@@ -204,21 +201,39 @@ public:
 	END_MSG_MAP()
 
 	void OnFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
-
-public:
-	// Constructor
-	CMainPropertyPage(HWND hWnd);
-
-	// Overrides
-	BOOL	OnSetActive();
-	BOOL	OnKillActive();
-	BOOL	OnApply();
-
-
-	// Implementation
+	
 private:
+	// Implementation
 	void	_GetData();
 	void	_SetData();
+
+
+	// Data members
+	bool	m_bInit;
+
+	int 	m_nNewWindow;
+	int 	m_nNoActivate;
+	int 	m_nNoActivateNewWin;
+	int 	m_nOneInstance;
+	int 	m_nLimit;
+	int 	m_nNoCloseDFG;
+	int 	m_nNoMDI;
+	int 	m_nBackUp;
+	int 	m_nAddFavoriteOldShell;
+	int 	m_nOrgFavoriteOldShell;
+	int 	m_nRegisterAsBrowser;
+	int 	m_nMaxWindowCount;
+	int 	m_nBackUpTime;
+	int 	m_nAutoRefreshTime;
+	int 	m_nAutoRefTimeMin;
+	int 	m_nAutoRefTimeSec; // UDT DGSTR ( dai
+	int 	m_nLoadGlobalOffline;
+	int 	m_nKillDialog;
+	int 	m_nInheritOptions;
+	//+++ int		m_nNoCloseNL;			//+++ ナビロック時閉じれなくするフラグ
+
+	CWindow m_wnd;
+	MTL::CLogFont	m_lf;
 };
 
 
@@ -229,12 +244,66 @@ class CMainPropertyPage2
 	: public CInitPropertyPageImpl<CMainPropertyPage2>
 	//, public CPropertyPageImpl<CMainPropertyPage2>
 	, public CWinDataExchange<CMainPropertyPage2>
+	, protected CMainOption
 {
 public:
 	// Constants
 	enum { IDD = IDD_PROPPAGE_MAIN2 };
 
+	// Constructor
+	CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent);
+
+	// Overrides
+	BOOL	OnSetActive();
+	BOOL	OnKillActive();
+	BOOL	OnApply();
+
+	// DDX map
+	BEGIN_DDX_MAP( CMainPropertyPage2 )
+		DDX_UINT ( IDC_EDIT_SZ_PAIN1		, m_nSzPain1	)
+		DDX_UINT ( IDC_EDIT_SZ_PAIN2		, m_nSzPain2	)
+		DDX_CHECK( IDC_CHK_SWAP_PAIN		, m_nChkSwapPain)
+
+		DDX_CHECK( IDC_CHK_MENU 			, m_nShowMenu	)
+		DDX_CHECK( IDC_CHK_TOOLBAR			, m_nShowToolBar)
+		DDX_CHECK( IDC_CHK_ADRESS			, m_nShowAdress )
+		DDX_CHECK( IDC_CHK_TAB				, m_nShowTab	)
+		DDX_CHECK( IDC_CHK_LINK 			, m_nShowLink	)
+		DDX_CHECK( IDC_CHK_SEARCH			, m_nShowSearch )
+		DDX_CHECK( IDC_CHK_STATUS			, m_nShowStatus )
+		//DDX_CHECK( IDC_CHK_MINBTN2TRAY	, m_nMinBtn2Tray )			//+++
+		DDX_RADIO( IDC_RADIO_NO2TRAY		, m_nMinBtn2Tray )			//+++
+
+		DDX_RADIO( IDC_RADIO_IMG_AUTO_RESIZE_NONE, s_nAutoImageResizeType )	//+++
+
+	  #if 0	//+++ 失敗
+		DDX_CHECK( IDC_CHK_TITLEBAR_STR_SWAP, m_nTitleBarStrSwap )	//+++
+	  #endif
+		DDX_CHECK( IDC_TRAVELLOG_GROUP		, m_nTravelLogGroup )
+		DDX_CHECK( IDC_TRAVELLOG_CLOSE		, m_nTravelLogClose )
+
+		DDX_INT_RANGE( IDC_EDIT_MRUCOUNT, m_nMRUCount, m_nMRUCountMin, m_nMRUCountMax )
+
+		DDX_CBINDEX( IDC_COMBO_MRU_MENUTYPE, m_nMRUMenuType )
+	END_DDX_MAP()
+
+	// Message map and handlers
+	BEGIN_MSG_MAP( CMainPropertyPage2 )
+		CHAIN_MSG_MAP( CPropertyPageImpl<CMainPropertyPage2> )
+	END_MSG_MAP()
+
+	static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
+
+
 private:
+	CString 	BrowseForFolder(const CString& strTitle, const CString& strNowPath);
+
+	void		_GetData();
+	void		_SetData();
+	void		InitCtrls();
+
+	// Data members
+	CRecentClosedTabList&	m_rRecentClosedTabList;
 	CWindow 	m_wnd;
 
 	// UH
@@ -258,68 +327,10 @@ private:
 	int 		m_nMRUCountMax;
 
 	int			m_nMinBtn2Tray;			//+++
-  #ifndef USE_DIET
-	int			m_nImgAutoResize;		//+++
-  #endif
+
   #if 0	//+++ 失敗
 	int			m_nTitleBarStrSwap;		//+++
   #endif
 
 	BOOL		m_bInit;
-
-public:
-	// DDX map
-	BEGIN_DDX_MAP( CMainPropertyPage2 )
-		DDX_UINT ( IDC_EDIT_SZ_PAIN1		, m_nSzPain1	)
-		DDX_UINT ( IDC_EDIT_SZ_PAIN2		, m_nSzPain2	)
-		DDX_CHECK( IDC_CHK_SWAP_PAIN		, m_nChkSwapPain)
-
-		DDX_CHECK( IDC_CHK_MENU 			, m_nShowMenu	)
-		DDX_CHECK( IDC_CHK_TOOLBAR			, m_nShowToolBar)
-		DDX_CHECK( IDC_CHK_ADRESS			, m_nShowAdress )
-		DDX_CHECK( IDC_CHK_TAB				, m_nShowTab	)
-		DDX_CHECK( IDC_CHK_LINK 			, m_nShowLink	)
-		DDX_CHECK( IDC_CHK_SEARCH			, m_nShowSearch )
-		DDX_CHECK( IDC_CHK_STATUS			, m_nShowStatus )
-		//DDX_CHECK( IDC_CHK_MINBTN2TRAY	, m_nMinBtn2Tray )			//+++
-		DDX_RADIO( IDC_RADIO_NO2TRAY		, m_nMinBtn2Tray )			//+++
-	  #ifndef USE_DIET
-		DDX_RADIO( IDC_RADIO_IMG_AUTO_RESIZE_NONE, m_nImgAutoResize )	//+++
-	  #endif
-
-	  #if 0	//+++ 失敗
-		DDX_CHECK( IDC_CHK_TITLEBAR_STR_SWAP, m_nTitleBarStrSwap )	//+++
-	  #endif
-		DDX_CHECK( IDC_TRAVELLOG_GROUP		, m_nTravelLogGroup )
-		DDX_CHECK( IDC_TRAVELLOG_CLOSE		, m_nTravelLogClose )
-
-		DDX_INT_RANGE( IDC_EDIT_MRUCOUNT, m_nMRUCount, m_nMRUCountMin, m_nMRUCountMax )
-
-		DDX_CBINDEX( IDC_COMBO_MRU_MENUTYPE, m_nMRUMenuType )
-	END_DDX_MAP()
-
-	// Message map and handlers
-	BEGIN_MSG_MAP( CMainPropertyPage2 )
-		CHAIN_MSG_MAP( CPropertyPageImpl<CMainPropertyPage2> )
-	END_MSG_MAP()
-
-	static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
-
-private:
-	CString 			BrowseForFolder(const CString& strTitle, const CString& strNowPath);
-
-public:
-	// Constructor
-	CMainPropertyPage2(HWND hWnd);
-
-	// Overrides
-	BOOL				OnSetActive();
-	BOOL				OnKillActive();
-	BOOL				OnApply();
-
-
-private:
-	void				_GetData();
-	void				_SetData();
-	void				InitCtrls();
 };

@@ -143,11 +143,6 @@ inline IWebBrowser2 *DonutGetIWebBrowser2(HWND hWnd)
 }
 
 
-inline HWND 	DonutGetActiveWindow(HWND hWnd)
-{
-	return (HWND) ::SendMessage(hWnd, WM_USER_GET_ACTIVE_WINDOW, 0, 0);
-}
-
 /// DonutでファイルやURLを開く
 void	DonutOpenFile(const CString &strFileOrURL);
 void	DonutOpenFile(const CString &strFileOrURL, DWORD dwOpenFlag);
@@ -262,9 +257,6 @@ extern CString Donut_GetActiveSelectedText();
 ///+++ 手抜きで現在のアクティブ頁でのステータス文字列を返す.
 ///+++ ※ カスタムメニュー側で、メニューが開かれたときにある文字列を取得するため.
 extern CString Donut_GetActiveStatusStr();
-
-///+++ Aboutダイアログ用にアイコンロード (暫定)
-HICON Donut_LoadIcon4AboutDialog();
 
 ///+++ CDonutExplorerBar::GetInstance()->RefreshExpBar(0); をするだけ.
 void  Donut_ExplorerBar_RefreshFavoriteBar();

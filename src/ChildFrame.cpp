@@ -14,6 +14,8 @@
 #include "option\MouseDialog.h"
 #include "option\IgnoreURLsOption.h"
 #include "option\CloseTitleOption.h"
+#include "option\UrlSecurityOption.h"
+#include "FaviconManager.h"
 
 DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 
@@ -29,6 +31,18 @@ DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 			return TRUE;									   \
 	}														   \
 }
+
+
+static const LPCTSTR		g_lpszLight[] = {
+	_T("<span id='unDonutHilight' style='color:black;background:#FFFF00'>"),
+	_T("<span id='unDonutHilight' style='color:black;background:#00FFFF'>"),
+	_T("<span id='unDonutHilight' style='color:black;background:#FF00FF'>"),
+	_T("<span id='unDonutHilight' style='color:black;background:#7FFF00'>"),
+	_T("<span id='unDonutHilight' style='color:black;background:#1F8FFF'>"),
+};
+
+static const int	g_LIGHTMAX		= _countof(g_lpszLight);
+
 
 /////////////////////////////////////////////////////////////
 // CChildFrame::Impl
@@ -56,6 +70,9 @@ public:
 	void	SetAutoRefreshStyle(DWORD dwAutoRefresh) { m_view.SetAutoRefreshStyle(dwAutoRefresh); }
 	void	SaveSearchWordflg(bool bSave) { m_bSaveSearchWordflg = bSave; }
 	void 	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
+	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back) {
+		m_TravelLogFore = fore; m_TravelLogBack = back;
+	}
 
 	CString	GetSelectedText();
 	CString GetSelectedTextLine();
@@ -95,10 +112,10 @@ public:
 	
 	// Message map
 	BEGIN_MSG_MAP( Impl )
-		MSG_WM_CREATE( OnCreate )
-		MSG_WM_DESTROY( OnDestroy )
-		MSG_WM_CLOSE( OnClose )
-		MSG_WM_SIZE( OnSize )
+		MSG_WM_CREATE		( OnCreate )
+		MSG_WM_DESTROY		( OnDestroy )
+		MSG_WM_CLOSE		( OnClose )
+		MSG_WM_SIZE			( OnSize )
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
@@ -130,10 +147,17 @@ public:
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_BACK1   , ID_VIEW_BACK9	, OnViewBackX	)
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_FORWARD1, ID_VIEW_FORWARD9, OnViewForwardX)
 
-
+		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_MENU			, OnHtmlZoomMenu			)
+		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_ADD			, OnHtmlZoom				)
+		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_SUB			, OnHtmlZoom				)
+		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_100TOGLE		, OnHtmlZoom				)
+		COMMAND_RANGE_HANDLER_EX( ID_HTMLZOOM_400 , ID_HTMLZOOM_050 , OnHtmlZoom    )
 
 		CHAIN_COMMANDS_MEMBER( m_view )
 		CHAIN_MSG_MAP( CWebBrowserCommandHandler<Impl> )
+
+		if (uMsg == WM_COMMAND)
+			GetTopLevelWindow().PostMessage(WM_COMMAND_FROM_CHILDFRAME, wParam, lParam);
 	END_MSG_MAP()
 
 	int		OnCreate(LPCREATESTRUCT /*lpCreateStruct*/);
@@ -170,12 +194,18 @@ public:
 	void 	OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
+	void	OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 private:
 	DWORD	_GetInheritedDLCtrlFlags();
 	DWORD	_GetInheritedExStyleFlags();
 	bool	_CursorOnSelectedText();
-
+	void	_InitTravelLog();
+	void	_CollectDataOnClose(ChildFrameDataOnClose& data);
+	void	_AutoImageResize(bool bFirst);
+	void	_SetFavicon(const CString& strURL);
+	void	_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord);
 
 	// Data members
 	CChildFrame*	m_pParentChild;
@@ -185,11 +215,22 @@ private:
 	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
 	CString	m_strSearchWord;
+	bool	m_bNowHilight;
 	bool	m_bAutoHilight;
 	CString m_strStatusText;
 	bool	m_bExecutedNewWindow;	// for OnMButtonHook
 	bool	m_bCancelRButtonUp;		// for PreTranslateMessage
 	DWORD	m_dwMarshalDLCtrlFlags;
+	bool	m_bInitTravelLog;
+	vector<std::pair<CString, CString> >	m_TravelLogFore;
+	vector<std::pair<CString, CString> >	m_TravelLogBack;
+
+	int		m_nImgScl;					//+++ zoom,imgサイズ自動設定での設定値.
+	int		m_nImgSclSav;				//+++ zoom,imgサイズの100%とのトグル切り替え用
+	int		m_nImgSclSw;				//+++ zoom,imgサイズの100%とのトグル切り替え用
+	bool	m_bImagePage;	// 画像ファイルを開いたかどうか
+	CSize	m_ImageSize;
+
 };
 
 
@@ -199,10 +240,16 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_view(m_UIChange),
 	m_bNowActive(false),
 	m_bSaveSearchWordflg(false),
+	m_bNowHilight(false),
 	m_bAutoHilight(false),
 	m_bExecutedNewWindow(false),
 	m_bCancelRButtonUp(false),
-	m_dwMarshalDLCtrlFlags(0)
+	m_dwMarshalDLCtrlFlags(0),
+	m_bInitTravelLog(false),
+	m_nImgScl(100),
+	m_nImgSclSav(100),
+	m_nImgSclSw(0),
+	m_bImagePage(false)
 {	}
 
 
@@ -285,6 +332,11 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 										const CString&		strHeaders,
 										bool&				bCancel )
 {
+	// 自動リサイズの設定を初期化
+	m_bImagePage	= false;
+	m_nImgSclSw		= (CMainOption::s_nAutoImageResizeType == AUTO_IMAGE_RESIZE_FIRSTON);
+	m_ImageSize.SetSize(0, 0);
+
 	if (m_dwMarshalDLCtrlFlags) {
 		m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
 		m_dwMarshalDLCtrlFlags = 0;
@@ -299,6 +351,8 @@ void	CChildFrame::Impl::OnTitleChange(const CString& strTitle)
 {
 	SetWindowText(strTitle);
 	m_UIChange.SetTitle(strTitle);
+
+	m_UIChange.SetLocationURL(GetLocationURL());
 }
 
 void	CChildFrame::Impl::OnProgressChange(long progress, long progressMax)
@@ -337,6 +391,22 @@ void	CChildFrame::Impl::OnStateCompleted()
 /// documentが操作できるようになった
 void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strURL)
 {
+	if ( IsPageIWebBrowser(pDisp) ) {
+		_InitTravelLog();	// トラベルログを設定
+
+		_AutoImageResize(true);
+
+		_SetFavicon(strURL);
+
+		if (m_bAutoHilight && m_strSearchWord.IsEmpty() == FALSE) {
+			if (m_bNowActive)
+				GetTopLevelWindow().SendMessage(WM_SETSEARCHTEXT, (WPARAM)(LPCTSTR)m_strSearchWord, true);
+			CString strWords = m_strSearchWord;
+			DeleteMinimumLengthWord(strWords);
+			m_bNowHilight = true;
+			_HilightOnce(pDisp, strWords);
+		}
+	}
 }
 
 /// ブラウザのコマンドの状態が変化した(戻る、進むなどの)
@@ -354,12 +424,20 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 
 	CChildFrame*	pChild = new CChildFrame;
 	pChild->pImpl->SetThreadRefCount(m_pThreadRefCount);
-	pChild->pImpl->m_view.SetDefaultFlags(_GetInheritedDLCtrlFlags(), _GetInheritedExStyleFlags(), 0);
+	DWORD	dwExStyle	= _GetInheritedDLCtrlFlags();
+	DWORD	dwDLCtrl	= _GetInheritedExStyleFlags();
+	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
+		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
+		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
+	}
+	pChild->pImpl->m_view.SetDefaultFlags(dwExStyle, dwDLCtrl, 0);
 	HWND hWnd = pChild->CreateEx(GetParent());
 	ATLASSERT( ::IsWindow(hWnd) );
 
 	pChild->pImpl->m_spBrowser->get_Application(ppDisp);
 	ATLASSERT( ppDisp && *ppDisp );
+
+	pChild->pImpl->SetSearchWordAutoHilight(m_strSearchWord, m_bNowHilight);
 
 	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TAB_LINK);
 }
@@ -665,6 +743,24 @@ BOOL CChildFrame::Impl::OnXButtonUp(WORD wKeys, WORD wButton)
 
 BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 {
+	if (IsWindowVisible() == FALSE/*m_bNowActive == false*/)
+		return FALSE;
+
+	// 自動リサイズのトグル
+	if (   m_bImagePage 
+		&& pMsg->message == WM_LBUTTONDOWN 
+		&& CMainOption::s_nAutoImageResizeType != AUTO_IMAGE_RESIZE_NONE)
+	{
+		CPoint	pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+		CRect	rc;
+		GetClientRect(&rc);
+		rc.right -= GetSystemMetrics(SM_CXVSCROLL);
+		rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+		if (rc.PtInRect(pt))
+			OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, 0);
+		return FALSE;
+	}
+
 	// ミドルクリック
 	if ( pMsg->message == WM_MBUTTONDOWN && IsChild(pMsg->hwnd) && OnMButtonHook(pMsg) )
 		return TRUE;
@@ -683,7 +779,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		if ( OnXButtonUp( GET_KEYSTATE_WPARAM(pMsg->wParam), GET_XBUTTON_WPARAM(pMsg->wParam)) )
 			return TRUE;
 	}
-	return FALSE;
+	return m_view.PreTranslateMessage(pMsg);
 }
 
 
@@ -734,13 +830,21 @@ void	CChildFrame::Impl::OnClose()
 {
 	SetMsgHandled(FALSE);
 
-	GetTopLevelWindow().SendMessage(WM_TABDESTROY, (WPARAM)m_hWnd);
+	CWindow	wndMain = GetTopLevelWindow();
+
+	ChildFrameDataOnClose*	pClosedTabData = new ChildFrameDataOnClose;
+	_CollectDataOnClose(*pClosedTabData);
+	wndMain.PostMessage(WM_ADDRECENTCLOSEDTAB, (WPARAM)pClosedTabData);
+
+	wndMain.SendMessage(WM_TABDESTROY, (WPARAM)m_hWnd);
 }
 
 void	CChildFrame::Impl::OnSize(UINT nType, CSize size)
 {
 	DefWindowProc();
 	m_view.SetWindowPos(NULL, 0, 0, size.cx, size.cy, SWP_NOZORDER);
+
+	_AutoImageResize(false);
 }
 
 void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
@@ -787,6 +891,114 @@ void 	CChildFrame::Impl::OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/,
 
 void 	CChildFrame::Impl::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
+}
+
+/// ポップアップズームメニューを開く
+void	CChildFrame::Impl::OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	::SetForegroundWindow(m_hWnd);
+
+	CMenu	menu0;
+	menu0.LoadMenu(IDR_ZOOM_MENU);
+	ATLASSERT(menu0.IsMenu());
+	CMenuHandle menu = menu0.GetSubMenu(0);
+	ATLASSERT(menu.IsMenu());
+
+	// ポップアップメニューを開く.
+	POINT 	pt;
+	::GetCursorPos(&pt);
+	menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd);
+}
+
+void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	auto SetBodyStyleZoom	= [this](int addSub, int scl, bool bWheel) {
+		if (Misc::getIEMejourVersion() >= 7 && bWheel) {
+			CComVariant vZoom;
+			if (addSub) {
+				m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, NULL, &vZoom);
+				scl =  static_cast<int>(vZoom.lVal);
+				scl += addSub;
+			}
+			if (scl < 5)
+				scl = 5;
+			else if (scl > 500)
+				scl = 500;
+
+			vZoom.lVal = scl;
+			m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoom, NULL); 
+
+		} else {
+			CComPtr<IDispatch>	spDisp;
+			m_spBrowser->get_Document(&spDisp);
+			CComQIPtr<IHTMLDocument2> 	pDoc = spDisp;
+			if ( pDoc.p == nullptr )
+				return;
+
+			CComPtr<IHTMLElement>	spHTMLElement;
+			if ( FAILED( pDoc->get_body(&spHTMLElement) ) && !spHTMLElement )
+				return;
+			CComQIPtr<IHTMLElement2>  spHTMLElement2 = spHTMLElement;
+			if (!spHTMLElement2)
+				return;
+
+			CComPtr<IHTMLStyle>		pHtmlStyle;
+			if ( FAILED(spHTMLElement2->get_runtimeStyle(&pHtmlStyle)) && !pHtmlStyle )
+				return;
+
+			CComVariant variantVal;
+			CComBSTR	bstrZoom( L"zoom" );
+			if (addSub) {
+				if ( FAILED(pHtmlStyle->getAttribute(bstrZoom, 1, &variantVal)) )
+					return;
+				CComBSTR	bstrTmp(variantVal.bstrVal);
+				scl =  !bstrTmp.m_str ? 100 : ::wcstol((wchar_t*)LPCWSTR(bstrTmp.m_str), 0, 10);
+				scl += addSub;
+			}
+			if (scl < 5)
+				scl = 5;
+			else if (scl > 500)
+				scl = 500;
+
+			m_nImgScl = scl;
+
+			wchar_t	wbuf[128] = L"\0";
+			swprintf_s(wbuf, L"%d%%", scl);
+			variantVal = CComVariant(wbuf);
+			pHtmlStyle->setAttribute(bstrZoom, variantVal, 1);
+			if (scl != 100 && m_ImageSize != CSize(0, 0))		// スクロールバーを隠す
+				pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"hidden"));
+			else 
+				pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"auto"));
+		}
+	};	// lamda
+
+	switch (nID) {
+	case ID_HTMLZOOM_ADD:	SetBodyStyleZoom(+10, 0, wndCtl == 0);	break;
+	case ID_HTMLZOOM_SUB:	SetBodyStyleZoom(-10, 0, wndCtl == 0);	break;
+
+	case ID_HTMLZOOM_100TOGLE:
+		if (m_nImgScl == 100) {	// 100% なら元の拡大率に
+			m_nImgScl	 = m_nImgSclSav;
+			m_nImgSclSw	 = 1;
+		} else {				// それ以外なら 100% に
+			m_nImgSclSav = m_nImgScl;
+			m_nImgScl    = 100;
+			m_nImgSclSw	 = 0;
+		}
+		SetBodyStyleZoom(0, m_nImgScl, false);
+		break;
+
+	default: {
+		ATLASSERT(ID_HTMLZOOM_400 <= nID && nID <= ID_HTMLZOOM_050);
+		static const int scls[] = { 400, 200, 150, 125, 100, 75, 50 };
+		int  n = nID - ID_HTMLZOOM_400;
+		if (n < 0 || n > ID_HTMLZOOM_050 - ID_HTMLZOOM_400)
+			return;
+		SetBodyStyleZoom(0, scls[n], false);
+		}
+		break;
+	}
 }
 
 
@@ -1218,8 +1430,474 @@ bool	CChildFrame::Impl::_CursorOnSelectedText()
 	return false;
 }
 
+/// トラベルログを初期化する
+void	CChildFrame::Impl::_InitTravelLog()
+{
+	if (m_bInitTravelLog == false) {
+		m_bInitTravelLog = true;
+		if (m_TravelLogFore.empty() && m_TravelLogBack.empty())
+			return ;
+		auto LoadTravelLog = [this](vector<std::pair<CString, CString> >& arrLog, bool bFore) -> BOOL {
+			HRESULT 					 hr;
+			CComPtr<IEnumTravelLogEntry> pTLEnum;
+			CComPtr<ITravelLogEntry>	 pTLEntryBase;
+			int		nDir = bFore ? TLEF_RELATIVE_FORE : TLEF_RELATIVE_BACK;
+
+			CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;
+			if (pISP == NULL)
+				return FALSE;
+
+			CComPtr<ITravelLogStg>		 pTLStg;
+			hr	   = pISP->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void **) &pTLStg);
+			if (FAILED(hr) || pTLStg == NULL)
+				return FALSE;
+
+			hr	   = pTLStg->EnumEntries(nDir, &pTLEnum);
+			if (FAILED(hr) || pTLEnum == NULL)
+				return FALSE;
+
+			int		nLast	= ( 10 > arrLog.size() ) ? (int) arrLog.size() : 10;
+			for (int i = 0; i < nLast; i++) {
+				CComPtr<ITravelLogEntry> pTLEntry;
+
+			  #if 1	//+++ UNICODE 対応.
+				std::vector<wchar_t>	title = Misc::tcs_to_wcs( LPCTSTR( arrLog[i].first ) );
+				std::vector<wchar_t>	url   = Misc::tcs_to_wcs( LPCTSTR( arrLog[i].second) );
+				// CreateEntry の第四引数がTRUEだと前に追加される
+				hr			 = pTLStg->CreateEntry(&url[0], &title[0], pTLEntryBase, !bFore, &pTLEntry);
+			  #else
+				CString 	strTitle	= arrLog[i].first;
+				CString 	strURL		= arrLog[i].second;
+
+				LPOLESTR				 pszwURL   = _ConvertString(strURL, strURL.GetLength() + 1);		//new
+				LPOLESTR				 pszwTitle = _ConvertString(strTitle, strTitle.GetLength() + 1);	//new
+
+				hr			 = pTLStg->CreateEntry(pszwURL, pszwTitle, pTLEntryBase, !bFore, &pTLEntry);
+				delete[] pszwURL;																			//Don't forget!
+				delete[] pszwTitle;
+			  #endif
+
+				if (FAILED(hr) || pTLEntry == NULL)
+					return FALSE;
+
+				if (pTLEntryBase.p)
+					pTLEntryBase.Release();
+
+				pTLEntryBase = pTLEntry;
+			}
+
+			return TRUE;
+		};	// lamda
+
+		LoadTravelLog(m_TravelLogFore, true);
+		LoadTravelLog(m_TravelLogBack, false);
+		m_TravelLogFore.clear();
+		m_TravelLogBack.clear();
+	}
+}
+
+/// 最近閉じたタブ用のデータを集める
+void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
+{	
+	data.strTitle	= GetLocationName();
+	data.strURL		= GetLocationURL();
+	data.dwDLCtrl	= m_view.GetDLControlFlags();
+
+	HRESULT hr;
+	CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;
+	if (pISP == NULL)
+		return ;
+
+	CComPtr<ITravelLogStg>		 pTLStg;
+	hr	= pISP->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void **) &pTLStg);
+	if (FAILED(hr) || pTLStg == NULL)
+		return ;
+
+	auto GetTravelLog	= [&](vector<std::pair<CString, CString> >& vecLog, bool bFore) {
+		DWORD	dwCount = 0;
+		hr	= pTLStg->GetCount(bFore ? TLEF_RELATIVE_FORE : TLEF_RELATIVE_BACK, &dwCount);
+		if (FAILED(hr) || dwCount == 0)	// 単に履歴がないだけの状態ならtrue.
+			return ;
+
+		CComPtr<IEnumTravelLogEntry> pTLEnum;
+		hr	= pTLStg->EnumEntries(bFore ? TLEF_RELATIVE_FORE : TLEF_RELATIVE_BACK, &pTLEnum);
+		if (FAILED(hr) || pTLEnum == NULL)
+			return ;
+
+		vecLog.reserve(10);
+
+		int 	count = 0;
+		for (int j = 0; j < (int)dwCount; ++j) {
+			CComPtr<ITravelLogEntry>  pTLEntry	= NULL;
+			LPOLESTR				  szURL 	= NULL;
+			LPOLESTR				  szTitle	= NULL;
+			DWORD	dummy = 0;
+			hr = pTLEnum->Next(1, &pTLEntry, &dummy);
+			if (pTLEntry == NULL || FAILED(hr))
+				break;
+
+			if (   SUCCEEDED( pTLEntry->GetTitle(&szTitle) ) && szTitle
+				&& SUCCEEDED( pTLEntry->GetURL  (&szURL  ) ) && szURL  )
+			{
+				vecLog.push_back(std::make_pair<CString, CString>(szTitle, szURL));
+				++count;
+			}
+			if (szTitle) ::CoTaskMemFree( szTitle );
+			if (szURL)	 ::CoTaskMemFree( szURL );
+
+			if (count >= 10)
+				break;
+		}
+	};	// lamda
+
+	GetTravelLog(data.TravelLogBack, false);
+	GetTravelLog(data.TravelLogFore, true);
+}
+
+/// 自動画像リサイズ
+void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
+{
+	if (CMainOption::s_nAutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
+		return ;
+
+	if (bFirst) {
+		CComPtr<IDispatch>	spDisp;
+		m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
+		if (spDoc == nullptr)
+			return ;
+		CComBSTR	strmineType;
+		spDoc->get_mimeType(&strmineType);
+		if (strmineType == nullptr)
+			return ;
+
+		CString strExt = CString(strmineType).Left(3);
+		if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF"))
+			return ;
+	
+		m_bImagePage = true;
+	}
+	if (m_bImagePage == false)
+		return ;
+
+	CComPtr<IDispatch>	spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
+	if (spDoc == nullptr)
+		return ;
+
+	if (bFirst) {	// 画像のサイズを得る
+		CComPtr<IHTMLElementCollection> 	pElemClct;
+		if ( FAILED( spDoc->get_images(&pElemClct) ) )
+			return;
+		long	length = 0;
+		pElemClct->get_length(&length);
+
+		CComPtr<IDispatch>			pDisp;
+		CComVariant 				varName ( 0L );
+		CComVariant 				varIndex( 0L );
+		if ( FAILED( pElemClct->item(varName, varIndex, &pDisp) ) )
+			return;
+		CComQIPtr<IHTMLImgElement>	pImg = pDisp;
+		if ( pImg == nullptr )
+			return;
+		
+		long	Width; 
+		long	Height;
+		if ( FAILED( pImg->get_width(&Width) ) )
+			return;
+		if ( FAILED( pImg->get_height(&Height) ) )
+			return;
+		m_ImageSize.SetSize((int)Width, (int)Height);
+	}
+
+	CComPtr<IHTMLElement>	spHTMLElement;
+	spDoc->get_body(&spHTMLElement);
+	CComQIPtr<IHTMLElement2>  spHTMLElement2 = spHTMLElement;
+	if (!spHTMLElement2)
+		return;
+
+	RECT	rcClient;
+	GetClientRect(&rcClient);
+
+	enum { kMargen = 10/*32*/ };
+	long 	scWidth  = (rcClient.right  - kMargen < 0) ? 1 : rcClient.right  - kMargen;
+	long 	scHeight = (rcClient.bottom - kMargen < 0) ? 1 : rcClient.bottom - kMargen;
+
+	double  sclW = scWidth  * 100.0 / m_ImageSize.cx;
+	double  sclH = scHeight * 100.0 / m_ImageSize.cy;
+	double  scl  = sclW < sclH ? sclW : sclH;
+	if (scl < 1) {
+		scl = 1;
+	} else if (scl >= 100) {
+		scl			= 100;
+		m_nImgSclSav = 100;
+	}
+	if (m_nImgSclSw == 0) {
+		m_nImgSclSav = int(scl);
+		scl			 = 100;
+	}
+	m_nImgScl = int( scl );
+	wchar_t		wbuf[128];
+	swprintf_s(wbuf, L"%d%%", int(scl));
+	CComVariant variantVal(wbuf);
+	CComBSTR	bstrZoom( L"zoom" );
+
+	CComPtr<IHTMLStyle>		pHtmlStyle;
+	if ( FAILED(spHTMLElement2->get_runtimeStyle(&pHtmlStyle)) || !pHtmlStyle )
+		return;
+	pHtmlStyle->setAttribute(bstrZoom, variantVal);
+	if (m_nImgSclSw)
+		pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"hidden"));
+
+}
+
+/// タブなどにFaviconを設定
+void	CChildFrame::Impl::_SetFavicon(const CString& strURL)
+{
+	CString strFaviconURL;
+	HRESULT hr = S_OK;
+	CComPtr<IDispatch>	spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+	if (spDocument) {
+		CComPtr<IHTMLElementCollection>	spCol;
+		spDocument->getElementsByTagName(CComBSTR(L"link"), &spCol);
+		if (spCol) {
+			ForEachHtmlElement(spCol, [&](IDispatch* pDisp) -> bool {
+				CComQIPtr<IHTMLLinkElement>	spLink = pDisp;
+				if (spLink.p) {
+					CComBSTR strrel;
+					spLink->get_rel(&strrel);
+					CComBSTR strhref;
+					spLink->get_href(&strhref);
+					strrel.ToLower();
+					if (strrel == _T("shortcut icon") || strrel == _T("icon")) {
+						DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
+						hr = ::UrlCombine(strURL, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
+						strFaviconURL.ReleaseBuffer();
+						if (SUCCEEDED(hr))
+							return false;
+					}
+				}
+				return true;
+			});
+		}
+	}
+	if (strFaviconURL.IsEmpty()) {	// ルートにあるFaviconのアドレスを得る
+		DWORD cchResult = INTERNET_MAX_URL_LENGTH;
+		if (::CoInternetParseUrl(strURL, PARSE_ROOTDOCUMENT, 0, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
+			strFaviconURL.ReleaseBuffer();
+			strFaviconURL += _T("/favicon.ico");
+		}
+	}
+
+	m_UIChange.SetFaviconURL(strFaviconURL);
+	CFaviconManager::SetFavicon(m_hWnd, strFaviconURL);
+}
+
+struct _Function_SelectEmpt {
+	void operator ()(IHTMLDocument2 *pDocument)
+	{
+		CComPtr<IHTMLSelectionObject> spSelection;
+		HRESULT 	hr = pDocument->get_selection(&spSelection);
+		if (spSelection)
+			spSelection->empty();
+	}
+};
+
+struct _Function_Hilight2 {
+	LPCTSTR 	m_lpszKeyWord;
+	BOOL		m_bHilight;
+
+	_Function_Hilight2(LPCTSTR lpszKeyWord, BOOL bHilight)
+		: m_lpszKeyWord(lpszKeyWord), m_bHilight(bHilight)
+	{	}
+
+	void operator ()(IHTMLDocument2* pDocument)
+	{
+		if (m_bHilight) {
+			if ( !FindHilight(pDocument) ) {
+				MakeHilight(pDocument);
+			}
+		} else {
+			RemoveHilight(pDocument);
+		}
+	}
+
+	// ハイライト作成
+	void MakeHilight(IHTMLDocument2* pDocument)
+	{
+	try {
+		// キーワードの最初の一語を取得
+		CString		strKeyWord = m_lpszKeyWord;
+
+		//+++ 単語区切りを調整
+		LPCTSTR		strExcept	= _T(" \t\"\r\n　");
+		strKeyWord = _tcstok( strKeyWord.GetBuffer(0), strExcept );
+		strKeyWord.TrimLeft(strExcept);
+		strKeyWord.TrimRight(strExcept);
+
+		int 	nLightIndex = 0;
+		HRESULT hr;
+
+		// キーワードが空になるまで繰り返し
+		while ( !strKeyWord.IsEmpty() ) {
+			CComPtr<IHTMLElement>		spHTMLElement;
+			// <body>を取得
+			hr = pDocument->get_body(&spHTMLElement);
+			if (spHTMLElement == NULL) 
+				break;
+
+			CComQIPtr<IHTMLBodyElement>	spHTMLBody = spHTMLElement;
+			if (spHTMLBody == NULL) 
+				break;
+
+			// テキストレンジを取得
+			CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
+			hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
+			if (!spHTMLTxtRange)
+				AtlThrow(hr);			
+
+			//+++ 最大キーワード数(無限ループ対策)
+			static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
+			//+++ 無限ループ状態を強制終了させるため、ループをカウントする
+			unsigned num = 0;
+
+			// キーワードを検索
+			CComBSTR		bstrText= strKeyWord;
+			VARIANT_BOOL	vBool	= VARIANT_FALSE;
+			while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
+				// 現在選択しているHTMLテキストを取得
+				CComBSTR	bstrTextNow;
+				hr = spHTMLTxtRange->get_text(&bstrTextNow);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				// <span>を付加
+				CComBSTR	bstrTextNew;
+				bstrTextNew.Append(g_lpszLight[nLightIndex]);	// <span ～
+				bstrTextNew.Append(bstrTextNow);
+				bstrTextNew.Append(_T("</span>"));
 
 
+				CComPtr<IHTMLElement> spParentElement;
+				hr = spHTMLTxtRange->parentElement(&spParentElement);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				CComBSTR	bstrParentTag;
+				hr = spParentElement->get_tagName(&bstrParentTag);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				if (   bstrParentTag != _T("SCRIPT")
+					&& bstrParentTag != _T("NOSCRIPT")
+					&& bstrParentTag != _T("TEXTAREA")
+					&& bstrParentTag != _T("STYLE"))
+				{
+					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
+					if (FAILED(hr))
+						AtlThrow(hr);
+
+					//+++ 通常のページでハイライト置換がこんなにもあることはないだろうで、無限ループ扱いでうちどめしとく
+					if (++num > maxKeyword)		
+						break;
+				}
+				spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+			}
+
+			++nLightIndex;
+			if (nLightIndex >= g_LIGHTMAX)
+				nLightIndex = 0;
+
+			// 次のキーワードに
+			strKeyWord = _tcstok(NULL, strExcept);
+			strKeyWord.TrimLeft(strExcept);
+			strKeyWord.TrimRight(strExcept);
+		}
+
+	} catch (const CAtlException& e) {
+			e;	// 例外を握りつぶす
+	}	// try
+	}
+
+	// ハイライトを解除する
+	void RemoveHilight(IHTMLDocument2* pDocument)
+	{
+		CComBSTR	hilightID(L"unDonutHilight");
+		CComBSTR	hilightTag(L"SPAN");
+
+		CComPtr<IHTMLElementCollection> pAll;
+
+		if (SUCCEEDED( pDocument->get_all(&pAll) ) && pAll != NULL) {
+			CComVariant 		id(L"unDonutHilight");
+			CComPtr<IDispatch>	pDisp;
+			CComVariant 		vIndex(0);
+			pAll->item(id, vIndex, &pDisp);
+			if (pDisp == NULL)
+				return;
+
+			CComPtr<IUnknown>	pUnk;
+
+			if (SUCCEEDED( pAll->get__newEnum(&pUnk) ) && pUnk != NULL) {
+				CComQIPtr<IEnumVARIANT> pEnumVariant = pUnk;
+
+				if (pEnumVariant != NULL) {
+					VARIANT  v;
+					ULONG	 ul;
+					CComBSTR bstrTagName;
+					CComBSTR bstrID;
+					CComBSTR bstrTmp;
+
+					while (pEnumVariant->Next(1, &v, &ul) == S_OK) {
+						CComQIPtr<IHTMLElement> pElement = v.pdispVal;
+						VariantClear(&v);
+
+						if (pElement != NULL) {
+							bstrTagName.Empty();
+							bstrID.Empty();
+							pElement->get_tagName(&bstrTagName);
+							pElement->get_id(&bstrID);
+
+							if (bstrTagName == hilightTag && bstrID == hilightID) {
+								bstrTmp.Empty();
+								pElement->get_innerHTML(&bstrTmp);
+								pElement->put_outerHTML(bstrTmp);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// ハイライトがすでにされているか確認する
+	BOOL FindHilight(IHTMLDocument2* pDocument)
+	{
+		CComPtr<IHTMLElementCollection> 	pAll;
+
+		if (SUCCEEDED(pDocument->get_all(&pAll)) && pAll != NULL) {
+			CComVariant 		id(L"unDonutHilight");
+			CComPtr<IDispatch>	pDisp;
+			CComVariant 		vIndex(0);
+			pAll->item(id, vIndex, &pDisp);
+			if (pDisp != NULL) {
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+};
+
+void	CChildFrame::Impl::_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord)
+{
+	CComQIPtr<IWebBrowser2> 	pWebBrowser = pDisp;
+	if (pWebBrowser) {
+		MtlForEachHTMLDocument2g(pWebBrowser, _Function_SelectEmpt());
+		MtlForEachHTMLDocument2g(pWebBrowser, _Function_Hilight2(lpszKeyWord, TRUE));
+	}
+}
 
 
 /////////////////////////////////////////////////////////////
@@ -1262,6 +1940,11 @@ void	CChildFrame::Navigate2(LPCTSTR lpszURL)
 	pImpl->Navigate2(lpszURL);
 }
 
+HWND	CChildFrame::GetHwnd() const
+{
+	return pImpl->m_hWnd;
+}
+
 DWORD	CChildFrame::GetExStyle() const
 {
 	return pImpl->GetExStyle();
@@ -1295,6 +1978,11 @@ void	CChildFrame::SaveSearchWordflg(bool bSave)
 void	CChildFrame::SetSearchWordAutoHilight(const CString& str, bool bAutoHilight)
 {
 	pImpl->SetSearchWordAutoHilight(str, bAutoHilight);
+}
+
+void	CChildFrame::SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back)
+{
+	pImpl->SetTravelLog(fore, back);
 }
 
 
