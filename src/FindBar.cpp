@@ -228,11 +228,10 @@ void	CFindBar::Impl::CloseFindBar()
 	m_CloseState = TTCS_NORMAL;
 	ShowWindow(FALSE);
 	m_funcUpdateLayout(FALSE);
-#if 0	//:::
+
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild) 
-		pChild->SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
-#endif
+		::SendMessage(pChild->GetHwnd(), WM_COMMAND, ID_VIEW_SETFOCUS, 0);
 }
 
 
@@ -370,13 +369,7 @@ void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
 		if (rc.PtInRect(pt)) {
 			CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 			if (pChild) {
-#if 0 //:::
-				CComPtr<IDispatch>	spDisp;
-				pChild->m_spBrowser->get_Document(&spDisp);
-				CComQIPtr<IHTMLDocument3> spDoc3 = spDisp;
-				if (spDoc3)
-					_RemoveHighlight(spDoc3);
-#endif
+				::SendMessage(pChild->GetHwnd(), WM_REMOVEHILIGHT, 0, 0);
 			}
 		}
 	}
@@ -585,12 +578,6 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild == nullptr)
 		return;
-#if 0 //:::
-	CComPtr<IDispatch>	spDisp;
-	pChild->m_spBrowser->get_Document(&spDisp);
-	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
-	if (spDoc == nullptr)
-		return;
 
 	long Flags = 0;
 	if (m_bWordUnit)
@@ -598,67 +585,12 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	if (m_bDistinguish)
 		Flags |= 4;
 
-	CComBSTR	strChar(L"Character");
-	CComBSTR	strTextedit(L"Textedit");
-	CComBSTR	strBackColor(L"BackColor");
-	CComBSTR	strColor(L"greenyellow");
-
-	/* 前のハイライト表示を消す */
-	CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc;
+	WORD	dw = 0;
+	if (bNoHighlight)
+		dw |= 0x1;
 	if (bEraseOld)
-		_RemoveHighlight(spDoc3);
-
-	/* 単語をハイライトする */
-	m_nMatchCount = 0;
-	if (strKeyword.GetLength() > 0) {
-		_MtlForEachHTMLDocument2(spDoc, [&](IHTMLDocument2* pDoc) {
-			CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
-			pDoc->get_selection(&spSelection);
-			if (spSelection.p)
-				spSelection->empty();
-
-			CComPtr<IHTMLElement>	spElm;
-			pDoc->get_body(&spElm);
-			CComQIPtr<IHTMLBodyElement>	spBody = spElm;
-			if (spBody.p == nullptr)
-				return;
-
-			CComPtr<IHTMLTxtRange>	spTxtRange;
-			spBody->createTextRange(&spTxtRange);
-			if (spTxtRange.p == nullptr)
-				return;
-
-			//long nMove;
-			//spTxtRange->moveStart(strTextedit, -1, &nMove);
-			//spTxtRange->moveEnd(strTextedit, 1, &nMove);
-			VARIANT_BOOL	vResult;
-			CComBSTR	strWord = strKeyword;
-			while (spTxtRange->findText(strWord, 1, Flags, &vResult), vResult == VARIANT_TRUE) {
-				CComPtr<IHTMLElement> spParentElement;
-				spTxtRange->parentElement(&spParentElement);
-				CComBSTR	bstrParentTag;
-				spParentElement->get_tagName(&bstrParentTag);
-				if (   bstrParentTag != _T("SCRIPT")
-					&& bstrParentTag != _T("NOSCRIPT")
-					&& bstrParentTag != _T("TEXTAREA")
-					&& bstrParentTag != _T("STYLE")) 
-				{
-					if (bNoHighlight == false) {
-						CComBSTR strInnerText;
-						spTxtRange->get_text(&strInnerText);
-						//VARIANT_BOOL	vRet;
-						//spTxtRange->execCommand(strBackColor, VARIANT_FALSE, CComVariant(strColor), &vRet);
-						CComBSTR strValue(L"<span id=\"udfbh\" style=\"color:black;background:greenyellow\">");//#00FFFF
-						strValue += strInnerText;
-						strValue += _T("</span>");
-						spTxtRange->pasteHTML(strValue);
-					}
-					++m_nMatchCount;
-				}
-				spTxtRange->collapse(VARIANT_FALSE);
-			}
-		});
-	}
+		dw |= 0x2;
+	m_nMatchCount = (int)::SendMessage(pChild->GetHwnd(), WM_HILIGHTFROMFINDBAR, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(dw, Flags));
 
 	/* 一致件数を表示 */
 	if (strKeyword.GetLength() > 0) {
@@ -677,7 +609,6 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	}
 	m_Edit.Invalidate();
 	m_Edit.UpdateWindow();
-#endif
 }
 
 //-----------------------------------
@@ -703,8 +634,7 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 
 	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
 	if (pChild) {
-#if 0	//:::
-		BOOL bFind = (BOOL)pChild->OnFindKeyWord(strKeyword, bFindDown, Flags);
+		BOOL bFind = (BOOL)::SendMessage(pChild->GetHwnd(), WM_USER_FIND_KEYWORD, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(bFindDown, Flags));
 		if (m_nMatchCount == 0)
 			return;	// 一致0ならなにもしない
 
@@ -729,7 +659,6 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 				m_static.SetWindowText(_T(" 見つかりませんでした"));
 			}
 		}
-#endif
 	}
 }
 

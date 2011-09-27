@@ -110,35 +110,46 @@ DWORD WINAPI CMultiThreadManager::RunMainThread(LPVOID lpData)
 	::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	::OleInitialize(NULL);
 
-	CMessageLoop theLoop;
-	_Module.AddMessageLoop(&theLoop);
+	_Module.StartMonitor();
+	HRESULT hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
+	ATLASSERT( SUCCEEDED(hRes) );
+	hRes = ::CoResumeClassObjects();
+	ATLASSERT( SUCCEEDED(hRes) );
+	int nRet = 0;
+	{
+		CMessageLoop theLoop;
+		_Module.AddMessageLoop(&theLoop);
 
-	CMainFrame	 wndMain;
-	if (wndMain.CreateEx() == NULL) {
-		ATLTRACE( _T("Main window creation failed!\n") );
-		return 0;
-	}
-
-	// load windowplacement
-	wndMain.startupMainFrameStayle(pData->nCmdShow, pData->bTray);
-
-	_Module.Lock();
-
-	if (pData->lpstrCmdLine == NULL || pData->lpstrCmdLine[0] == 0) {	// no command line param
-		CStartUpOption::StartUp(wndMain);
-	} else {
-		if (CStartUpOption::s_dwParam) {
-			CStartUpOption::StartUp(wndMain);
+		CMainFrame	 wndMain;
+		if (wndMain.CreateEx() == NULL) {
+			ATLTRACE( _T("Main window creation failed!\n") );
+			return 0;
 		}
-		CommandLineArg(wndMain, pData->lpstrCmdLine);
+
+		// load windowplacement
+		wndMain.startupMainFrameStayle(pData->nCmdShow, pData->bTray);
+
+		_Module.Lock();
+
+		if (pData->lpstrCmdLine == NULL || pData->lpstrCmdLine[0] == 0) {	// no command line param
+			CStartUpOption::StartUp(wndMain);
+		} else {
+			if (CStartUpOption::s_dwParam) {
+				CStartUpOption::StartUp(wndMain);
+			}
+			CommandLineArg(wndMain, pData->lpstrCmdLine);
+		}
+		g_pMainWnd->SetAutoBackUp();		//自動更新するなら、開始.
+
+		delete pData;
+		// 実際のメインループ.
+		nRet = theLoop.Run();
+
+		_Module.RemoveMessageLoop();
 	}
-	g_pMainWnd->SetAutoBackUp();		//自動更新するなら、開始.
+	_Module.RevokeClassObjects();
+	::Sleep(_Module.m_dwPause);
 
-	delete pData;
-	// 実際のメインループ.
-	int nRet = theLoop.Run();
-
-	_Module.RemoveMessageLoop();
 	::CoUninitialize();
 	::OleUninitialize();
 
@@ -163,8 +174,10 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 
 	DWORD dwOption = 0;
 	if (pData->ConstructData.bActive)
-		dwOption = TAB_ACTIVE;
-	wnd.GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+		dwOption |= TAB_ACTIVE;
+	if (pData->ConstructData.bLink)
+		dwOption |= TAB_LINK;
+	wnd.GetTopLevelWindow().SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
 	
 	if (pData->ConstructData.funcCallAfterCreated)
 		pData->ConstructData.funcCallAfterCreated(pData->pChild);

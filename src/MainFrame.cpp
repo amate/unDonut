@@ -7,6 +7,8 @@
 
 #include "stdafx.h"
 #include "MainFrame.h"
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
 #include "XmlFile.h"
 #include "DialogKiller.h"
 #include "dialog/DebugWindow.h"
@@ -84,7 +86,7 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 		::ShowWindowAsync(m_hWndChildFrame, FALSE);
 	}
 	if (hWndChildFrame) {
-		::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+		//::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
 		RECT rcClient;
 		GetClientRect(&rcClient);
 		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
@@ -173,7 +175,6 @@ CMainFrame::CMainFrame()
 	, m_ScriptMenu(ID_INSERTPOINT_SCRIPTMENU, _T("(empty)"), ID_INSERTPOINT_SCRIPTMENU, ID_INSERTPOINT_SCRIPTMENU_END)
 	, m_DropScriptMenu(ID_INSERTPOINT_SCRIPTMENU, _T("(empty)"), ID_INSERTPOINT_SCRIPTMENU, ID_INSERTPOINT_SCRIPTMENU_END)
 	, m_MenuEncode(this)
-	, m_bShow(FALSE)
 	, m_hGroupThread(NULL)
 	, m_nMenuBarStyle(-1)		//+++
 	, m_bTray(0)				//+++
@@ -2356,18 +2357,61 @@ struct _Function_Enum_ChildInfomation {
 
 void	CMainFrame::SaveAllTab()
 {
-	/* すべてのタブの情報を取得 */
-	std::list<SDfgSaveInfo>	SaveInfoList;
-	_Function_Enum_ChildInfomation	f(this, m_ChildFrameClient.GetActiveChildFrameWindow(), SaveInfoList, 0, CMainOption::s_bTravelLogGroup);
-	m_MDITab.ForEachWindow( boost::ref(f) );
+	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	int	nCount = 0;
+	int nActiveIndex = -1;
+	vector<unique_ptr<ChildFrameDataOnClose> >	vecpSaveData;
+	auto CollectChildFrameData = [&](HWND hWnd) {
+		ChildFrameDataOnClose* pData = new ChildFrameDataOnClose;
+		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, (WPARAM)pData, 0);
+		vecpSaveData.push_back(unique_ptr<ChildFrameDataOnClose>(std::move(pData)));
+		if (hWnd == hWndActive)
+			nActiveIndex = nCount;
+		++nCount;
+	};
+	m_MDITab.ForEachWindow(CollectChildFrameData);
 
 	CString	TabList = Misc::GetExeDirectory() + _T("TabList.xml");
-
 	if (::PathFileExists(TabList)) {
 		CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.xml");
 		::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
 	}
 
+	try {
+		using boost::property_tree::wptree;
+
+		auto AddTravelLog = [](wptree& ptLog, const vector<std::pair<CString, CString> >& vecTravelLog) {
+			for (auto it = vecTravelLog.cbegin(); it != vecTravelLog.cend(); ++it) {
+				wptree& ptItem = ptLog.add(L"item", L"");
+				ptItem.put(L"<xmlattr>.title", (LPCTSTR)it->first);
+				ptItem.put(L"<xmlattr>.url"	 , (LPCTSTR)it->second);
+			}
+		};
+		wptree	pt;
+		wptree&	ptTabList = pt.add(L"TabList", L"");
+		ptTabList.add(L"<xmlattr>.ActiveIndex", nActiveIndex);
+		for (auto it = vecpSaveData.cbegin(); it != vecpSaveData.cend(); ++it) {
+			ChildFrameDataOnClose& data = *(*it);
+			wptree& ptItem = ptTabList.add(L"Tab", L"");
+			ptItem.put(L"<xmlattr>.title", (LPCTSTR)data.strTitle);
+			ptItem.put(L"<xmlattr>.url"	 , (LPCTSTR)data.strURL);
+			ptItem.put(L"<xmlattr>.DLCtrlFlags", data.dwDLCtrl);
+			ptItem.put(L"<xmlattr>.ExStyle",	data.dwExStyle);
+			ptItem.put(L"<xmlattr>.AutoRefreshStyle", data.dwAutoRefreshStyle);
+			AddTravelLog(ptItem.add(L"TravelLog.Back", L""), data.TravelLogBack);
+			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
+		}
+		using namespace boost::property_tree::xml_parser;
+		std::wofstream	filestream;
+		filestream.imbue(std::locale("japanese"));
+		filestream.open(TabList, std::ios::out | std::ios::trunc);
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("shift_jis")));
+
+
+	} catch (...) {
+		MessageBox(_T("SaveAllTabでエラー発生!"));
+	}
+#if 0
 	try {
 		CXmlFileWrite	xmlWrite(TabList);
 
@@ -2423,6 +2467,7 @@ void	CMainFrame::SaveAllTab()
 	catch (...) {
 		MessageBox(_T("SaveAllTabListに失敗"));
 	}
+#endif
 }
 
 
@@ -2445,8 +2490,7 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	}
 
 	int	nActiveIndex = 0;
-	std::vector<SDfgSaveInfo>	vecSaveInfo;
-	SDfgSaveInfo				Info;
+	std::vector<unique_ptr<ChildFrameDataOnClose> >	vecpSaveData;
 
 	CString	TabList;
 	if (strFilePath == NULL) {
@@ -2455,6 +2499,91 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		TabList = strFilePath;
 	}
 
+	std::wifstream	filestream;
+	filestream.imbue(std::locale("japanese"));
+	filestream.open(TabList);
+	if (filestream.is_open() == false) {
+		return ;
+	}
+
+	try {
+		using boost::property_tree::wptree;
+
+		wptree	pt;
+		boost::property_tree::read_xml(filestream, pt);
+
+		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
+			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
+				wptree& item = it->second;
+				vecTravelLog.push_back(std::pair<CString, CString>(
+					item.get(L"<xmlattr>.title", L"").c_str(), 
+					item.get(L"<xmlattr>.url", L"").c_str()));
+			}
+		};
+
+		wptree&	ptChild = pt.get_child(L"TabList");
+		for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
+			wptree& ptItem = it->second;
+			if (it == ptChild.begin()) {
+				nActiveIndex = ptItem.get(L"ActiveIndex", 0);
+				continue;
+			}
+
+			unique_ptr<ChildFrameDataOnClose>	pdata(new ChildFrameDataOnClose);
+
+			pdata->strTitle	= ptItem.get(L"<xmlattr>.title", L"").c_str();
+			pdata->strURL	= ptItem.get(L"<xmlattr>.url", L"").c_str();
+			pdata->dwDLCtrl	= ptItem.get<DWORD>(L"<xmlattr>.DLCtrlFlags", CDLControlOption::s_dwDLControlFlags);
+			pdata->dwExStyle= ptItem.get<DWORD>(L"<xmlattr>.ExStyle",	CDLControlOption::s_dwExtendedStyleFlags);
+			pdata->dwAutoRefreshStyle	= ptItem.get<DWORD>(L"<xmlattr>.AutoRefreshStyle", 0);
+			SetTravelLog(ptItem.get_child(L"TravelLog.Back"), pdata->TravelLogBack);
+			SetTravelLog(ptItem.get_child(L"TravelLog.Fore"), pdata->TravelLogFore);
+
+			vecpSaveData.push_back(std::move(pdata));
+		}
+	} catch (...) {
+		MessageBox(_T("RestoreAllTabでエラーが発生しました!"));
+	}
+
+	CLockRedrawMDIClient	 lock(m_ChildFrameClient);
+	CDonutTabBar::CLockRedraw lock2(m_MDITab);
+
+	if (bClose) 
+		MtlCloseAllMDIChildren(m_ChildFrameClient);
+
+	int nCount = (int)vecpSaveData.size();
+	vector<NewChildFrameData*>	vecpNewChildData;
+	vecpNewChildData.reserve(nCount);
+	for (int i = 0; i < nCount; ++i) {						// OnCloseからNewChildに転写
+		ChildFrameDataOnClose&	data = *vecpSaveData[i];
+
+		NewChildFrameData*	pNewChildData = new NewChildFrameData(m_ChildFrameClient);
+		pNewChildData->strURL		= data.strURL;
+		pNewChildData->dwDLCtrl		= data.dwDLCtrl;
+		pNewChildData->dwExStyle	= data.dwExStyle;
+		pNewChildData->dwAutoRefresh= data.dwAutoRefreshStyle;
+		pNewChildData->bActive	= (i == nActiveIndex);
+		vecpNewChildData.push_back(pNewChildData);
+	}
+	for (int i = 0; i < nCount - 1; ++i) {	
+		vecpNewChildData[i]->pNext	= vecpNewChildData[i + 1];
+	}
+	for (int i = 0; i < nCount; ++i) {
+		ChildFrameDataOnClose* pData = vecpSaveData[i].release();
+		NewChildFrameData*	pThis = vecpNewChildData[i];
+		pThis->funcCallAfterCreated	= [pData, pThis](CChildFrame* pChild) {
+			pChild->SetTravelLog(pData->TravelLogFore, pData->TravelLogBack);
+			delete pData;
+			if (pThis->pNext)
+				CChildFrame::AsyncCreate(*pThis->pNext);	// 次のChildFrameを作成
+			delete pThis;
+
+		};
+	}
+	if (vecpNewChildData.size() > 0) 
+		CChildFrame::AsyncCreate(*vecpNewChildData[0]);
+
+#if 0
 	try {
 		CXmlFileRead	xmlRead(TabList);
 		CString 		Element;
@@ -2612,6 +2741,7 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	catch (...) {
 		MessageBox(_T("RestoreAllTabに失敗"));
 	}
+#endif
 }
 
 //private:
@@ -3087,6 +3217,13 @@ void	CMainFrame::OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData)
 	m_RecentClosedTabList.AddToList(pClosedTabData);
 }
 
+/// 独自ページ内検索バーを表示する
+void	CMainFrame::OnOpenFindBarWithText(LPCTSTR strText)
+{
+	if (CMainOption::s_bUseCustomFindBar) 
+		m_FindBar.ShowFindBar(strText);
+}
+
 void	CMainFrame::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
 {
 	m_MDITab.SetTitle(hWndChildFrame, strTitle);
@@ -3172,21 +3309,12 @@ LRESULT CMainFrame::OnMenuRefreshScript(BOOL bInit)
 	if ( m_DropScriptMenu.GetMenu().IsMenu() ) {
 		if (bInit == FALSE) {
 			m_DropScriptMenu.GetMenu().DestroyMenu();
-			m_bShow = FALSE;
-		} else {
-			m_bShow = TRUE;
 		}
 	}
 
 	return S_OK;
 }
 
-
-LRESULT CMainFrame::OnRestrictMessage(BOOL bOn)
-{
-	m_bShow = bOn;
-	return S_OK;
-}
 
 /// お気に入りメニューからリンクのパスを返す
 LRESULT	CMainFrame::OnGetFavoriteFilePath(int nID)
@@ -4303,188 +4431,6 @@ bool CMainFrame::_IsClipboardAvailable()
 }
 
 
-//minit
-LRESULT CMainFrame::OnSpecialKeys(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	int nCode = 0;
-	switch (wID) {
-	case ID_SPECIAL_HOME:		nCode = VK_HOME;	break;
-	case ID_SPECIAL_END:		nCode = VK_END; 	break;
-	case ID_SPECIAL_PAGEUP: 	nCode = VK_PRIOR;	break;
-	case ID_SPECIAL_PAGEDOWN:	nCode = VK_NEXT;	break;
-	case ID_SPECIAL_UP: 		nCode = VK_UP;		break;
-	case ID_SPECIAL_DOWN:		nCode = VK_DOWN;	break;
-	default:	ATLASSERT(FALSE);
-	}
-	CChildFrame* pChild = GetActiveChildFrame();
-	if (pChild == nullptr) 
-		return 0;
-#if 0 //:::
-	if (wID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
-		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
-			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
-				CRect rc;
-				spIFrame->get_offsetHeight(&rc.bottom);
-				spIFrame->get_offsetWidth(&rc.right);
-				CComPtr<IHTMLElement>	spCurElement = spIFrame;
-				do {
-					CPoint temp;
-					spCurElement->get_offsetTop(&temp.y);
-					spCurElement->get_offsetLeft(&temp.x);
-					rc += temp;
-					CComPtr<IHTMLElement>	spTemp;
-					spCurElement->get_offsetParent(&spTemp);
-					spCurElement.Release();
-					spCurElement = spTemp;
-				} while (spCurElement.p);
-				
-				return rc;
-			};
-			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
-				CPoint ptScroll;
-				CComPtr<IHTMLElement>	spBody;
-				spDoc2->get_body(&spBody);
-				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
-				spBody2->get_scrollTop(&ptScroll.y);
-				spBody2->get_scrollLeft(&ptScroll.x);
-				if (ptScroll == CPoint(0, 0)) {
-					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
-					CComPtr<IHTMLElement>	spDocumentElement;
-					spDoc3->get_documentElement(&spDocumentElement);
-					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
-					spDocumentElement2->get_scrollTop(&ptScroll.y);
-					spDocumentElement2->get_scrollLeft(&ptScroll.x);
-				}
-				return ptScroll;
-			};
-
-			HRESULT hr = S_OK;
-			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
-
-			CComPtr<IHTMLFramesCollection2>	spFrames;
-			spDoc2->get_frames(&spFrames);
-			CComPtr<IHTMLElementCollection>	spIFrameCol;
-			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spIFrameCol);
-			CComPtr<IHTMLElementCollection>	spFrameCol;
-			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spFrameCol);
-			
-			long frameslength = 0, iframelength = 0, framelength = 0;
-			spFrames->get_length(&frameslength);
-			spIFrameCol->get_length(&iframelength);
-			spFrameCol->get_length(&framelength);
-			ATLASSERT(frameslength == iframelength || frameslength == framelength);
-
-			if (frameslength == iframelength && spIFrameCol.p && spFrames.p) {
-				for (long i = 0; i < iframelength; ++i) {
-					CComVariant vIndex(i);
-					CComPtr<IDispatch>	spDisp2;
-					spIFrameCol->item(vIndex, vIndex, &spDisp2);
-					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
-					CPoint ptScroll = funcGetScrollPosition(spDoc2);
-					CRect rc = rcAbsolute - ptScroll;
-					if (rc.PtInRect(pt)) {
-						CComVariant vResult;
-						spFrames->item(&vIndex, &vResult);
-						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
-						return spWindow;
-					}
-				}
-			}
-
-			if (frameslength == framelength && spFrameCol.p && spFrames.p) {
-				for (long i = 0; i < framelength; ++i) {
-					CComVariant vIndex(i);
-					CComPtr<IDispatch>	spDisp2;
-					spFrameCol->item(vIndex, vIndex, &spDisp2);
-					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
-					if (spFrame.p) {
-						CRect rc;
-						spFrame->get_offsetLeft(&rc.left);
-						spFrame->get_offsetTop(&rc.top);
-						long temp;
-						spFrame->get_offsetWidth(&temp);
-						rc.right += rc.left + temp;
-						spFrame->get_offsetHeight(&temp);
-						rc.bottom+= rc.top + temp;
-						if (rc.PtInRect(pt)) {
-							CComVariant vResult;
-							spFrames->item(&vIndex, &vResult);
-							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
-							return spWindow;
-						}
-					}
-				}
-			}
-			return nullptr;
-		};
-
-		CComPtr<IDispatch>	spDisp;
-		HRESULT hr = pChild->m_spBrowser->get_Document(&spDisp);
-		CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
-		if (spDocument == nullptr)
-			return 0;
-		CPoint pt;
-		::GetCursorPos(&pt);
-		pChild->ScreenToClient(&pt);
-
-		CComPtr<IHTMLWindow2> spWindow = funcGetHTMLWindowOnCursorPos(pt, spDocument);
-		if (spWindow) {
-			CComQIPtr<IHTMLDocument2>	spFrameDocument;
-			hr = spWindow->get_document(&spFrameDocument);
-			if ( FAILED(hr) ) {
-				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
-				ATLASSERT(spServiceProvider);
-				CComPtr<IWebBrowser2>	spBrowser;
-				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
-				if (!spBrowser)
-					return 0;
-				CComPtr<IDispatch>	spDisp;
-				hr = spBrowser->get_Document(&spDisp);
-				if (!spDisp)
-					return 0;
-				spFrameDocument = spDisp;
-				if (!spFrameDocument)
-					return 0;
-				spWindow.Release();
-				spFrameDocument->get_parentWindow(&spWindow);
-				if (!spWindow)
-					return 0;
-			}
-
-			if (wID == ID_SPECIAL_HOME)
-				spWindow->scrollBy(0, -300000);
-			else if (wID == ID_SPECIAL_END)
-				spWindow->scrollBy(0, 300000);
-		} else {
-			CComQIPtr<IHTMLDocument2>	spDocument2 = spDocument;
-			spDocument2->get_parentWindow(&spWindow);
-			ATLASSERT(spWindow);
-			if (wID == ID_SPECIAL_HOME)
-				spWindow->scrollBy(0, -300000);
-			else if (wID == ID_SPECIAL_END)
-				spWindow->scrollBy(0, 300000);
-		}
-	} else {
-		pChild->SetFocus();
-
-		INPUT	inputs[2] = { 0 };
-		inputs[0].type		= INPUT_KEYBOARD;
-		inputs[0].ki.wVk	= nCode;
-		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[0].ki.dwFlags= 0;
-		inputs[1].type		= INPUT_KEYBOARD;
-		inputs[1].ki.wVk	= nCode;
-		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
-		SendInput(2, inputs, sizeof(INPUT));
-
-	//PostMessage(WM_KEYDOWN, nCode, 0);
-	}
-#endif
-	return 0;
-}
-
-
 /// 証明書情報表示
 LRESULT CMainFrame::OnSecurityReport(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 {
@@ -5389,15 +5335,6 @@ void CMainFrame::OnSearchWeb_engineId(UINT code, int id, HWND hWnd)
 }
 
 
-//-----------------------------------------
-/// 独自ページ内検索バーを表示する
-void	CMainFrame::SetFocusToSearchBarWithSelectedText()
-{
-	if (CMainOption::s_bUseCustomFindBar) 
-		m_FindBar.ShowFindBar(GetActiveSelectedText());
-}
-
-
 
 // ==================================================================================
 
@@ -5412,11 +5349,14 @@ IDispatch *CMainFrame::ApiGetDocumentObject(int nTabIndex)
 	if (hTabWnd == NULL)
 		return NULL;
 
-	CWebBrowser2 browser = DonutGetIWebBrowser2(hTabWnd);
+	CChildFrame* pChild = GetChildFrame(hTabWnd);
+	if (pChild == nullptr)
+		return nullptr;
 
-	IDispatch *  spDocument = 0;
-	browser.m_spBrowser->get_Document(&spDocument);
-	return (IDispatch *) spDocument;
+	CComPtr<IWebBrowser2>	spBrwoser = pChild->GetMarshalIWebBrowser();
+	IDispatch*  spDocument = nullptr;
+	spBrwoser->get_Document(&spDocument);
+	return spDocument;
 }
 
 
@@ -5426,30 +5366,34 @@ IDispatch *CMainFrame::ApiGetWindowObject(int nTabIndex)
 	if (hTabWnd == NULL)
 		return NULL;
 
-	CWebBrowser2			  browser = DonutGetIWebBrowser2(hTabWnd);
+	CChildFrame* pChild = GetChildFrame(hTabWnd);
+	if (pChild == nullptr)
+		return nullptr;
+
+	CComPtr<IWebBrowser2>	spBrwoser = pChild->GetMarshalIWebBrowser();
 
 	CComPtr<IDispatch>		  spDisp  = 0;
-	HRESULT 				  hr	  = browser.m_spBrowser->get_Document(&spDisp);
+	HRESULT 				  hr	  = spBrwoser->get_Document(&spDisp);
 	CComQIPtr<IHTMLDocument2> spDoc   = spDisp;
 
-	IHTMLWindow2 *			  spWnd   = 0;
+	IHTMLWindow2*			  spWnd   = 0;
 	spDoc->get_parentWindow(&spWnd);
-	return (IDispatch *) spWnd;
+	return (IDispatch*)spWnd;
 }
 
 
 IDispatch *CMainFrame::ApiGetWebBrowserObject(int nTabIndex)
 {
 	HWND		  hTabWnd	= m_MDITab.GetTabHwnd(nTabIndex);
-
 	if (hTabWnd == NULL)
 		return NULL;
 
-	CWebBrowser2  browser	= DonutGetIWebBrowser2(hTabWnd);
+	CChildFrame* pChild = GetChildFrame(hTabWnd);
+	if (pChild == nullptr)
+		return nullptr;
 
-	IWebBrowser2 *spBrowser = 0;
-	browser.m_spBrowser->QueryInterface(IID_IWebBrowser2, (void **) &spBrowser);
-	return (IDispatch *) spBrowser;
+	CComPtr<IWebBrowser2>	spBrwoser = pChild->GetMarshalIWebBrowser();
+	return (IDispatch *) spBrwoser;
 }
 
 
@@ -5468,8 +5412,8 @@ void CMainFrame::ApiSetTabIndex(int nTabIndex)
 void CMainFrame::ApiClose(int nTabIndex)
 {
 	HWND hTabWnd = m_MDITab.GetTabHwnd(nTabIndex);
-
-	::SendMessage(hTabWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
+	if (hTabWnd)
+		::SendMessage(hTabWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
 }
 
 
@@ -5489,28 +5433,13 @@ void CMainFrame::ApiMoveToTab(int nBeforIndex, int nAfterIndex)
 
 int CMainFrame::ApiNewWindow(BSTR bstrURL, BOOL bActive)
 {
-#if 0 //:::
 	CString 	 strURL(bstrURL);
-
-	int 		 nCmdShow = bActive ? -1 : SW_SHOWNOACTIVATE;
-
+	
 	if (m_MDITab.GetItemCount() == 0)
-		nCmdShow = -1;
+		bActive = TRUE;
+	UserOpenFile(bstrURL, bActive ? D_OPENFILE_ACTIVATE : 0);
 
-	CChildFrame *pChild   = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar);
-	if (pChild == NULL)
-		return -1;
-
-	pChild->ActivateFrame(nCmdShow);
-
-	if ( strURL.IsEmpty() )
-		strURL = _T("about:blank");
-
-	pChild->SetWaitBeforeNavigate2Flag();			//+++ 無理やり、BeforeNavigate2()が実行されるまでの間アドレスバーを更新しないようにするフラグをon
-	pChild->Navigate2(strURL);
-	return m_MDITab.GetTabIndex(pChild->m_hWnd);
-#endif
-	return -1;
+	return -1;	//\\ インデックスは分からない
 }
 
 
@@ -5592,12 +5521,6 @@ void CMainFrame::ApiSetSearchText(BSTR bstrText)
 {
 	CString strText = bstrText;
 	m_SearchBar.SetSearchStr(strText);
-#if 0
-	CEdit	edit	= m_SearchBar.GetEditCtrl();
-	
-	edit.SendMessage(WM_CHAR, 'P');
-	edit.SetWindowText(strText);
-#endif
 }
 
 
@@ -5616,10 +5539,7 @@ void CMainFrame::ApiGetAddressText( /*[out, retval]*/ BSTR *bstrText)
 void CMainFrame::ApiSetAddressText(BSTR bstrText)
 {
 	CString strText = bstrText;
-	CEdit	edit	= m_AddressBar.GetEditCtrl();
-
-	edit.SendMessage(WM_CHAR, 'P');
-	edit.SetWindowText(strText);
+	m_AddressBar.SetWindowText(strText);
 }
 
 
@@ -5795,14 +5715,13 @@ struct CMainFrame::_ExtendProfileInfo {
 //public:
 int CMainFrame::ApiNewWindow3(BSTR bstrURL, BOOL bActive, long ExStyle, void *pExInfo)
 {
-#if 0	//:::
 	CString 	 strURL   = bstrURL;
 
-	int 		 nCmdShow = bActive ? -1 : SW_SHOWNOACTIVATE;
-
 	if (m_MDITab.GetItemCount() == 0)
-		nCmdShow = -1;
+		bActive = TRUE;
 
+	UserOpenFile(strURL, bActive ? D_OPENFILE_ACTIVATE : 0, -1, (int)ExStyle);
+#if 0
 	CChildFrame *pChild   = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar);
 
 	if (pChild == NULL)

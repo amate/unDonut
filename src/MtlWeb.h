@@ -29,6 +29,7 @@
 #include "MtlWeb.h"
 #include "MtlFile.h"
 #include "DonutPFunc.h"
+#include "Donut.h"
 
 
 
@@ -552,7 +553,8 @@ public:
 
 
 private:
-	virtual void searchEngines(const CString &strKeyWord )
+	// Overriable
+	void searchEngines(const CString &strKeyWord )
 	{
 		T * 		pT		  = static_cast<T *>(this);
 		CString 	strURL;

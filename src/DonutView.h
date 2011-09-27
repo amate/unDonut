@@ -46,6 +46,7 @@ public:
 
 	void	SetDefaultFlags(DWORD dwDefaultDLCtrl, DWORD dwDefaultExStyle, DWORD dwAutoRefresh);
 	void	SetAutoRefreshStyle(DWORD dwStyle);
+	DWORD	GetAutoRefreshStyle() const { return m_dwAutoRefreshStyle; }
 
 	// Methods
 	DWORD	GetDLControlFlags() const { return m_dwDLControlFlags; }
@@ -96,6 +97,11 @@ public:
 	BEGIN_MSG_MAP( CDonutView )
 		MSG_WM_CREATE	( OnCreate )
 		MSG_WM_DESTROY	( OnDestroy )
+		MSG_WM_TIMER( OnTimer )
+		if (uMsg == WM_INITMENUPOPUP) {
+			GetTopLevelWindow().SendMessage(uMsg, wParam, lParam);
+			return TRUE;
+		}
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_BGSOUNDS		, OnMultiBgsounds		)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_VIDEOS			, OnMultiVideos 		)
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_DLIMAGES		, OnMultiDlImages		)
@@ -120,12 +126,12 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_MESSAGE_FILTER  , OnMessageFilter   )
 		COMMAND_ID_HANDLER_EX( ID_MOUSE_GESTURE   , OnMouseGesture	  )
 		COMMAND_ID_HANDLER_EX( ID_BLOCK_MAILTO	  , OnBlockMailto	  )
-		MSG_WM_TIMER( OnTimer )
 	END_MSG_MAP()
 
 
 	int		OnCreate(LPCREATESTRUCT /*lpCreateStruct*/);
 	void	OnDestroy();
+	void	OnTimer(UINT_PTR nIDEvent);
 	void	OnMultiChg(WORD, WORD, HWND);
 	void	OnSecuChg(WORD, WORD, HWND);
 	void	OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
@@ -149,8 +155,6 @@ public:
 	void	OnAutoRefresh2min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnAutoRefresh5min(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnAutoRefreshUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	void	OnTimer(UINT_PTR nIDEvent);
-
 
 private:
 	void	_InitDLControlFlags() { PutDLControlFlags(m_dwDefaultDLControlFlags); }

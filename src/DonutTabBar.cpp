@@ -1100,7 +1100,7 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 				if (nNext >= 0) {
 					return nNext;
 				} else {
-					nNext = nActiveIndex + 1;
+					nNext = nActiveIndex;// + 1;
 
 					if (nNext < nCount) {
 						return nNext;
@@ -1108,12 +1108,11 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 				}
 			} else if (s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) {
 				// 閉じるときアクティブなタブの右をアクティブにする
-				int nNext = nActiveIndex + 1;
+				int nNext = nActiveIndex;// + 1;
 				if (nNext < nCount) {
 					return nNext;
 				} else {
 					nNext = nActiveIndex - 1;
-
 					if (nNext >= 0) {
 						return nNext;
 					}
@@ -1122,6 +1121,8 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 			// 全タブが削除された
 			return -1;
 		};
+		_DeleteItem(nIndex);			// タブを削除する
+
 		int nNextIndex = funcManageClose(nCurIndex);
 		if (nNextIndex == -1) {
 			// 最後のタブが閉じられた
@@ -1130,7 +1131,6 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 		} else
 			SetCurSel(nNextIndex);
 
-		_DeleteItem(nCurIndex);			// タブを削除する
 	} else {
 		// アクティブでないビューが破棄された
 		_DeleteItem(nIndex);
@@ -1983,8 +1983,9 @@ void	CDonutTabBar::Impl::OnMButtonUp(UINT nFlags, CPoint point)
 	GetCurMultiSelEx(arrCurMultiSel, nIndex);
 
 	if (arrCurMultiSel.GetSize() > 1) {
-		for (int i = 0; i < arrCurMultiSel.GetSize(); ++i) {
-			hWndChild = GetTabHwnd(arrCurMultiSel[i]);
+		for (int i = arrCurMultiSel.GetSize() - 1; i >= 0; --i) {
+			int nTargetIndex = arrCurMultiSel[i];
+			hWndChild = GetTabHwnd(nTargetIndex);
 
 			if (s_dwExStyle & MTB_EX_XCLICKCLOSE)
 				::PostMessage(hWndChild, WM_CLOSE, 0, 0);

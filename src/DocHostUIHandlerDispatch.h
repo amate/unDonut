@@ -10,7 +10,6 @@
 #include <mshtmdid.h>
 
 #include "MtlDragDrop.h"
-#include "CustomContextMenu.h"
 
 // ëOï˚êÈåæ
 class CDonutView;
@@ -121,7 +120,14 @@ public:
 		/* [out] */ IUnknown  * *	ppDORet) { return E_NOTIMPL; }
 
 private:
+	HRESULT	_ShowCustomContextMenu(DWORD dwID, POINT* pptPosition, IUnknown* pCommandTarget, IDispatch* pDispatchObjectHit);
+	void	_SetMenuEnable(HMENU hMenu, IOleCommandTarget* spOleCommandTarget);
+
+	// Data members
 	bool					   m_bNoIECustom;
 	CComPtr<IDocHostUIHandler> m_pDefaultHandler;
 	CDonutView*				   m_pView;
+
+	int		m_nContextMenuMode;
+	CString	m_strUrl;
 };

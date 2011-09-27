@@ -14,10 +14,12 @@ struct NewChildFrameData {
 	DWORD	dwExStyle;
 	DWORD	dwAutoRefresh;
 	bool	bActive;
+	bool	bLink;
 	function<void (CChildFrame*)>	funcCallAfterCreated;
+	NewChildFrameData*	pNext;
 
 	NewChildFrameData(HWND Parent) : 
-		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), bActive(false)
+		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), bActive(false), bLink(false), pNext(nullptr)
 	{	}
 };
 
@@ -27,8 +29,10 @@ struct ChildFrameDataOnClose {
 	vector<std::pair<CString, CString> > TravelLogFore;
 	vector<std::pair<CString, CString> > TravelLogBack;
 	DWORD	dwDLCtrl;
+	DWORD	dwExStyle;			// TabList.xml—p
+	DWORD	dwAutoRefreshStyle;	// 
 
-	ChildFrameDataOnClose() : dwDLCtrl(0)
+	ChildFrameDataOnClose() : dwDLCtrl(0), dwExStyle(0), dwAutoRefreshStyle(0)
 	{	}
 };
 

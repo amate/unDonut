@@ -41,7 +41,11 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
+#ifdef WIN64
+IDR_MAINFRAME           ICON                    "res64\\Icon_64.ico"
+#else
 IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
+#endif
 IDR_MDICHILD            ICON                    "res\\DonutDoc.ico"
 IDI_DLSTOP              ICON                    "res\\DLStop.ico"
 IDI_GENERIC_DOCUMENT    ICON                    "res\\Generic_Document.ico"

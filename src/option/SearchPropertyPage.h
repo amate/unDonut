@@ -5,9 +5,9 @@
  *		+++ SearchBar.h ‚æ‚è•ª—£.
  */
 
-#ifndef SEARCHPROPETRYPAGE_H
-#define SEARCHPROPETRYPAGE_H
 #pragma once
+
+#include "../IniFile.h"
 
 enum ESts {
 	STS_ENG_CHANGE_GO		=	0x00000001,	// ŒŸõƒGƒ“ƒWƒ“•ÏX‚É‘¦ŒŸõ
@@ -351,5 +351,3 @@ public:
 
 };
 
-
-#endif

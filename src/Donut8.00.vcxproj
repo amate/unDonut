@@ -864,7 +864,6 @@
     <ClCompile Include="ChildFrame.cpp" />
     <ClCompile Include="ChildFrameCommandUIUpdater.cpp" />
     <ClCompile Include="CmbboxPrxy.cpp" />
-    <ClCompile Include="CustomContextMenu.cpp" />
     <ClCompile Include="DocHostUIHandlerDispatch.cpp" />
     <ClCompile Include="Donut.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">Disabled</Optimization>
@@ -1076,7 +1075,6 @@
     <ClInclude Include="ChildFrame.h" />
     <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
-    <ClInclude Include="CustomContextMenu.h" />
     <ClInclude Include="DialogHook.h" />
     <ClInclude Include="DialogKiller.h" />
     <ClInclude Include="DocHostUIHandlerDispatch.h" />

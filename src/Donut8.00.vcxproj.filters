@@ -173,9 +173,6 @@
     <ClCompile Include="option\RightClickMenuDialog.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
-    <ClCompile Include="CustomContextMenu.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="VersionControl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -296,9 +293,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="CmbboxPrxy.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="CustomContextMenu.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DialogHook.h">

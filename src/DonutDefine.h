@@ -164,7 +164,7 @@ extern	class CMainFrame *		g_pMainWnd;
 #define MSG_WM_USER_FIND_KEYWORD(func)								 \
 	if (uMsg == WM_USER_FIND_KEYWORD) { 							 \
 		SetMsgHandled(TRUE);										 \
-		lResult = (LRESULT) func( (LPCTSTR) wParam, (BOOL) lParam, 0); \
+		lResult = (LRESULT) func( (LPCTSTR) wParam, (BOOL) LOWORD(lParam), (long) HIWORD(lParam) ); \
 		if ( IsMsgHandled() )										 \
 			return TRUE;											 \
 	}
@@ -520,6 +520,62 @@ enum TabCreateOption {
 	}
 
 #define WM_COMMAND_FROM_CHILDFRAME	(WM_USER + 110)
+
+// void	OnGetChildFrameData(ChildFrameDataOnClose* pData)
+#define WM_GETCHILDFRAMEDATA	(WM_USER + 111)
+#define USER_MSG_WM_GETCHILDFRAMEDATA(func)	\
+	if (uMsg == WM_GETCHILDFRAMEDATA) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((ChildFrameDataOnClose*)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnOpenFindBarWithText(LPCTSTR strText)
+#define WM_OPENFINDBARWITHTEXT	(WM_USER + 111)
+#define USER_MSG_WM_OPENFINDBARWITHTEXT(func)	\
+	if (uMsg == WM_OPENFINDBARWITHTEXT) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((LPCTSTR)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// int	OnHilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags)
+#define WM_HILIGHTFROMFINDBAR	(WM_USER + 112)
+#define USER_MSG_WM_HILIGHTFROMFINDBAR(func)	\
+	if (uMsg == WM_HILIGHTFROMFINDBAR) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = func((LPCTSTR)wParam, (LOWORD(lParam) & 0x1) != 0, (LOWORD(lParam) & 0x2) != 0, (long)HIWORD(lParam));;		\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnRemoveHilight()
+#define WM_REMOVEHILIGHT	(WM_USER + 113)
+#define USER_MSG_WM_REMOVEHILIGHT(func)	\
+	if (uMsg == WM_REMOVEHILIGHT) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// int	OnGetTabIndex(HWND hWndChildFrame)
+#define WM_GETTABINDEX	(WM_USER + 114)
+#define USER_MSG_WM_GETTABINDEX(func)	\
+	if (uMsg == WM_GETTABINDEX) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = func((HWND)wParam);				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 
 //----------------------------------------------------------------------------
 #define BEGIN_MSG_MAP_EX_decl(theClass) 				\

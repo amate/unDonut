@@ -282,9 +282,8 @@ public:
 		DDX_CHECK( IDC_TRAVELLOG_GROUP		, m_nTravelLogGroup )
 		DDX_CHECK( IDC_TRAVELLOG_CLOSE		, m_nTravelLogClose )
 
-		DDX_INT_RANGE( IDC_EDIT_MRUCOUNT, m_nMRUCount, m_nMRUCountMin, m_nMRUCountMax )
-
-		DDX_CBINDEX( IDC_COMBO_MRU_MENUTYPE, m_nMRUMenuType )
+		DDX_INT_RANGE( IDC_EDIT_MRUCOUNT	, s_nMaxRecentClosedTabCount, m_nMRUCountMin, m_nMRUCountMax )
+		DDX_CBINDEX( IDC_COMBO_MRU_MENUTYPE	, s_RecentClosedTabMenuType )
 	END_DDX_MAP()
 
 	// Message map and handlers
@@ -321,10 +320,8 @@ private:
 	int 		m_nTravelLogGroup;
 	int 		m_nTravelLogClose;
 
-	int 		m_nMRUMenuType;
-	int 		m_nMRUCount;
-	int 		m_nMRUCountMin;
-	int 		m_nMRUCountMax;
+	const int	m_nMRUCountMin;
+	const int	m_nMRUCountMax;
 
 	int			m_nMinBtn2Tray;			//+++
 

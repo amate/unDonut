@@ -621,11 +621,11 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	CDonutSimpleEventManager::RaiseEvent(EVENT_PROCESS_START);
 
 	if (bRun) {
-		_Module.StartMonitor();
-		hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
-		ATLASSERT( SUCCEEDED(hRes) );
-		hRes = ::CoResumeClassObjects();
-		ATLASSERT( SUCCEEDED(hRes) );
+		//_Module.StartMonitor();
+		//hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
+		//ATLASSERT( SUCCEEDED(hRes) );
+		//hRes = ::CoResumeClassObjects();
+		//ATLASSERT( SUCCEEDED(hRes) );
 
 		if (bAutomation) {
 			CMessageLoop theLoop;
@@ -649,8 +649,8 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 			nRet = 0;
 	  #endif
 
-		_Module.RevokeClassObjects();
-		::Sleep(_Module.m_dwPause);
+		//_Module.RevokeClassObjects();
+		//::Sleep(_Module.m_dwPause);
 	}
 
 	//_PrivateTerm();

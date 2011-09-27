@@ -1757,14 +1757,14 @@ void CDonutSearchBar::Impl::_AddToolBarIcon(CString strWord)
 	while (m_wndToolBar.GetButtonCount())
 		m_wndToolBar.DeleteButton(0);
 
-	int hilightStat = m_bHilightSw ? TBSTATE_PRESSED : TBSTATE_ENABLED;
+	int hilightStat = m_bHilightSw ? TBSTATE_PRESSED | TBSTATE_ENABLED : TBSTATE_ENABLED;
 	if (strs.size() == 0 || s_bNoWordButton || s_bUsePageButton) {	//+++ 旧来の検索 (単独のページ内検索ボタンあり)
 		if (s_bNoWordButton && m_dwTinyWordButton) {
 			_AddDefaultToolBarIcon_tinyWordButton(strs.size());
 			return;
 		}
 
-		static TBBUTTON	btns[] = {
+		TBBUTTON	btns[] = {
 			{ 0 , ID_SEARCH_WEB,		TBSTATE_ENABLED, TBSTYLE_BUTTON | TBSTYLE_AUTOSIZE },// Web
 			{ 2 , ID_SEARCH_PAGE,		TBSTATE_ENABLED, TBSTYLE_BUTTON | TBSTYLE_AUTOSIZE },// Page
 			{ 1 , ID_SEARCHBAR_HILIGHT, hilightStat    , TBSTYLE_CHECK	| TBSTYLE_AUTOSIZE },// Hilight

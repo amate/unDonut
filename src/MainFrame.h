@@ -44,6 +44,7 @@
 #include "ChildFrameCommandUIUpdater.h"
 #include "DonutViewOption.h"
 #include "RecentClosedTabList.h"
+#include "ExMenu.h"
 
 
 ///////////////////////////////////////////////////////////////
@@ -130,7 +131,6 @@ public:
 	void			SaveAllTab();
 	void			RestoreAllTab(LPCTSTR strFilePath = NULL, bool bClose = false);
 	void			OpenBingTranslator(const CString& strText);
-	void			SetFocusToSearchBarWithSelectedText();
 
 public:
 	/////////////////////////////////////////////
@@ -230,6 +230,8 @@ public:
 		USER_MSG_WM_TABCREATE( OnTabCreate )	// CChildFrame用
 		USER_MSG_WM_TABDESTROY( OnTabDestory )	// 
 		USER_MSG_WM_ADDRECENTCLOSEDTAB( OnAddRecentClosedTab )
+		USER_MSG_WM_OPENFINDBARWITHTEXT( OnOpenFindBarWithText )
+		USER_MSG_WM_GETTABINDEX( OnGetTabIndex ) 
 
 		USER_MSG_WM_UPDATE_TITLEBAR( UpdateTitleBar )						// UDT DGSTR
 
@@ -358,7 +360,6 @@ public:
 
 
 		USER_MEG_WM_MENU_REFRESH_SCRIPT 	( OnMenuRefreshScript	)
-		USER_MSG_WM_MENU_RESTRICT_MESSAGE	( OnRestrictMessage 	)
 		USER_MSG_WM_GET_FAVORITEFILEPATH	( OnGetFavoriteFilePath )
 
 		COMMAND_ID_HANDLER( ID_WINDOW_THUMBNAIL 		  , OnWindowThumbnail			)
@@ -398,12 +399,6 @@ public:
 		COMMAND_ID_HANDLER( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
 		COMMAND_ID_HANDLER	( ID_SHOW_ACTIVEMENU, OnShowActiveMenu )
 		COMMAND_ID_HANDLER_EX( ID_SAVEIMAGE		, OnSaveImage )
-		COMMAND_ID_HANDLER( ID_SPECIAL_HOME 	, OnSpecialKeys    )
-		COMMAND_ID_HANDLER( ID_SPECIAL_END		, OnSpecialKeys    )
-		COMMAND_ID_HANDLER( ID_SPECIAL_PAGEUP	, OnSpecialKeys    )
-		COMMAND_ID_HANDLER( ID_SPECIAL_PAGEDOWN , OnSpecialKeys    )
-		COMMAND_ID_HANDLER( ID_SPECIAL_UP		, OnSpecialKeys    )
-		COMMAND_ID_HANDLER( ID_SPECIAL_DOWN 	, OnSpecialKeys    )
 		COMMAND_ID_HANDLER( ID_PRIVACYREPORT	, OnPrivacyReport )
 		COMMAND_ID_HANDLER( ID_SECURITYREPORT	, OnSecurityReport )
 
@@ -600,6 +595,8 @@ public:
 	void	OnTabCreate(HWND hWndChildFrame, DWORD dwOption);
 	void	OnTabDestory(HWND hWndChildFrame);	
 	void	OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData);
+	void	OnOpenFindBarWithText(LPCTSTR strText);
+	int		OnGetTabIndex(HWND hWndChildFrame) { return m_MDITab.GetTabIndex(hWndChildFrame); }
 
 #ifdef _DEBUG
 	void	OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -621,7 +618,6 @@ public:
 	LRESULT OnMenuGoForward(HMENU hMenu);
 	LRESULT	OnMenuGetBingTranslate();
 	LRESULT OnMenuRefreshScript(BOOL bInit);
-	LRESULT OnRestrictMessage(BOOL bOn);
 	LRESULT	OnGetFavoriteFilePath(int nID);
 	void	IfTrayRestoreWindow() {	if (m_bTray) OnGetOut(0, 0, 0); }	//+++ トレイ状態だったら窓を復活.
 	void 	OnGetOut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -783,7 +779,6 @@ public:
 	void 	OnUpdateProgressUI(CCmdUI *pCmdUI);
 	void 	OnUpdateStautsIcon(CCmdUI *pCmdUI);
 
-	LRESULT OnSpecialKeys		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnSecurityReport	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
 	LRESULT OnWindowThumbnail	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
@@ -967,7 +962,6 @@ private:
 	BYTE/*bool*/			m_bOldMaximized;				//+++ 最大化していたかどうか
 	BYTE/*bool*/			m_bFullScreen;					//+++ トレイからの復帰用に窓がフルスクリーンかどうかを保持
 
-	BYTE/*BOOL*/			m_bShow;
 	bool					m_bCancelRButtonUp;
 	bool					m_bWM_TIMER;
 	bool					m_bCommandFromChildFrame;

@@ -6,8 +6,9 @@
 #include "stdafx.h"
 #include "DonutView.h"
 #include "mshtmdid.h"
-#include "option/DLControlOption.h"
+#include "option\DLControlOption.h"
 #include "option\MouseDialog.h"
+#include "option\MenuDialog.h"
 #include "Donut.h"
 
 #include "ScriptErrorCommandTargetImpl.h"

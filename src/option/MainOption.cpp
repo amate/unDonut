@@ -374,7 +374,9 @@ CString CMainPropertyPage2::BrowseForFolder(const CString& strTitle, const CStri
 // Constructor
 CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent) : 
 	m_wnd(hWnd), 
-	m_rRecentClosedTabList(rRecent)
+	m_rRecentClosedTabList(rRecent),
+	m_nMRUCountMin(CRecentClosedTabList::kMaxEntries_Min),
+	m_nMRUCountMax(CRecentClosedTabList::kMaxEntries_Max)
 {
 	m_bInit 	     = FALSE;
 
@@ -392,10 +394,6 @@ CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent)
 	m_nShowSearch    = FALSE;
 	m_nShowStatus    = FALSE;
 
-	m_nMRUCount      = 9;
-	m_nMRUCountMin   = 2;
-	m_nMRUCountMax   = 64;
-	m_nMRUMenuType   = 0;
 	m_nMinBtn2Tray   = 0;		//+++
 
 	_SetData();
@@ -459,8 +457,8 @@ void CMainPropertyPage2::_GetData()
 	CMainOption::s_bTravelLogClose = m_nTravelLogClose != 0;	//+++ ? true : false;
 
 	m_rRecentClosedTabList.ResetMenu();
-	m_rRecentClosedTabList.SetMaxEntries(m_nMRUCount);
-	m_rRecentClosedTabList.SetMenuType(m_nMRUMenuType);
+	m_rRecentClosedTabList.SetMaxEntries(s_nMaxRecentClosedTabCount);
+	m_rRecentClosedTabList.SetMenuType(s_RecentClosedTabMenuType);
 	m_rRecentClosedTabList.UpdateMenu();
 
   #if 0	//+++ Ž¸”s
@@ -506,11 +504,6 @@ void CMainPropertyPage2::_SetData()
 
 	m_nTravelLogGroup = CMainOption::s_bTravelLogGroup != 0;	//+++ ? 1 : 0;
 	m_nTravelLogClose = CMainOption::s_bTravelLogClose != 0;	//+++ ? 1 : 0;
-
-	m_nMRUCountMin	  = CRecentClosedTabList::kMaxEntries_Min;
-	m_nMRUCountMax	  = CRecentClosedTabList::kMaxEntries_Max;
-	m_nMRUCount 	  = m_rRecentClosedTabList.GetMaxEntries();
-	m_nMRUMenuType	  = m_rRecentClosedTabList.GetMenuType();
 
   #if 0	//+++ Ž¸”s
 	m_nTitleBarStrSwap= (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_TITLEBAR_STR_SWAP) != 0;	//+++ ’Ç‰Á.

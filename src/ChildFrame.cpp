@@ -10,12 +10,17 @@
 #include "DonutView.h"
 #include "MultiThreadManager.h"
 #include "ChildFrameCommandUIUpdater.h"
+#include "option\MainOption.h"
 #include "option\DLControlOption.h"
 #include "option\MouseDialog.h"
 #include "option\IgnoreURLsOption.h"
 #include "option\CloseTitleOption.h"
 #include "option\UrlSecurityOption.h"
+#include "option\SearchPropertyPage.h"
+#include "option\AddressBarPropertyPage.h"
 #include "FaviconManager.h"
+#include "ToolTipManager.h"
+#include "PluginManager.h"
 
 DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 
@@ -32,8 +37,10 @@ DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 	}														   \
 }
 
+namespace {
 
-static const LPCTSTR		g_lpszLight[] = {
+	
+static const LPCTSTR	g_lpszLight[] = {
 	_T("<span id='unDonutHilight' style='color:black;background:#FFFF00'>"),
 	_T("<span id='unDonutHilight' style='color:black;background:#00FFFF'>"),
 	_T("<span id='unDonutHilight' style='color:black;background:#FF00FF'>"),
@@ -41,8 +48,204 @@ static const LPCTSTR		g_lpszLight[] = {
 	_T("<span id='unDonutHilight' style='color:black;background:#1F8FFF'>"),
 };
 
-static const int	g_LIGHTMAX		= _countof(g_lpszLight);
+static const int	g_LIGHTMAX	= _countof(g_lpszLight);
 
+
+struct _Function_SelectEmpt {
+	void operator ()(IHTMLDocument2 *pDocument)
+	{
+		CComPtr<IHTMLSelectionObject> spSelection;
+		HRESULT 	hr = pDocument->get_selection(&spSelection);
+		if (spSelection)
+			spSelection->empty();
+	}
+};
+
+struct _Function_Hilight2 {
+	LPCTSTR 	m_lpszKeyWord;
+	BOOL		m_bHilight;
+
+	_Function_Hilight2(LPCTSTR lpszKeyWord, BOOL bHilight)
+		: m_lpszKeyWord(lpszKeyWord), m_bHilight(bHilight)
+	{	}
+
+	void operator ()(IHTMLDocument2* pDocument)
+	{
+		if (m_bHilight) {
+			if ( !FindHilight(pDocument) ) {
+				MakeHilight(pDocument);
+			}
+		} else {
+			RemoveHilight(pDocument);
+		}
+	}
+
+	// ハイライト作成
+	void MakeHilight(IHTMLDocument2* pDocument)
+	{
+	try {
+		// キーワードの最初の一語を取得
+		CString		strKeyWord = m_lpszKeyWord;
+
+		//+++ 単語区切りを調整
+		LPCTSTR		strExcept	= _T(" \t\"\r\n　");
+		strKeyWord = _tcstok( strKeyWord.GetBuffer(0), strExcept );
+		strKeyWord.TrimLeft(strExcept);
+		strKeyWord.TrimRight(strExcept);
+
+		int 	nLightIndex = 0;
+		HRESULT hr;
+
+		// キーワードが空になるまで繰り返し
+		while ( !strKeyWord.IsEmpty() ) {
+			CComPtr<IHTMLElement>		spHTMLElement;
+			// <body>を取得
+			hr = pDocument->get_body(&spHTMLElement);
+			if (spHTMLElement == NULL) 
+				break;
+
+			CComQIPtr<IHTMLBodyElement>	spHTMLBody = spHTMLElement;
+			if (spHTMLBody == NULL) 
+				break;
+
+			// テキストレンジを取得
+			CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
+			hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
+			if (!spHTMLTxtRange)
+				AtlThrow(hr);			
+
+			//+++ 最大キーワード数(無限ループ対策)
+			static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
+			//+++ 無限ループ状態を強制終了させるため、ループをカウントする
+			unsigned num = 0;
+
+			// キーワードを検索
+			CComBSTR		bstrText= strKeyWord;
+			VARIANT_BOOL	vBool	= VARIANT_FALSE;
+			while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
+				// 現在選択しているHTMLテキストを取得
+				CComBSTR	bstrTextNow;
+				hr = spHTMLTxtRange->get_text(&bstrTextNow);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				// <span>を付加
+				CComBSTR	bstrTextNew;
+				bstrTextNew.Append(g_lpszLight[nLightIndex]);	// <span ～
+				bstrTextNew.Append(bstrTextNow);
+				bstrTextNew.Append(_T("</span>"));
+
+
+				CComPtr<IHTMLElement> spParentElement;
+				hr = spHTMLTxtRange->parentElement(&spParentElement);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				CComBSTR	bstrParentTag;
+				hr = spParentElement->get_tagName(&bstrParentTag);
+				if (FAILED(hr))
+					AtlThrow(hr);
+
+				if (   bstrParentTag != _T("SCRIPT")
+					&& bstrParentTag != _T("NOSCRIPT")
+					&& bstrParentTag != _T("TEXTAREA")
+					&& bstrParentTag != _T("STYLE"))
+				{
+					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
+					if (FAILED(hr))
+						AtlThrow(hr);
+
+					//+++ 通常のページでハイライト置換がこんなにもあることはないだろうで、無限ループ扱いでうちどめしとく
+					if (++num > maxKeyword)		
+						break;
+				}
+				spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+			}
+
+			++nLightIndex;
+			if (nLightIndex >= g_LIGHTMAX)
+				nLightIndex = 0;
+
+			// 次のキーワードに
+			strKeyWord = _tcstok(NULL, strExcept);
+			strKeyWord.TrimLeft(strExcept);
+			strKeyWord.TrimRight(strExcept);
+		}
+
+	} catch (const CAtlException& e) {
+			e;	// 例外を握りつぶす
+	}	// try
+	}
+
+	// ハイライトを解除する
+	void RemoveHilight(IHTMLDocument2* pDocument)
+	{
+		CComBSTR	hilightID(L"unDonutHilight");
+		CComBSTR	hilightTag(L"SPAN");
+
+		CComPtr<IHTMLElementCollection> pAll;
+
+		if (SUCCEEDED( pDocument->get_all(&pAll) ) && pAll != NULL) {
+			CComVariant 		id(L"unDonutHilight");
+			CComPtr<IDispatch>	pDisp;
+			CComVariant 		vIndex(0);
+			pAll->item(id, vIndex, &pDisp);
+			if (pDisp == NULL)
+				return;
+
+			CComPtr<IUnknown>	pUnk;
+
+			if (SUCCEEDED( pAll->get__newEnum(&pUnk) ) && pUnk != NULL) {
+				CComQIPtr<IEnumVARIANT> pEnumVariant = pUnk;
+
+				if (pEnumVariant != NULL) {
+					VARIANT  v;
+					ULONG	 ul;
+					CComBSTR bstrTagName;
+					CComBSTR bstrID;
+					CComBSTR bstrTmp;
+
+					while (pEnumVariant->Next(1, &v, &ul) == S_OK) {
+						CComQIPtr<IHTMLElement> pElement = v.pdispVal;
+						VariantClear(&v);
+
+						if (pElement != NULL) {
+							bstrTagName.Empty();
+							bstrID.Empty();
+							pElement->get_tagName(&bstrTagName);
+							pElement->get_id(&bstrID);
+
+							if (bstrTagName == hilightTag && bstrID == hilightID) {
+								bstrTmp.Empty();
+								pElement->get_innerHTML(&bstrTmp);
+								pElement->put_outerHTML(bstrTmp);
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// ハイライトがすでにされているか確認する
+	BOOL FindHilight(IHTMLDocument2* pDocument)
+	{
+		CComPtr<IHTMLElementCollection> 	pAll;
+
+		if (SUCCEEDED(pDocument->get_all(&pAll)) && pAll != NULL) {
+			CComVariant 		id(L"unDonutHilight");
+			CComPtr<IDispatch>	pDisp;
+			CComVariant 		vIndex(0);
+			pAll->item(id, vIndex, &pDisp);
+			if (pDisp != NULL) {
+				return TRUE;
+			}
+		}
+		return FALSE;
+	}
+};
+
+};	// namespace
 
 /////////////////////////////////////////////////////////////
 // CChildFrame::Impl
@@ -109,6 +312,7 @@ public:
 	// Overrides
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void OnFinalMessage(HWND /*hWnd*/) { delete m_pParentChild;/*this;*/ }
+	void	searchEngines(const CString &strKeyWord);
 	
 	// Message map
 	BEGIN_MSG_MAP( Impl )
@@ -119,7 +323,7 @@ public:
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
-
+		USER_MSG_WM_GETCHILDFRAMEDATA( OnGetChildFrameData )
 		USER_MSG_WM_MENU_GOBACK 	( OnMenuGoBack		)
 		USER_MSG_WM_MENU_GOFORWARD	( OnMenuGoForward	)
 
@@ -128,6 +332,8 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_TEXT,OnEditOpenSelectedText	)	// URLテキストを開く
 
 		// 編集
+		COMMAND_ID_HANDLER_EX( ID_EDIT_FIND 			, OnEditFind				)
+		COMMAND_ID_HANDLER_EX( ID_EDIT_FIND_MAX 		, OnEditFindMax 			)
 		COMMAND_ID_HANDLER_EX( ID_TITLE_COPY			, OnTitleCopy				)
 		COMMAND_ID_HANDLER_EX( ID_URL_COPY				, OnUrlCopy 				)
 		COMMAND_ID_HANDLER_EX( ID_COPY_TITLEANDURL		, OnTitleAndUrlCopy 		)
@@ -146,12 +352,28 @@ public:
 
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_BACK1   , ID_VIEW_BACK9	, OnViewBackX	)
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_FORWARD1, ID_VIEW_FORWARD9, OnViewForwardX)
+		
+		// 検索バーから
+		MSG_WM_USER_HILIGHT 		( OnHilight 		)
+		MSG_WM_USER_FIND_KEYWORD	( OnFindKeyWord 	)
+		// 独自ページ内検索バーから
+		USER_MSG_WM_HILIGHTFROMFINDBAR( OnHilightFromFindBar )
+		USER_MSG_WM_REMOVEHILIGHT( OnRemoveHilight )
 
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_MENU			, OnHtmlZoomMenu			)
+		// Special command
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_ADD			, OnHtmlZoom				)
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_SUB			, OnHtmlZoom				)
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_100TOGLE		, OnHtmlZoom				)
 		COMMAND_RANGE_HANDLER_EX( ID_HTMLZOOM_400 , ID_HTMLZOOM_050 , OnHtmlZoom    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_HOME 		, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_END		, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEUP	, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEDOWN	, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_UP		, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_DOWN 		, OnSpecialKeys    )
+
+		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH		, OnViewRefresh 	)
 
 		CHAIN_COMMANDS_MEMBER( m_view )
 		CHAIN_MSG_MAP( CWebBrowserCommandHandler<Impl> )
@@ -166,6 +388,7 @@ public:
 	void	OnSize(UINT nType, CSize size);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
+	void	OnGetChildFrameData(ChildFrameDataOnClose* pData) { _CollectDataOnClose(*pData); }
 
 	LRESULT OnMenuGoBack(HMENU hMenu)	 { MenuChgGoBack(hMenu);	return 0; }
 	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
@@ -175,9 +398,11 @@ public:
 	void 	OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	// 編集
+	void	OnEditFind(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnEditFindMax(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { _OnEditFindMax(0, 0, NULL); }
 	void	OnTitleCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
-	void	OnTitleAndUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnTitleAndUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);	
 
 	// 表示
 	void	OnViewSetFocus(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { m_view.SetFocus(); }
@@ -194,8 +419,19 @@ public:
 	void 	OnWindowCloseExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
+	// 検索バーから
+	LRESULT OnHilight(CString strKeyWord);
+	LRESULT OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags = 0);
+	// 独自ページ内検索バーから
+	int		OnHilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
+	void	OnRemoveHilight();
+
 	void	OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl);
+	// Specla command
 	void	OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	void	OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 private:
 	DWORD	_GetInheritedDLCtrlFlags();
@@ -206,6 +442,7 @@ private:
 	void	_AutoImageResize(bool bFirst);
 	void	_SetFavicon(const CString& strURL);
 	void	_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord);
+	BOOL 	_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags = 0);
 
 	// Data members
 	CChildFrame*	m_pParentChild;
@@ -215,6 +452,9 @@ private:
 	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
 	CString	m_strSearchWord;
+	CComBSTR	m_strBookmark;
+	int 		m_nPainBookmark;
+	CString		m_strOldKeyword;
 	bool	m_bNowHilight;
 	bool	m_bAutoHilight;
 	CString m_strStatusText;
@@ -231,6 +471,8 @@ private:
 	bool	m_bImagePage;	// 画像ファイルを開いたかどうか
 	CSize	m_ImageSize;
 
+	bool	m_bReload;
+
 };
 
 
@@ -240,6 +482,7 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_view(m_UIChange),
 	m_bNowActive(false),
 	m_bSaveSearchWordflg(false),
+	m_nPainBookmark(0),
 	m_bNowHilight(false),
 	m_bAutoHilight(false),
 	m_bExecutedNewWindow(false),
@@ -249,7 +492,8 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_nImgScl(100),
 	m_nImgSclSav(100),
 	m_nImgSclSw(0),
-	m_bImagePage(false)
+	m_bImagePage(false),
+	m_bReload(false)
 {	}
 
 
@@ -291,7 +535,7 @@ CString CChildFrame::Impl::GetSelectedText()
 			}
 		}
 	});
-
+#if 0	//:::
 	if (strSelText.IsEmpty()) {
 		//+++ 選択範囲がない場合、右クリックメニュー経由のことがあるので、それ対策を強引に...
 		CCustomContextMenu* pMenu = CCustomContextMenu::GetInstance();
@@ -301,6 +545,7 @@ CString CChildFrame::Impl::GetSelectedText()
 			strSelText = CString(pMenu->GetAnchorUrl());
 		}
 	}
+#endif
 	return strSelText;
 }
 
@@ -378,14 +623,37 @@ void	CChildFrame::Impl::OnPrivacyImpactedStateChange(bool bPrivacyImpacted)
 
 void	CChildFrame::Impl::OnStateConnecting()
 {
+	READYSTATE	state;
+	HRESULT hr = m_spBrowser->get_ReadyState(&state);
+	if (hr == S_OK && state == READYSTATE_COMPLETE)
+		return;
+
+	//m_MDITab.SetConnecting(m_hWnd);
+	//m_bPrivacyImpacted = TRUE;	// ページ読み込み後もOnStateConnectingが呼ばれるページがあるので
+								// クッキー制限アイコンが表示されないページがある
+	//m_nSecureLockIcon = secureLockIconUnsecure;
 }
 
 void	CChildFrame::Impl::OnStateDownloading()
 {
+	READYSTATE	state;
+	HRESULT hr = m_spBrowser->get_ReadyState(&state);
+	if (hr == S_OK && state == READYSTATE_COMPLETE)
+		return;
+
+	//m_MDITab.SetDownloading(m_hWnd);
 }
 
 void	CChildFrame::Impl::OnStateCompleted()
 {
+	//m_MDITab.SetComplete(m_hWnd);
+
+	if (m_bReload) {
+		CString strUrl = GetLocationURL();
+		CComQIPtr<IDispatch>	spDisp = m_spBrowser;
+		OnDocumentComplete(spDisp, strUrl);
+		m_bReload = false;
+	}
 }
 
 /// documentが操作できるようになった
@@ -398,13 +666,33 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 
 		_SetFavicon(strURL);
 
-		if (m_bAutoHilight && m_strSearchWord.IsEmpty() == FALSE) {
+		bool bHilight = m_bAutoHilight || CDonutSearchBar::GetInstance()->GetHilightSw();
+		if (bHilight && m_strSearchWord.IsEmpty() == FALSE) {
 			if (m_bNowActive)
 				GetTopLevelWindow().SendMessage(WM_SETSEARCHTEXT, (WPARAM)(LPCTSTR)m_strSearchWord, true);
 			CString strWords = m_strSearchWord;
 			DeleteMinimumLengthWord(strWords);
 			m_bNowHilight = true;
 			_HilightOnce(pDisp, strWords);
+		}
+	}
+
+	{
+		//プラグインイベント - ロード完了
+		CComQIPtr<IWebBrowser2> 	pWB2 = pDisp;
+
+		if (pWB2) {
+			DEVTS_TAB_DOCUMENTCOMPLETE	dc;
+			dc.lpstrURL   = (LPCTSTR) strURL;
+
+			CComBSTR	bstrTitle;
+			pWB2->get_LocationName(&bstrTitle);
+
+			CString 	strTitle = bstrTitle;
+			dc.lpstrTitle = (LPCTSTR) strTitle;
+			dc.nIndex	  = (int)GetTopLevelWindow().SendMessage(WM_GETTABINDEX, (WPARAM)m_hWnd);
+			dc.bMainDoc   = IsPageIWebBrowser(pDisp);
+			CPluginManager::BroadCast_PluginEvent(DEVT_TAB_DOCUMENTCOMPLETE, dc.nIndex, (DWORD_PTR) &dc);
 		}
 	}
 }
@@ -424,13 +712,13 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 
 	CChildFrame*	pChild = new CChildFrame;
 	pChild->pImpl->SetThreadRefCount(m_pThreadRefCount);
-	DWORD	dwExStyle	= _GetInheritedDLCtrlFlags();
-	DWORD	dwDLCtrl	= _GetInheritedExStyleFlags();
+	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
+	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
 	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
-		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
 		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
+		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
 	}
-	pChild->pImpl->m_view.SetDefaultFlags(dwExStyle, dwDLCtrl, 0);
+	pChild->pImpl->m_view.SetDefaultFlags(dwDLCtrl, dwExStyle, 0);
 	HWND hWnd = pChild->CreateEx(GetParent());
 	ATLASSERT( ::IsWindow(hWnd) );
 
@@ -782,6 +1070,25 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	return m_view.PreTranslateMessage(pMsg);
 }
 
+/// 選択中の文字列を検索(アドレスバーでCtrl+Enterしたときの検索エンジンが使われる)
+void CChildFrame::Impl::searchEngines(const CString& strKeyWord)
+{
+	CString 	strSearchWord = strKeyWord;
+
+	if (CAddressBarOption::s_bReplaceSpace)
+		strSearchWord.Replace( _T("　"), _T(" ") );
+
+	//_ReplaceCRLF(strSearchWord,CString(_T(" ")));
+	//strSearchWord.Replace('\n',' ');
+	//strSearchWord.Remove('\r');
+	strSearchWord.Replace( _T("\r\n"), _T("") );
+
+	CIniFileI	pr( g_szIniFileName, _T("AddressBar") );
+	CString 		strEngin = pr.GetStringUW( _T("EnterCtrlEngin"), NULL, 256 );
+
+	::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) strSearchWord, (LPARAM) (LPCTSTR) strEngin);
+}
+
 
 // Message map
 
@@ -820,8 +1127,10 @@ void	CChildFrame::Impl::OnDestroy()
 	m_view.DestroyWindow();
 
 	--(*m_pThreadRefCount);
-	if (*m_pThreadRefCount == 0)
+	if (*m_pThreadRefCount == 0) {
+		TRACEIN(_T("ChildFreameスレッドの破棄"));
 		PostQuitMessage(0);
+	}
 
 	CChildFrameCommandUIUpdater::RemoveCommandUIMap(m_hWnd);
 }
@@ -851,8 +1160,14 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 {
 	if (hWndAct == m_hWnd) {
 		m_bNowActive = true;
-		if (MtlIsApplicationActive(m_hWnd))
+		if (MtlIsApplicationActive(m_hWnd) && m_view.IsWindow())
 			m_view.SetFocus();
+
+		if (CSearchBarOption::s_bSaveSearchWord) {
+			CDonutSearchBar::GetInstance()->SetSearchStr(m_strSearchWord); //\\ 保存しておいた文字列を検索バーに戻す
+			CDonutSearchBar::GetInstance()->ForceSetHilightBtnOn(m_bNowHilight);
+		}
+
 	} else if (hWndDeact == m_hWnd) {
 		m_bNowActive = false;
 		// _KillFocusToHTML
@@ -861,6 +1176,15 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 		if(spIOleInPlaceObject) {
 			hr = spIOleInPlaceObject->UIDeactivate(); // IEのUIを無効化
 		}
+
+		if( m_bSaveSearchWordflg == true ){	//\\ 現在、検索バーにある文字列を取っておく
+			CDonutSearchBar::GetInstance()->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);
+			m_strSearchWord.ReleaseBuffer();
+		} else {
+			m_bSaveSearchWordflg = true;
+		}
+		if (hWndAct)
+			::PostMessage(hWndAct, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndAct, (LPARAM)hWndDeact);
 	}
 }
 
@@ -893,6 +1217,273 @@ void 	CChildFrame::Impl::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*
 {
 }
 
+
+// 検索バーから
+
+/// ハイライト
+LRESULT CChildFrame::Impl::OnHilight(CString strKeyWord)
+{
+	bool bHilightSw = CDonutSearchBar::GetInstance()->GetHilightSw();
+	//if (m_bNowHilight != bHilightSw)
+	{
+		m_bNowHilight	= bHilightSw;
+		if (bHilightSw) {
+			m_strSearchWord = strKeyWord;
+			DeleteMinimumLengthWord(strKeyWord);
+		} else {
+			m_strSearchWord.Empty();
+		}
+		MtlForEachHTMLDocument2g(m_spBrowser, _Function_SelectEmpt());
+		MtlForEachHTMLDocument2g(m_spBrowser, _Function_Hilight2(strKeyWord, bHilightSw));
+	}
+	return TRUE;
+}
+
+/// ページ内検索
+LRESULT CChildFrame::Impl::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags /*= 0*/)
+{
+	if (!m_spBrowser)
+		return 0;
+
+	CComPtr<IDispatch>	spDisp;
+	HRESULT hr = m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument2>	spDocument = spDisp;	// htmlの取得
+	if (!spDocument)
+		return 0;
+
+	CString strKeyword = lpszKeyWord;
+	strKeyword.Replace(_T('ﾞ'), _T('゛'));
+
+	// 検索
+	BOOL	bSts = _FindKeyWordOne(spDocument, strKeyword, bFindDown, Flags);
+	if (bSts)
+		return TRUE;
+
+	// フレームウィンドウの取得
+	CComPtr<IHTMLFramesCollection2> 	spFrames;
+	hr = spDocument->get_frames(&spFrames);
+	// cf. Even if no frame, get_frames would succeed.
+	if ( FAILED(hr) )
+		return 0;
+
+	// フレーム内ウィンドウの数を取得
+	LONG	nCount	   = 0;
+	hr = spFrames->get_length(&nCount);
+	if ( FAILED(hr) )
+		return 0;
+
+	BOOL	bFindIt    = FALSE;
+	if (bFindDown) {	// ページ内検索 - 下
+		for (LONG ii = m_nPainBookmark; ii < nCount; ii++) {
+			CComVariant 			varItem(ii);
+			CComVariant 			varResult;
+
+			// フレーム内のウィンドウを取得
+			hr		= spFrames->item(&varItem, &varResult);
+			if ( FAILED(hr) )
+				continue;
+
+			CComQIPtr<IHTMLWindow2> spWindow = varResult.pdispVal;
+			if (!spWindow)
+				continue;
+
+			CComPtr<IHTMLDocument2> spDocumentFr;
+			hr		= spWindow->get_document(&spDocumentFr);
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					continue;
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					continue;
+				spDocumentFr = spDisp;
+				if (!spDocument)
+					continue;
+			}
+
+			// 検索
+			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, bFindDown, Flags);
+			if (bFindIt) {
+				m_nPainBookmark = ii;
+				break;
+			}
+		}
+
+		if (!bFindIt) {
+			m_nPainBookmark = 0;
+			m_strBookmark	= LPCOLESTR(NULL);
+		}
+
+	} else {			// ページ内検索 - 上
+		if (m_nPainBookmark == 0 && !m_strBookmark)
+			m_nPainBookmark = nCount - 1;
+
+		for (LONG ii = m_nPainBookmark; ii >= 0; ii--) {
+			CComVariant 			varItem(ii);
+			CComVariant 			varResult;
+
+			// ウィンドウの取得
+			hr		= spFrames->item(&varItem, &varResult);
+			if ( FAILED(hr) )
+				continue;
+
+			CComQIPtr<IHTMLWindow2> spWindow = varResult.pdispVal;
+			if (!spWindow)
+				continue;
+
+			CComPtr<IHTMLDocument2> spDocumentFr;
+			hr		= spWindow->get_document(&spDocumentFr);
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					continue;
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					continue;
+				spDocumentFr = spDisp;
+				if (!spDocument)
+					continue;
+			}
+
+			// 検索
+			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, bFindDown, Flags);
+			if (bFindIt) {
+				m_nPainBookmark = ii;
+				break;
+			}
+		}
+
+		if (!bFindIt) {
+			m_nPainBookmark = 0;
+			m_strBookmark	= LPCOLESTR(NULL);
+		}
+	}
+
+	return bFindIt;
+}
+
+static void _RemoveHighlight(IHTMLDocument3* pDoc3)
+{
+	CComQIPtr<IHTMLDocument2> spDoc2 = pDoc3;
+	_MtlForEachHTMLDocument2(spDoc2, [&](IHTMLDocument2* pDoc) {
+		CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
+		pDoc->get_selection(&spSelection);
+		if (spSelection.p)
+			spSelection->empty();
+
+		vector<CComPtr<IHTMLElement> > vecElm;
+		CComPtr<IHTMLElementCollection>	spCol;
+		CComQIPtr<IHTMLDocument3> spDoc3 = pDoc;
+		spDoc3->getElementsByTagName(CComBSTR(L"span"), &spCol);
+		ForEachHtmlElement(spCol, [&vecElm](IDispatch* pDisp) -> bool {
+			CComQIPtr<IHTMLElement>	spElm = pDisp;
+			if (spElm.p) {
+				CComBSTR strID;
+				spElm->get_id(&strID);
+				if (strID && strID == L"udfbh")
+					vecElm.push_back(spElm);
+			}
+			return true;
+		});
+		for (auto it = vecElm.rbegin(); it != vecElm.rend(); ++it) {
+			CComBSTR str;
+			(*it)->get_innerText(&str);
+			(*it)->put_outerHTML(str);
+		}
+	});
+}
+
+int		CChildFrame::Impl::OnHilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags)
+{
+	CString strKeyword = strText;
+	CComBSTR	strChar(L"Character");
+	CComBSTR	strTextedit(L"Textedit");
+	CComBSTR	strBackColor(L"BackColor");
+	CComBSTR	strColor(L"greenyellow");
+
+	CComPtr<IDispatch>	spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
+	if (spDoc == nullptr)
+		return 0;
+
+	/* 前のハイライト表示を消す */
+	CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc;
+	if (bEraseOld)
+		_RemoveHighlight(spDoc3);
+
+	/* 単語をハイライトする */
+	int nMatchCount = 0;
+	if (strKeyword.GetLength() > 0) {
+		_MtlForEachHTMLDocument2(spDoc, [&](IHTMLDocument2* pDoc) {
+			CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
+			pDoc->get_selection(&spSelection);
+			if (spSelection.p)
+				spSelection->empty();
+
+			CComPtr<IHTMLElement>	spElm;
+			pDoc->get_body(&spElm);
+			CComQIPtr<IHTMLBodyElement>	spBody = spElm;
+			if (spBody.p == nullptr)
+				return;
+
+			CComPtr<IHTMLTxtRange>	spTxtRange;
+			spBody->createTextRange(&spTxtRange);
+			if (spTxtRange.p == nullptr)
+				return;
+
+			//long nMove;
+			//spTxtRange->moveStart(strTextedit, -1, &nMove);
+			//spTxtRange->moveEnd(strTextedit, 1, &nMove);
+			VARIANT_BOOL	vResult;
+			CComBSTR	strWord = strKeyword;
+			while (spTxtRange->findText(strWord, 1, Flags, &vResult), vResult == VARIANT_TRUE) {
+				CComPtr<IHTMLElement> spParentElement;
+				spTxtRange->parentElement(&spParentElement);
+				CComBSTR	bstrParentTag;
+				spParentElement->get_tagName(&bstrParentTag);
+				if (   bstrParentTag != _T("SCRIPT")
+					&& bstrParentTag != _T("NOSCRIPT")
+					&& bstrParentTag != _T("TEXTAREA")
+					&& bstrParentTag != _T("STYLE")) 
+				{
+					if (bNoHighlight == false) {
+						CComBSTR strInnerText;
+						spTxtRange->get_text(&strInnerText);
+						//VARIANT_BOOL	vRet;
+						//spTxtRange->execCommand(strBackColor, VARIANT_FALSE, CComVariant(strColor), &vRet);
+						CComBSTR strValue(L"<span id=\"udfbh\" style=\"color:black;background:greenyellow\">");//#00FFFF
+						strValue += strInnerText;
+						strValue += _T("</span>");
+						spTxtRange->pasteHTML(strValue);
+					}
+					++nMatchCount;
+				}
+				spTxtRange->collapse(VARIANT_FALSE);
+			}
+		});
+	}
+	return nMatchCount;
+}
+
+void	CChildFrame::Impl::OnRemoveHilight()
+{
+	CComPtr<IDispatch>	spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument3> spDoc3 = spDisp;
+	if (spDoc3)
+		_RemoveHighlight(spDoc3);
+}
+
+
 /// ポップアップズームメニューを開く
 void	CChildFrame::Impl::OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -908,6 +1499,192 @@ void	CChildFrame::Impl::OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl
 	POINT 	pt;
 	::GetCursorPos(&pt);
 	menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd);
+}
+
+void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	int nCode = 0;
+	switch (nID) {
+	case ID_SPECIAL_HOME:		nCode = VK_HOME;	break;
+	case ID_SPECIAL_END:		nCode = VK_END; 	break;
+	case ID_SPECIAL_PAGEUP: 	nCode = VK_PRIOR;	break;
+	case ID_SPECIAL_PAGEDOWN:	nCode = VK_NEXT;	break;
+	case ID_SPECIAL_UP: 		nCode = VK_UP;		break;
+	case ID_SPECIAL_DOWN:		nCode = VK_DOWN;	break;
+	default:	
+		ATLASSERT(FALSE);
+		return ;
+	}
+
+	if (nID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
+		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
+			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
+				CRect rc;
+				spIFrame->get_offsetHeight(&rc.bottom);
+				spIFrame->get_offsetWidth(&rc.right);
+				CComPtr<IHTMLElement>	spCurElement = spIFrame;
+				do {
+					CPoint temp;
+					spCurElement->get_offsetTop(&temp.y);
+					spCurElement->get_offsetLeft(&temp.x);
+					rc += temp;
+					CComPtr<IHTMLElement>	spTemp;
+					spCurElement->get_offsetParent(&spTemp);
+					spCurElement.Release();
+					spCurElement = spTemp;
+				} while (spCurElement.p);
+				
+				return rc;
+			};
+			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
+				CPoint ptScroll;
+				CComPtr<IHTMLElement>	spBody;
+				spDoc2->get_body(&spBody);
+				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+				spBody2->get_scrollTop(&ptScroll.y);
+				spBody2->get_scrollLeft(&ptScroll.x);
+				if (ptScroll == CPoint(0, 0)) {
+					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
+					CComPtr<IHTMLElement>	spDocumentElement;
+					spDoc3->get_documentElement(&spDocumentElement);
+					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+					spDocumentElement2->get_scrollTop(&ptScroll.y);
+					spDocumentElement2->get_scrollLeft(&ptScroll.x);
+				}
+				return ptScroll;
+			};
+
+			HRESULT hr = S_OK;
+			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
+
+			CComPtr<IHTMLFramesCollection2>	spFrames;
+			spDoc2->get_frames(&spFrames);
+			CComPtr<IHTMLElementCollection>	spIFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spIFrameCol);
+			CComPtr<IHTMLElementCollection>	spFrameCol;
+			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spFrameCol);
+			
+			long frameslength = 0, iframelength = 0, framelength = 0;
+			spFrames->get_length(&frameslength);
+			spIFrameCol->get_length(&iframelength);
+			spFrameCol->get_length(&framelength);
+			ATLASSERT(frameslength == iframelength || frameslength == framelength);
+
+			if (frameslength == iframelength && spIFrameCol.p && spFrames.p) {
+				for (long i = 0; i < iframelength; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spIFrameCol->item(vIndex, vIndex, &spDisp2);
+					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
+					CPoint ptScroll = funcGetScrollPosition(spDoc2);
+					CRect rc = rcAbsolute - ptScroll;
+					if (rc.PtInRect(pt)) {
+						CComVariant vResult;
+						spFrames->item(&vIndex, &vResult);
+						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+						return spWindow;
+					}
+				}
+			}
+
+			if (frameslength == framelength && spFrameCol.p && spFrames.p) {
+				for (long i = 0; i < framelength; ++i) {
+					CComVariant vIndex(i);
+					CComPtr<IDispatch>	spDisp2;
+					spFrameCol->item(vIndex, vIndex, &spDisp2);
+					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
+					if (spFrame.p) {
+						CRect rc;
+						spFrame->get_offsetLeft(&rc.left);
+						spFrame->get_offsetTop(&rc.top);
+						long temp;
+						spFrame->get_offsetWidth(&temp);
+						rc.right += rc.left + temp;
+						spFrame->get_offsetHeight(&temp);
+						rc.bottom+= rc.top + temp;
+						if (rc.PtInRect(pt)) {
+							CComVariant vResult;
+							spFrames->item(&vIndex, &vResult);
+							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
+							return spWindow;
+						}
+					}
+				}
+			}
+			return nullptr;
+		};
+
+		CComPtr<IDispatch>	spDisp;
+		HRESULT hr = m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument3>	spDocument = spDisp;
+		if (spDocument == nullptr)
+			return ;
+		CPoint pt;
+		::GetCursorPos(&pt);
+		ScreenToClient(&pt);
+
+		CComPtr<IHTMLWindow2> spWindow = funcGetHTMLWindowOnCursorPos(pt, spDocument);
+		if (spWindow) {
+			CComQIPtr<IHTMLDocument2>	spFrameDocument;
+			hr = spWindow->get_document(&spFrameDocument);
+			if ( FAILED(hr) ) {
+				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
+				ATLASSERT(spServiceProvider);
+				CComPtr<IWebBrowser2>	spBrowser;
+				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
+				if (!spBrowser)
+					return ;
+				CComPtr<IDispatch>	spDisp;
+				hr = spBrowser->get_Document(&spDisp);
+				if (!spDisp)
+					return ;
+				spFrameDocument = spDisp;
+				if (!spFrameDocument)
+					return ;
+				spWindow.Release();
+				spFrameDocument->get_parentWindow(&spWindow);
+				if (!spWindow)
+					return ;
+			}
+
+			if (nID == ID_SPECIAL_HOME)
+				spWindow->scrollBy(0, -300000);
+			else if (nID == ID_SPECIAL_END)
+				spWindow->scrollBy(0, +300000);
+		} else {
+			CComQIPtr<IHTMLDocument2>	spDocument2 = spDocument;
+			spDocument2->get_parentWindow(&spWindow);
+			ATLASSERT(spWindow);
+			if (nID == ID_SPECIAL_HOME)
+				spWindow->scrollBy(0, -300000);
+			else if (nID == ID_SPECIAL_END)
+				spWindow->scrollBy(0, +300000);
+		}
+	} else {
+		m_view.SetFocus();
+
+		INPUT	inputs[2] = { 0 };
+		inputs[0].type		= INPUT_KEYBOARD;
+		inputs[0].ki.wVk	= nCode;
+		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[0].ki.dwFlags= 0;
+		inputs[1].type		= INPUT_KEYBOARD;
+		inputs[1].ki.wVk	= nCode;
+		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
+		SendInput(2, inputs, sizeof(INPUT));
+
+		//PostMessage(WM_KEYDOWN, nCode, 0);
+	}
+}
+
+void	CChildFrame::Impl::OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	m_bReload = true;
+	if (::GetAsyncKeyState(VK_CONTROL) < 0) 	// Inspired by DOGSTORE, Thanks
+		Refresh2(REFRESH_COMPLETELY);
+	else
+		Refresh();
 }
 
 void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -1026,6 +1803,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 		CComBSTR						bstrText;
 		hr = spTxtRange->get_htmlText(&bstrText);
 		if (FAILED(hr) || !bstrText) {	//+++
+#if 0	//:::
 		  #if 1 //+++ 選択範囲がない場合、右クリックメニュー経由のことがあるので、それ対策を強引に...
 			CCustomContextMenu* pMenu = CCustomContextMenu::GetInstance();
 			if (pMenu && pMenu->GetContextMenuMode() == CONTEXT_MENU_ANCHOR && pMenu->GetAnchorUrl().IsEmpty() == 0) {
@@ -1045,6 +1823,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 		  #else
 			return;
 		  #endif
+#endif
 		} else {
 			hr = pDocument->get_URL(&bstrLocationUrl);
 			if ( FAILED(hr) )
@@ -1168,6 +1947,18 @@ void	CChildFrame::Impl::OnViewForwardX(WORD /*wNotifyCode*/, WORD wID, HWND /*hW
 
 	for (int i = 0; i < nStep; ++i)
 		GoForward();
+}
+
+// 編集
+
+void	CChildFrame::Impl::OnEditFind(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
+{
+	if (CMainOption::s_bUseCustomFindBar) {
+		CString strText = GetSelectedText();
+		GetTopLevelWindow().SendMessage(WM_OPENFINDBARWITHTEXT, (WPARAM)(LPCTSTR)strText);
+	} else {
+		__super::OnEditFind(0, 0, NULL);
+	}
 }
 
 /// タイトルをクリップボードにコピーします。
@@ -1502,6 +2293,8 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 	data.strTitle	= GetLocationName();
 	data.strURL		= GetLocationURL();
 	data.dwDLCtrl	= m_view.GetDLControlFlags();
+	data.dwExStyle	= m_view.GetExStyle();
+	data.dwAutoRefreshStyle	= m_view.GetAutoRefreshStyle();
 
 	HRESULT hr;
 	CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;
@@ -1696,200 +2489,6 @@ void	CChildFrame::Impl::_SetFavicon(const CString& strURL)
 	CFaviconManager::SetFavicon(m_hWnd, strFaviconURL);
 }
 
-struct _Function_SelectEmpt {
-	void operator ()(IHTMLDocument2 *pDocument)
-	{
-		CComPtr<IHTMLSelectionObject> spSelection;
-		HRESULT 	hr = pDocument->get_selection(&spSelection);
-		if (spSelection)
-			spSelection->empty();
-	}
-};
-
-struct _Function_Hilight2 {
-	LPCTSTR 	m_lpszKeyWord;
-	BOOL		m_bHilight;
-
-	_Function_Hilight2(LPCTSTR lpszKeyWord, BOOL bHilight)
-		: m_lpszKeyWord(lpszKeyWord), m_bHilight(bHilight)
-	{	}
-
-	void operator ()(IHTMLDocument2* pDocument)
-	{
-		if (m_bHilight) {
-			if ( !FindHilight(pDocument) ) {
-				MakeHilight(pDocument);
-			}
-		} else {
-			RemoveHilight(pDocument);
-		}
-	}
-
-	// ハイライト作成
-	void MakeHilight(IHTMLDocument2* pDocument)
-	{
-	try {
-		// キーワードの最初の一語を取得
-		CString		strKeyWord = m_lpszKeyWord;
-
-		//+++ 単語区切りを調整
-		LPCTSTR		strExcept	= _T(" \t\"\r\n　");
-		strKeyWord = _tcstok( strKeyWord.GetBuffer(0), strExcept );
-		strKeyWord.TrimLeft(strExcept);
-		strKeyWord.TrimRight(strExcept);
-
-		int 	nLightIndex = 0;
-		HRESULT hr;
-
-		// キーワードが空になるまで繰り返し
-		while ( !strKeyWord.IsEmpty() ) {
-			CComPtr<IHTMLElement>		spHTMLElement;
-			// <body>を取得
-			hr = pDocument->get_body(&spHTMLElement);
-			if (spHTMLElement == NULL) 
-				break;
-
-			CComQIPtr<IHTMLBodyElement>	spHTMLBody = spHTMLElement;
-			if (spHTMLBody == NULL) 
-				break;
-
-			// テキストレンジを取得
-			CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
-			hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
-			if (!spHTMLTxtRange)
-				AtlThrow(hr);			
-
-			//+++ 最大キーワード数(無限ループ対策)
-			static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
-			//+++ 無限ループ状態を強制終了させるため、ループをカウントする
-			unsigned num = 0;
-
-			// キーワードを検索
-			CComBSTR		bstrText= strKeyWord;
-			VARIANT_BOOL	vBool	= VARIANT_FALSE;
-			while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
-				// 現在選択しているHTMLテキストを取得
-				CComBSTR	bstrTextNow;
-				hr = spHTMLTxtRange->get_text(&bstrTextNow);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				// <span>を付加
-				CComBSTR	bstrTextNew;
-				bstrTextNew.Append(g_lpszLight[nLightIndex]);	// <span ～
-				bstrTextNew.Append(bstrTextNow);
-				bstrTextNew.Append(_T("</span>"));
-
-
-				CComPtr<IHTMLElement> spParentElement;
-				hr = spHTMLTxtRange->parentElement(&spParentElement);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				CComBSTR	bstrParentTag;
-				hr = spParentElement->get_tagName(&bstrParentTag);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				if (   bstrParentTag != _T("SCRIPT")
-					&& bstrParentTag != _T("NOSCRIPT")
-					&& bstrParentTag != _T("TEXTAREA")
-					&& bstrParentTag != _T("STYLE"))
-				{
-					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
-					if (FAILED(hr))
-						AtlThrow(hr);
-
-					//+++ 通常のページでハイライト置換がこんなにもあることはないだろうで、無限ループ扱いでうちどめしとく
-					if (++num > maxKeyword)		
-						break;
-				}
-				spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
-			}
-
-			++nLightIndex;
-			if (nLightIndex >= g_LIGHTMAX)
-				nLightIndex = 0;
-
-			// 次のキーワードに
-			strKeyWord = _tcstok(NULL, strExcept);
-			strKeyWord.TrimLeft(strExcept);
-			strKeyWord.TrimRight(strExcept);
-		}
-
-	} catch (const CAtlException& e) {
-			e;	// 例外を握りつぶす
-	}	// try
-	}
-
-	// ハイライトを解除する
-	void RemoveHilight(IHTMLDocument2* pDocument)
-	{
-		CComBSTR	hilightID(L"unDonutHilight");
-		CComBSTR	hilightTag(L"SPAN");
-
-		CComPtr<IHTMLElementCollection> pAll;
-
-		if (SUCCEEDED( pDocument->get_all(&pAll) ) && pAll != NULL) {
-			CComVariant 		id(L"unDonutHilight");
-			CComPtr<IDispatch>	pDisp;
-			CComVariant 		vIndex(0);
-			pAll->item(id, vIndex, &pDisp);
-			if (pDisp == NULL)
-				return;
-
-			CComPtr<IUnknown>	pUnk;
-
-			if (SUCCEEDED( pAll->get__newEnum(&pUnk) ) && pUnk != NULL) {
-				CComQIPtr<IEnumVARIANT> pEnumVariant = pUnk;
-
-				if (pEnumVariant != NULL) {
-					VARIANT  v;
-					ULONG	 ul;
-					CComBSTR bstrTagName;
-					CComBSTR bstrID;
-					CComBSTR bstrTmp;
-
-					while (pEnumVariant->Next(1, &v, &ul) == S_OK) {
-						CComQIPtr<IHTMLElement> pElement = v.pdispVal;
-						VariantClear(&v);
-
-						if (pElement != NULL) {
-							bstrTagName.Empty();
-							bstrID.Empty();
-							pElement->get_tagName(&bstrTagName);
-							pElement->get_id(&bstrID);
-
-							if (bstrTagName == hilightTag && bstrID == hilightID) {
-								bstrTmp.Empty();
-								pElement->get_innerHTML(&bstrTmp);
-								pElement->put_outerHTML(bstrTmp);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	// ハイライトがすでにされているか確認する
-	BOOL FindHilight(IHTMLDocument2* pDocument)
-	{
-		CComPtr<IHTMLElementCollection> 	pAll;
-
-		if (SUCCEEDED(pDocument->get_all(&pAll)) && pAll != NULL) {
-			CComVariant 		id(L"unDonutHilight");
-			CComPtr<IDispatch>	pDisp;
-			CComVariant 		vIndex(0);
-			pAll->item(id, vIndex, &pDisp);
-			if (pDisp != NULL) {
-				return TRUE;
-			}
-		}
-		return FALSE;
-	}
-};
-
 void	CChildFrame::Impl::_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord)
 {
 	CComQIPtr<IWebBrowser2> 	pWebBrowser = pDisp;
@@ -1898,6 +2497,187 @@ void	CChildFrame::Impl::_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord)
 		MtlForEachHTMLDocument2g(pWebBrowser, _Function_Hilight2(lpszKeyWord, TRUE));
 	}
 }
+
+
+	
+BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags /*= 0*/)
+{
+	// ドキュメントがNULLなら終了
+	if (!pDocument)
+		return FALSE;
+
+	HRESULT	hr = S_OK;
+	// キーワードを一語取得
+	//x strKeyWord = strtok( (LPSTR) strKeyWord.GetBuffer(0), " " );
+	CString 	strKeyWord = strKeyword;//\\Misc::GetStrWord( strKeyword );
+	LPCTSTR		strExcept  = _T(" \t\"\r\n　");
+	strKeyWord.TrimLeft(strExcept);
+	strKeyWord.TrimRight(strExcept);
+
+	// <body>を取得
+	CComPtr<IHTMLElement>		spHTMLElement;
+	pDocument->get_body(&spHTMLElement);
+	CComQIPtr<IHTMLBodyElement> spHTMLBody = spHTMLElement;
+	if (!spHTMLBody)
+		return FALSE;
+
+	// テキストレンジを取得
+	CComPtr<IHTMLTxtRange>		spTxtRange;
+	spHTMLBody->createTextRange(&spTxtRange);
+	if (!spTxtRange)
+		return FALSE;
+
+	if (m_strBookmark && m_strOldKeyword == strKeyword) {
+		VARIANT_BOOL vMoveBookmark = VARIANT_FALSE;
+		spTxtRange->moveToBookmark(m_strBookmark, &vMoveBookmark);
+		if (vMoveBookmark == TRUE) {
+			long lActual;
+			if (bFindDown) {
+				spTxtRange->collapse(false);	// Caretの位置を選択したテキストの一番下に
+				if (Misc::getIEMejourVersion() < 9)
+					spTxtRange->moveStart(CComBSTR(L"character"), 1, &lActual);
+				//spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
+			} else {
+				spTxtRange->collapse(true);	// Caretの位置を選択したテキストの一番上に
+				//if (Misc::getIEMejourVersion() < 9) 
+				//	spTxtRange->moveEnd  (CComBSTR(L"character"), -10, &lActual);			
+			}
+		}
+	} else {	// 検索範囲を全体にする
+		long lActual;
+		spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
+		spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
+	}
+	m_strOldKeyword = strKeyword;
+
+	CComBSTR		bstrText(strKeyWord);
+	BOOL			bSts  = FALSE;
+	VARIANT_BOOL	vBool = VARIANT_FALSE;
+	int	nSearchCount = 0;
+	while (spTxtRange->findText(bstrText, (bFindDown) ? 1 : -1, Flags, &vBool), vBool == VARIANT_TRUE) {
+
+		auto funcMove = [&spTxtRange, bFindDown] () {	// 検索範囲を変更する関数
+			long lActual = 0;
+			if (bFindDown)
+				spTxtRange->collapse(false);
+				//spTxtRange->moveStart(CComBSTR(L"character"), 1, &lActual);
+			else
+				spTxtRange->collapse(true);
+				//spTxtRange->moveEnd  (CComBSTR(L"character"), -10, &lActual);
+		};
+		
+		CComPtr<IHTMLElement>	spFirstParentElement;
+
+		bool	bVisible = true;
+		CComQIPtr<IHTMLElement> spParentElement;
+		spTxtRange->parentElement(&spParentElement);
+		spFirstParentElement = spParentElement;
+		while (spParentElement) {
+			CComQIPtr<IHTMLElement2>	spParentElm2 = spParentElement;
+			CComPtr<IHTMLCurrentStyle>	spStyle;
+			spParentElm2->get_currentStyle(&spStyle);
+			if (spStyle) {
+				CComBSTR	strdisplay;
+				spStyle->get_display(&strdisplay);
+				if (strdisplay && strdisplay == _T("none")) {	// 表示されていない場合はスキップ
+					funcMove();
+					bVisible = false;
+					break;
+				}
+			}
+			CComPtr<IHTMLElement>	spPPElm;
+			spParentElement->get_parentElement(&spPPElm);
+			spParentElement = spPPElm;
+		}
+		if (bVisible == false)
+			continue;
+
+		CComBSTR	bstrParentTag;
+		spFirstParentElement->get_tagName(&bstrParentTag);
+		if (   bstrParentTag != _T("SCRIPT")
+			&& bstrParentTag != _T("NOSCRIPT")
+			&& bstrParentTag != _T("TEXTAREA")) 
+			break;	/* 終わり */
+
+		//++nSearchCount;
+		//if (nSearchCount > 5)	// 5以上で打ち止め
+		//	break;
+
+		funcMove();
+	}
+
+	auto funcScrollBy = [](IHTMLDocument2 *pDoc2) {
+		CComPtr<IHTMLDocument3> 	   pDoc3;
+		HRESULT 	hr = pDoc2->QueryInterface(&pDoc3);
+		if ( FAILED(hr) )
+			return;
+
+		CComPtr<IHTMLElement>		   pElem;
+		hr	= pDoc3->get_documentElement(&pElem);
+		if ( FAILED(hr) )
+			return;
+
+		long		height = 0;
+		hr	= pElem->get_offsetHeight(&height); 	// HTML表示領域の高さ
+		if ( FAILED(hr) )
+			return;
+
+		CComPtr<IHTMLSelectionObject>  pSel;
+		hr	= pDoc2->get_selection(&pSel);
+		if ( FAILED(hr) )
+			return;
+
+		CComPtr<IDispatch>			   pDisp;
+		hr	= pSel->createRange(&pDisp);
+
+		if ( FAILED(hr) )
+			return;
+
+		CComPtr<IHTMLTextRangeMetrics> pTxtRM;
+		hr	= pDisp->QueryInterface(&pTxtRM);
+		if ( FAILED(hr) )
+			return;
+
+		long		y = 0;
+		hr	= pTxtRM->get_offsetTop(&y);		// 選択部分の画面上からのy座標
+		if ( FAILED(hr) )
+			return;
+
+		long scy = y - height / 2;				// 画面中央までの距離
+
+		// 距離が表示部分の1/4より大きければスクロールさせる
+		if ( (scy > height / 4) || (scy < -height / 4) ) {
+			CComPtr<IHTMLWindow2> pWnd;
+			hr = pDoc2->get_parentWindow(&pWnd);
+
+			if ( FAILED(hr) )
+				return;
+
+			pWnd->scrollBy(0, scy);
+		}
+	};
+
+	if (vBool == VARIANT_FALSE) {
+		CComPtr<IHTMLSelectionObject> spSelection;
+		pDocument->get_selection(&spSelection);
+		if (spSelection)
+			spSelection->empty();
+	} else {
+		if (spTxtRange->getBookmark(&m_strBookmark) != S_OK)
+			m_strBookmark = LPCOLESTR(NULL);
+
+		spTxtRange->select();
+		spTxtRange->scrollIntoView(VARIANT_TRUE);
+
+		bSts = TRUE;
+
+		if (CSearchBarOption::s_bScrollCenter)
+			funcScrollBy(pDocument);
+	}
+
+	return bSts;
+}
+
 
 
 /////////////////////////////////////////////////////////////
