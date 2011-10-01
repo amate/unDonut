@@ -258,6 +258,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 //	}
 
 	//m_nContextMenuMode = 0;	//+++
+	m_strUrl.Empty();
 
 	return S_OK;
 }

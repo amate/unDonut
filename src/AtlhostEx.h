@@ -359,7 +359,7 @@ public:
 		m_bInPlaceActive = FALSE;
 		m_bUIActive = FALSE;
 	  #if 1 //+++ ‹Œ”Å(atl3Œn)‚É‚ ‚í‚¹‚Ä‚Ý‚é
-		m_bMDIApp = TRUE;	//FALSE;
+		m_bMDIApp = FALSE;//\\TRUE;	//FALSE;
 	  #else
 		m_bMDIApp = FALSE;
 	  #endif

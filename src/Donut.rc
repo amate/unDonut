@@ -42,7 +42,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 #ifdef WIN64
-IDR_MAINFRAME           ICON                    "res64\\Icon_64.ico"
+IDR_MAINFRAME			ICON					"res64\\Icon_64.ico"
 #else
 IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
 #endif
@@ -323,7 +323,6 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "左のタブ(&X)",                    ID_TAB_LEFT
         MENUITEM "右のタブ(&V)",                    ID_TAB_RIGHT
-        MENUITEM SEPARATOR
     END
     POPUP "ヘルプ(&H)"
     BEGIN

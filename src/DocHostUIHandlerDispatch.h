@@ -44,6 +44,7 @@ public:
 
 	void SetDefaultUIHandler(const CComPtr<IDocHostUIHandler> &pDefaultHandler) { m_pDefaultHandler = pDefaultHandler; }
 
+	CString	GetAnchorURL() const { return m_strUrl; }
 
 public: 	
 	// IUnknown atlhost.h‚ðŒ©‚éŒÀ‚è•K—v‚Å‚Í‚È‚¢

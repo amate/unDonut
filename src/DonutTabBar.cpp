@@ -10,20 +10,14 @@
 #include "Donut.h"
 #include "option/MenuDialog.h"
 #include "option/RightClickMenuDialog.h"
+#include "option/MDITabDialog.h"
 #include "DonutAddressBar.h"
-
 #include "HlinkDataObject.h"
 #include "dialog/CommandSelectDialog.h"
-#include "FaviconManager.h"
-
-#include "option/MDITabDialog.h"
 #include "DropDownButton.h"
 #include "MainFrame.h"
-
-//////////////////////////////////////////////////////////
-
-
-
+#include "FaviconManager.h"
+#include "PluginManager.h"
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -631,14 +625,12 @@ public:
 		MSG_WM_CREATE		( OnCreate )
 		MSG_WM_DESTROY		( OnDestroy )
 		MSG_WM_SIZE			( OnSize )
-		MESSAGE_HANDLER_EX	( WM_MENUSELECT, OnMenuSelect )
 
 		MSG_WM_LBUTTONDOWN	( OnLButtonDown )	// Drag
 
 		MSG_WM_RBUTTONUP	( OnRButtonUp )
 		MSG_WM_LBUTTONDBLCLK( OnLButtonDblClk )
 		MSG_WM_MBUTTONUP	( OnMButtonUp )
-		MSG_WM_COMMAND		( OnCommand 	  )
 		COMMAND_ID_HANDLER_EX( COMMAND_ID_DROPBUTTON, OnPushDropButton	)
 		USER_MSG_WM_SETFAVICONIMAGE( OnSetFaviconImage )
 		NOTIFY_CODE_HANDLER_EX( UDN_DELTAPOS   , OnDeltaPos	)
@@ -648,29 +640,20 @@ public:
 		CHAIN_MSG_MAP( CThemeImpl<Impl> )
 		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
 		REFLECT_NOTIFICATIONS()
-	ALT_MSG_MAP(1)							// MDI child windows messages
-		m_wndMDIChildProcessing = hWnd;
-		MSG_WM_MDIACTIVATE	( OnMDIActivate )
-		m_wndMDIChildProcessing = NULL;
 	END_MSG_MAP()
 
 	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void	OnDestroy();
 	void	OnSize(UINT nType, CSize size);
-	LRESULT OnMenuSelect(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void	OnLButtonDown(UINT nFlags, CPoint point);
 
 	void	OnRButtonUp(UINT nFlags, CPoint point);
 	void	OnLButtonDblClk(UINT nFlags, CPoint point);
 	void	OnMButtonUp(UINT nFlags, CPoint point);
-	void	OnCommand(UINT wNotifyCode, int wID, HWND hwndCtl);
 	void	OnPushDropButton(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSetFaviconImage(HWND hWnd, HICON hIcon);
 	LRESULT OnDeltaPos(LPNMHDR pnmh);
 	LRESULT OnGetDispInfo(LPNMHDR pnmh);
-
-	// CChildFrameから
-	void	OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct);
 
 	void	OnSetCurSel(int nIndex, int nOldIndex);
 	HRESULT OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, IDataObject** ppDataObject);
@@ -698,6 +681,7 @@ private:
 	bool	_IsLinkOpen();
 	int		_GetFirstVisibleIndex();
 	int		_GetLastVisibleIndex();
+	void	_SetCurSelExceptIndex(const CSimpleArray<int>& arrCurMultiSel);
 
 	bool	_InsertItem(int nIndex, unique_ptr<TabItem>&& item);
 	bool	_DeleteItem(int nIndex, bool bMoveNow = false);
@@ -740,8 +724,6 @@ private:
 	bool				m_bDragFromItself;
 	CSimpleArray<int>	m_arrCurDragItems;
 
-	CWindow 	m_wndMDIChildProcessing;		// while message processing
-	CMDIWindow	m_wndMDIChildPopuping;			// while menu popuping (m_bPopup is not enough)
 	bool		m_bRedrawLocked;
 	bool		m_bLockRefreshBandInfo;
 
@@ -786,8 +768,6 @@ HWND	CDonutTabBar::Impl::Create(HWND hWndParent)
 void CDonutTabBar::Impl::SetChildFrameClient(CChildFrameClient* pChildClient)
 {
 	ATLASSERT( ::IsWindow(*pChildClient) );
-	//ATLASSERT(m_wndMDIChildPopuping.m_hWndMDIClient == NULL);
-	//:::m_wndMDIChildPopuping.m_hWndMDIClient = hWndMDIClient;
 	m_pChildFrameClient = pChildClient;
 }
 
@@ -1079,7 +1059,7 @@ void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd, bool bActive /*= false*/)
 			nPos = GetItemCount();
 
 		_InsertItem(nPos, std::move(pItem));
-		if (bActive || m_pChildFrameClient->GetActiveChildFrameWindow() == NULL)
+		if (bActive/* || m_pChildFrameClient->GetActiveChildFrameWindow() == NULL*/)
 			SetCurSel(nPos);
 	}
 }
@@ -1089,7 +1069,7 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 {
 	int nIndex = GetTabIndex(hWnd);
 	int nCurIndex = GetCurSel();
-	if (nCurIndex == nIndex) {
+	if (hWnd == m_pChildFrameClient->GetActiveChildFrameWindow()/*nCurIndex == nIndex*/) {
 		// アクティブなビューが破棄された
 		// 次のタブをアクティブにする
 		auto funcManageClose = [this](int nActiveIndex) ->int {
@@ -1745,16 +1725,6 @@ void	CDonutTabBar::Impl::OnSize(UINT nType, CSize size)
 	}
 }
 
-//--------------------------------
-/// for help message line
-LRESULT CDonutTabBar::Impl::OnMenuSelect(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	ATLASSERT( ::IsWindow(m_wndMDIChildPopuping.m_hWndMDIClient) );
-	static HWND hWndToplevelWindow = CWindow(m_wndMDIChildPopuping.m_hWndMDIClient).GetTopLevelWindow();
-	::SendMessage(hWndToplevelWindow, WM_MENUSELECT, wParam, lParam);
-	return 0;
-}
-
 //---------------------------
 // 左クリックDOWN : DragDrop開始
 void	CDonutTabBar::Impl::OnLButtonDown(UINT nFlags, CPoint point)
@@ -1829,56 +1799,6 @@ void	CDonutTabBar::Impl::OnLButtonDown(UINT nFlags, CPoint point)
 void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	SetMsgHandled(FALSE);
-
-	auto funcUpdateMenu = [this](CMenuHandle &menuSys) {	// Emulation is needed cause MDI child window won't update its menu information until clicked.
-		ATLASSERT( ::IsMenu(menuSys.m_hMenu) );
-
-		// no effect
-		// m_wndMDIChildPopuping.SetWindowPos(NULL, 0, 0, 0, 0, SWP_FRAMECHANGED | SWP_NOACTIVATE |
-		//	SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER);
-
-		menuSys.EnableMenuItem(SC_RESTORE , MF_BYCOMMAND | MF_ENABLED);
-		menuSys.EnableMenuItem(SC_MOVE	  , MF_BYCOMMAND | MF_ENABLED);
-		menuSys.EnableMenuItem(SC_SIZE	  , MF_BYCOMMAND | MF_ENABLED);
-		menuSys.EnableMenuItem(SC_MINIMIZE, MF_BYCOMMAND | MF_ENABLED);
-		menuSys.EnableMenuItem(SC_MAXIMIZE, MF_BYCOMMAND | MF_ENABLED);
-
-		CWindowPlacement wndpl;
-		m_wndMDIChildPopuping.GetWindowPlacement(&wndpl);
-
-		switch (wndpl.showCmd) {
-		case SW_SHOWNORMAL:
-			ATLTRACE2( atlTraceGeneral, 4, _T(" SW_SHOWNORMAL\n") );
-			menuSys.EnableMenuItem(SC_RESTORE, MF_BYCOMMAND | MF_GRAYED);
-			::SetMenuDefaultItem(menuSys, SC_CLOSE, FALSE);
-			break;
-
-		case SW_SHOWMAXIMIZED:
-			ATLTRACE2( atlTraceGeneral, 4, _T(" SW_SHOWMAXIMIZED\n") );
-			menuSys.EnableMenuItem(SC_MOVE	  , MF_BYCOMMAND | MF_GRAYED);
-			menuSys.EnableMenuItem(SC_SIZE	  , MF_BYCOMMAND | MF_GRAYED);
-			menuSys.EnableMenuItem(SC_MAXIMIZE, MF_BYCOMMAND | MF_GRAYED);
-			::SetMenuDefaultItem(menuSys, SC_CLOSE, FALSE);
-			break;
-
-		case SW_SHOWMINIMIZED:
-			ATLTRACE2( atlTraceGeneral, 4, _T(" SW_SHOWMINIMIZED\n") );
-			menuSys.EnableMenuItem(SC_SIZE	  , MF_BYCOMMAND | MF_GRAYED);
-			menuSys.EnableMenuItem(SC_MINIMIZE, MF_BYCOMMAND | MF_GRAYED);
-			::SetMenuDefaultItem(menuSys, SC_RESTORE, FALSE);
-			break;
-
-		default:
-			ATLASSERT(FALSE);
-			break;
-		}
-
-		if ( m_wndMDIChildPopuping.m_hWnd != m_wndMDIChildPopuping.MDIGetActive() ) {	// it's not active
-			menuSys.EnableMenuItem(SC_MOVE, MF_BYCOMMAND | MF_GRAYED);
-			menuSys.EnableMenuItem(SC_SIZE, MF_BYCOMMAND | MF_GRAYED);
-		}
-	};
-
 	int nIndex = _HitTest(point);
 	if (nIndex != -1) {
 		HWND hWndChild = GetTabHwnd(nIndex);
@@ -1890,9 +1810,8 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 			::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
 		} else if ( (s_dwExStyle & MTB_EX_RIGHTCLICKCOMMAND) && s_RClickCommand ) {		//minit
 			::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) s_RClickCommand, 0);
-		} else if (m_menuPopup.m_hMenu) {
+		} else {	// メニューを表示する
 			ClientToScreen(&point);
-			//CMenuHandle menu	 = m_menuPopup.GetSubMenu(0);
 
 			DWORD	dwFlag = TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RETURNCMD;
 			if (CMenuOption::s_bR_Equal_L) 
@@ -1901,29 +1820,33 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 			CMenuHandle menu = CCustomContextMenuOption::s_menuTabItem;
 			CSimpleArray<HMENU>	arrDestroyMenu;
 			CCustomContextMenuOption::AddSubMenu(menu, GetTopLevelWindow(), arrDestroyMenu);
-			// ポップアップメニューを表示する
-			int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, hWndChild);
-			if (nCmd != 0) {
-				if (nCmd == ID_FILE_CLOSE) {	// 場合によっては複数選択されたタブも閉じる
-					CSimpleArray<int>	arr;
-					GetCurMultiSelEx(arr, nIndex);
-					int nCount = arr.GetSize();
-					for (int i = 0; i < nCount; ++i) {
-						::PostMessage(GetTabHwnd(arr[i]), WM_CLOSE, 0, 0);
-					}
-				} else 
-					MtlSendCommand(hWndChild, nCmd);
+			{
+				{	// メニューの右にショートカットキーを表示しないようにする(メインフレームで設定されるのを防ぐ)
+					MENUITEMINFO menuInfo = { sizeof (MENUITEMINFO) };
+					menuInfo.fMask	= MIIM_TYPE;
+					menuInfo.fType	= MF_SEPARATOR;
+					menu.InsertMenuItem(0, MF_BYPOSITION, &menuInfo);
+				}
+				CWindow wndMainFrame = GetTopLevelWindow();
+				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)hWndChild);
+				// ポップアップメニューを表示する
+				int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, wndMainFrame);
+				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)GetTabHwnd(GetCurSel()));
+				if (nCmd != 0) {
+					if (nCmd == ID_FILE_CLOSE) {	// 場合によっては複数選択されたタブも閉じる
+						CSimpleArray<int>	arr;
+						GetCurMultiSelEx(arr, nIndex);
+						_SetCurSelExceptIndex(arr);
+						int nCount = arr.GetSize();
+						for (int i = 0; i < nCount; ++i) {
+							::PostMessage(GetTabHwnd(arr[i]), WM_CLOSE, 0, 0);
+						}
+					} else 
+						MtlSendCommand(hWndChild, nCmd);
+				}
 			}
-
 			CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
 
-		} else {																				// system menu (default)
-			CMenuHandle menuSys = ::GetSystemMenu(hWndChild, FALSE);
-			ClientToScreen(&point);
-			m_wndMDIChildPopuping = hWndChild;
-			funcUpdateMenu(menuSys);
-			menuSys.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON,
-								   point.x, point.y, m_hWnd);									// owner is me!!
 		}
 	} else {
 		::SendMessage(GetTopLevelParent(), WM_SHOW_TOOLBARMENU, 0, 0);
@@ -1983,6 +1906,9 @@ void	CDonutTabBar::Impl::OnMButtonUp(UINT nFlags, CPoint point)
 	GetCurMultiSelEx(arrCurMultiSel, nIndex);
 
 	if (arrCurMultiSel.GetSize() > 1) {
+		if (s_dwExStyle & MTB_EX_XCLICKCLOSE)
+			_SetCurSelExceptIndex(arrCurMultiSel);
+
 		for (int i = arrCurMultiSel.GetSize() - 1; i >= 0; --i) {
 			int nTargetIndex = arrCurMultiSel[i];
 			hWndChild = GetTabHwnd(nTargetIndex);
@@ -2014,34 +1940,9 @@ void	CDonutTabBar::Impl::OnMButtonUp(UINT nFlags, CPoint point)
 	}
 }
 
-//--------------------------
-void	CDonutTabBar::Impl::OnCommand(UINT wNotifyCode, int wID, HWND hwndCtl)
-{
-	if (m_wndMDIChildPopuping.m_hWnd == NULL) { 		// this is not my command message
-		SetMsgHandled(FALSE);
-		return;
-	}
-
-	ATLASSERT( m_wndMDIChildPopuping.IsWindow() );
-	CMDIWindow		wnd   = m_wndMDIChildPopuping;
-	m_wndMDIChildPopuping = NULL;		// It must be reset cause SendMessage(WM_SYSCOMMAND) make one more WM_COMMAND.
-
-	if (wID != SC_CLOSE && wID != SC_NEXTWINDOW)
-		wnd.BringWindowToTop();
-
-	// Note: If you send SC_NEXTWINDOW to inactive child window,
-	//		 order is broken. Tell me why.
-	if (wID == SC_NEXTWINDOW)
-		wnd.MDINext(NULL);					// I think NULL is natural.
-	else if (wID == SC_MAXIMIZE)
-		wnd.ShowWindow(SW_MAXIMIZE);		// without this, frame window maximized. why?
-	//else if (wID == SC_CLOSE)
-	//	wnd.PostMessage(WM_CLOSE);			// without this, debug assertion occurs?
-	else
-		wnd.SendMessage(WM_SYSCOMMAND, (WPARAM) wID);
-}
 
 //----------------------------
+/// 一列表示時の右端のドロップボタン押したときのメニュー
 void	CDonutTabBar::Impl::OnPushDropButton(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	CRect rc;
@@ -2052,10 +1953,7 @@ void	CDonutTabBar::Impl::OnPushDropButton(UINT uNotifyCode, int nID, CWindow wnd
 	if (nIndex == -1)
 		return;
 
-	HWND  hChild = GetTabHwnd(nIndex);
-	ATLASSERT(::IsWindow(hChild));
-
-	::SendMessage(m_wndMDIChildPopuping.m_hWndMDIClient, WM_MDIACTIVATE, (WPARAM) hChild, 0);
+	SetCurSel(nIndex);
 }
 
 //-----------------------------
@@ -2092,10 +1990,10 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 		m_strTooltipText.Empty();
 		HWND	hWnd = GetTabHwnd(nIndex);
 		if (hWnd) {
-			CWebBrowser2 browser = DonutGetIWebBrowser2(hWnd);
-			if ( browser.IsBrowserNull() == false ) {
+			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
+			if (pChild) {
 				CString   strName = MtlGetWindowText(hWnd);
-				CString   strUrl  = browser.GetLocationURL();
+				CString   strUrl  = pChild->GetLocationURL();
 				m_strTooltipText = strName + _T("\n") + strUrl;
 			}
 		}
@@ -2110,27 +2008,6 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 }
 
 
-// CChildFrameから
-
-//------------------------------
-void	CDonutTabBar::Impl::OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct)
-{
-	SetMsgHandled(FALSE);
-
-	if (hWndChildAct == NULL)
-		return;
-
-	int nIndex = GetTabIndex(hWndChildAct);
-	ATLASSERT(nIndex != -1);
-
-	if (!m_bRedrawLocked) {
-		SetItemActive(nIndex);
-		UpdateWindow();
-	}
-
-	SetCurSel(nIndex, false, true);
-}
-
 //------------------------------
 /// 
 void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
@@ -2139,6 +2016,11 @@ void	CDonutTabBar::Impl::OnSetCurSel(int nIndex, int nOldIndex)
 	ATLASSERT( ::IsWindow(hWnd) );
 
 	m_pChildFrameClient->SetChildFrameWindow(hWnd);
+
+	{
+		//プラグインイベント - アクティブタブ変更
+		CPluginManager::BroadCast_PluginEvent(DEVT_TAB_CHANGEACTIVE, nOldIndex, nIndex);
+	}
 #if 0	//:::
 	if (Misc::IsGpuRendering()) {
 		/* 前のウィンドウの画面を更新しておく */
@@ -2586,9 +2468,6 @@ void	CDonutTabBar::Impl::_LockRedraw(bool bLock)
 		m_bRedrawLocked = true;
 	} else {
 		m_bRedrawLocked = false;
-		int nIndex = GetCurSel();
-		//if ( m_wndMDIChildPopuping.MDIGetActive() == GetTabHwnd(nIndex) )
-			//SetItemActive(nIndex);
 	}
 }
 
@@ -2680,6 +2559,63 @@ int		CDonutTabBar::Impl::_GetLastVisibleIndex()
 	}
 
 	return -1;
+}
+
+//-------------------------
+/// 閉じる前にアクティブになる予定のタブを選択する
+void	CDonutTabBar::Impl::_SetCurSelExceptIndex(const CSimpleArray<int>& arrCurMultiSel)
+{
+	if (arrCurMultiSel.Find(GetCurSel()) != -1) {	// アクティブなタブを含む
+		if (arrCurMultiSel.GetSize() == GetItemCount()) {	// 全部消える
+			m_pChildFrameClient->SetChildFrameWindow(NULL);
+		} else {	// 次にアクティブにすべきタブを先に見つける
+			auto SearchNextIndex = [arrCurMultiSel, this]() -> int {
+				const int nCount		= GetItemCount();
+				const int nActiveIndex	= GetCurSel();
+				if (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE) {
+					// 閉じるときアクティブなタブの左をアクティブにする
+					bool	bRise = false;
+					int nNext = nActiveIndex - 1;
+					while (arrCurMultiSel.Find(nNext) != -1) {
+						if (bRise) {
+							++nNext;
+							ATLASSERT( nNext <= nCount );
+						} else {
+							if (nNext > 0) {
+								--nNext;	// 下げていく
+							} else if (nNext == 0) {	// 最後まで行ったので反転
+								bRise = true;
+								nNext = nActiveIndex + 1;
+							}
+						}
+					}
+					return nNext;
+				} else if (s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) {
+					// 閉じるときアクティブなタブの右をアクティブにする
+					bool	bSink = false;
+					int nNext = nActiveIndex + 1;
+					while (arrCurMultiSel.Find(nNext) != -1) {
+						if (bSink) {
+							--nNext;
+							ATLASSERT( nNext >= 0 );
+						} else {
+							if (nNext < nCount) {
+								++nNext;	// 上げていく
+							} else {
+								bSink = true;
+								nNext = nActiveIndex - 1;	// 最後まで行ったので反転
+							}
+						}
+					}
+				}
+				return -1;
+			};// lamda
+
+			int nNext = SearchNextIndex();
+			ATLASSERT( _IsValidIndex(nNext) );
+			SetCurSel(nNext);
+		}
+	}
 }
 
 //--------------------------------------
@@ -3179,275 +3115,6 @@ bool	CDonutTabBar::Impl::_ScrollItem(bool bRight/* = true*/)
 }
 
 
-#if 0
-
-void CMDITabCtrl::SetCurSelEx(int nIndex, bool bActivate)
-{
-	SetCurSel(nIndex);
-
-	if (bActivate) {
-		HWND	hWnd = GetTabHwnd(nIndex);
-		ATLASSERT( ::IsWindow(hWnd) );
-#if 1 //+++ メモ:unDonut+
-		CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
-		wndMDI.SetRedraw(FALSE);
-		m_wndMDIChildPopuping.MDIActivate(hWnd);
-		wndMDI.SetRedraw(TRUE);
-		wndMDI.RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-#else	//+++ メモ:r13test	//*お試し
-		m_wndMDIChildPopuping.MDIActivate(hWnd);
-#endif
-	}
-}
-
-
-
-
-void CMDITabCtrl::_SendSelChange(int nIndex)
-{
-	int   idCtrl = ::GetDlgCtrlID(m_hWnd);
-	NMHDR nmh	 = { m_hWnd, idCtrl, TCN_SELCHANGE };
-
-	SendMessage(WM_NOTIFY, (WPARAM) idCtrl, (LPARAM) &nmh);
-}
-
-
-
-DWORD CMDITabCtrl::GetMDITabExtendedStyle() const
-{
-	return m_dwExtendedStyle;
-}
-
-
-
-DWORD CMDITabCtrl::SetMDITabExtendedStyle(DWORD dwExtendedStyle)
-{
-	DWORD dwPrevStyle = m_dwExtendedStyle;
-
-	m_dwExtendedStyle = dwExtendedStyle;
-
-	if (dwExtendedStyle & MTB_EX_MULTILINE)
-		ModifyTabCtrl2ExtendedStyle(0, TAB2_EX_MULTILINE);
-	else
-		ModifyTabCtrl2ExtendedStyle(TAB2_EX_MULTILINE, 0);
-
-	if (dwExtendedStyle & MTB_EX_FIXEDSIZE)
-		ModifyTabCtrl2ExtendedStyle(0, TAB2_EX_FIXEDSIZE);
-	else
-		ModifyTabCtrl2ExtendedStyle(TAB2_EX_FIXEDSIZE, 0);
-
-	if (dwExtendedStyle & MTB_EX_ANCHORCOLOR)
-		ModifyTabCtrl2ExtendedStyle(0, TAB2_EX_ANCHORCOLOR);
-	else
-		ModifyTabCtrl2ExtendedStyle(TAB2_EX_ANCHORCOLOR, 0);
-
-	if (dwExtendedStyle & MTB_EX_MOUSEDOWNSELECT)
-		ModifyTabCtrl2ExtendedStyle(0, TAB2_EX_MOUSEDOWNSELECT);
-	else
-		ModifyTabCtrl2ExtendedStyle(TAB2_EX_MOUSEDOWNSELECT, 0);
-
-	return dwPrevStyle;
-}
-
-
-
-
-void CMDITabCtrl::SetMaxTabItemTextLength(int nLength)
-{
-	if (m_nMaxTabItemTextLength == nLength)
-		return;
-
-	m_nMaxTabItemTextLength = nLength;
-
-	UINT nCount = GetItemCount();
-	for (UINT i = 0; i < nCount; ++i) {
-		HWND  hWnd = GetTabHwnd(i);
-		ATLASSERT( ::IsWindow(hWnd) );
-		TCHAR szText[MAX_PATH];
-		szText[0] = 0;
-		::GetWindowText(hWnd, szText, MAX_PATH);
-		_SetTabText(i, szText);
-	}
-}
-
-
-
-int CMDITabCtrl::GetMaxTabItemTextLength()
-{
-	return m_nMaxTabItemTextLength;
-}
-
-
-
-
-
-// タブが切り替わるときに呼ばれる
-LRESULT CMDITabCtrl::OnTcnSelChange(LPNMHDR lpnhmdr)
-{
-	// Watch OnLButtonDown, this handler will not be called by windows.
-	// The flat style tab has a wastefull animation.
-
-	ATLTRACE2( atlTraceGeneral, 4, _T("CMDITabCtrlImpl::OnTcnSelChange : %d\n"), GetCurSel() );
-	int 	nIndex	   = GetCurSel();
-	ATLASSERT(nIndex != -1);
-#if 1	//+++ メモ:unDonut+
-	CWindow wndMDI(m_wndMDIChildPopuping.m_hWndMDIClient);
-	wndMDI.SetRedraw(FALSE);
-
-	HWND	hWndActive = GetTabHwnd(nIndex);
-	m_wndMDIChildPopuping.MDIActivate(hWndActive);
-
-	wndMDI.SetRedraw(TRUE);
-	wndMDI.RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-#else	//+++ メモ:r13test	//*お試し
-	HWND	hWndActive = GetTabHwnd(nIndex);
-	m_wndMDIChildPopuping.MDIActivate(hWndActive);
-#endif
-	return 0;
-}
-
-
-void CMDITabCtrl::OnMDIActivate(HWND hWndChildDeact, HWND hWndChildAct)
-{
-	ATLTRACE2( atlTraceGeneral, 4, _T("CMDITabCtrlImpl::OnMDIActivate\n") );
-	SetMsgHandled(FALSE);
-
-	if (hWndChildAct == NULL)
-		return;
-
-	int nIndex = GetTabIndex(hWndChildAct);
-	ATLASSERT(nIndex != -1);
-
-	if (!m_bRedrawLocked) {
-		SetItemActive(nIndex);
-		UpdateWindow();
-	}
-
-	SetCurSelEx(nIndex, false);
-}
-
-
-
-CString CMDITabCtrl::_GetTabText(int nIndex)
-{
-	CString str;
-
-	GetItemText(nIndex, str);
-	return str;
-}
-
-
-
-
-
-
-void CMDITabCtrl::_SetImageListIndex(int nItem, int nIndex)
-{
-	SetItemImageIndex(nItem, nIndex);
-}
-
-
-
-bool CMDITabCtrl::IsConnecting(HWND hWnd)
-{
-	int nItem = GetTabIndex(hWnd);
-
-	if (nItem == -1)
-		return false;
-
-	return _GetImageListIndex(nItem) == 0;
-}
-
-
-
-bool CMDITabCtrl::IsDownloading(HWND hWnd)
-{
-	int nItem = GetTabIndex(hWnd);
-
-	if (nItem == -1)
-		return false;
-
-	return _GetImageListIndex(nItem) == 1;
-}
-
-
-
-bool CMDITabCtrl::IsCompleted(HWND hWnd)
-{
-	int nItem = GetTabIndex(hWnd);
-
-	if (nItem == -1)
-		return false;
-
-	return _GetImageListIndex(nItem) == -1;
-}
-
-
-
-int CMDITabCtrl::_GetImageListIndex(int nItem)
-{
-	int nImgIndex = -1;
-
-	GetItemImageIndex(nItem, nImgIndex);
-	return nImgIndex;
-}
-
-
-int CMDITabCtrl::ShowTabListMenuDefault(int nX, int nY)
-{
-	int 	nCount = GetItemCount();
-	CMenu	menu;
-
-	menu.CreatePopupMenu();
-
-	for (int i = 0; i < nCount; i++) {
-		menu.AppendMenu( 0, i + 1, _GetTabText(i) );
-	}
-
-	int 	nRet	 = menu.TrackPopupMenu(
-						TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON | TPM_NONOTIFY | TPM_RETURNCMD,
-						nX,
-						nY + 1,
-						m_hWnd);
-	return	nRet - 1;
-}
-
-
-
-
-
-// Overrides
-void CMDITabCtrl::OnDropDownButton()
-{
-	CRect rc;
-
-	m_wndDropBtn.GetClientRect(&rc);
-	m_wndDropBtn.ClientToScreen(&rc);
-	int   nIndex = ShowTabListMenuVisible(rc.left, rc.top);
-
-	if (nIndex == -1)
-		return;
-
-	HWND  hChild = GetTabHwnd(nIndex);
-
-	if ( !::IsWindow(hChild) )
-		return;
-
-	::SendMessage(m_wndMDIChildPopuping.m_hWndMDIClient, WM_MDIACTIVATE, (WPARAM) hChild, 0);
-}
-
-
-void CMDITabCtrl::OnDeleteItemDrag(int nIndex)
-{
-	HWND hWnd;
-
-	if ( ( hWnd = GetTabHwnd(nIndex) ) != 0 )
-		::PostMessage( (HWND) hWnd, WM_CLOSE, 0, 0 );
-}
-
-
-
-#endif
 
 //////////////////////////////////////////
 // CDonutTabBar

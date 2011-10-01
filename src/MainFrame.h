@@ -53,7 +53,7 @@
 class CChildFrameClient : public CWindowImpl<CChildFrameClient>
 {
 public:
-	DECLARE_WND_CLASS_EX(_T("DonutChildFrameClient"), 0, COLOR_APPWORKSPACE)
+	DECLARE_WND_CLASS_EX(_T("DonutChildFrameClient"), CS_BYTEALIGNCLIENT, COLOR_APPWORKSPACE)
 
 	CChildFrameClient();
 
@@ -103,6 +103,7 @@ public:
 	CMainFrame();
 	~CMainFrame();
 
+	void	SetCommandLine(LPCTSTR strCommandLine) { m_strCommandLine = strCommandLine; }
 	
 	bool 			OnDDEOpenFile(const CString &strFileName);
 	void 			SetAutoBackUp() { OnBackUpOptionChanged(0,0,0); }	///+++	オートバックアップの開始設定.
@@ -226,12 +227,18 @@ public:
 		USER_MSG_WM_NEWINSTANCE ( OnNewInstance 	)
 		MSG_WM_USER_MDICHILD	( OnMDIChild		)
 		MSG_WM_PAINT			( OnPaint			)
+		MSG_WM_COPYDATA			( OnCopyData		)
+		USER_MSG_WM_INITPROCESSFINISHED( OnInitProcessFinished )
 
-		USER_MSG_WM_TABCREATE( OnTabCreate )	// CChildFrame用
-		USER_MSG_WM_TABDESTROY( OnTabDestory )	// 
-		USER_MSG_WM_ADDRECENTCLOSEDTAB( OnAddRecentClosedTab )
-		USER_MSG_WM_OPENFINDBARWITHTEXT( OnOpenFindBarWithText )
-		USER_MSG_WM_GETTABINDEX( OnGetTabIndex ) 
+		// CChildFrameから
+		USER_MSG_WM_TABCREATE				( OnTabCreate	)	
+		USER_MSG_WM_TABDESTROY				( OnTabDestory	)
+		USER_MSG_WM_ADDRECENTCLOSEDTAB		( OnAddRecentClosedTab )
+		USER_MSG_WM_OPENFINDBARWITHTEXT		( OnOpenFindBarWithText )
+		USER_MSG_WM_GETTABINDEX				( OnGetTabIndex )
+		USER_MSG_WM_CHILDFRAMECONNECTING	( OnChildFrameConnecting	)
+		USER_MSG_WM_CHILDFRAMEDOWNLOADING	( OnChildFrameDownloading	)
+		USER_MSG_WM_CHILDFRAMECOMPLETE		( OnChildFrameComplete		)
 
 		USER_MSG_WM_UPDATE_TITLEBAR( UpdateTitleBar )						// UDT DGSTR
 
@@ -339,13 +346,14 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_EXCEPT	, OnWindowCloseExcept	)
 		COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabLeft 			)
 		COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabRight			)
-		//COMMAND_RANGE_HANDLER( ID_TAB_IDX_1, ID_TAB_IDX_LAST, OnTabIdx )	//+++ 先頭タブから1..8選択. 9は最後のタブを選択
+		//COMMAND_RANGE_HANDLER( ID_TAB_IDX_1, ID_TAB_IDX_LAST, OnTabIdx )	
+		//+++ 先頭タブから1..8選択. 9は最後のタブを選択
+
 		// ヘルプ
 		COMMAND_ID_HANDLER	 ( ID_OPEN_EXE_DIR			, OnOpenExeDir		)
 		COMMAND_ID_HANDLER	 ( ID_JUMP_WEBSITE			, OnJumpToWebSite 	)
 		COMMAND_ID_HANDLER	 ( ID_APP_ABOUT 			, OnAppAbout		)
 
-		// UH
 		USER_MEG_WM_MENU_GET_FAV		( OnMenuGetFav		)
 		USER_MEG_WM_MENU_GET_FAV_GROUP	( OnMenuGetFavGroup )
 		USER_MEG_WM_MENU_GET_SCRIPT 	( OnMenuGetScript	)
@@ -362,10 +370,6 @@ public:
 		USER_MEG_WM_MENU_REFRESH_SCRIPT 	( OnMenuRefreshScript	)
 		USER_MSG_WM_GET_FAVORITEFILEPATH	( OnGetFavoriteFilePath )
 
-		COMMAND_ID_HANDLER( ID_WINDOW_THUMBNAIL 		  , OnWindowThumbnail			)
-
-		COMMAND_ID_HANDLER( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine) 	//長いなぁ
-
 		COMMAND_RANGE_HANDLER_EX(ID_INSERTPOINT_SEARCHENGINE, ID_INSERTPOINT_SEARCHENGINE_END, OnSearchWeb_engineId)
 
 		USER_MSG_WM_MENU_RECENTDOCUMENT( OnMenuRecentDocument )
@@ -379,15 +383,7 @@ public:
 		USER_MSG_WM_SEARCH_WEB_SELTEXT	( OnSearchWebSelText )
 		USER_MSG_WM_SET_EXPROPERTY		( OnSetExProperty	 )
 
-		COMMAND_ID_HANDLER( ID_TABLIST_DEFAULT, 	OnTabListDefault	)
-		COMMAND_ID_HANDLER( ID_TABLIST_VISIBLE, 	OnTabListVisible	)
-		COMMAND_ID_HANDLER( ID_TABLIST_ALPHABET,	OnTabListAlphabet	)
-		COMMAND_ID_HANDLER( ID_MAINFRAME_MINIMIZE,	OnMainFrameMinimize )
-		COMMAND_ID_HANDLER( ID_MAINFRAME_MAXIMIZE,	OnMainFrameMaximize )
 		COMMAND_ID_HANDLER( ID_MAINFRAME_NORM_MAX_SIZE,OnMainFrameNormMaxSize )
-		COMMAND_ID_HANDLER( ID_SHOW_EXMENU, 		OnShowExMenu		)
-		COMMAND_ID_HANDLER( ID_SELECT_USERFOLDER,	OnSelectUserFolder	)
-		COMMAND_ID_HANDLER( ID_SEARCH_HISTORY,		OnSearchHistory 	)
 
 		#define WM_PLUGIN_COMMAND	ID_PLUGIN_COMMAND
 		MESSAGE_HANDLER 			( WM_PLUGIN_COMMAND, OnPluginCommand )
@@ -397,8 +393,17 @@ public:
 		
 		// Special Command
 		COMMAND_ID_HANDLER( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
-		COMMAND_ID_HANDLER	( ID_SHOW_ACTIVEMENU, OnShowActiveMenu )
-		COMMAND_ID_HANDLER_EX( ID_SAVEIMAGE		, OnSaveImage )
+		COMMAND_ID_HANDLER( ID_TABLIST_DEFAULT	, OnTabListDefault		)
+		COMMAND_ID_HANDLER( ID_TABLIST_VISIBLE	, OnTabListVisible		)
+		COMMAND_ID_HANDLER( ID_TABLIST_ALPHABET	, OnTabListAlphabet		)
+		COMMAND_ID_HANDLER( ID_WINDOW_THUMBNAIL , OnWindowThumbnail		)
+		COMMAND_ID_HANDLER( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine)
+		COMMAND_ID_HANDLER( ID_SHOW_EXMENU, 		OnShowExMenu		)
+		COMMAND_ID_HANDLER( ID_SELECT_USERFOLDER,	OnSelectUserFolder	)
+		COMMAND_ID_HANDLER( ID_SEARCH_HISTORY,		OnSearchHistory 	)
+		COMMAND_ID_HANDLER( ID_MAINFRAME_MINIMIZE,	OnMainFrameMinimize )
+		COMMAND_ID_HANDLER( ID_MAINFRAME_MAXIMIZE,	OnMainFrameMaximize )
+		COMMAND_ID_HANDLER( ID_SHOW_ACTIVEMENU	, OnShowActiveMenu )
 		COMMAND_ID_HANDLER( ID_PRIVACYREPORT	, OnPrivacyReport )
 		COMMAND_ID_HANDLER( ID_SECURITYREPORT	, OnSecurityReport )
 
@@ -409,9 +414,9 @@ public:
 		CHAIN_COMMANDS			( CAppCommandHandler<CMainFrame>		)
 		CHAIN_COMMANDS_TO_EXPLORERBAR( m_ExplorerBar		)
 
-		if (uMsg == WM_COMMAND && m_bCommandFromChildFrame == false) {
-			HWND  hWndChild = m_ChildFrameClient.GetActiveChildFrameWindow();				
-			if (hWndChild != NULL) 								
+		if (uMsg == WM_COMMAND && m_bCommandFromChildFrame == false) {			
+			HWND  hWndChild = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();			
+			if (hWndChild)
 				::PostMessage(hWndChild, uMsg, wParam, lParam);
 		}
 
@@ -563,12 +568,10 @@ public:
 		UPDATE_COMMAND_UI				( ID_SECURE_PANE	, OnUpdateStautsIcon		)
 		UPDATE_COMMAND_UI				( ID_PRIVACY_PANE	, OnUpdateStautsIcon		)
 
-		// UH
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_POPUP_CLOSE	, CIgnoredURLsOption::s_bValid )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_TITLE_CLOSE	, CCloseTitlesOption::s_bValid )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_DOUBLE_CLOSE	, CIgnoredURLsOption::s_bValid && CCloseTitlesOption::s_bValid )
 
-		// UH
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_BLOCK, _CheckCookies(ID_URLACTION_COOKIES_BLOCK) )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_HI	, _CheckCookies(ID_URLACTION_COOKIES_HI   ) )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_MIDHI, _CheckCookies(ID_URLACTION_COOKIES_MIDHI) )
@@ -587,8 +590,6 @@ public:
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_SEL_UP	, bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_SEL_DOWN , bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_HILIGHT	, bActiveChild )
-		//minit
-		//CHAIN_UPDATE_COMMAND_UI_MEMBER( m_DockingPluginManager )
 	END_UPDATE_COMMAND_UI_MAP()
 
 
@@ -597,6 +598,9 @@ public:
 	void	OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData);
 	void	OnOpenFindBarWithText(LPCTSTR strText);
 	int		OnGetTabIndex(HWND hWndChildFrame) { return m_MDITab.GetTabIndex(hWndChildFrame); }
+	void	OnChildFrameConnecting(HWND hWndChildFrame)	{ m_MDITab.SetConnecting(hWndChildFrame); }
+	void	OnChildFrameDownloading(HWND hWndChildFrame){ m_MDITab.SetDownloading(hWndChildFrame); }
+	void	OnChildFrameComplete(HWND hWndChildFrame)	{ m_MDITab.SetComplete(hWndChildFrame); }
 
 #ifdef _DEBUG
 	void	OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -659,6 +663,8 @@ public:
 	void 	OnEndSession(BOOL wParam, UINT lParam);
 	void 	OnActivate(UINT nState, BOOL bMinimized, HWND hWndOther);
 	void	OnPaint(CDCHandle /*dc*/);
+	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
+	void	OnInitProcessFinished();
 
 	void 	OnExplorerBarAutoShow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
@@ -732,7 +738,6 @@ public:
 	LRESULT OnPopupClose		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	LRESULT OnTitleClose		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	LRESULT OnDoubleClose		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
-	LRESULT OnPrivacyReport		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnCookiesIE6		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	LRESULT OnChangeCSS			(LPCTSTR lpszStyleSheet);
 	void 	OnViewOption		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -748,6 +753,22 @@ public:
 	// ヘルプ
 	LRESULT OnJumpToWebSite		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnOpenExeDir		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+
+	// Special Commands
+	LRESULT OnMenuRecentLast	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnTabListDefault	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnTabListVisible	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnTabListAlphabet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnWindowThumbnail	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnSpecialRefreshSearchEngine(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnShowExMenu		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnSelectUserFolder	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnSearchHistory		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnMainFrameMinimize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnMainFrameMaximize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnShowActiveMenu	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnPrivacyReport		(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
+	LRESULT OnSecurityReport	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
 	// etc
 
@@ -779,34 +800,18 @@ public:
 	void 	OnUpdateProgressUI(CCmdUI *pCmdUI);
 	void 	OnUpdateStautsIcon(CCmdUI *pCmdUI);
 
-	LRESULT OnSecurityReport	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-
-	LRESULT OnWindowThumbnail	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-
-	LRESULT OnSpecialRefreshSearchEngine(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	BOOL 	_Load_OptionalData(CChildFrame *pChild, const CString &strFileName, CString &strSection);
 	BOOL 	_Load_OptionalData2(CChildFrame *pChild,
 						 std::vector<std::pair<CString, CString> > &ArrayFore,
 						 std::vector<std::pair<CString, CString> > &ArrayBack);
 	LRESULT OnMenuRecentDocument(HMENU hMenu);
-	LRESULT OnMenuRecentLast	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT _OnMDIActivate(HWND hWndActive);
-	LRESULT OnTabListDefault	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnTabListVisible	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnTabListAlphabet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnShowActiveMenu	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnMainFrameMinimize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnMainFrameMaximize	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnMainFrameNormMaxSize(WORD/*wNotifyCode*/,WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
 	LRESULT OnUseUserStyleSheet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnSetUserStyleSheet	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 
-	LRESULT OnShowExMenu		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnSelectUserFolder	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnSearchHistory		(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
 	LRESULT OnCommandDirect(int nCommand, LPCTSTR lpstr);
-	void	OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	HRESULT OnSkinChange();
 
@@ -833,35 +838,9 @@ private:
 		_nPosCssMenu		   = 4, _nPosSubCssMenu 	= 14, _nPosEncodeMenu = 2, _nPosEncodeMenuSub	 = 18
 	};
 
-	struct 			_Function_EnumChildSaveOption;
 	struct 			_ExtendProfileInfo;
 
-	///////////////////////////////////////////////////////////
-	// CSaveGroupOptionToFile
-	class  	CSaveGroupOptionToFile {
-	public:
-		CSaveGroupOptionToFile();
-		~CSaveGroupOptionToFile();
-		void Run(CMainFrame* pMainWnd, const CString &strFileName, bool bDelay); // modified by minit
-
-	private:
-		static UINT __stdcall WriteIniFile_Thread(void* pParam);
-		void WriteIniFile();
-
-	private:
-		HANDLE* 						m_phThread;
-		BOOL							m_bOldMaximized;
-		bool							m_bSaveTravelLog;
-		int 							m_nIndex;
-		int 							m_nActiveIndex;
-		CString 						m_strFileName;
-		std::list<SDfgSaveInfo> 		m_dfgSaveInfoList;
-	};
-	///////////////////////////////////////////////////////////
-
-
-private:
-
+	// Implementation
 	void 	init_menus_infomation();
 	HWND	init_commandBarWindow();
 	HWND	init_toolBar();
@@ -881,10 +860,11 @@ private:
 	void 	init_message_loop();
 	void 	init_sysMenu();
 	void 	init_loadPlugins();
-
 	void 	InitSkin();
 	void 	setMainFrameCaptionSw(int sw);	//+++ メインフレームのCaption on/off
 	void 	initCurrentIcon();				//+++ 現在のスキンのアイコンを(再)設定.
+
+	void	_AnalyzeCommandLine(const CString& strCommandLine);
 
 	// PretranslateMessage用
 	BOOL 	OnXButtonUp(WORD wKeys, WORD wButton, CPoint point);
@@ -892,7 +872,6 @@ private:
 	BOOL 	TranslateMessageToBHO(MSG *pMsg);
 
 	bool 	_OpenAboutFile(CString strFile);
-	bool	_IsSelectedTextInner();
 	void	_RefreshFavMenu();
 
 	void 	_ShowBandsFullScreen(BOOL bOn, bool bInit = false);
@@ -948,11 +927,9 @@ private:
 
 	CDownloadManager		m_DownloadManager;
 
-	HANDLE					m_hGroupThread;
 #ifdef _DEBUG
 //	CDebugWindow			m_wndDebug;
 #endif
-	CSaveGroupOptionToFile	m_saveGroupOptionToFile;		//+++ 自動セーブ処理.
 	CString 				m_strIcon;						//+++ アイコンの名前.
 	CString 				m_strIconSm;					//+++ アイコン小の名前.
 
@@ -965,6 +942,8 @@ private:
 	bool					m_bCancelRButtonUp;
 	bool					m_bWM_TIMER;
 	bool					m_bCommandFromChildFrame;
+
+	CString		m_strCommandLine;
 
 	static const UINT		STDBAR_ID[];
 	static const UINT		STDBAR_STYLE[];

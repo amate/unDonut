@@ -259,7 +259,9 @@ extern CString Donut_GetActiveSelectedText();
 extern CString Donut_GetActiveStatusStr();
 
 ///+++ CDonutExplorerBar::GetInstance()->RefreshExpBar(0); ‚ð‚·‚é‚¾‚¯.
-void  Donut_ExplorerBar_RefreshFavoriteBar();
+void	Donut_ExplorerBar_RefreshFavoriteBar();
+
+void	PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls);
 
 void	CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine);
 

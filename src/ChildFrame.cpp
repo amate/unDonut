@@ -21,6 +21,7 @@
 #include "FaviconManager.h"
 #include "ToolTipManager.h"
 #include "PluginManager.h"
+#include "Download\DownloadManager.h"
 
 DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 
@@ -313,7 +314,7 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void OnFinalMessage(HWND /*hWnd*/) { delete m_pParentChild;/*this;*/ }
 	void	searchEngines(const CString &strKeyWord);
-	
+
 	// Message map
 	BEGIN_MSG_MAP( Impl )
 		MSG_WM_CREATE		( OnCreate )
@@ -340,6 +341,7 @@ public:
 
 		// 表示
 		COMMAND_ID_HANDLER_EX( ID_VIEW_SETFOCUS 		, OnViewSetFocus			)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP				, OnViewStop				)
 		
 		// ツール
 		COMMAND_ID_HANDLER_EX( ID_EDIT_IGNORE			, OnAddClosePopupUrl		)
@@ -366,12 +368,13 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_SUB			, OnHtmlZoom				)
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_100TOGLE		, OnHtmlZoom				)
 		COMMAND_RANGE_HANDLER_EX( ID_HTMLZOOM_400 , ID_HTMLZOOM_050 , OnHtmlZoom    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_HOME 		, OnSpecialKeys    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_END		, OnSpecialKeys    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEUP	, OnSpecialKeys    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEDOWN	, OnSpecialKeys    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_UP		, OnSpecialKeys    )
-		COMMAND_ID_HANDLER_EX( ID_SPECIAL_DOWN 		, OnSpecialKeys    )
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_HOME 		, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_END		, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEUP	, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_PAGEDOWN	, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_UP		, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_DOWN 		, OnSpecialKeys		)
+		COMMAND_ID_HANDLER_EX( ID_SAVEIMAGE			, OnSaveImage		)
 
 		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH		, OnViewRefresh 	)
 
@@ -406,6 +409,7 @@ public:
 
 	// 表示
 	void	OnViewSetFocus(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { m_view.SetFocus(); }
+	void	OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewForwardX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 
@@ -430,6 +434,7 @@ public:
 	// Specla command
 	void	OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
@@ -472,6 +477,7 @@ private:
 	CSize	m_ImageSize;
 
 	bool	m_bReload;
+	bool	m_bNowNavigate;
 
 };
 
@@ -493,7 +499,8 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_nImgSclSav(100),
 	m_nImgSclSw(0),
 	m_bImagePage(false),
-	m_bReload(false)
+	m_bReload(false),
+	m_bNowNavigate(false)
 {	}
 
 
@@ -577,19 +584,53 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 										const CString&		strHeaders,
 										bool&				bCancel )
 {
-	// 自動リサイズの設定を初期化
-	m_bImagePage	= false;
-	m_nImgSclSw		= (CMainOption::s_nAutoImageResizeType == AUTO_IMAGE_RESIZE_FIRSTON);
-	m_ImageSize.SetSize(0, 0);
+	bool bTopWindow = IsPageIWebBrowser(pDisp);
 
-	if (m_dwMarshalDLCtrlFlags) {
-		m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
-		m_dwMarshalDLCtrlFlags = 0;
+	// Navigate中かつjavescriptから始まるウィンドウはナビゲートしない
+	if (m_bNowNavigate && 
+		strURL.Left(15).CompareNoCase(_T("javascript:void")) == 0 || strURL.CompareNoCase(_T("javascript:;")) == 0) 
+	{
+		bCancel = true;
+		return;
+	}
+
+	if (bTopWindow) {
+		if (m_dwMarshalDLCtrlFlags) {
+			m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
+			m_dwMarshalDLCtrlFlags = 0;
+		}
+
+		// 自動リサイズの設定を初期化
+		m_bImagePage	= false;
+		m_nImgSclSw		= (CMainOption::s_nAutoImageResizeType == AUTO_IMAGE_RESIZE_FIRSTON);
+		m_ImageSize.SetSize(0, 0);
+
+		/* ページ内検索の情報をリセット */
+		m_nPainBookmark = 0;
+		m_strBookmark	= LPCOLESTR(NULL);
+
+		/* Faviconを白紙に設定 */
+		//if (strURL.Left(11).CompareNoCase(_T("javascript:")) != 0) {
+			//m_UIChange.SetLocationURL(strURL);
+		//	_SetFavicon(strURL);
+		//}
+
+	}
+	m_bNowNavigate = true;	// Navigate中である
+
+	{
+		//イベント発生 - ナビゲート
+		DEVTS_TAB_NAVIGATE stn;
+		stn.nIndex			 = (int)GetTopLevelWindow().SendMessage(WM_GETTABINDEX, (WPARAM)m_hWnd);
+		stn.lpstrURL		 = (LPCTSTR) strURL;
+		stn.lpstrTargetFrame = (LPCTSTR) strTargetFrameName;
+		CPluginManager::BroadCast_PluginEvent(DEVT_TAB_NAVIGATE, stn.nIndex, (SPARAM) &stn);
 	}
 }
 
 void	CChildFrame::Impl::OnDownloadComplete()
 {
+	m_bNowNavigate = false;	// Navigate終了
 }
 
 void	CChildFrame::Impl::OnTitleChange(const CString& strTitle)
@@ -629,6 +670,7 @@ void	CChildFrame::Impl::OnStateConnecting()
 		return;
 
 	//m_MDITab.SetConnecting(m_hWnd);
+	GetTopLevelWindow().PostMessage(WM_CHILDFRAMECONNECTING, (WPARAM)m_hWnd);
 	//m_bPrivacyImpacted = TRUE;	// ページ読み込み後もOnStateConnectingが呼ばれるページがあるので
 								// クッキー制限アイコンが表示されないページがある
 	//m_nSecureLockIcon = secureLockIconUnsecure;
@@ -642,11 +684,13 @@ void	CChildFrame::Impl::OnStateDownloading()
 		return;
 
 	//m_MDITab.SetDownloading(m_hWnd);
+	GetTopLevelWindow().PostMessage(WM_CHILDFRAMEDOWNLOADING, (WPARAM)m_hWnd);
 }
 
 void	CChildFrame::Impl::OnStateCompleted()
 {
 	//m_MDITab.SetComplete(m_hWnd);
+	GetTopLevelWindow().PostMessage(WM_CHILDFRAMECOMPLETE, (WPARAM)m_hWnd);
 
 	if (m_bReload) {
 		CString strUrl = GetLocationURL();
@@ -708,6 +752,7 @@ void	CChildFrame::Impl::OnCommandStateChange(long Command, bool bEnable)
 
 void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 {
+#if 1
 	m_bExecutedNewWindow = true;
 
 	CChildFrame*	pChild = new CChildFrame;
@@ -728,10 +773,33 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 	pChild->pImpl->SetSearchWordAutoHilight(m_strSearchWord, m_bNowHilight);
 
 	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TAB_LINK);
+#endif
 }
 
 void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl)
 {
+#if 0
+	bCancel	= true;
+	m_bExecutedNewWindow = true;
+
+	NewChildFrameData	data(GetParent());
+	data.strURL	= bstrUrl;
+	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
+	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
+	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
+		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
+		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
+	}
+	data.dwDLCtrl	= dwDLCtrl;
+	data.dwExStyle	= dwExStyle;
+	data.bLink	= true;
+	CString strSearchWord = m_strSearchWord;
+	bool	bNowHilight	= m_bNowHilight;
+	data.funcCallAfterCreated	= [strSearchWord, bNowHilight](CChildFrame* pChild) {
+		pChild->SetSearchWordAutoHilight(strSearchWord, bNowHilight);
+	};
+	CChildFrame::AsyncCreate(data);
+#endif
 }
 
 void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)
@@ -937,7 +1005,9 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 			break;
 			
 		case ID_FILE_CLOSE:
-			::PostMessage(m_hWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
+			PostMessage(WM_CLOSE);	// これだけじゃたぶんダメ
+			msg.message = WM_RBUTTONUP;
+			//::PostMessage(m_hWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
 			//::PostMessage(hWnd, WM_CLOSE, 0, 0);
 			bNoting    = false;
 			m_UIChange.SetStatusText(_T(""));
@@ -1109,6 +1179,9 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 
 	WebBrowserEvents2Advise();
 
+	SetRegisterAsBrowser(true);
+	SetVisible(true);
+
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
 
@@ -1119,6 +1192,8 @@ void	CChildFrame::Impl::OnDestroy()
 {
     CMessageLoop* pLoop = _Module.GetMessageLoop();
     pLoop->RemoveMessageFilter(this);
+
+	SetRegisterAsBrowser(false);
 
 	WebBrowserEvents2Unadvise();
 
@@ -1145,13 +1220,20 @@ void	CChildFrame::Impl::OnClose()
 	_CollectDataOnClose(*pClosedTabData);
 	wndMain.PostMessage(WM_ADDRECENTCLOSEDTAB, (WPARAM)pClosedTabData);
 
+	{
+		int nIndex = (int)GetTopLevelWindow().SendMessage(WM_GETTABINDEX, (WPARAM)m_hWnd);
+		//プラグインイベント - クローズ
+		CPluginManager::BroadCast_PluginEvent(DEVT_TAB_CLOSE, nIndex, 0);
+	}
+
 	wndMain.SendMessage(WM_TABDESTROY, (WPARAM)m_hWnd);
 }
 
 void	CChildFrame::Impl::OnSize(UINT nType, CSize size)
 {
 	DefWindowProc();
-	m_view.SetWindowPos(NULL, 0, 0, size.cx, size.cy, SWP_NOZORDER);
+	if (m_view.IsWindow())
+		m_view.SetWindowPos(NULL, 0, 0, size.cx, size.cy, SWP_NOZORDER);
 
 	_AutoImageResize(false);
 }
@@ -1177,14 +1259,12 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			hr = spIOleInPlaceObject->UIDeactivate(); // IEのUIを無効化
 		}
 
-		if( m_bSaveSearchWordflg == true ){	//\\ 現在、検索バーにある文字列を取っておく
+		if( m_bSaveSearchWordflg ){	//\\ 現在、検索バーにある文字列を取っておく
 			CDonutSearchBar::GetInstance()->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);
 			m_strSearchWord.ReleaseBuffer();
 		} else {
 			m_bSaveSearchWordflg = true;
 		}
-		if (hWndAct)
-			::PostMessage(hWndAct, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndAct, (LPARAM)hWndDeact);
 	}
 }
 
@@ -1678,6 +1758,71 @@ void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
 	}
 }
 
+/// 画像を保存する
+void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	auto funcGetUrl = [](CComQIPtr<IDispatch> spDisp) -> LPCTSTR {
+		CComBSTR strUrl;
+		CComQIPtr<IHTMLImgElement>	spImage =  spDisp;
+		if (spImage != NULL) {
+			spImage->get_href(&strUrl);
+		} else {
+			CComQIPtr<IHTMLInputElement>	spInput = spDisp;
+			if (spInput != NULL) {
+				spInput->get_src(&strUrl);
+			} else {
+				CComQIPtr<IHTMLAreaElement>	spArea = spDisp;
+				if (spArea != NULL) {
+					spArea->get_href(&strUrl);
+				}
+			}
+		}
+		return strUrl;
+	};
+
+	CString strUrl = m_view.GetAnchorURL();
+	if (strUrl.IsEmpty() == FALSE) {
+		CDownloadManager::GetInstance()->DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
+	} else {
+		CComPtr<IDispatch>	spDisp;
+		m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
+		ATLASSERT(spDocument);
+		CPoint	pt;
+		::GetCursorPos(&pt);
+		ScreenToClient(&pt);
+		CComPtr<IHTMLElement>	spHitElement;
+		spDocument->elementFromPoint(pt.x, pt.y, &spHitElement);
+		// Hit先が画像の場合
+		CComQIPtr<IHTMLImgElement>	spImg = spHitElement;
+		if (spImg == NULL) {
+			// フレームの可能性
+			CComQIPtr<IHTMLFrameElement3>	spFrame = spHitElement;
+			if (spFrame) {
+				LONG x, y;
+				spHitElement->get_offsetTop(&y);
+				spHitElement->get_offsetLeft(&x);
+				pt.Offset(-x, -y);
+				CComPtr<IDispatch>	spFrameDisp;
+				spFrame->get_contentDocument(&spFrameDisp);
+				CComQIPtr<IHTMLDocument2>	spFrameDocument = spFrameDisp;
+				if (spFrameDocument == NULL) 
+					return;	// 別ドメイン
+				ATLASSERT(spFrameDocument);
+				CComPtr<IHTMLElement>	spHitFrameElement;
+				spFrameDocument->elementFromPoint(pt.x, pt.y, &spHitFrameElement);
+				spImg = spHitFrameElement;
+			}
+		}
+		if (spImg) {
+			CString strUrl = funcGetUrl(spImg.p);
+			if (strUrl.IsEmpty() == FALSE)
+				CDownloadManager::GetInstance()->DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
+		}
+	}
+}
+
+
 void	CChildFrame::Impl::OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	m_bReload = true;
@@ -1803,27 +1948,12 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 		CComBSTR						bstrText;
 		hr = spTxtRange->get_htmlText(&bstrText);
 		if (FAILED(hr) || !bstrText) {	//+++
-#if 0	//:::
-		  #if 1 //+++ 選択範囲がない場合、右クリックメニュー経由のことがあるので、それ対策を強引に...
-			CCustomContextMenu* pMenu = CCustomContextMenu::GetInstance();
-			if (pMenu && pMenu->GetContextMenuMode() == CONTEXT_MENU_ANCHOR && pMenu->GetAnchorUrl().IsEmpty() == 0) {
-				//bstrText		= pMenu->GetAnchorUrl();
-				//bstrLocationUrl = pMenu->GetAnchorUrl();
-			   #if _ATL_VER >= 0x700	//+++
-				if (bNoAddFromMenu == false) {
-					arrUrls.Add(pMenu->GetAnchorUrl());
-					bNoAddFromMenu = true;
-				}
-			   #else
-				arrUrls.Add( *const_cast<CString*>(&pMenu->GetAnchorUrl()) );
-			   #endif
-			} else {
-				return;
+			if (bNoAddFromMenu == false) {	// 右クリックメニューから取ってくる
+				bNoAddFromMenu = true;
+				CString strURL = m_view.GetAnchorURL();
+				if (strURL.IsEmpty() == FALSE)
+					arrUrls.Add(strURL);
 			}
-		  #else
-			return;
-		  #endif
-#endif
 		} else {
 			hr = pDocument->get_URL(&bstrLocationUrl);
 			if ( FAILED(hr) )
@@ -1864,12 +1994,12 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 				bNoAddFromMenu = true;	// 選択範囲からリンクが見つかったので
 		}
 	});
-#if 0	//:::
-	m_MDITab.SetLinkState(LINKSTATE_B_ON);
+#if 1	//:::
+	//m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	for (int i = 0; i < arrUrls.GetSize(); ++i) {
 		DonutOpenFile(arrUrls[i], 0);
 	}
-	m_MDITab.SetLinkState(LINKSTATE_OFF);
+	//m_MDITab.SetLinkState(LINKSTATE_OFF);
 #endif
 }
 
@@ -1979,6 +2109,16 @@ void	CChildFrame::Impl::OnTitleAndUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /
 	CString strText;
 	strText.Format(_T("%s\r\n%s"), MtlGetWindowText(m_hWnd), GetLocationURL());
 	MtlSetClipboardText(strText, m_hWnd);
+}
+
+// 表示
+
+void	CChildFrame::Impl::OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
+{
+	Stop();
+
+	m_nDownloadCounter = 0;
+	OnStateCompleted();
 }
 
 

@@ -39,8 +39,8 @@ class CDonutView :
 {
 public:
 	// Declaration
-	DECLARE_WND_SUPERCLASS( NULL, CAxWindow::GetWndClassName() )
-	
+	DECLARE_WND_SUPERCLASS( _T("DonutView"), CAxWindow::GetWndClassName() )
+
 	// Constructor
 	CDonutView(CChildFrameUIStateChange& UI);
 
@@ -55,6 +55,7 @@ public:
 	DWORD	GetExStyle() const { return m_dwExStyle; }
 	void	SetExStyle(DWORD dwExStyle);
 	void	SetIeMenuNoCstm(int nStatus);
+	CString GetAnchorURL() const { return m_ExternalUIDispatch.GetAnchorURL(); }
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか

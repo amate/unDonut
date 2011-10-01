@@ -82,21 +82,22 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
-		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+		::SendMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
 		::ShowWindowAsync(m_hWndChildFrame, FALSE);
 	}
 	if (hWndChildFrame) {
-		//::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
 		RECT rcClient;
 		GetClientRect(&rcClient);
 		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
 	} else {
 		InvalidateRect(NULL);
 	}
+
 	m_hWndChildFrame = hWndChildFrame;
 
 	SetRedraw(TRUE);
-	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
 }
 
 
@@ -175,7 +176,6 @@ CMainFrame::CMainFrame()
 	, m_ScriptMenu(ID_INSERTPOINT_SCRIPTMENU, _T("(empty)"), ID_INSERTPOINT_SCRIPTMENU, ID_INSERTPOINT_SCRIPTMENU_END)
 	, m_DropScriptMenu(ID_INSERTPOINT_SCRIPTMENU, _T("(empty)"), ID_INSERTPOINT_SCRIPTMENU, ID_INSERTPOINT_SCRIPTMENU_END)
 	, m_MenuEncode(this)
-	, m_hGroupThread(NULL)
 	, m_nMenuBarStyle(-1)		//+++
 	, m_bTray(0)				//+++
 	, m_bFullScreen(0)			//+++
@@ -703,19 +703,6 @@ void CMainFrame::OnDestroy()
 	//:::m_wndMDIClient.UnsubclassWindow();
 	m_ReBar.UnsubclassWindow();
 
-	//バックアップスレッドの開放
-	if (m_hGroupThread) {
-		DWORD dwResult = ::WaitForSingleObject(m_hGroupThread, DONUT_BACKUP_THREADWAIT);
-
-		if (dwResult == WAIT_TIMEOUT) {
-			ErrorLogPrintf(_T("MainFrame::OnDestroyにて、自動更新スレッドの終了が出来ない模様\n"));
-			::TerminateThread(m_hGroupThread, 1);
-		}
-
-		CloseHandle(m_hGroupThread);
-		m_hGroupThread = NULL;			//+++ 最後とはいえ、一応 NULLしとく.
-	}	
-
 	//\\?CCriticalIdleTimer::UninstallCriticalIdleTimer();
 
 	// what can I trust?
@@ -774,11 +761,15 @@ void CMainFrame::OnClose()
 		m_nBackUpTimerID	= 0;			//+++ 一応 0クリアしとく.
 	}
 
-  #if 1 //+++ _WriteProfile()からバックアップの処理をこちらに移す(先に行う) ... //やっぱりやめ
-	//_SaveGroupOption( CStartUpOption::GetDefaultDFGFilePath() );
-	SaveAllTab();
-  #endif
-
+	// 現在表示中のタブを保存する
+	if (CStartUpOption::s_dwFlags == CStartUpOption::STARTUP_LATEST) {
+		SaveAllTab();
+	} else {
+		// 最近閉じたタブに追加
+		m_MDITab.ForEachWindow([](HWND hWndChildFrame) {
+			::SendMessage(hWndChildFrame, WM_CLOSE, 0, 0);
+		});
+	}
 	//:::CChildFrame::SetMainframeCloseFlag();	//+++ mainfrmがcloseすることをChildFrameに教える(ナビロックのclose不可をやめるため)
 
 
@@ -1175,233 +1166,6 @@ BOOL CMainFrame::TranslateMessageToBHO(MSG *pMsg)
 }
 
 
-// 選択テキスト上にカーソルがあるかどうか
-bool	CMainFrame::_IsSelectedTextInner()
-{
-	if (GetActiveSelectedText().IsEmpty())
-		return false;
-
-	try {
-		HRESULT hr = S_OK;
-		CChildFrame* pChild = GetActiveChildFrame();
-		if (pChild == NULL) 
-			AtlThrow(hr);
-#if 0	//:::
-		CPoint	pt;
-		::GetCursorPos(&pt);
-		pChild->ScreenToClient(&pt);
-
-		CComPtr<IDispatch>	spDisp;
-		hr = pChild->m_spBrowser->get_Document(&spDisp);
-		if (spDisp == NULL)
-			AtlThrow(hr);
-
-		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
-		if (spDocument == NULL)
-			AtlThrow(hr);
-
-
-		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
-			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
-				CRect rc;
-				spIFrame->get_offsetHeight(&rc.bottom);
-				spIFrame->get_offsetWidth(&rc.right);
-				CComPtr<IHTMLElement>	spCurElement = spIFrame;
-				do {
-					CPoint temp;
-					spCurElement->get_offsetTop(&temp.y);
-					spCurElement->get_offsetLeft(&temp.x);
-					rc += temp;
-					CComPtr<IHTMLElement>	spTemp;
-					spCurElement->get_offsetParent(&spTemp);
-					spCurElement.Release();
-					spCurElement = spTemp;
-				} while (spCurElement.p);
-				
-				return rc;
-			};
-			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
-				CPoint ptScroll;
-				CComPtr<IHTMLElement>	spBody;
-				spDoc2->get_body(&spBody);
-				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
-				spBody2->get_scrollTop(&ptScroll.y);
-				spBody2->get_scrollLeft(&ptScroll.x);
-				if (ptScroll == CPoint(0, 0)) {
-					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
-					CComPtr<IHTMLElement>	spDocumentElement;
-					spDoc3->get_documentElement(&spDocumentElement);
-					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
-					spDocumentElement2->get_scrollTop(&ptScroll.y);
-					spDocumentElement2->get_scrollLeft(&ptScroll.x);
-				}
-				return ptScroll;
-			};
-
-			HRESULT hr = S_OK;
-			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
-
-			CComPtr<IHTMLFramesCollection2>	spFrames;
-			spDoc2->get_frames(&spFrames);
-			CComPtr<IHTMLElementCollection>	spIFrameCol;
-			pDoc->getElementsByTagName(CComBSTR(L"iframe"), &spIFrameCol);
-			CComPtr<IHTMLElementCollection>	spFrameCol;
-			pDoc->getElementsByTagName(CComBSTR(L"frame"), &spFrameCol);
-			
-			long frameslength = 0, iframelength = 0, framelength = 0;
-			spFrames->get_length(&frameslength);
-			spIFrameCol->get_length(&iframelength);
-			spFrameCol->get_length(&framelength);
-			ATLASSERT(frameslength == iframelength || frameslength == framelength);
-
-			if (frameslength == iframelength && spIFrameCol.p && spFrames.p) {
-				for (long i = 0; i < iframelength; ++i) {
-					CComVariant vIndex(i);
-					CComPtr<IDispatch>	spDisp2;
-					spIFrameCol->item(vIndex, vIndex, &spDisp2);
-					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
-					CPoint ptScroll = funcGetScrollPosition(spDoc2);
-					CRect rc = rcAbsolute - ptScroll;
-					if (rc.PtInRect(pt)) {
-						pt.x	-= rc.left;
-						pt.y	-= rc.top;
-						CComVariant vResult;
-						spFrames->item(&vIndex, &vResult);
-						CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
-						return spWindow;
-					}
-				}
-			}
-
-			if (frameslength == framelength && spFrameCol.p && spFrames.p) {
-				for (long i = 0; i < framelength; ++i) {
-					CComVariant vIndex(i);
-					CComPtr<IDispatch>	spDisp2;
-					spFrameCol->item(vIndex, vIndex, &spDisp2);
-					CComQIPtr<IHTMLElement>	spFrame = spDisp2;
-					if (spFrame.p) {
-						CRect rc = funcGetIFrameAbsolutePosition(spFrame);
-						//spFrame->get_offsetLeft(&rc.left);
-						//spFrame->get_offsetTop(&rc.top);
-						//long temp;
-						//spFrame->get_offsetWidth(&temp);
-						//rc.right += rc.left + temp;
-						//spFrame->get_offsetHeight(&temp);
-						//rc.bottom+= rc.top + temp;
-						if (rc.PtInRect(pt)) {
-							pt.x	-= rc.left;
-							pt.y	-= rc.top;
-							CComVariant vResult;
-							spFrames->item(&vIndex, &vResult);
-							CComQIPtr<IHTMLWindow2> spWindow = vResult.pdispVal;
-							return spWindow;
-						}
-					}
-				}
-			}
-			return nullptr;
-		};
-
-		CComQIPtr<IHTMLDocument3>	spDocument3 = spDocument;
-		CComPtr<IHTMLWindow2> spWindow = funcGetHTMLWindowOnCursorPos(pt, spDocument3);
-		if (spWindow) {
-			spDocument.Release();
-			CComQIPtr<IHTMLDocument2>	spFrameDocument;
-			hr = spWindow->get_document(&spFrameDocument);
-			if ( FAILED(hr) ) {
-				CComQIPtr<IServiceProvider>  spServiceProvider = spWindow;
-				ATLASSERT(spServiceProvider);
-				CComPtr<IWebBrowser2>	spBrowser;
-				hr = spServiceProvider->QueryService(IID_IWebBrowserApp, IID_IWebBrowser2, (void**)&spBrowser);
-				if (!spBrowser)
-					AtlThrow(hr);
-				CComPtr<IDispatch>	spDisp;
-				hr = spBrowser->get_Document(&spDisp);
-				if (!spDisp)
-					AtlThrow(hr);
-				spDocument = spDisp;
-			} else {
-				spDocument = spFrameDocument;
-			}
-		}
-
-		CComPtr<IDispatch>	spTargetDisp;
-		auto funcGetRangeDisp = [&spTargetDisp](CPoint pt, IHTMLDocument2 *pDocument) {
-			CComPtr<IHTMLSelectionObject>		spSelection;
-			HRESULT 	hr	= pDocument->get_selection(&spSelection);
-			if ( SUCCEEDED(hr) ) {
-				CComPtr<IDispatch>				spDisp;
-				hr	   = spSelection->createRange(&spDisp);
-				if ( SUCCEEDED(hr) ) {
-					CComQIPtr<IHTMLTxtRange>	spTxtRange = spDisp;
-					if (spTxtRange != NULL) {
-						CComBSTR				bstrText;
-						hr	   = spTxtRange->get_text(&bstrText);
-						if (SUCCEEDED(hr) && !!bstrText) {
-							spTargetDisp = spDisp;
-						}
-					}
-				}
-			}
-		};
-
-		funcGetRangeDisp(pt, spDocument);
-		if (spTargetDisp == NULL)
-			return false;
-
-		CComQIPtr<IHTMLTextRangeMetrics2>	spMetrics = spTargetDisp;
-		ATLASSERT(spMetrics);
-		CComPtr<IHTMLRect>	spRect;
-		hr = spMetrics->getBoundingClientRect(&spRect);
-		if (FAILED(hr))
-			AtlThrow(hr);
-
-		CRect rc;
-		spRect->get_top(&rc.top);
-		spRect->get_left(&rc.left);
-		spRect->get_right(&rc.right);
-		spRect->get_bottom(&rc.bottom);
-		if (rc.PtInRect(pt)) {
-			return true;
-		}
-#endif
-
-#if 0
-		CComPtr<IHTMLRectCollection>	spRcCollection;
-		hr = spMetrics->getClientRects(&spRcCollection);
-		if (FAILED(hr))
-			AtlThrow(hr);
-
-		long l;
-		spRcCollection->get_length(&l);
-		for (long i = 0; i < l; ++i) {
-			VARIANT vIndex;
-			vIndex.vt	= VT_I4;
-			vIndex.lVal	= i;
-			VARIANT vResult;
-			if (spRcCollection->item(&vIndex, &vResult) == S_OK) {
-				CComQIPtr<IHTMLRect>	spRect = vResult.pdispVal;
-				ATLASSERT(spRect);
-				CRect rc;
-				spRect->get_top(&rc.top);
-				spRect->get_left(&rc.left);
-				spRect->get_right(&rc.right);
-				spRect->get_bottom(&rc.bottom);
-				if (rc.PtInRect(pt)) {
-					return true;
-				}
-			}
-		}
-#endif
-
-	}
-	catch (const CAtlException& e) {
-		e;
-	}
-	return false;
-}
-
-
 
 // ===========================================================================
 // スキン関係
@@ -1523,6 +1287,71 @@ void CMainFrame::initCurrentIcon()
   #endif
 }
 
+
+void	CMainFrame::_AnalyzeCommandLine(const CString& strCommandLine)
+{
+	bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
+
+	//\\ 1行ずつ渡す方式に変えたので
+	if (strCommandLine == _T("-tray") || strCommandLine == _T("/tray"))
+		bActive = false;
+
+	// 検索バーを使って検索する
+	if (strCommandLine.Left(13) == _T("SearchEngine:")) {
+		std::wstring	strUrl2 = strCommandLine;
+		std::wregex	rx(L"SearchEngine:\"(.+?)\" Keyword:\"(.+?)\"");
+		std::wsmatch	rt;
+		if (std::regex_search(strUrl2, rt, rx)) {
+			CString strKeyword = rt.str(2).c_str();
+			if (strKeyword.IsEmpty())
+				return ;
+			strKeyword.TrimLeft(_T(" \t\r\n　"));
+			strKeyword.TrimRight(_T(" \t\r\n　"));
+			TRACEIN(_T("コマンドラインからの検索:%s"), (LPCTSTR)strKeyword);
+			CString strEngine  = rt.str(1).c_str();
+			m_SearchBar.SearchWebWithEngine(strKeyword, strEngine);
+		}
+		return ;
+	}
+
+	vector<CString>	vecUrls;
+	PerseUrls(strCommandLine, vecUrls);
+
+	vector<NewChildFrameData*>	vecpNewChildData;
+	vecpNewChildData.reserve(vecUrls.size());
+	int nCount = (int)vecUrls.size();
+	for (int i = 0; i < nCount; ++i) {
+		NewChildFrameData*	pNewChildData = new NewChildFrameData(m_ChildFrameClient);
+		pNewChildData->strURL	= vecUrls[i];
+		if (bActive && i == nCount - 1)
+			pNewChildData->bActive	= true;	// 一番最後をアクティブに
+		vecpNewChildData.push_back(pNewChildData);
+	}
+	// 次を指し示すようにする
+	for (int i = 0; i < nCount - 1; ++i) {	
+		vecpNewChildData[i]->pNext	= vecpNewChildData[i + 1];
+	}
+	// funcCallAfterCreated設定
+	for (int i = 0; i < nCount; ++i) {
+		NewChildFrameData*	pThis = vecpNewChildData[i];
+		pThis->funcCallAfterCreated	= [pThis, this](CChildFrame* pChild) {
+			if (pThis->pNext) {
+				m_MDITab.SetInsertIndex(m_MDITab.GetItemCount());
+				CChildFrame::AsyncCreate(*pThis->pNext);	// 次のChildFrameを作成
+			} else {
+				m_MDITab.InsertHere(false);
+			}
+			delete pThis;
+
+		};
+	}
+	// 連鎖作成開始
+	if (vecpNewChildData.size() > 0) {
+		m_MDITab.InsertHere(true);
+		m_MDITab.SetInsertIndex(m_MDITab.GetItemCount());
+		CChildFrame::AsyncCreate(*vecpNewChildData[0]);
+	}
+}
 
 void	CMainFrame::OpenBingTranslator(const CString& strText)
 {
@@ -1669,7 +1498,8 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 				pActiveChild->SetAutoRefreshStyle(data.dwAutoRefresh);
 		} else {
 			// 新規タブを作成する
-			data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE);
+			data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
+				|| m_ChildFrameClient.GetActiveChildFrameWindow() != 0;
 			CChildFrame::AsyncCreate(data);
 		}
 		return NULL;
@@ -1755,9 +1585,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 				::SetFocus(NULL);
 				MtlSendCommand(hWndActive, ID_VIEW_SETFOCUS);
 			}
-
 			return NULL;
-			//return hWndActive;
 		}
 	}
 
@@ -1766,7 +1594,8 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 	data.strURL		= strFileOrURL;
 	data.dwDLCtrl	= dlCtrlFlag;
 	data.dwExStyle	= extededStyleFlags;
-	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE);
+	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
+		|| m_ChildFrameClient.GetActiveChildFrameWindow() != 0;
 	CChildFrame::AsyncCreate(data);
 	return NULL;
 #if 0	//:::
@@ -2043,39 +1872,35 @@ LRESULT CMainFrame::OnFileRecent(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 void CMainFrame::OnNewInstance(ATOM nAtom)			// WM_NEWINSTANCE
 {
 	enum { NAME_LEN = 0x4000 };
-	TCHAR szBuff[NAME_LEN+2];
-	szBuff[0]	= 0;
+	TCHAR szBuff[NAME_LEN+2] = _T("\0");
 	bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
 
 	if (::GlobalGetAtomName(nAtom, szBuff, NAME_LEN) != 0) {
 		//\\ 1行ずつ渡す方式に変えたので
 		CString strPath = szBuff;
+		::GlobalDeleteAtom(nAtom);
 		if (strPath.CompareNoCase(_T("-tray")) == 0 || strPath.CompareNoCase(_T("/tray")) == 0)
 			bActive = false;
-#if 0
-		//dmfTRACE(_T("CMainFrame::OnNewInstance: %s\n"), szBuff);
-		CString					strPath;
-		std::vector<CString>	strs;
-		Misc::SeptTextToWords(strs, szBuff);
-		for (unsigned i = 0; i < strs.size(); ++i)　
-		{
-			CString&	str = strs[i];
-			int 		c   = str[0];
 
-			if (c == _T('-') || c == _T('/')) {
-				if (str.CompareNoCase(_T("-tray")) == 0 || str.CompareNoCase(_T("/tray"))) {
-					bActive = false;
-				}
-			} else {
-				if (strPath.IsEmpty())
-					strPath = str;
-				else
-					strPath += _T(' ') + str;
-			}
+		// 検索バーを使って検索する
+		if (strPath.Left(13) == _T("SearchEngine:")) {
+			std::wstring	strUrl2 = strPath;
+			std::wregex	rx(L"SearchEngine:\"(.+?)\" Keyword:\"(.*?)\"");
+			std::wsmatch	rt;
+			if (std::regex_search(strUrl2, rt, rx)) {
+				CString strKeyword = rt.str(2).c_str();
+				if (strKeyword.IsEmpty())
+					return ;
+				strKeyword.TrimLeft(_T(" \t\r\n　"));
+				strKeyword.TrimRight(_T(" \t\r\n　"));
+				TRACEIN(_T("コマンドラインからの検索:%s"), (LPCTSTR)strKeyword);
+				CString strEngine  = rt.str(1).c_str();
+				m_SearchBar.SearchWebWithEngine(strKeyword, strEngine);
+			} else
+				return ;
+		} else {
+			UserOpenFile( strPath, DonutGetStdOpenFlag() );
 		}
-#endif
-		UserOpenFile( strPath, DonutGetStdOpenFlag() );
-		::GlobalDeleteAtom(nAtom);
 	}
 
 	if ( bActive ) {
@@ -2102,8 +1927,10 @@ void CMainFrame::OnFileNewHome(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 	NewChildFrameData	data(m_ChildFrameClient);
 	data.strURL		= _T("about:blank");
 	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);
-	data.funcCallAfterCreated	= [](CChildFrame* pChild) {
+	data.funcCallAfterCreated	= [this](CChildFrame* pChild) {
 		pChild->GetIWebBrowser()->GoHome();
+		if (m_strCommandLine.IsEmpty() == FALSE)
+			this->PostMessage(WM_INITPROCESSFINISHED);
 	};
 	CChildFrame::AsyncCreate(data);
 }
@@ -2485,6 +2312,7 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 			}
 			CString strBakFile = Misc::GetFileNameNoExt(strFile) + _T(".bak.dfg");
 			::MoveFileEx(strFile, strBakFile, MOVEFILE_REPLACE_EXISTING);
+			PostMessage(WM_INITPROCESSFINISHED);
 			return;
 		}
 	}
@@ -2503,6 +2331,7 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	filestream.imbue(std::locale("japanese"));
 	filestream.open(TabList);
 	if (filestream.is_open() == false) {
+		PostMessage(WM_INITPROCESSFINISHED);
 		return ;
 	}
 
@@ -2543,6 +2372,8 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		}
 	} catch (...) {
 		MessageBox(_T("RestoreAllTabでエラーが発生しました!"));
+		PostMessage(WM_INITPROCESSFINISHED);
+		return ;
 	}
 
 	CLockRedrawMDIClient	 lock(m_ChildFrameClient);
@@ -2571,17 +2402,27 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	for (int i = 0; i < nCount; ++i) {
 		ChildFrameDataOnClose* pData = vecpSaveData[i].release();
 		NewChildFrameData*	pThis = vecpNewChildData[i];
-		pThis->funcCallAfterCreated	= [pData, pThis](CChildFrame* pChild) {
+		pThis->funcCallAfterCreated	= [pData, pThis, this](CChildFrame* pChild) {
 			pChild->SetTravelLog(pData->TravelLogFore, pData->TravelLogBack);
 			delete pData;
-			if (pThis->pNext)
+			if (pThis->pNext) {
+				m_MDITab.SetInsertIndex(m_MDITab.GetItemCount());
 				CChildFrame::AsyncCreate(*pThis->pNext);	// 次のChildFrameを作成
+			} else {
+				m_MDITab.InsertHere(false);
+				this->PostMessage(WM_INITPROCESSFINISHED);
+			}
 			delete pThis;
 
 		};
 	}
-	if (vecpNewChildData.size() > 0) 
+	if (vecpNewChildData.size() > 0) {
+		m_MDITab.InsertHere(true);
+		m_MDITab.SetInsertIndex(m_MDITab.GetItemCount());
 		CChildFrame::AsyncCreate(*vecpNewChildData[0]);
+	} else {
+		PostMessage(WM_INITPROCESSFINISHED);
+	}
 
 #if 0
 	try {
@@ -2744,179 +2585,13 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 #endif
 }
 
-//private:
-//+++ グループオプションのセーブ処理を書き直し.
-//+++ - ファイルの排他制御をしやすくするため、情報収集と、iniファイルへの書き込みのタイミングを分離.
-//+++ - 排他制御自体はCIniFileに任せる.
-//+++ - 元は、子窓の情報収集の取得を含め別スレッド側で処理していたが、どうもその辺がまずく
-//+++	いろいろ不安定の元になっていた模様.（"進む・戻る"のTravelLog処理中に、ieコンポーネント(dll)の
-//+++	中でハングしていた原因）
-
-// タブ１つの情報を取得
-struct CMainFrame::_Function_EnumChildSaveOption {
-	CMainFrame *				m_pMainFrame;
-	HWND						m_hWndActive;
-	std::list<SDfgSaveInfo>&	m_rDfgSaveInfoList;
-	int 						m_nIndex;
-	bool						m_bSaveFB;
-	int 						m_nActiveIndex;
-
-	_Function_EnumChildSaveOption(
-			CMainFrame *				pMainFrame,
-			HWND						hWndActive,
-			std::list<SDfgSaveInfo>&	rDrfSaveInfoList,
-			int 						nIndex		= 0,
-			bool						bSaveFB 	= FALSE)
-		:	m_pMainFrame(pMainFrame)
-		,	m_hWndActive(hWndActive)
-		,	m_rDfgSaveInfoList(rDrfSaveInfoList)
-		,	m_nIndex(nIndex)
-		,	m_bSaveFB(bSaveFB)
-		,	m_nActiveIndex(-1)
-	{
-	}
-
-	void operator ()(HWND hWnd)
-	{
-		if (hWnd == m_hWndActive)
-			m_nActiveIndex = m_nIndex;
-
-		CString 	 strSection;
-		strSection.Format(_T("Window%d"), m_nIndex);
-
-		//3つ以上の引数を送るのが面倒なので直にCChildFrameを操作
-		CChildFrame *pChild = m_pMainFrame->GetChildFrame(hWnd);
-		if (!pChild) {
-			ErrorLogPrintf(_T("dfgのセーブでの情報取得で%s(子ウィンドウ%#x)の取得に失敗\n"), LPCTSTR(strSection), hWnd);
-			return;
-		}
-
-		try {	//+++ 念のため例外チェック.
-			m_rDfgSaveInfoList.push_back( SDfgSaveInfo() );
-			m_rDfgSaveInfoList.back().m_section = strSection;
-			//:::pChild->view().m_ViewOption.GetDfgSaveInfo( m_rDfgSaveInfoList.back(), m_bSaveFB );
-		} catch(...) {
-			ErrorLogPrintf(_T("dfgのセーブで%s(子ウィンドウ%#x)のセーブ中に例外発生\n"), LPCTSTR(strSection), hWnd);
-		}
-		++m_nIndex;
-	}
-};
-
-
-CMainFrame::CSaveGroupOptionToFile::CSaveGroupOptionToFile()
-	:	m_bOldMaximized(0)
-	,	m_bSaveTravelLog(0)
-	,	m_nIndex(0)
-	,	m_nActiveIndex(0)
-	,	m_phThread(0)
-	,	m_strFileName()
-	,	m_dfgSaveInfoList()
-{
-}
-
-CMainFrame::CSaveGroupOptionToFile::~CSaveGroupOptionToFile() {
-	if (m_phThread && *m_phThread) {	//+++ スレッドが生きていると、m_dfgSaveInfoListのデストラクトがまずいかも...
-		DWORD dwResult = ::WaitForSingleObject(*m_phThread, DONUT_BACKUP_THREADWAIT);
-		//x CloseHandle(*m_phThread);
-	}
-}
-
-
-void CMainFrame::CSaveGroupOptionToFile::Run(CMainFrame* pMainWnd, const CString &strFileName, bool bDelay) // modified by minit
-{
-#if 0 //:::
-	if (pMainWnd == 0)
-		return;
-	if (pMainWnd->m_hGroupThread) {
-		DWORD dwReturnCode = 0;
-		::GetExitCodeThread(pMainWnd->m_hGroupThread, &dwReturnCode);
-		if (dwReturnCode == STILL_ACTIVE) {
-			ErrorLogPrintf(_T("defalut.dfgの前回のセーブに予想以上に時間がかかっているようなので今回は見送り.\n"));
-			return;
-		}
-		//+++ 一旦終了.
-		::CloseHandle(pMainWnd->m_hGroupThread);
-		pMainWnd->m_hGroupThread = NULL;
-	}
-
-	m_phThread			= &pMainWnd->m_hGroupThread;
-	m_strFileName		= strFileName;
-	m_bOldMaximized		= FALSE;
-	m_bSaveTravelLog	= CMainOption::s_bTravelLogGroup != 0/*? TRUE : FALSE*/;
-	m_dfgSaveInfoList.clear();
-	HWND	hWndActive	= pMainWnd->m_ChildFrameClient.GetActiveChildFrameWindow(&m_bOldMaximized);
-
-	//+++ まずは情報取得だけ行う.
-	_Function_EnumChildSaveOption	f(pMainWnd, hWndActive, m_dfgSaveInfoList, 0, m_bSaveTravelLog);
-
-	try {	//+++ 意味なくなったけど念のため例外チェック.
-		// f=
-		pMainWnd->m_MDITab.ForEachWindow( boost::ref(f) );		// MtlForEachMDIChild(m_hWndMDIClient, f);
-	} catch (...) {
-		ErrorLogPrintf(_T("グループオプションセーブ中に例外発生\n"));
-	}
-
-	m_nIndex		= f.m_nIndex;
-	m_nActiveIndex	= f.m_nActiveIndex;
-
-	if (bDelay == 0) {	//+++ iniファイルへの書き込みを同期でする場合.
-		WriteIniFile();
-	} else {			//+++ iniファイルへの書き込みを非同期にする場合.
-		UINT	dwThreadID = 0;
-		pMainWnd->m_hGroupThread = (HANDLE) _beginthreadex(NULL, 0, CSaveGroupOptionToFile::WriteIniFile_Thread, (LPVOID) this, 0, &dwThreadID);
-	}
-#endif
-}
-
-//private:
-UINT __stdcall CMainFrame::CSaveGroupOptionToFile::WriteIniFile_Thread(void* pParam)
-{
-	CSaveGroupOptionToFile* pThis = (CSaveGroupOptionToFile*)pParam;
-	pThis->WriteIniFile();
-	_endthreadex(0);
-	return 0;
-}
-
-
-void CMainFrame::CSaveGroupOptionToFile::WriteIniFile()
-{
-  #if 1	//+++ ニケ氏のアイデアで、バックアップファイル名を .dfg.bak でなく .bak.dfg にしてみる.
-	CString		strFileName	= m_strFileName;
-	CString 	strBakName	= Misc::GetFileNameNoExt(strFileName) + ".bak.dfg";
-	if (::GetFileAttributes(strBakName) != 0xFFFFFFFF)
-		::DeleteFile(strBakName);					// 古いバックアップファイルを削除.
-	if (::GetFileAttributes(strFileName) != 0xFFFFFFFF)
-		::MoveFile(strFileName, strBakName);		// 既存のファイルをバックアップファイルにする.
-  #endif
-
-	//+++ dfgファイルにセーブ
-	CIniFileO	pr( m_strFileName, _T("Window") );
-	//pr.RemoveFileToBak();			// strFileName を削除(.bak化)
-
-	//+++ 全体に関する設定を保存
-	pr.ChangeSectionName( _T("Header") );
-	pr.SetValue( m_nIndex				, _T("count")	  );
-	pr.SetValue( m_nActiveIndex 		, _T("active")	  );	// active index
-	pr.SetValue( (m_bOldMaximized != 0)	, _T("maximized") );
-
-	//+++ 窓ごとの設定を保存
-	for (std::list<SDfgSaveInfo>::iterator it = m_dfgSaveInfoList.begin();
-			it != m_dfgSaveInfoList.end();
-			++it)
-	{
-		it->WriteProfile(pr, m_bSaveTravelLog);
-	}
-}
-
-
 
 // ===========================================================================
 
 ///+++
 void CMainFrame::_SaveGroupOption(const CString &strFileName, bool bDelay /*=false*/)
 {
-	m_saveGroupOptionToFile.Run(this, strFileName, bDelay);
-
+	MessageBox(_T("_SaveGroupOption 未実装です"));
   #if 0	//+++ v1.48c で削除. 高頻度の自動セーブが設定されていると、環境によってはパフォーマンス悪化が大きいみたいなのでoff.
 	//x RtlSetMinProcWorkingSetSize();				//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 ) ... ひょっとするとあまりよろしくないかもだが...
   #endif
@@ -3049,18 +2724,6 @@ void CMainFrame::OnFavoriteGroupSave(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 }
 
 
-void CMainFrame::OnFavoriteGroupAdd(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	::SendMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, (WPARAM) ID_FAVORITE_GROUP_ADD, 0);
-}
-
-
-void CMainFrame::OnFavoriteGroupOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	::ShellExecute(m_hWnd, NULL, DonutGetFavoriteGroupFolder(), NULL, NULL, SW_SHOWNORMAL);
-}
-
-
 
 #if 1 //+++ WS_CAPTION無しがフルスクリーン、という前提を捨てたので、Mtlの外部関数だったのをこちらへ移動
 template <class _Profile>
@@ -3152,7 +2815,7 @@ BOOL CMainFrame::OnIdle()
 }
 
 // リバーとビューの間の横線を書く
-void		CMainFrame::OnPaint(CDCHandle /*dc*/)
+void	CMainFrame::OnPaint(CDCHandle /*dc*/)
 {
 	SetMsgHandled(FALSE);
 
@@ -3169,6 +2832,62 @@ void		CMainFrame::OnPaint(CDCHandle /*dc*/)
 
 	rc.InflateRect(s_kcxBorder, s_kcxBorder);
 	dc.DrawEdge(rc, EDGE_ETCHED, BF_RECT);
+}
+
+
+// コマンドラインからURLを取り出す
+static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
+{
+	std::wstring	strCommandline = lpszCommandline;
+	auto			itbegin = strCommandline.cbegin();
+	auto			itend	= strCommandline.cend();
+	std::wregex		rx(L"(?:\")([^\"]+)(?:\")");	// "～"
+	std::wsmatch	result;
+	while (std::regex_search(itbegin, itend, result, rx)) {
+		vecUrls.push_back(result[1].str().c_str());
+		itbegin = result[0].second;
+	}
+	if (vecUrls.size() == 0) {
+		strCommandline = lpszCommandline;
+		itbegin = strCommandline.cbegin();
+		itend	= strCommandline.cend();
+		std::wregex		rx(L"([^ ]+)");
+		std::wsmatch	result;
+		while (std::regex_search(itbegin, itend, result, rx)) {
+			vecUrls.push_back(result[1].str().c_str());
+			itbegin = result[0].second;
+		}
+	}
+}
+
+/// 複数起動されたunDonutの引数が渡される
+BOOL	CMainFrame::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
+{
+	if (pCopyDataStruct->dwData != 1)
+		return FALSE;
+	
+	bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
+
+	CString	strCommandLine = (LPCTSTR)pCopyDataStruct->lpData;
+	_AnalyzeCommandLine(strCommandLine);
+
+	if ( bActive ) {
+		IfTrayRestoreWindow();									//+++ トレイ状態だったら復活.
+		if (IsZoomed() == FALSE)
+			ShowWindow(SW_RESTORE);
+		MtlSetForegroundWindow(m_hWnd); 						//ウインドウをアクティブにする
+		//if (m_bOldMaximized == 0 && m_bFullScreen == 0) 		//+++
+		//	ShowWindow_Restore(1);	//ShowWindow(SW_RESTORE);	//+++ サイズを戻す.
+	}
+
+	return TRUE;
+}
+
+/// 初期化処理が全て終了したあとにコマンドライン文字列を処理するための関数
+void	CMainFrame::OnInitProcessFinished()
+{
+	_AnalyzeCommandLine(m_strCommandLine);
+	m_strCommandLine.Empty();
 }
 
 
@@ -3889,89 +3608,6 @@ void CMainFrame::OnRegisterAsBrowser(WORD wNotifyCode, WORD /*wID*/, HWND /*hWnd
 #endif
 }
 
-// 画像を保存する
-void	CMainFrame::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
-{
-#if 0	//:::
-	auto funcGetUrl = [](CComQIPtr<IDispatch> spDisp) -> LPCTSTR {
-		CComBSTR strUrl;
-		CComQIPtr<IHTMLImgElement>	spImage =  spDisp;
-		if (spImage != NULL) {
-			spImage->get_href(&strUrl);
-		} else {
-			CComQIPtr<IHTMLInputElement>	spInput = spDisp;
-			if (spInput != NULL) {
-				spInput->get_src(&strUrl);
-			} else {
-				CComQIPtr<IHTMLAreaElement>	spArea = spDisp;
-				if (spArea != NULL) {
-					spArea->get_href(&strUrl);
-				}
-			}
-		}
-		return strUrl;
-	};
-
-	CCustomContextMenu* pMenu = CCustomContextMenu::GetInstance();
-	if (pMenu) {
-#if 0	// デバッグ用
-		CComQIPtr<IHTMLElement>	spElement = pMenu->GetDispatch();
-		if (spElement)  {
-			CComBSTR str;
-			spElement->get_tagName(&str);
-			DEBUGPUT(_T("%s\n"), str);
-			spElement->get_outerHTML(&str);
-			DEBUGPUT(_T("%s\n"), str);
-		}
-#endif
-		CString strUrl = funcGetUrl(pMenu->GetDispatch());
-
-		if (strUrl.IsEmpty() == FALSE)
-			m_DownloadManager.DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
-	} else {
-		CChildFrame*	pChild = GetActiveChildFrame();
-		if (pChild) {
-			CComPtr<IDispatch>	spDisp;
-			pChild->m_spBrowser->get_Document(&spDisp);
-			CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
-			ATLASSERT(spDocument);
-			CPoint	pt;
-			::GetCursorPos(&pt);
-			pChild->ScreenToClient(&pt);
-			CComPtr<IHTMLElement>	spHitElement;
-			spDocument->elementFromPoint(pt.x, pt.y, &spHitElement);
-			// Hit先が画像の場合
-			CComQIPtr<IHTMLImgElement>	spImg = spHitElement;
-			if (spImg == NULL) {
-				// フレームの可能性
-				CComQIPtr<IHTMLFrameElement3>	spFrame = spHitElement;
-				if (spFrame) {
-					LONG x, y;
-					spHitElement->get_offsetTop(&y);
-					spHitElement->get_offsetLeft(&x);
-					pt.Offset(-x, -y);
-					CComPtr<IDispatch>	spFrameDisp;
-					spFrame->get_contentDocument(&spFrameDisp);
-					CComQIPtr<IHTMLDocument2>	spFrameDocument = spFrameDisp;
-					if (spFrameDocument == NULL) 
-						return;	// 別ドメイン
-					ATLASSERT(spFrameDocument);
-					CComPtr<IHTMLElement>	spHitFrameElement;
-					spFrameDocument->elementFromPoint(pt.x, pt.y, &spHitFrameElement);
-					spImg = spHitFrameElement;
-				}
-			}
-			if (spImg) {
-				CString strUrl = funcGetUrl(spImg.p);
-				if (strUrl.IsEmpty() == FALSE)
-					m_DownloadManager.DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
-			}
-
-		}
-	}
-#endif
-}
-
 
 // 編集
 
@@ -4135,12 +3771,21 @@ void	CMainFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 
 // お気に入り
 
+/// お気に入りに追加する
 void CMainFrame::OnFavoriteAdd(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	::SendMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, (WPARAM) ID_FAVORITE_ADD, 0);
+	CChildFrame* pChild = GetChildFrame(m_ChildFrameUIState.GetActiveChildFrameWindowHandle());
+	if (pChild == nullptr)
+		return ;
+
+	bool bOldShell = _check_flag(MAIN_EX_ADDFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
+
+	MtlAddFavorite(pChild->GetLocationURL(), MtlGetWindowText(pChild->GetHwnd()), bOldShell, DonutGetFavoritesFolder(), m_hWnd);
+
+	::SendMessage(m_hWnd, WM_REFRESH_EXPBAR, 0, 0);
 }
 
-
+/// お気に入りの整理
 void CMainFrame::OnFavoriteOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	bool bOldShell = _check_flag(MAIN_EX_ORGFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
@@ -4148,6 +3793,18 @@ void CMainFrame::OnFavoriteOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*h
 	//		CString strPath = DonutGetFavoritesFolder();
 	//		MtlOrganizeFavorite(m_hWnd, bOldShell, strPath);
 	MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
+}
+
+
+void CMainFrame::OnFavoriteGroupAdd(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	::SendMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, (WPARAM) ID_FAVORITE_GROUP_ADD, 0);
+}
+
+
+void CMainFrame::OnFavoriteGroupOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	::ShellExecute(m_hWnd, NULL, DonutGetFavoriteGroupFolder(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 
@@ -4557,18 +4214,16 @@ CChildFrame *CMainFrame::GetActiveChildFrame()
 
 //private:
 
-
+// メインメニューの [表示]-[ツールバー]を表示する
 LRESULT CMainFrame::OnShowToolBarMenu()
 {
-#if 0	//:::
-	POINT		pt = {0};
-
+	CPoint pt;
 	::GetCursorPos(&pt);
-
-	CMenuHandle submenu = ::GetSubMenu(::GetSubMenu(m_hMenu, 2), 0);
+	
+	CMenuHandle submenu = m_MainFrameMenu.GetSubMenu(2).GetSubMenu(0);
 	if ( submenu.IsMenu() )
 		submenu.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd);
-#endif
+
 	return 0;
 }
 
@@ -5184,13 +4839,30 @@ void CMainFrame::OnSetFocusAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND h
 
 CString CMainFrame::GetActiveSelectedText()
 {
-#if 0	//:::
 	CChildFrame *pChild = GetActiveChildFrame();
-	if (pChild)
-		return pChild->GetSelectedTextLine();
-	return CString();
-#endif
-	return CString();
+	if (pChild == nullptr)
+		return CString();
+
+	CString 	strSelText;
+	CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
+	MtlForEachHTMLDocument2( spBrowser, [&strSelText](IHTMLDocument2 *pDocument) {
+		CComPtr<IHTMLSelectionObject>		spSelection;
+		HRESULT 	hr	= pDocument->get_selection(&spSelection);
+		if ( SUCCEEDED( hr ) ) {
+			CComPtr<IDispatch>				spDisp;
+			hr	   = spSelection->createRange(&spDisp);
+			if ( SUCCEEDED( hr ) ) {
+				CComQIPtr<IHTMLTxtRange>	spTxtRange = spDisp;
+				if (spTxtRange != NULL) {
+					CComBSTR				bstrText;
+					hr	   = spTxtRange->get_text(&bstrText);
+					if (SUCCEEDED(hr) && !!bstrText)
+						strSelText = bstrText;
+				}
+			}
+		}
+	});
+	return strSelText;
 }
 
 
@@ -5393,7 +5065,9 @@ IDispatch *CMainFrame::ApiGetWebBrowserObject(int nTabIndex)
 		return nullptr;
 
 	CComPtr<IWebBrowser2>	spBrwoser = pChild->GetMarshalIWebBrowser();
-	return (IDispatch *) spBrwoser;
+	IDispatch*	pDisp = nullptr;
+	spBrwoser->QueryInterface(&pDisp);
+	return (IDispatch *) pDisp;
 }
 
 

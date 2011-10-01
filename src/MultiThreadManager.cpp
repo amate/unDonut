@@ -131,15 +131,12 @@ DWORD WINAPI CMultiThreadManager::RunMainThread(LPVOID lpData)
 
 		_Module.Lock();
 
-		if (pData->lpstrCmdLine == NULL || pData->lpstrCmdLine[0] == 0) {	// no command line param
+		if (CStartUpOption::s_dwParam) 
 			CStartUpOption::StartUp(wndMain);
-		} else {
-			if (CStartUpOption::s_dwParam) {
-				CStartUpOption::StartUp(wndMain);
-			}
+		if (pData->lpstrCmdLine && pData->lpstrCmdLine[0] != _T('\0'))
 			CommandLineArg(wndMain, pData->lpstrCmdLine);
-		}
-		g_pMainWnd->SetAutoBackUp();		//自動更新するなら、開始.
+
+		wndMain.SetAutoBackUp();		//自動更新するなら、開始.
 
 		delete pData;
 		// 実際のメインループ.

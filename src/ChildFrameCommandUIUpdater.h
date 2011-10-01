@@ -67,14 +67,18 @@ public:
 
 	static void	ChangeCommandUIMap(HWND hWndChildFrame);
 
+	static HWND	GetActiveChildFrameWindowHandle() { return s_hWndActiveChildFrame; }
+
 	// Message map
 	BEGIN_MSG_MAP( CChildFrameCommandUIUpdater )
 		USER_MSG_WM_ADDCOMMANDUIMAP( OnAddCommandUIMap )
 		USER_MSG_WM_REMOVECOMMANDUIMAP( OnRemoveCommandUIMap )
+		USER_MSG_WM_CHANGECHILDFRAMEUIMAP( OnChangeChildFrameUIMap )
 	END_MSG_MAP()
 
 	void	OnAddCommandUIMap(HWND hWndChildFrame);
 	void	OnRemoveCommandUIMap(HWND hWndChildFrame);
+	void	OnChangeChildFrameUIMap(HWND hWndChildFrame);
 
 	// Update Command UI Map
 	BEGIN_UPDATE_COMMAND_UI_MAP( CChildFrameCommandUIUpdater )
@@ -82,8 +86,6 @@ public:
 			return FALSE;
 
 		m_pUIData = s_vecpUIData[s_nActiveUIIndex].get();
-
-		//:::CHAIN_UPDATE_COMMAND_UI_MEMBER( m_view )
 
 		UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_VIEW_BACK   , m_pUIData->bNavigateBack   , true ) 	// with popup
 		UPDATE_COMMAND_UI_ENABLE_IF 		  ( ID_VIEW_FORWARD, m_pUIData->bNavigateForward )

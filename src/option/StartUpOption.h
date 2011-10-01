@@ -106,20 +106,15 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 
 	switch (s_dwFlags) {
 	case STARTUP_NOINITWIN:
+		__frame.PostMessage(WM_INITPROCESSFINISHED);
 		break;
 
 	case STARTUP_GOHOME:
-		hWndChild = __frame.UserOpenFile(CString(), 0);
-		if (hWndChild) {
-			CWebBrowser2	browser = DonutGetIWebBrowser2(hWndChild);
-			if (browser.m_spBrowser != NULL)
-				browser.GoHome();
-		}
+		__frame.OnFileNewHome(0, 0, NULL);
 		break;
 
 	case STARTUP_LATEST:
 		__frame.RestoreAllTab();
-		//__frame.OnUserOpenFile(GetDefaultDFGFilePath(), 0);
 		break;
 
 	case STARTUP_DFG:
@@ -128,6 +123,7 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 			if ( !strPath.IsEmpty() )
 				__frame.UserOpenFile(s_szDfgPath, 0);
 		}
+		__frame.PostMessage(WM_INITPROCESSFINISHED);
 		break;
 
 	default:

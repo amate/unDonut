@@ -155,7 +155,7 @@ int WINAPI GenerateDumpi(EXCEPTION_POINTERS* pExceptionPointers)
 }
 
 // コマンドラインからURLを取り出す
-static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
+void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 {
 	// 検索バーを使って検索する
 	CString str = lpszCommandline;
@@ -187,25 +187,22 @@ static void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 }
 
 //+++	起動時しょっぱなのチェック.
-static bool CheckOneInstance(HINSTANCE hInstance, LPTSTR lpstrCmdLine)
+static bool CheckOneInstance(LPTSTR lpstrCmdLine)
 {
 	//ChangeWindowMessageFilter(WM_NEWINSTANCE, MSGFLT_ADD); //+++ ユーザーメッセージを通過させるためにvistaでの開発中は必要?(て、そもそもつかえなかった)
 	
-	CString	strIniFilePath = Misc::GetFileBaseNoExt(Misc::GetExeFileName()) + _T(".ini");
-	CIniFileI	pr(strIniFilePath, _T("Main"));
-
-	CMainOption::s_dwMainExtendedStyle = pr.GetValue(_T("Extended_Style"), CMainOption::s_dwMainExtendedStyle);
+	CIniFileI	pr(g_szIniFileName, _T("Main"));
+	pr.QueryValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
 	if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ONEINSTANCE) { // 複数起動を許可しない
-		//x HWND hWnd = ::FindWindow(_T("WTL:Donut"), NULL);
 		HWND hWnd = ::FindWindow(DONUT_WND_CLASS_NAME, NULL);
 		if (hWnd) {		// 既に起動しているunDonutが見つかった
-			std::vector<CString> strs;
-			PerseUrls(lpstrCmdLine, strs);
-
-			for (auto it = strs.cbegin(); it != strs.cend(); ++it) {
-				ATOM nAtom = ::GlobalAddAtom(*it);
-				::PostMessage(hWnd, WM_NEWINSTANCE, (WPARAM) nAtom, 0);
-			}
+			COPYDATASTRUCT	cd;
+			cd.dwData	= 1;
+			size_t	cbCommandLine = 0;
+			StringCbLength(lpstrCmdLine, sizeof(TCHAR) * 2048, &cbCommandLine);
+			cd.cbData	= (DWORD)cbCommandLine + sizeof(TCHAR);
+			cd.lpData	= lpstrCmdLine;
+			::SendMessage(hWnd, WM_COPYDATA, NULL, (LPARAM)&cd);
 			return true;
 		}
 	}
@@ -216,7 +213,6 @@ static bool CheckOneInstance(HINSTANCE hInstance, LPTSTR lpstrCmdLine)
 // iniファイルから設定を読み込む
 static bool _PrivateInit()
 {
-	MtlIniFileNameInit(g_szIniFileName, _MAX_PATH);
 #if 0
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	do {
@@ -315,60 +311,6 @@ static bool	HaveEnvFiles()
 	return false;
 }
 
-// --------------------------------------------
-/// メッセージループ開始
-static int Run(LPTSTR lpstrCmdLine = NULL, int nCmdShow = SW_SHOWDEFAULT, bool bTray=false)
-{
-	CMessageLoop theLoop;
-	_Module.AddMessageLoop(&theLoop);
-
-	CMainFrame	 wndMain;
-	if (wndMain.CreateEx() == NULL) {
-		ATLTRACE( _T("Main window creation failed!\n") );
-		return 0;
-	}
-
-	// g_pMainWnd = &wndMain;	//+++ CreateEx()中にプラグイン初期化とかで参照されるので、CMainFreameで設定するように変更.
-
-	// load windowplacement
-	wndMain.startupMainFrameStayle(nCmdShow, bTray);
-
-	_Module.Lock();
-
-	if (lpstrCmdLine == 0 || lpstrCmdLine[0] == 0) {	// no command line param
-		CStartUpOption::StartUp(wndMain);
-	} else {
-		if (CStartUpOption::s_dwParam) {
-			CStartUpOption::StartUp(wndMain);
-		}
-		CommandLineArg(wndMain, lpstrCmdLine);
-	}
-
-  #if 1 //+++
-	//\\ 削除↓
-   #if 0	//+++ CMainFrame生成時に行っていた、バックアップ処理の開始を、このタイミングにずらしてみた.
-	//+++ スタートページの表示等、先行するメッセージを先にさばいておく.
-	//	  ...なるべく最初のページ表示の処理がすんでから、自動更新開始(になってほしい..なっていないけれど)
-	if (ForceMessageLoop() == 0)
-		return 0;						// この段階で終了されちゃってたら帰る
-   #endif
-	g_pMainWnd->SetAutoBackUp();		//自動更新するなら、開始.
-
-	//RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
-
-	// 実際のメインループ.
-	int nRet = theLoop.Run();
-
-	_Module.RemoveMessageLoop();
-  #else
-	int nRet = theLoop.Run();
-	_Module.RemoveMessageLoop();
-  #endif
-
-	return nRet;	// ※ WTLのメイン窓クローズ時に1を正常値として返しているので注意.
-}
-
-
 void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
 {
 	CString 	 strCmdLine = lpstrCmdLine;
@@ -379,12 +321,7 @@ void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
 			&& strCmdLine.Mid(1,4).CompareNoCase(_T("tray")) == 0)	//+++ -trayオプションをスキップ
 			return;
 
-		std::vector<CString> vecUrls;
-		PerseUrls(strCmdLine, vecUrls);
-
-		std::for_each(vecUrls.cbegin(), vecUrls.cend(), [&wndMain](const CString& strUrl) {
-			wndMain.UserOpenFile(strUrl, DonutGetStdOpenActivateFlag());
-		});
+		wndMain.SetCommandLine(lpstrCmdLine);
 	}
 }
 
@@ -551,21 +488,18 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	#endif
 #endif
 
-#if 0
-	DWORD	dwMaxConection = 20;
-	BOOL	b = ::InternetSetOption(NULL, INTERNET_OPTION_MAX_CONNS_PER_SERVER, (LPVOID)&dwMaxConection, sizeof(DWORD));
-		b = ::InternetSetOption(NULL, INTERNET_OPTION_MAX_CONNS_PER_1_0_SERVER, (LPVOID)&dwMaxConection, sizeof(DWORD));
-	b = ::InternetSetOption(NULL, 103, (LPVOID)&dwMaxConection, sizeof(DWORD));
-#endif
-  #ifdef _DEBUG
+#ifdef _DEBUG
 	// ATLTRACEで日本語を使うために必要
 	_tsetlocale( LC_ALL, _T("japanese") );
-  #endif
+#endif
 
 	Misc::setHeapAllocLowFlagmentationMode();	//+++
 
+	// 設定ファイルのフルパスを取得する
+	MtlIniFileNameInit(g_szIniFileName, MAX_PATH);
+
 	// 複数起動の確認
-	if (CheckOneInstance(hInstance, lpstrCmdLine)) 
+	if (CheckOneInstance(lpstrCmdLine)) 
 		return 0;
 
 	g_pMainWnd	 = NULL;

@@ -475,17 +475,6 @@ enum TabCreateOption {
 	}
 
 
-// void	OnRemoveCommandUIMap(HWND hWndChildFrame);
-#define WM_REMOVECOMMANDUIMAP	(WM_USER + 106)
-#define USER_MSG_WM_REMOVECOMMANDUIMAP(func)	\
-	if (uMsg == WM_REMOVECOMMANDUIMAP) {	   \
-		SetMsgHandled(TRUE);		   \
-		func((HWND)wParam);    \
-		lResult = 0;				\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
-
 // void	OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData)
 #define WM_ADDRECENTCLOSEDTAB	(WM_USER + 107)
 #define USER_MSG_WM_ADDRECENTCLOSEDTAB(func)	\
@@ -574,6 +563,74 @@ enum TabCreateOption {
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
 	}
+
+// void	OnChangeChildFrameUIMap(HWND hWndChildFrame)
+#define WM_CHANGECHILDFRAMEUIMAP	(WM_USER + 115)
+#define USER_MSG_WM_CHANGECHILDFRAMEUIMAP(func)	\
+	if (uMsg == WM_CHANGECHILDFRAMEUIMAP) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnChildFrameConnecting(HWND hWndChildFrame)
+#define WM_CHILDFRAMECONNECTING		(WM_USER + 116)
+#define USER_MSG_WM_CHILDFRAMECONNECTING(func)	\
+	if (uMsg == WM_CHILDFRAMECONNECTING) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnChildFrameDownloading(HWND hWndChildFrame)
+#define WM_CHILDFRAMEDOWNLOADING	(WM_USER + 117)
+#define USER_MSG_WM_CHILDFRAMEDOWNLOADING(func)	\
+	if (uMsg == WM_CHILDFRAMEDOWNLOADING) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnChildFrameComplete(HWND hWndChildFrame)
+#define WM_CHILDFRAMECOMPLETE		(WM_USER + 118)
+#define USER_MSG_WM_CHILDFRAMECOMPLETE(func)	\
+	if (uMsg == WM_CHILDFRAMECOMPLETE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+// void	OnInitProcessFinished()
+#define WM_INITPROCESSFINISHED	(WM_USER + 119)
+#define USER_MSG_WM_INITPROCESSFINISHED(func)	\
+	if (uMsg == WM_INITPROCESSFINISHED) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnRemoveCommandUIMap(HWND hWndChildFrame);
+#define WM_REMOVECOMMANDUIMAP	(WM_USER + 120)
+#define USER_MSG_WM_REMOVECOMMANDUIMAP(func)	\
+	if (uMsg == WM_REMOVECOMMANDUIMAP) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam);    \
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
 
 
 

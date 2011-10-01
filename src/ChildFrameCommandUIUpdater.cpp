@@ -75,9 +75,18 @@ void	CChildFrameCommandUIUpdater::OnRemoveCommandUIMap(HWND hWndChildFrame)
 		if (it->second > nDestroyIndex)
 			--it->second;
 	}
-	s_nActiveUIIndex	= -1;
+	if (s_nActiveUIIndex > nDestroyIndex)
+		--s_nActiveUIIndex;
 }
 
+/// ChildFrameのUI更新マップを変更する(タブのメニュー用)
+void	CChildFrameCommandUIUpdater::OnChangeChildFrameUIMap(HWND hWndChildFrame)
+{
+	ATLASSERT( ::IsWindow(hWndChildFrame) );
+	s_hWndActiveChildFrame	= hWndChildFrame;
+	s_nActiveUIIndex = _GetIndexFromHWND(hWndChildFrame);
+	ATLASSERT(s_nActiveUIIndex != -1);
+}
 
 // UI map
 
