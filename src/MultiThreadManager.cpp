@@ -50,6 +50,7 @@ private:
 	void	RemoveThread(DWORD dwIndex);
 
 	// Data members
+	HANDLE m_hMainThread;
 	DWORD m_dwCount;
 	HANDLE m_arrThreadHandles[MAXIMUM_WAIT_OBJECTS - 1];
 
@@ -58,19 +59,29 @@ private:
 //static CMultiThreadManager	g_MultiThreadManager;
 
 // Constructor
-CMultiThreadManager::CMultiThreadManager() : m_dwCount(0)
+CMultiThreadManager::CMultiThreadManager() : m_dwCount(0), m_hMainThread(NULL)
 { }
 
 
 /// メインフレーム用のスレッド起動とスレッドの削除を管理する
 int CMultiThreadManager::Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 {
-	MSG msg;
+	//MSG msg;
 	// 強制的にメッセージキューを作らせる
-	::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+	//\\::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
 	AddMainThread(lpstrCmdLine, nCmdShow, bTray);
+	if (m_hMainThread == NULL)
+		return 0;
 
+	int nRet = 0;
+	DWORD dwRet = ::WaitForSingleObject(m_hMainThread, INFINITE);
+	if(dwRet == 0xFFFFFFFF)
+	{
+		::MessageBox(NULL, _T("エラー: オブジェクトのイベント待ち受けに失敗しました！"), _T("Multi"), MB_OK);
+	}
+	::CloseHandle(m_hMainThread);
+#if 0
 	int nRet = m_dwCount;
 	DWORD dwRet;
 	while(m_dwCount > 0)
@@ -98,7 +109,7 @@ int CMultiThreadManager::Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 			::MessageBeep((UINT)-1);
 		}
 	}
-
+#endif
 	return nRet;
 }
 
@@ -206,8 +217,14 @@ DWORD CMultiThreadManager::AddMainThread(LPTSTR lpstrCmdLine, int nCmdShow, bool
 	pData->lpstrCmdLine = lpstrCmdLine;
 	pData->nCmdShow = nCmdShow;
 	pData->bTray = bTray;
-
+		
 	DWORD dwThreadID;
+	m_hMainThread = ::CreateThread(NULL, 0, RunMainThread, pData, 0, &dwThreadID);
+	if (m_hMainThread == NULL) {
+		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
+		return 0;
+	}
+#if 0
 	HANDLE hThread = ::CreateThread(NULL, 0, RunMainThread, pData, 0, &dwThreadID);
 	if (hThread == NULL) {
 		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
@@ -216,6 +233,7 @@ DWORD CMultiThreadManager::AddMainThread(LPTSTR lpstrCmdLine, int nCmdShow, bool
 
 	m_arrThreadHandles[m_dwCount] = hThread;
 	m_dwCount++;
+#endif
 	return dwThreadID;
 }
 
@@ -236,9 +254,11 @@ DWORD CMultiThreadManager::AddChildFrameThread(CChildFrame* pChild, NewChildFram
 		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
 		return 0;
 	}
-
+	::CloseHandle(hThread);
+#if 0
 	m_arrThreadHandles[m_dwCount] = hThread;
 	m_dwCount++;
+#endif
 	return dwThreadID;
 }
 

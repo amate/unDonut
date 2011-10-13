@@ -632,6 +632,54 @@ enum TabCreateOption {
 	}
 
 
+// ChildFrameÇ™é¿ëïÇ∑ÇÈÅBï‘Ç≥ÇÍÇΩï∂éöóÒÇÕÇøÇ·ÇÒÇ∆deleteÇ∑ÇÈÇ±Ç∆!
+// void	OnGetSelectedText(LPCTSTR* ppStr);
+#define WM_GETSELECTEDTEXT	(WM_USER + 121)
+#define USER_MSG_WM_GETSELECTEDTEXT(func)	\
+	if (uMsg == WM_GETSELECTEDTEXT) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((LPCTSTR*)wParam);						\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnExecuteUserJavascript(LPCTSTR strScriptText)
+#define WM_EXECUTEUSERJAVASCRIPT	(WM_USER + 122)
+#define USER_MSG_WM_EXECUTEUSERJAVASCRIPT(func)	\
+	if (uMsg == WM_EXECUTEUSERJAVASCRIPT) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((CString*)wParam);						\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnSetPageBitmap(HBITMAP* pBmp)
+#define WM_SETPAGEBITMAP	(WM_USER + 123)
+#define USER_MSG_WM_SETPAGEBITMAP(func)	\
+	if (uMsg == WM_SETPAGEBITMAP) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HBITMAP*)wParam);						\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnDrawChildFramePage(CDCHandle dc)
+#define WM_DRAWCHILDFRAMEPAGE	(WM_USER + 124)
+#define USER_MSG_WM_DRAWCHILDFRAMEPAGE(func)	\
+	if (uMsg == WM_DRAWCHILDFRAMEPAGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HDC)wParam);						\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
 
 
 //----------------------------------------------------------------------------

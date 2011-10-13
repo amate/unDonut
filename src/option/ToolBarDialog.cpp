@@ -309,7 +309,7 @@ CString GetSmallFilePath()
 	return strPath;
 }
 
-};
+};	// namespace
 
 
 /////////////////////////////////////////////////////////

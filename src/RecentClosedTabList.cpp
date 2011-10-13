@@ -299,20 +299,26 @@ BOOL CRecentClosedTabList::Impl::ReadFromXmlFile()
 {
 	using boost::property_tree::wptree;
 
-	CString 		strFile = _GetRecentCloseFile();
-
 	m_vecpClosedTabData.clear();
 
-	std::wifstream	filestream;
-	filestream.imbue(std::locale("japanese"));
-	filestream.open(strFile);
-	if (filestream.is_open() == false) {
-		UpdateMenu();
-		return FALSE;
-	}
 	try {
 		wptree	pt;
-		boost::property_tree::read_xml(filestream, pt);
+
+		FILE* fp = nullptr;
+		if (_wfopen_s(&fp, _GetRecentCloseFile(), L"r, ccs=UTF-8") != 0) {
+			UpdateMenu();
+			return FALSE;
+		}
+		std::wstringstream	strstream;
+		enum { kBuffSize = 512 };
+		wchar_t	temp[kBuffSize + 1];
+		while (!feof(fp)) {
+			size_t n = fread(temp, sizeof(wchar_t), kBuffSize, fp);
+			temp[n] = L'\0';
+			strstream << temp;
+		}
+		fclose(fp);
+		boost::property_tree::read_xml(strstream, pt);
 
 		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
 			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
@@ -347,8 +353,6 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 {
 	using boost::property_tree::wptree;
 
-	CString 	strSaveFilePath = _GetRecentCloseFile();
-
 	try {
 		auto AddTravelLog = [](wptree& ptLog, const vector<std::pair<CString, CString> >& vecTravelLog) {
 			for (auto it = vecTravelLog.cbegin(); it != vecTravelLog.cend(); ++it) {
@@ -368,10 +372,16 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
 		}
 		using namespace boost::property_tree::xml_parser;
-		std::wofstream	filestream;
-		filestream.imbue(std::locale("japanese"));
-		filestream.open(strSaveFilePath, std::ios::out | std::ios::trunc);
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("shift_jis")));
+
+		std::wstringstream	strstream;
+		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+
+		FILE* fp = nullptr;
+		if (_wfopen_s(&fp, _GetRecentCloseFile(), L"w, ccs=UTF-8") != 0) 
+			throw "error";
+		CString str = strstream.str().c_str();
+		fwrite(str, sizeof(wchar_t), str.GetLength(), fp);
+		fclose(fp);
 	} catch (...) {
 		ATLTRACE(_T("CRecentClosedTabList::Impl::WriteToXmlFile で例外発生!\n"));
 	}

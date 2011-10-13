@@ -80,7 +80,7 @@ inline CString MtlGetChangedExtFromModuleName(const CString &strExt)
 
 inline bool MtlIsExt(const CString &strPath, const CString &strExt)
 {
-	CString 	strExtSrc = strPath.Right(4);
+	CString 	strExtSrc = strPath.Right(strExt.GetLength());
 	return (strExtSrc.CompareNoCase(strExt) == 0);
 }
 

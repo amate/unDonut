@@ -8,6 +8,9 @@
 ////////////////////////////////////////////////////////////////////////////
 // CTreeViewPropertySheet
 
+#define OPTIONDIALOGWIDTH	280;
+#define OPTIONDIALOGHEIGHT	300;
+
 // コンストラクタ
 CTreeViewPropertySheet::CTreeViewPropertySheet(LPCTSTR title)
 	: m_Title(title)
@@ -139,6 +142,8 @@ void CTreeViewPropertySheet::_ReadyDialogResources()
 
 	//ダイアログ単位からピクセル単位に変換
 	CRect rc(0, 0, max_w, max_h);
+	rc.right	= OPTIONDIALOGWIDTH;	//\\ 強制的に幅と高さを設定する
+	rc.bottom	= OPTIONDIALOGHEIGHT;
 	MapDialogRect(&rc);
 	m_nWidth   = rc.Width();
 	m_nHeight  = rc.Height();

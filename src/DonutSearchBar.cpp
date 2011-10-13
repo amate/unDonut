@@ -820,6 +820,18 @@ BOOL	CDonutSearchBar::Impl::PreTranslateMessage(MSG *pMsg)
 		return _MTL_TRANSLATE_HANDLE;
 	}
   #endif
+	else if (pMsg->hwnd == m_EngineListBox.m_hWnd && msg == WM_RBUTTONDOWN) {
+		m_cmbEngine.ShowDropDown(FALSE);	
+		// 検索エンジンのプロパティを開く		
+		int nIndex = m_EngineListBox.GetCaretIndex();
+		CString 			strText;
+		m_cmbEngine.GetLBText(nIndex, strText);
+		CExPropertyDialog	dlg(GetSearchIniPath(), strText, 0);
+		dlg.SetTitle(strText);
+		dlg.DoModal();
+		_SetCmbKeywordEmptyStr();	//+++
+		return _MTL_TRANSLATE_HANDLE;
+	}
 
 	return _MTL_TRANSLATE_PASS;
 }
@@ -870,9 +882,7 @@ DROPEFFECT CDonutSearchBar::Impl::OnDrop(IDataObject *pDataObject, DROPEFFECT dr
 	if (   MtlGetHGlobalText( pDataObject, strText)
 		|| MtlGetHGlobalText( pDataObject, strText, ::RegisterClipboardFormat(CFSTR_SHELLURL) ) )
 	{
-		CEdit edit = GetEditCtrl();
-		edit.SendMessage(WM_CHAR, 'P'); //m_cmbKeyword.GetCurSel() == -1にするための苦肉の策 minit
-		edit.SetWindowText(strText);
+		SetSearchStr(strText);
 
 		bool  bSts = s_bDropGo;	// Dropで検索
 		if (::GetKeyState(VK_SHIFT) < 0)

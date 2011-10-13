@@ -743,7 +743,7 @@ GetClientRect(&rect);
 			}
 			return ptScroll;
 		};
-		if (m_spViewObject && Misc::IsGpuRendering()/* && m_bWindowless*/)
+		if (m_spViewObject && /*Misc::IsGpuRendering() &&*/ m_bWindowless)
 		{
 			PAINTSTRUCT ps;
 			HDC hdc = ::BeginPaint(m_hWnd, &ps);

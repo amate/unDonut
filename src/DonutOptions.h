@@ -26,6 +26,8 @@
 #include "option/FavoriteMenuDialog.h"
 #include "option/ExecutableDialog.h"
 #include "option/MDITabDialog.h"
+#include "option/UserDefinedCSSOption.h"
+#include "option/UserDefinedJavascriptOption.h"
 
 //‚±‚±‚¾‚ÆƒŠƒ“ƒN‚ÌˆË‘¶ŠÖŒW‚ª–Ê“|‚È‚ñ‚Å‚â‚Á‚Ï‚èmainfrm.h‘¤‚Åinclude
 //#include "option/AddressBarPropertyPage.h"	//+++ AddressBar.h‚æ‚è•ª—£

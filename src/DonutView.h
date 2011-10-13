@@ -99,7 +99,7 @@ public:
 		MSG_WM_CREATE	( OnCreate )
 		MSG_WM_DESTROY	( OnDestroy )
 		MSG_WM_TIMER( OnTimer )
-		if (uMsg == WM_INITMENUPOPUP) {
+		if (uMsg == WM_INITMENUPOPUP || uMsg == WM_MENUSELECT) {
 			GetTopLevelWindow().SendMessage(uMsg, wParam, lParam);
 			return TRUE;
 		}

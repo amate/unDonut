@@ -55,7 +55,7 @@ private:
 		if (m_hExitEvent == INVALID_HANDLE_VALUE)
 			return;
 
-		MTLVERIFY( ::SetEvent(m_hExitEvent) );
+		ATLVERIFY( ::SetEvent(m_hExitEvent) );
 
 		if (!m_thread_Notification.timed_join(boost::posix_time::milliseconds(DONUT_THREADWAIT)))
 			ATLASSERT(FALSE);

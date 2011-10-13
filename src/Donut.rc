@@ -42,7 +42,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 #ifdef WIN64
-IDR_MAINFRAME			ICON					"res64\\Icon_64.ico"
+IDR_MAINFRAME           ICON                    "res64\\icon_64.ico"
 #else
 IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
 #endif
@@ -1826,6 +1826,45 @@ BEGIN
     COMBOBOX        IDC_CMB_DLLISTOPTION,128,21,76,44,CBS_DROPDOWNLIST | CBS_HASSTRINGS
 END
 
+IDD_PROPPAGE_USERDEFINEDCSS DIALOGEX 0, 0, 317, 264
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_CAPTION
+CAPTION "ユーザー定義CSS"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LISTBOX         IDC_LIST_URL,5,80,305,140,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "ページが読み込まれたときに自動的に適用するCSSを選択します。\r\nunDonut.exeのあるフォルダ/css フォルダ以下にある ""*.css""ファイルを選択してください。",IDC_STATIC,5,5,290,20
+    EDITTEXT        IDC_EDIT_URL,25,25,285,12,ES_LOWERCASE | ES_AUTOHSCROLL
+    LTEXT           "URL:",IDC_STATIC,5,25,15,10,SS_CENTERIMAGE
+    LTEXT           "CSSファイル:",IDC_STATIC,6,45,40,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_COMBO_CSS,46,44,215,170,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "CSS編集",IDC_BUTTON_CSSEDIT,267,42,45,15
+    PUSHBUTTON      "cssフォルダを開く",IDC_BUTTON_OPENCSSFOLDER,245,60,65,15
+    PUSHBUTTON      "追加",IDC_BUTTON_ADD,5,60,30,15
+    PUSHBUTTON      "削除",IDC_BUTTON_DELETE,40,60,30,15
+    PUSHBUTTON      "変更の適用",IDC_BUTTON_CHANGEAPPLY,80,60,50,15
+    LTEXT           "URLは部分一致で判定するので""*""などは不要です\r\n例) URLに「http://www.google.co.jp/」と入れている場合\r\n「http://www.google.co.jp/search?hl=ja&q=test」は一致しますが\r\n「http://www.google.com/」は一致しません",IDC_STATIC,5,225,305,35
+END
+
+IDD_PROPPAGE_USERDEFINEDJAVASCRIPT DIALOGEX 0, 0, 317, 274
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_CAPTION
+CAPTION "ユーザー定義JS"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LISTBOX         IDC_LIST_URL,5,80,305,140,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "ページが読み込まれたときに自動的に読み込むJavaScriptを選択します。\r\nunDonut.exeのあるフォルダ/javascript フォルダ以下にある ""*.js""ファイルを選択してください。",IDC_STATIC,5,5,290,20
+    EDITTEXT        IDC_EDIT_URL,25,25,285,12,ES_LOWERCASE | ES_AUTOHSCROLL
+    LTEXT           "URL:",IDC_STATIC,5,25,15,10,SS_CENTERIMAGE
+    LTEXT           "JSファイル:",IDC_STATIC,7,43,40,10,SS_CENTERIMAGE
+    COMBOBOX        IDC_COMBO_JS,47,42,215,170,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
+    PUSHBUTTON      "JS編集",IDC_BUTTON_JSEDIT,267,42,45,15
+    PUSHBUTTON      "javascriptフォルダを開く",IDC_BUTTON_OPENJSFOLDER,225,60,85,15
+    PUSHBUTTON      "追加",IDC_BUTTON_ADD,5,60,30,15
+    PUSHBUTTON      "削除",IDC_BUTTON_DELETE,40,60,30,15
+    PUSHBUTTON      "変更の適用",IDC_BUTTON_CHANGEAPPLY,80,60,50,15
+    LTEXT           "URLは部分一致で判定するので""*""などは不要です\r\n例) URLに「http://www.google.co.jp/」と入れている場合\r\n「http://www.google.co.jp/search?hl=ja&q=test」は一致しますが\r\n「http://www.google.com/」は一致しません",IDC_STATIC,5,225,305,35
+    LTEXT           "※""*.js""の文字コードはUTF-8である必要があります。",IDC_STATIC,5,260,305,10
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2227,6 +2266,22 @@ BEGIN
         RIGHTMARGIN, 214
         TOPMARGIN, 7
         BOTTOMMARGIN, 270
+    END
+
+    IDD_PROPPAGE_USERDEFINEDCSS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 257
+    END
+
+    IDD_PROPPAGE_USERDEFINEDJAVASCRIPT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 310
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 267
     END
 END
 #endif    // APSTUDIO_INVOKED

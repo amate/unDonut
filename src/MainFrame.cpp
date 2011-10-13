@@ -78,26 +78,61 @@ HWND	CChildFrameClient::Create(HWND hWndMainFrame)
 
 void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 {
-	SetRedraw(FALSE);
+#if 1	/* 前のウィンドウの画面を更新しておく */
+	if (   m_hWndChildFrame && hWndChildFrame
+		&& Misc::IsGpuRendering() 
+		&& CDLControlOption::s_nGPURenderStyle != CDLControlOption::GPURENDER_NONE)
+	{
+		static CBitmap	bmpPage;
+		if (bmpPage.IsNull() == false)
+			bmpPage.DeleteObject();
+//		CClientDC	dc(m_hWndChildFrame);
+		//CClientDC	dc2(hWndChildFrame);
+		RECT rect;
+		::GetClientRect(m_hWndChildFrame, &rect);
+		CDC Desktopdc = ::GetDC(NULL);
+		bmpPage.CreateCompatibleBitmap(Desktopdc, rect.right, rect.bottom);
+		CDC	memDC = CreateCompatibleDC(Desktopdc);
+		HBITMAP bmpPrev = memDC.SelectBitmap(bmpPage);
 
+		/* ページのビットマップを取得 */
+		memDC.FillSolidRect(&rect, RGB(255, 255, 255));
+		::SendMessage(hWndChildFrame, WM_DRAWCHILDFRAMEPAGE, (WPARAM)memDC.m_hDC, 0);
+
+//		dc.BitBlt(0, 0, rect.right, rect.bottom, memDC, rect.right, rect.bottom, SRCCOPY);
+		//dc2.BitBlt(0, 0, rect.right, rect.bottom, memDC, rect.right, rect.bottom, SRCCOPY);	//
+		memDC.SelectBitmap(bmpPrev);
+
+		::SendMessage(hWndChildFrame, WM_SETPAGEBITMAP, (WPARAM)&bmpPage.m_hBitmap, 0);
+		::SendMessage(m_hWndChildFrame, WM_SETPAGEBITMAP, (WPARAM)&bmpPage.m_hBitmap, 0);
+
+		::InvalidateRect(m_hWndChildFrame, NULL, FALSE);
+		::UpdateWindow(m_hWndChildFrame);
+	}
+#endif
+	SetRedraw(FALSE);
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
 		::SendMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
-		::ShowWindowAsync(m_hWndChildFrame, FALSE);
+		::ShowWindow/*Async*/(m_hWndChildFrame, FALSE);
 	}
+	
 	if (hWndChildFrame) {
 		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+		//::ShowWindow(hWndChildFrame, TRUE);
 		RECT rcClient;
 		GetClientRect(&rcClient);
-		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, SWP_ASYNCWINDOWPOS | SWP_NOZORDER | SWP_SHOWWINDOW);
+		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | SWP_SHOWWINDOW | SWP_NOREDRAW);
+		//::RedrawWindow(hWndChildFrame, NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW*/ | RDW_ALLCHILDREN);
+		//::BringWindowToTop(hWndChildFrame);
 	} else {
 		InvalidateRect(NULL);
 	}
 
 	m_hWndChildFrame = hWndChildFrame;
-
+		
 	SetRedraw(TRUE);
-	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
+	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_ERASE | RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 
@@ -1355,24 +1390,11 @@ void	CMainFrame::_AnalyzeCommandLine(const CString& strCommandLine)
 
 void	CMainFrame::OpenBingTranslator(const CString& strText)
 {
-#if 0	//:::
-	m_MDITab.SetLinkState(LINKSTATE_A_ON);
-	DWORD dwDLFlgs = CDLControlOption::s_dwDLControlFlags & ~(DLCTL_NO_SCRIPTS | DLCTL_NO_RUNACTIVEXCTLS);
-	CChildFrame *pChild = CChildFrame::NewWindow(	m_hWndMDIClient,
-													m_MDITab,
-													m_AddressBar,
-													false,
-													dwDLFlgs, CDLControlOption::s_dwExtendedStyleFlags);
-	if (pChild) {
-		pChild->SetWaitBeforeNavigate2Flag();
-		pChild->ActivateFrame(-1);	//\\ タブに追加
-		CString strtemp;
-		strtemp.Format(_T("SourceText=%s&from=en&to=ja"), strText);
-		std::vector<char>	vecStr = Misc::tcs_to_sjis(strtemp);
-		pChild->Navigate2(_T("http://www.microsofttranslator.com/Default.aspx"), 0, NULL, 
-			_T("Content-Type: application/x-www-form-urlencoded"), (LPVOID)vecStr.data(), vecStr.size() - 1);
-	}
-#endif
+	CString strUrl;
+	strUrl.Format(_T("http://www.microsofttranslator.com/?ref=JAIME&from=en&to=ja&text=%s"), strText);
+
+	DWORD dwDLFlags = CDLControlOption::s_dwDLControlFlags & ~(DLCTL_NO_SCRIPTS | DLCTL_NO_RUNACTIVEXCTLS);
+	UserOpenFile(strUrl, D_OPENFILE_CREATETAB | D_OPENFILE_ACTIVATE, dwDLFlags);
 }
 
 // ===========================================================================
@@ -1476,6 +1498,12 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 		//:::return OpenUrlWithExProp(strFileOrURL, openFlag, strFileOrURL);
 		CChildFrame *pActiveChild = GetActiveChildFrame();
 
+		bool	bJavascript = false;
+		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+			bJavascript = true;
+			openFlag |= D_OPENFILE_NOCREATE;
+		}
+
 		NewChildFrameData	data(m_ChildFrameClient);
 		data.strURL		= strFileOrURL;
 		DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
@@ -1493,9 +1521,16 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 				pActiveChild->SetMarshalDLCtrl(data.dwDLCtrl);
 			if (data.dwExStyle != -1)
 				pActiveChild->SetExStyle(data.dwExStyle);
-			pActiveChild->Navigate2(data.strURL);
+
+			if (bJavascript) {
+				::PostMessage(pActiveChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
+			} else {
+				pActiveChild->Navigate2(data.strURL);
+			}
 			if (data.dwAutoRefresh)
 				pActiveChild->SetAutoRefreshStyle(data.dwAutoRefresh);
+		} else if (bJavascript) {	// javascript: かつ pActiveChildがないのでなにもしない
+			return NULL;
 		} else {
 			// 新規タブを作成する
 			data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
@@ -1561,32 +1596,18 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 	/* openFlag が D_OPENFILE_NOCREATE ならアクティブなページを移動する */
 	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlag) ) {
 		CChildFrame* pChild  = GetActiveChildFrame();
-		CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
-		if ( spBrowser ) {
-			if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
-				CComPtr<IDispatch>	spDisp;
-				spBrowser->get_Document(&spDisp);
-				CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
-				if (spDoc == nullptr)
-					return NULL;
-				CComPtr<IHTMLWindow2>	spWindow;
-				spDoc->get_parentWindow(&spWindow);
-				if (spWindow == nullptr)
-					return NULL;
-				CComVariant	vRet;
-				spWindow->execScript(CComBSTR(strFileOrURL), CComBSTR(L"javascript"), &vRet);
-				TRACEIN(_T("UserOpenFile() : bookmarket実行(%s)"), (LPCTSTR)strFileOrURL.Left(45));
-			} else {
-				pChild->Navigate2(strFileOrURL);
-			}
-
-			if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
-				// reset focus
-				::SetFocus(NULL);
-				MtlSendCommand(hWndActive, ID_VIEW_SETFOCUS);
-			}
-			return NULL;
+		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+			::PostMessage(pChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
+		} else {
+			pChild->Navigate2(strFileOrURL);
 		}
+
+		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
+			// reset focus
+			::SetFocus(NULL);
+			MtlSendCommand(hWndActive, ID_VIEW_SETFOCUS);
+		}
+		return NULL;
 	}
 
 	/* 新規ChildFrame作成 */
@@ -1851,11 +1872,16 @@ LRESULT CMainFrame::OnFileRecent(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*
 		data.strURL		= pdata->strURL;
 		data.dwDLCtrl	= pdata->dwDLCtrl;
 		data.bActive	= _check_flag(DonutGetStdOpenCreateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
-		data.funcCallAfterCreated	= [pdata, this, wID](CChildFrame* pChild) {
+		typedef vector<std::pair<CString, CString> > tlog;
+		tlog* pvecBack = new tlog(pdata->TravelLogBack);
+		tlog* pvecFore = new tlog(pdata->TravelLogFore);
+		data.funcCallAfterCreated	= [pvecBack, pvecFore, this](CChildFrame* pChild) {
 			if (CMainOption::s_bTravelLogClose) 
-				pChild->SetTravelLog(pdata->TravelLogFore, pdata->TravelLogBack);
-			m_RecentClosedTabList.RemoveFromList(wID);
+				pChild->SetTravelLog(*pvecFore, *pvecBack);
+			delete pvecBack;
+			delete pvecFore;
 		};
+		m_RecentClosedTabList.RemoveFromList(wID);
 		CChildFrame::AsyncCreate(data);
 
 	} else {
@@ -2229,12 +2255,19 @@ void	CMainFrame::SaveAllTab()
 			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
 		}
 		using namespace boost::property_tree::xml_parser;
-		std::wofstream	filestream;
-		filestream.imbue(std::locale("japanese"));
-		filestream.open(TabList, std::ios::out | std::ios::trunc);
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("shift_jis")));
+		std::wstringstream	strstream;
+		//std::wofstream	filestream;
+		//filestream.imbue(std::locale("japanese"));
+		//filestream.open(TabList, std::ios::out | std::ios::trunc);
+		//Misc::tcs_to_utf8(strstream.str().c_str())
+		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
 
-
+		FILE* fp = nullptr;
+		if (_wfopen_s(&fp, TabList, L"w, ccs=UTF-8") != 0) 
+			throw "error";
+		CString str = strstream.str().c_str();
+		fwrite(str, sizeof(wchar_t), str.GetLength(), fp);
+		fclose(fp);
 	} catch (...) {
 		MessageBox(_T("SaveAllTabでエラー発生!"));
 	}
@@ -2327,19 +2360,29 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		TabList = strFilePath;
 	}
 
-	std::wifstream	filestream;
-	filestream.imbue(std::locale("japanese"));
-	filestream.open(TabList);
-	if (filestream.is_open() == false) {
-		PostMessage(WM_INITPROCESSFINISHED);
-		return ;
-	}
-
 	try {
 		using boost::property_tree::wptree;
 
 		wptree	pt;
-		boost::property_tree::read_xml(filestream, pt);
+		
+		FILE* fp = nullptr;
+		if (_wfopen_s(&fp, TabList, L"r, ccs=UTF-8") != 0) {
+			PostMessage(WM_INITPROCESSFINISHED);
+			return ;
+		}
+
+		std::wstringstream	strstream;
+		enum { kBuffSize = 512 };
+		wchar_t	temp[kBuffSize + 1];
+		while (!feof(fp)) {
+			size_t n = fread(temp, sizeof(wchar_t), kBuffSize, fp);
+			temp[n] = L'\0';
+			strstream << temp;
+			//str += Misc::utf8_to_wcs(temp).data();
+		}
+		fclose(fp);
+
+		boost::property_tree::read_xml(strstream, pt);
 
 		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
 			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
@@ -3470,7 +3513,7 @@ void	CMainFrame::OnWindowCloseExcept(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if ( !CDonutConfirmOption::OnCloseAllExcept( m_hWnd ) )
 		return ;
 
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	HWND	hWndActive = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
 	CWaitCursor 		 cur;
 	//CLockRedrawMDIClient lock(m_hWndMDIClient);
 	CDonutTabBar::CLockRedraw 		 lock2(m_MDITab);
@@ -3746,7 +3789,7 @@ LRESULT CMainFrame::OnViewToolBarCust(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 void CMainFrame::OnViewStopAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	m_MDITab.ForEachWindow([](HWND hWnd) {
-		::PostMessage(hWnd, ID_VIEW_STOP, 0, 0);
+		::PostMessage(hWnd, WM_COMMAND, ID_VIEW_STOP, 0);
 	});
 }
 
@@ -3754,17 +3797,17 @@ void CMainFrame::OnViewStopAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCt
 void CMainFrame::OnViewRefreshAll(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	m_MDITab.ForEachWindow([](HWND hWnd) {
-		::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+		::PostMessage(hWnd, WM_COMMAND, ID_VIEW_REFRESH, 0);
 	});
 }
 
 /// このウィンドウ以外を更新
 void	CMainFrame::OnWindowRefreshExcept(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
+	HWND hWndActive = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
 	m_MDITab.ForEachWindow([hWndActive](HWND hWnd) {
 		if (hWndActive != hWnd)
-			::PostMessage(hWnd, ID_VIEW_REFRESH, 0, 0);
+			::PostMessage(hWnd, WM_COMMAND, ID_VIEW_REFRESH, 0);
 	});
 }
 
@@ -3813,6 +3856,8 @@ void CMainFrame::OnViewOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl
 {
 	if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
 		MtlShowInternetOptions();
+	else
+		SetMsgHandled(FALSE);	// ChildFrameへ
 }
 
 /// Donutのオプションを表示
@@ -3843,21 +3888,18 @@ void CMainFrame::OnViewOptionDonut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 	CSkinPropertyPage				pageSkin(m_hWnd, &bSkinChange);
 	CLinkBarPropertyPage			pageLinks(m_LinkBar);
 
-	CString 						strURL, strTitle;
-	HWND							hWndActive	= m_ChildFrameClient.GetActiveChildFrameWindow();
-
-	if (hWndActive) {
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWndActive);
-
-		if (browser.m_spBrowser != NULL) {
-			strURL	 = browser.GetLocationURL();
-			strTitle = MtlGetWindowText(hWndActive); // pChild->get_LocationName();
-		}
+	CString strURL, strTitle;
+	CChildFrame* pChild = GetActiveChildFrame();
+	if (pChild) {
+		strURL	 = pChild->GetLocationURL();
+		strTitle = MtlGetWindowText(pChild->GetHwnd());
 	}
 
 	CIgnoredURLsPropertyPage		pageURLs(strURL);
 	CCloseTitlesPropertyPage		pageTitles( strTitle );
 	CUrlSecurityPropertyPage		pageUrlSecu(strURL);		//+++
+	CUserDefinedCSSPropertyPage		pageUserCSS(strURL);
+	CUserDefinedJsPropertyPage		pageUserJs(strURL);
 	CDonutExecutablePropertyPage	pageExe;
 	CDonutConfirmPropertyPage		pageCnf;
 	CPluginPropertyPage 			pagePlugin;
@@ -3885,6 +3927,8 @@ void CMainFrame::OnViewOptionDonut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 	sheet.AddPage( pageURLs 	 , TRUE  );
 	sheet.AddPage( pageTitles	 , FALSE );
 	sheet.AddPage( pageUrlSecu 	 , FALSE );				//+++
+	sheet.AddPage( pageUserCSS	 , FALSE );
+	sheet.AddPage( pageUserJs	 , FALSE );
 	//sheet.AddPage( pageDeterrent	 );
 
 	sheet.AddPage( pageExe			 );
@@ -4839,30 +4883,16 @@ void CMainFrame::OnSetFocusAddressBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND h
 
 CString CMainFrame::GetActiveSelectedText()
 {
-	CChildFrame *pChild = GetActiveChildFrame();
-	if (pChild == nullptr)
+	HWND hWnd = m_ChildFrameClient.GetActiveChildFrameWindow();
+	if (hWnd == nullptr)
 		return CString();
 
-	CString 	strSelText;
-	CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
-	MtlForEachHTMLDocument2( spBrowser, [&strSelText](IHTMLDocument2 *pDocument) {
-		CComPtr<IHTMLSelectionObject>		spSelection;
-		HRESULT 	hr	= pDocument->get_selection(&spSelection);
-		if ( SUCCEEDED( hr ) ) {
-			CComPtr<IDispatch>				spDisp;
-			hr	   = spSelection->createRange(&spDisp);
-			if ( SUCCEEDED( hr ) ) {
-				CComQIPtr<IHTMLTxtRange>	spTxtRange = spDisp;
-				if (spTxtRange != NULL) {
-					CComBSTR				bstrText;
-					hr	   = spTxtRange->get_text(&bstrText);
-					if (SUCCEEDED(hr) && !!bstrText)
-						strSelText = bstrText;
-				}
-			}
-		}
-	});
-	return strSelText;
+	LPCTSTR str = nullptr;
+	::SendMessage(hWnd, WM_GETSELECTEDTEXT, (WPARAM)&str, 0);
+	ATLASSERT(str);
+	CString strSelectedText = str;
+	delete str;
+	return strSelectedText;
 }
 
 

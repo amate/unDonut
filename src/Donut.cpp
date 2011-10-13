@@ -203,6 +203,10 @@ static bool CheckOneInstance(LPTSTR lpstrCmdLine)
 			cd.cbData	= (DWORD)cbCommandLine + sizeof(TCHAR);
 			cd.lpData	= lpstrCmdLine;
 			::SendMessage(hWnd, WM_COPYDATA, NULL, (LPARAM)&cd);
+		
+			bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
+			if (bActive)
+				::SetForegroundWindow(hWnd);
 			return true;
 		}
 	}
@@ -249,6 +253,8 @@ static bool _PrivateInit()
 	CFileNewOption::GetProfile();
 	CStartUpOption::GetProfile();
 	CUrlSecurityOption::GetProfile();
+	CUserDefinedCSSOption::LoadUserCSSConfig();
+	CUserDefinedJsOption::LoadUserJsConfig();
 	CDonutConfirmOption::GetProfile();
 	CStyleSheetOption::GetProfile();
 	//CToolBarOption::GetProfile();

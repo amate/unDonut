@@ -281,6 +281,12 @@
     <ClCompile Include="RecentClosedTabList.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="option\UserDefinedCSSOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="option\UserDefinedJavascriptOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -741,6 +747,15 @@
     </ClInclude>
     <ClInclude Include="RecentClosedTabList.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChildFrame.inl">
+      <Filter>Source Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="option\UserDefinedCSSOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\UserDefinedJavascriptOption.h">
+      <Filter>Source Files\option</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

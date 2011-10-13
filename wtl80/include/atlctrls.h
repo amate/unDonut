@@ -970,7 +970,7 @@ public:
 		if (cchLen == CB_ERR)
 			return CB_ERR;
 		int nRet = CB_ERR;
-		LPTSTR lpstr = strText.GetBuffer(cchLen + 2);	//\\+ +2しないとアサートが出るので修正
+		LPTSTR lpstr = strText.GetBuffer(cchLen + 128);	//\\+ GetLBTextLenとGetLBTextの間のラグで同期がとれてないみたい？　とりあえず大目に確保しておく
 		if (lpstr != NULL)
 		{
 			nRet = GetLBText(nIndex, lpstr);

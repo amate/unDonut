@@ -935,6 +935,8 @@
     <ClCompile Include="option\MDITabDialog.cpp" />
     <ClCompile Include="option\RightClickMenuDialog.cpp" />
     <ClCompile Include="option\UrlSecurityExPropDialog.cpp" />
+    <ClCompile Include="option\UserDefinedCSSOption.cpp" />
+    <ClCompile Include="option\UserDefinedJavascriptOption.cpp" />
     <ClCompile Include="ParseInternetShortcutFile.cpp" />
     <ClCompile Include="PluginManager.cpp" />
     <ClCompile Include="RecentClosedTabList.cpp" />
@@ -1072,6 +1074,7 @@
     <ClInclude Include="appconst.h" />
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />
+    <ClInclude Include="ChildFrame.inl" />
     <ClInclude Include="ChildFrame.h" />
     <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
@@ -1134,6 +1137,8 @@
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h" />
     <ClInclude Include="option\RightClickMenuDialog.h" />
     <ClInclude Include="option\UrlSecurityExPropDialog.h" />
+    <ClInclude Include="option\UserDefinedCSSOption.h" />
+    <ClInclude Include="option\UserDefinedJavascriptOption.h" />
     <ClInclude Include="ParseInternetShortcutFile.h" />
     <ClInclude Include="PluginBar.h" />
     <ClInclude Include="PluginEventImpl.h" />
