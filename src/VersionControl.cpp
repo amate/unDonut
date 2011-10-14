@@ -23,6 +23,7 @@ void	CVersionControl::Run()
 		case 0:	_0to1();
 		case 1: _1to2();
 		case 2: _2to3();
+		case 3: _3to4();
 			break;
 		}
 	}
@@ -101,6 +102,13 @@ void	CVersionControl::_2to3()
 	pr.DeleteValue(_T("Show_ToolBarIcon"));
 }
 
+void	CVersionControl::_3to4()
+{
+	CIniFileIO pr(g_szIniFileName, _T("Main"));
+	pr.QueryValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
+	CMainOption::s_dwMainExtendedStyle |= MAIN_EX_EXTERNALNEWTAB | MAIN_EX_EXTERNALNEWTABACTIVE;
+	pr.SetValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
+}
 
 
 

@@ -11,20 +11,16 @@
 #include "../RecentClosedTabList.h"
 
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////////
 //CMainOption‚Ì’è‹`
 ////////////////////////////////////////////////////////////////////////////////
 
-DWORD		CMainOption::s_dwMainExtendedStyle		= /*MAIN_EX_NEWWINDOW |*/ MAIN_EX_KILLDIALOG | MAIN_EX_NOMDI | MAIN_EX_INHERIT_OPTIONS;
+DWORD		CMainOption::s_dwMainExtendedStyle		=
+	  MAIN_EX_KILLDIALOG 
+	| MAIN_EX_NOMDI 
+	| MAIN_EX_INHERIT_OPTIONS 
+	| MAIN_EX_EXTERNALNEWTAB 
+	| MAIN_EX_EXTERNALNEWTABACTIVE;
 
 DWORD		CMainOption::s_dwMainExtendedStyle2 	= 0;
 DWORD		CMainOption::s_dwExplorerBarStyle		= 0;
@@ -48,6 +44,8 @@ bool	CMainOption::s_bStretchImage			= false;
 
 bool	CMainOption::s_bIgnore_blank			= false;
 bool	CMainOption::s_bUseCustomFindBar		= false;
+bool	CMainOption::s_bExternalNewTab			= true;
+bool	CMainOption::s_bExternalNewTabActive	= true;
 
 int		CMainOption::s_nMaxRecentClosedTabCount		= 16;
 int		CMainOption::s_RecentClosedTabMenuType		= RECENTDOC_MENUTYPE_URL;
@@ -81,6 +79,8 @@ void CMainOption::GetProfile()
 	s_bTabMode			= (s_dwMainExtendedStyle & MAIN_EX_NOMDI) != 0;
 	s_bIgnore_blank		= (s_dwMainExtendedStyle & MAIN_EX_IGNORE_BLANK) != 0;
 	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
+	s_bExternalNewTab	= (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTAB) != 0;
+	s_bExternalNewTabActive = (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTABACTIVE) != 0;
 
 	// NOTE. If all the Web Browser server on your desktop is unloaded, some OS automatically goes online.
 	//		 And if all the Web Browser server on you application is unloaded, some OS automatically goes online.
@@ -186,6 +186,17 @@ void CMainOption::OnMainExNoActivateNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, H
 //CMainPropertyPage‚Ì’è‹`
 ////////////////////////////////////////////////////////////////////////////////
 
+
+void CMainPropertyPage::OnCheckExternalNewTab(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
+{
+	bool bCheck = CButton(GetDlgItem(IDC_CHECK_EXTERNALNEWTAB)).GetCheck() != 0;
+	CButton btn = GetDlgItem(IDC_CHECK_EXTERNALNEWTABACTIVE);
+	btn.EnableWindow(bCheck);
+	if (bCheck == false)
+		btn.SetCheck(FALSE);
+}
+
+
 void CMainPropertyPage::OnFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
 {
 	CFontDialog dlg(&m_lf);
@@ -213,6 +224,7 @@ BOOL CMainPropertyPage::OnSetActive()
 	if (m_bInit == false) {
 		m_bInit = true;
 		DoDataExchange(DDX_LOAD);
+		OnCheckExternalNewTab(0, 0, NULL);
 	}
 	SetModified(TRUE);
 	return TRUE;
@@ -274,6 +286,12 @@ void CMainPropertyPage::_GetData()
 
 	if (s_bIgnore_blank)		CMainOption::s_dwMainExtendedStyle |= MAIN_EX_IGNORE_BLANK;
 	if (s_bUseCustomFindBar)	CMainOption::s_dwMainExtendedStyle |= MAIN_EX_USECUSTOMFINDBER;
+	if (s_bExternalNewTab) {
+		CMainOption::s_dwMainExtendedStyle |= MAIN_EX_EXTERNALNEWTAB;
+		if (s_bExternalNewTabActive) {
+			CMainOption::s_dwMainExtendedStyle |= MAIN_EX_EXTERNALNEWTABACTIVE;
+		}
+	}
 
 	// update max window count
 	CMainOption::s_dwMaxWindowCount  = m_nMaxWindowCount;

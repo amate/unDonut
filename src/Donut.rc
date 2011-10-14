@@ -42,7 +42,7 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 #ifdef WIN64
-IDR_MAINFRAME           ICON                    "res64\\icon_64.ico"
+IDR_MAINFRAME           ICON                    "res64\\Icon_64.ico"
 #else
 IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
 #endif
@@ -937,52 +937,54 @@ BEGIN
     LTEXT           "タブ切り替え時のページのちらつきについて",IDC_STATIC,12,249,126,8,NOT WS_GROUP
 END
 
-IDD_PROPPAGE_MAIN DIALOGEX 0, 0, 280, 275
+IDD_PROPPAGE_MAIN DIALOGEX 0, 0, 279, 305
 STYLE DS_SETFONT | WS_CHILD | WS_CAPTION
 CAPTION "全般"
 FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    CONTROL         "お気に入りやファイルを新しいウィンドウで開く(&N)",IDC_CHECK_MAIN_NEWWINDOW,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,16,155,10
-    CONTROL         "お気に入りやファイルを開くとき、アクティブにしない(&F)",IDC_CHECK_MAIN_NOACTIVATE,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,28,171,10
-    CONTROL         "リンクを開くとき、アクティブにしない(&R)",IDC_CHECK_MAIN_NOACTIVATE_NEWWIN,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,40,127,10
+    CONTROL         "お気に入りやファイルを新規タブで開く(&N)",IDC_CHECK_MAIN_NEWWINDOW,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,16,135,10
+    CONTROL         "お気に入りやファイルを開くとき、タブをアクティブにしない(&F)",IDC_CHECK_MAIN_NOACTIVATE,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,28,189,10
+    CONTROL         "ページ内のリンクを開くとき、作成された新規タブをアクティブにしない(&R)",IDC_CHECK_MAIN_NOACTIVATE_NEWWIN,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,64,223,10
     CONTROL         "お気に入りグループを開くとき、他のウィンドウを閉じない(&D)",IDC_CHECK_MAIN_NOCLOSEDFG,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,52,182,10
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,76,182,10
     CONTROL         "お気に入りの追加に、コモンダイアログボックスを使う(&C)",IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,64,177,10
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,88,177,10
     CONTROL         "お気に入りの整理に、エクスプローラを使う(&E)",IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,76,147,10
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,100,147,10
     CONTROL         "リンクのターゲット名を考慮する(&M)",IDC_CHECK_MAIN_REGISTER_AS_BROWSER,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,88,117,10
-    CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,140,85,10
-    CONTROL         "タブモードで起動する(&T)",IDC_CHECK_MAIN_NOMDI,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,152,86,10
-    CONTROL         "ウィンドウの数を制限する(&L):",IDC_CHECK_MAIN_LIMIT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,180,95,10
-    EDITTEXT        IDC_EDIT_MAIN_LIMITEDCOUNT,143,179,25,12,ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,112,117,10
+    CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,164,85,10
+    CONTROL         "タブモードで起動する(&T)",IDC_CHECK_MAIN_NOMDI,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,176,86,10
+    CONTROL         "タブの数を制限する(&L):",IDC_CHECK_MAIN_LIMIT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,95,10
+    EDITTEXT        IDC_EDIT_MAIN_LIMITEDCOUNT,144,204,25,12,ES_AUTOHSCROLL
     CONTROL         "状態をTabList.xmlへ定期的に保存する(&S):",IDC_CHECK_MAIN_BACKUP,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,192,131,10
-    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,143,192,25,12,ES_AUTOHSCROLL
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,131,10
+    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,144,216,25,12,ES_AUTOHSCROLL
     CONTROL         "オン/オフラインの状態を保存する(&G)",IDC_CHECK_MAIN_LOADGLOBALOFFLINE,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,122,10
-    CONTROL         "警告ダイアログを自動的に閉じる(&K)",IDC_CHECK_MAIN_KILLDIALOG,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,119,10
-    LTEXT           "(0-255個)",IDC_STATIC,170,181,30,8,SS_CENTERIMAGE
-    LTEXT           "(1-120分)",IDC_STATIC,170,194,30,8
-    CONTROL         "ウィンドウのオプションを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,228,118,10
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,126,245,25,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,161,245,25,12,ES_AUTOHSCROLL
-    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,17,248,80,8
-    LTEXT           "分",IDC_STATIC,152,247,8,8
-    LTEXT           "秒",IDC_STATIC,189,247,8,8
-    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,259,44,12,BS_FLAT
-    LTEXT           "(ﾊﾞｰに対してのﾌｫﾝﾄ、ｱﾌﾟﾘｹｰｼｮﾝ再起動後有効)",IDC_STATIC,56,261,142,8
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,228,122,10
+    CONTROL         "警告ダイアログを自動的に閉じる(&K)",IDC_CHECK_MAIN_KILLDIALOG,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,240,119,10
+    LTEXT           "(0-255個)",IDC_STATIC,172,204,30,12,SS_CENTERIMAGE
+    LTEXT           "(1-120分)",IDC_STATIC,172,216,30,12,SS_CENTERIMAGE
+    CONTROL         "タブのオプション/セキュリティを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,252,140,10
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,88,268,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,123,268,25,12,ES_AUTOHSCROLL
+    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,8,268,80,12,SS_CENTERIMAGE
+    LTEXT           "分",IDC_STATIC,114,270,8,8
+    LTEXT           "秒",IDC_STATIC,151,270,8,8
+    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,284,44,15,BS_FLAT
+    LTEXT           "(バーに対してのフォント、アプリケーション再起動後有効)",IDC_STATIC,56,284,164,16,SS_CENTERIMAGE
     LTEXT           "動作",IDC_STATIC,4,4,269,9,SS_SUNKEN
-    LTEXT           "システム",IDC_STATIC,4,128,269,9,SS_SUNKEN
-    LTEXT           "その他",IDC_STATIC,4,168,269,9,SS_SUNKEN
+    LTEXT           "システム",IDC_STATIC,4,152,269,9,SS_SUNKEN
+    LTEXT           "その他",IDC_STATIC,4,192,269,9,SS_SUNKEN
     CONTROL         "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)",IDC_CHK_IGNORE_BLANK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,100,253,10
-    CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,112,115,9
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,124,253,10
+    CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,136,115,9
+    CONTROL         "外部からURLを開いたとき、新規タブで開く",IDC_CHECK_EXTERNALNEWTAB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,40,136,10
+    CONTROL         "↑で開かれたタブをアクティブにする",IDC_CHECK_EXTERNALNEWTABACTIVE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,51,120,11
 END
 
 IDD_PROPPAGE_EXPMENU DIALOGEX 0, 0, 280, 256
@@ -1912,8 +1914,9 @@ BEGIN
     IDD_PROPPAGE_MAIN, DIALOG
     BEGIN
         LEFTMARGIN, 6
-        RIGHTMARGIN, 275
+        RIGHTMARGIN, 274
         VERTGUIDE, 13
+        BOTTOMMARGIN, 293
     END
 
     IDD_PROPPAGE_EXPMENU, DIALOG

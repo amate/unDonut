@@ -61,15 +61,16 @@ void	CUserDefinedJsOption::LoadUserJsConfig()
 		read_xml(strstream, pt);
 
 		CString strJsDir = Misc::GetExeDirectory() + _T("javascript\\");
-		wptree ptChild = pt.get_child(L"UserDefinedJavascript");
-		for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
-			wptree& ptItem = it->second;
-			unique_ptr<UserDefinedJsData>	pData(new UserDefinedJsData);
-			pData->strUrl = ptItem.get<std::wstring>(L"<xmlattr>.url").c_str();
-			pData->strJsPath = strJsDir + ptItem.get<std::wstring>(L"<xmlattr>.jspath").c_str();
-			s_vecpData.push_back(std::move(pData));
+		if (auto optChild = pt.get_child_optional(L"UserDefinedJavascript")) {
+			wptree ptChild = optChild.get();
+			for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
+				wptree& ptItem = it->second;
+				unique_ptr<UserDefinedJsData>	pData(new UserDefinedJsData);
+				pData->strUrl = ptItem.get<std::wstring>(L"<xmlattr>.url").c_str();
+				pData->strJsPath = strJsDir + ptItem.get<std::wstring>(L"<xmlattr>.jspath").c_str();
+				s_vecpData.push_back(std::move(pData));
+			}
 		}
-
 	} catch (...) {
 		MessageBox(NULL, _T("UserDefinedJavascriptConfig.xmlÇÃì«Ç›çûÇ›Ç…é∏îs"), NULL, MB_ICONERROR);
 	}

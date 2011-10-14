@@ -145,7 +145,7 @@ void CChildFrameClient::OnSize(UINT nType, CSize size)
 
 BOOL CChildFrameClient::OnEraseBkgnd(CDCHandle dc)
 {
-	if (m_hWndChildFrame && CMainOption::s_bTabMode)
+	if (m_hWndChildFrame)
 		return 1;
 
 	//*+++ BG描画指定.
@@ -630,7 +630,7 @@ void CMainFrame::init_explorerBar()
 /// MDIClient misc
 void CMainFrame::init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar)
 {
-	m_mcCmdBar.InstallAsMDICmdBar(hWndCmdBar, m_ChildFrameClient/*m_hWndMDIClient*/, CMainOption::s_bTabMode);
+	m_mcCmdBar.InstallAsMDICmdBar(hWndCmdBar, m_ChildFrameClient, CMainOption::s_bTabMode);
 	m_mcToolBar.InstallAsStandard(hWndToolBar, m_hWnd, true, ID_VIEW_FULLSCREEN);
 
 	m_mcCmdBar.ShowButton(!CMenuOption::s_bDontShowButton);	// メニューの閉じるボタンを表示しない
@@ -1325,12 +1325,6 @@ void CMainFrame::initCurrentIcon()
 
 void	CMainFrame::_AnalyzeCommandLine(const CString& strCommandLine)
 {
-	bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
-
-	//\\ 1行ずつ渡す方式に変えたので
-	if (strCommandLine == _T("-tray") || strCommandLine == _T("/tray"))
-		bActive = false;
-
 	// 検索バーを使って検索する
 	if (strCommandLine.Left(13) == _T("SearchEngine:")) {
 		std::wstring	strUrl2 = strCommandLine;
@@ -1351,6 +1345,9 @@ void	CMainFrame::_AnalyzeCommandLine(const CString& strCommandLine)
 
 	vector<CString>	vecUrls;
 	PerseUrls(strCommandLine, vecUrls);
+
+	bool bActive = CMainOption::s_bExternalNewTabActive 
+		|| m_ChildFrameClient.GetActiveChildFrameWindow() == NULL;
 
 	vector<NewChildFrameData*>	vecpNewChildData;
 	vecpNewChildData.reserve(vecUrls.size());
@@ -1404,7 +1401,18 @@ bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
 {
 	//dmfTRACE(_T("CMainFrame::OnDDEOpenFile(%s)\n"), strFileName);
   #if 1 //+++ トレイ状態からの復帰でのバグ対策.
-	UserOpenFile( strFileName, DonutGetStdOpenFlag() );
+	DWORD dwOpen = 0;
+	if (CMainOption::s_bExternalNewTab) {
+		dwOpen |= D_OPENFILE_CREATETAB;
+		if (CMainOption::s_bExternalNewTabActive)
+			dwOpen |= D_OPENFILE_ACTIVATE;
+	} else {	// 既存のタブをナビゲートする
+		dwOpen |= D_OPENFILE_NOCREATE;
+		if (!CStartUpOption::s_dwActivate)
+			dwOpen |= D_OPENFILE_NOSETFOCUS;
+	}
+
+	UserOpenFile( strFileName, dwOpen );
 	if (CStartUpOption::s_dwActivate) {
 		IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
@@ -1616,7 +1624,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 	data.dwDLCtrl	= dlCtrlFlag;
 	data.dwExStyle	= extededStyleFlags;
 	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
-		|| m_ChildFrameClient.GetActiveChildFrameWindow() != 0;
+		|| m_ChildFrameClient.GetActiveChildFrameWindow() == NULL;
 	CChildFrame::AsyncCreate(data);
 	return NULL;
 #if 0	//:::
@@ -3946,9 +3954,6 @@ void CMainFrame::OnViewOptionDonut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 	CAccelerManager accelManager(m_hAccel);
 	m_hAccel = accelManager.LoadAccelaratorState(m_hAccel);
 
-  #if 0 //+++	"タブモードで起動する"のチェックを反映... やっぱりしないでおく.
-	m_mcCmdBar.setOnlyCloseButton(CMainOption::s_bTabMode);
-  #endif
 	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 }
 

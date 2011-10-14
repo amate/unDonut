@@ -31,9 +31,9 @@ enum EMain_Ex {
 	MAIN_EX_IGNORE_BLANK			= 0x00040000L,
 	//MAIN_EX_FOCUSTOSEARCHBAR		= 0x00080000L,
 	MAIN_EX_USECUSTOMFINDBER		= 0x00100000L,
-	// MAIN_EX_NOCAPTION			= 0x00080000L,		//+++ 廃案:メインフレームのキャプションをなくす. (とりあえずskinのほうで行うことにした)
+	MAIN_EX_EXTERNALNEWTAB			= 0x00080000L,
+	MAIN_EX_EXTERNALNEWTABACTIVE	= 0x00200000L,
 };
-
 
 
 enum EMain_Ex2 {
@@ -81,10 +81,6 @@ public:
 	static DWORD	s_dwMainExtendedStyle2;
 	static DWORD	s_dwExplorerBarStyle;
 
-private:
-	static DWORD	s_dwMaxWindowCount;
-
-public:
 	static DWORD	s_dwBackUpTime;
 	static DWORD	s_dwAutoRefreshTime;		// UDT DGSTR ( dai
 	static bool 	s_bTabMode;
@@ -92,22 +88,27 @@ public:
 
 	static volatile bool 	s_bIgnoreUpdateClipboard;	// for insane WM_DRAWCLIBOARD
 
-private:
-	static DWORD		s_dwErrorBlock;
-
-	static CString		s_strExplorerUserDirectory;
-public:
 	static bool 	s_bTravelLogGroup;
 	static bool 	s_bTravelLogClose;
 	static bool 	s_bStretchImage;
 
 	static bool		s_bIgnore_blank;
 	static bool		s_bUseCustomFindBar;
+	static bool		s_bExternalNewTab;
+	static bool		s_bExternalNewTabActive;
 
 	static int		s_nMaxRecentClosedTabCount;
 	static int		s_RecentClosedTabMenuType;
 
 	static int		s_nAutoImageResizeType;
+
+private:
+
+	static DWORD	s_dwMaxWindowCount;
+
+	static DWORD	s_dwErrorBlock;
+
+	static CString	s_strExplorerUserDirectory;
 
 public:
 	// Constructor
@@ -170,6 +171,8 @@ public:
 		DDX_CHECK( IDC_CHECK_MAIN_NEWWINDOW 			, m_nNewWindow			)
 		DDX_CHECK( IDC_CHECK_MAIN_NOACTIVATE			, m_nNoActivate 		)
 		DDX_CHECK( IDC_CHECK_MAIN_NOACTIVATE_NEWWIN 	, m_nNoActivateNewWin	)
+		DDX_CHECK( IDC_CHECK_EXTERNALNEWTAB				, s_bExternalNewTab		)
+		DDX_CHECK( IDC_CHECK_EXTERNALNEWTABACTIVE		, s_bExternalNewTabActive)
 		DDX_CHECK( IDC_CHECK_MAIN_NOMDI 				, m_nNoMDI				)
 		DDX_CHECK( IDC_CHECK_MAIN_INHERIT_OPTIONS		, m_nInheritOptions 	)
 		DDX_CHECK( IDC_CHECK_ONEINSTANCE				, m_nOneInstance		)
@@ -196,10 +199,12 @@ public:
 
 	// Message map and handlers
 	BEGIN_MSG_MAP( CMainPropertyPage )
+		COMMAND_ID_HANDLER_EX( IDC_CHECK_EXTERNALNEWTAB, OnCheckExternalNewTab )
 		COMMAND_ID_HANDLER_EX( IDC_BUTTON_BAR_FONT, OnFont )
 		CHAIN_MSG_MAP( CPropertyPageImpl<CMainPropertyPage> )
 	END_MSG_MAP()
 
+	void OnCheckExternalNewTab(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
 	void OnFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
 	
 private:

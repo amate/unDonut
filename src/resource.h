@@ -514,6 +514,7 @@
 #define IDC_CHECK_RESTORE_OPTION        1372
 #define IDC_CHECK1                      1373
 #define IDC_CHECK_DRAW_FAVICON          1373
+#define IDC_CHECK_EXTERNALNEWTAB        1373
 #define IDC_EDIT_DOWNLOADFOLDER         1374
 #define IDC_BUTTON_FOLDERSELECT         1375
 #define IDC_CHECK_OPENDIALOG_BEFOREDL   1376
@@ -565,6 +566,8 @@
 #define IDC_BUTTON_OPENJSFOLDER         1425
 #define IDC_BUTTON_JSEDIT               1426
 #define IDC_COMBO_JS                    1427
+#define IDC_CHECK2                      1428
+#define IDC_CHECK_EXTERNALNEWTABACTIVE  1428
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -920,7 +923,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        322
 #define _APS_NEXT_COMMAND_VALUE         33196
-#define _APS_NEXT_CONTROL_VALUE         1428
+#define _APS_NEXT_CONTROL_VALUE         1429
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

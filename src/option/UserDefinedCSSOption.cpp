@@ -61,15 +61,16 @@ void	CUserDefinedCSSOption::LoadUserCSSConfig()
 		read_xml(strstream, pt);
 
 		CString strCssDir = Misc::GetExeDirectory() + _T("css\\");
-		wptree ptChild = pt.get_child(L"UserDefinedCSS");
-		for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
-			wptree& ptItem = it->second;
-			unique_ptr<UserDefinedCssData>	pData(new UserDefinedCssData);
-			pData->strUrl = ptItem.get<std::wstring>(L"<xmlattr>.url").c_str();
-			pData->strCSSPath = strCssDir + ptItem.get<std::wstring>(L"<xmlattr>.csspath").c_str();
-			s_vecpData.push_back(std::move(pData));
+		if (auto optChild = pt.get_child_optional(L"UserDefinedCSS")) {
+			wptree ptChild = optChild.get();
+			for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
+				wptree& ptItem = it->second;
+				unique_ptr<UserDefinedCssData>	pData(new UserDefinedCssData);
+				pData->strUrl = ptItem.get<std::wstring>(L"<xmlattr>.url").c_str();
+				pData->strCSSPath = strCssDir + ptItem.get<std::wstring>(L"<xmlattr>.csspath").c_str();
+				s_vecpData.push_back(std::move(pData));
+			}
 		}
-
 	} catch (...) {
 		MessageBox(NULL, _T("UserDefinedCSSConfig.xmlÇÃì«Ç›çûÇ›Ç…é∏îs"), NULL, MB_ICONERROR);
 	}

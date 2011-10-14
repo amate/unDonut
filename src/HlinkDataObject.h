@@ -53,17 +53,15 @@ inline bool GetDonutURLList(IDataObject* pDataObject, std::vector<CString>&	vecU
 	STGMEDIUM stgmedium = { 0 };
 	if ( SUCCEEDED(pDataObject->GetData(&formatetc, &stgmedium)) ) {
 		if (stgmedium.hGlobal) {
-			HGLOBAL hText = stgmedium.hGlobal;
-			LPWSTR strList = reinterpret_cast<LPWSTR>( ::GlobalLock(hText) );
+			LPWSTR strList = reinterpret_cast<LPWSTR>(stgmedium.hGlobal);
 			while (*strList) {
 				CString strUrl = strList;
 				vecUrl.push_back(strUrl);
 				strList += strUrl.GetLength() + 1;				
 			}
 			bResult = true;
-			::GlobalUnlock(hText);
-		}
-		::ReleaseStgMedium(&stgmedium);
+			delete (LPWSTR)stgmedium.hGlobal;
+		}		
 	}
 
 	return bResult;
@@ -283,11 +281,9 @@ private:
 		}
 		dwSize += sizeof(WCHAR);
 
-		HGLOBAL hMem = ::GlobalAlloc(GHND, dwSize);
-		if (hMem == NULL)
-			return NULL;
-
-		LPWSTR	lpszDest = (LPWSTR)::GlobalLock(hMem);
+		
+		LPWSTR	lpszDest = new WCHAR[dwSize];
+		HGLOBAL hMem = (HGLOBAL)lpszDest;
 		LPWSTR	pEnd = lpszDest + dwSize;
 		for (int i = 0; i < nCount; ++i) {
 			const CString& strUrl = m_arrNameAndUrl[i].second;
