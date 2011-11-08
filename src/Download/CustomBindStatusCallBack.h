@@ -24,6 +24,8 @@ public:
 	CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing);
 	~CCustomBindStatusCallBack();
 
+	void	SetThreadId(DWORD dwID) { m_dwThreadId = dwID; }
+	DWORD	GetThreadId() const { return m_dwThreadId; }
 	void	SetReferer(LPCTSTR strReferer);
 	void	SetOption(LPCTSTR strDLFolder, HWND hWnd, DWORD dwOption);
 	void	SetBSCB(IBindStatusCallback* pPrev) { m_spBSCBPrev = pPrev; }
@@ -103,4 +105,5 @@ private:
 	CString				m_strDLFolder;
 	HWND				m_hWndNotify;
 	DWORD				m_dwDLOption;
+	DWORD				m_dwThreadId;
 };

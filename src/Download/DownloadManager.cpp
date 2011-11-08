@@ -145,6 +145,8 @@ STDMETHODIMP CDownloadManager::Download(
 		}
 	}
 	if (SUCCEEDED(hr)) {
+		pCBSCB->SetThreadId(::GetCurrentThreadId());
+		::PostThreadMessage(::GetCurrentThreadId(), WM_INCREMENTTHREADREFCOUNT, 0, 0);
 		CComPtr<IStream>	spStream;
 		hr = pmk->BindToStorage(pbc, NULL, IID_IStream, (void**)&spStream);
 	} else {

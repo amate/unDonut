@@ -191,7 +191,38 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 		pData->ConstructData.funcCallAfterCreated(pData->pChild);
 	delete pData;
 
+	class CThreadRefManager : public CMessageFilter
+	{
+	public:
+		CThreadRefManager(int* pCount) : m_pThreadRefCount(pCount)
+		{	}
+
+		virtual BOOL PreTranslateMessage(MSG* pMsg)
+		{
+			switch (pMsg->message) {
+			case WM_INCREMENTTHREADREFCOUNT:
+				++(*m_pThreadRefCount);
+				return TRUE;
+
+			case WM_DECREMENTTHREADREFCOUNT:
+				--(*m_pThreadRefCount);
+				if (*m_pThreadRefCount == 0) {
+					TRACEIN(_T("ChildFreameƒXƒŒƒbƒh‚Ì”jŠü"));
+					PostQuitMessage(0);
+				}
+				return TRUE;
+			}
+			return FALSE;
+		}
+	private:
+		int*	m_pThreadRefCount;
+	};
+	CThreadRefManager threadRefManager(&nThreadRefCount);
+	theLoop.AddMessageFilter(&threadRefManager);
+
 	int nRet = theLoop.Run();
+
+	theLoop.RemoveMessageFilter(&threadRefManager);
 
 	_Module.RemoveMessageLoop();
 

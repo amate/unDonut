@@ -681,6 +681,8 @@ enum TabCreateOption {
 	}
 
 
+#define WM_DECREMENTTHREADREFCOUNT	(WM_USER + 125)
+#define WM_INCREMENTTHREADREFCOUNT	(WM_USER + 126)
 
 //----------------------------------------------------------------------------
 #define BEGIN_MSG_MAP_EX_decl(theClass) 				\

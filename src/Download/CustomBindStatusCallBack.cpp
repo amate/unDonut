@@ -28,6 +28,7 @@ CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLi
 	, m_hWndDLing(hWndDLing) 
 	, m_cRef(1)
 	, m_hWndNotify(NULL)
+	, m_dwThreadId(0)
 {	}
 
 // Destructor

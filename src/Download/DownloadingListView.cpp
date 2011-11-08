@@ -475,6 +475,11 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 {
 	DLItem* pItem = (DLItem*)wParam;
 	CCustomBindStatusCallBack* pbscb = (CCustomBindStatusCallBack*)lParam;
+	DWORD dwThreadId = pbscb->GetThreadId();
+	if (dwThreadId) {
+		::PostThreadMessage(dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
+	}
+
 	//if (pItem->bAbort == false)
 	//	delete pbscb;
 	//pbscb->Release();
