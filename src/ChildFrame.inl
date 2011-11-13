@@ -372,6 +372,7 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 			dc.lpstrTitle = (LPCTSTR) strTitle;
 			dc.nIndex	  = (int)GetTopLevelWindow().SendMessage(WM_GETTABINDEX, (WPARAM)m_hWnd);
 			dc.bMainDoc   = IsPageIWebBrowser(pDisp);
+			dc.pDispBrowser	= pDisp;
 			CPluginManager::BroadCast_PluginEvent(DEVT_TAB_DOCUMENTCOMPLETE, dc.nIndex, (DWORD_PTR) &dc);
 		}
 	}
@@ -485,7 +486,8 @@ static DWORD GetMouseButtonCommand(const MSG& msg)
 	case WM_MBUTTONUP:	strKey = _T("MButtonUp");					break;
 	case WM_XBUTTONUP:	strKey.Format(_T("XButtonUp%d"), GET_XBUTTON_WPARAM(msg.wParam)); break;
 	case WM_MOUSEWHEEL:
-		if (HIWORD(msg.wParam) > 0)
+		short zDelta = (short)HIWORD(msg.wParam);
+		if (zDelta > 0)
 			strKey = _T("WHEEL_UP");
 		else
 			strKey = _T("WHEEL_DOWN");

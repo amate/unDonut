@@ -87,6 +87,7 @@ typedef struct _DEVTS_TAB_DOCUMENTCOMPLETE {	//DEVT_TAB_DOCUMENTCOMPLETEイベント
 	LPCTSTR 	lpstrURL;						//タブの新しいURL
 	LPCTSTR 	lpstrTitle; 					//タブの新しいタイトル
 	BOOL		bMainDoc;						//最上位のドキュメント(フレーム)かどうか
+	IDispatch*	pDispBrowser;					//QueryInterfaceでIWebBrowser2*を取り出せる
 } DEVTS_TAB_DOCUMENTCOMPLETE;
 
 
