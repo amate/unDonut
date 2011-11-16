@@ -238,8 +238,10 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		}
 		
 #endif
+
 				//\\ 絶対送信するようにしてみる
-				lRes = ::SendMessage(hWndTopLevel, WM_COMMAND, iSelection, NULL);
+				lRes = m_pView->GetParent().SendMessage(WM_COMMAND, iSelection);
+				//lRes = ::SendMessage(hWndTopLevel, WM_COMMAND, iSelection, NULL);
 
 				//この時点でウィンドウが消されてしまう可能性があるけれども・・
 				if (iSelection == nCmdAddFav) {

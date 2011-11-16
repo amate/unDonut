@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "RecentClosedTabList.h"
+#include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
 #include "MtlMisc.h"
@@ -302,23 +303,15 @@ BOOL CRecentClosedTabList::Impl::ReadFromXmlFile()
 	m_vecpClosedTabData.clear();
 
 	try {
-		wptree	pt;
-
-		FILE* fp = nullptr;
-		if (_wfopen_s(&fp, _GetRecentCloseFile(), L"r, ccs=UTF-8") != 0) {
+		std::wifstream	filestream(_GetRecentCloseFile());
+		if (!filestream) {
 			UpdateMenu();
 			return FALSE;
 		}
-		std::wstringstream	strstream;
-		enum { kBuffSize = 512 };
-		wchar_t	temp[kBuffSize + 1];
-		while (!feof(fp)) {
-			size_t n = fread(temp, sizeof(wchar_t), kBuffSize, fp);
-			temp[n] = L'\0';
-			strstream << temp;
-		}
-		fclose(fp);
-		boost::property_tree::read_xml(strstream, pt);
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+
+		wptree	pt;
+		boost::property_tree::read_xml(filestream, pt);
 
 		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
 			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
@@ -373,15 +366,12 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 		}
 		using namespace boost::property_tree::xml_parser;
 
-		std::wstringstream	strstream;
-		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+		std::wofstream filestream(_GetRecentCloseFile());
+		if (!filestream)
+			return FALSE;
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
 
-		FILE* fp = nullptr;
-		if (_wfopen_s(&fp, _GetRecentCloseFile(), L"w, ccs=UTF-8") != 0) 
-			throw "error";
-		CString str = strstream.str().c_str();
-		fwrite(str, sizeof(wchar_t), str.GetLength(), fp);
-		fclose(fp);
 	} catch (...) {
 		ATLTRACE(_T("CRecentClosedTabList::Impl::WriteToXmlFile で例外発生!\n"));
 	}

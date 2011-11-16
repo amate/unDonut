@@ -1757,8 +1757,13 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 	});
 #if 1	//:::
 	//m_MDITab.SetLinkState(LINKSTATE_B_ON);
-	for (int i = 0; i < arrUrls.GetSize(); ++i) {
-		DonutOpenFile(arrUrls[i], 0);
+	int size = arrUrls.GetSize();
+	for (int i = 0; i < size; ++i) {
+		DWORD dwOpenFlags = D_OPENFILE_CREATETAB;
+		if (  i == (size - 1) 
+			&& !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE_NEWWIN))
+			dwOpenFlags |= D_OPENFILE_ACTIVATE;	// リンクを開くときアクティブにしないに従う
+		DonutOpenFile(arrUrls[i], dwOpenFlags);
 	}
 	//m_MDITab.SetLinkState(LINKSTATE_OFF);
 #endif
@@ -1767,10 +1772,24 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 /// URLテキストを開く
 void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	CString strText = GetSelectedText();
-	if (strText.IsEmpty())
+	std::wstring strText = GetSelectedText();
+	if (strText.empty())
 		return;
 
+	std::vector<CString>	vecUrls;
+	std::wregex rx(L"(http(?:s|)://|)((?:[a-zA-Z0-9_\\-]+\\.)+\\w+(?::\\d+|)(?:/[a-zA-Z0-9./_\\-?#%&=+あ-んア-ンｱ-ﾝ一-龠]*|))");
+	std::wsmatch result;
+	auto itbegin = strText.cbegin();
+	auto itend	 = strText.cend();
+	while (std::regex_search(itbegin, itend, result, rx)) {
+		CString strUrl;
+		if (result[1].str().empty())
+			strUrl = _T("http://");
+		strUrl += result[2].str().c_str();
+		vecUrls.push_back(strUrl);
+		itbegin = result[0].second;
+	}
+#if 0
 	std::vector<CString> lines;
 	lines.reserve(20);
 	Misc::SeptTextToLines(lines, strText);
@@ -1795,13 +1814,17 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 			return;
 		}
 	}
-#if 0	//:::
-	for (unsigned i = 0; i < size; ++i) {
-		CString& strUrl = lines[i];
-		Misc::StrToNormalUrl(strUrl);		//+++ 関数化
-		DonutOpenFile(strUrl);
-	}
 #endif
+	size_t size = vecUrls.size();
+	for (unsigned i = 0; i < size; ++i) {
+		CString& strUrl = vecUrls[i];
+		//Misc::StrToNormalUrl(strUrl);		//+++ 関数化
+		DWORD dwOpenFlags = D_OPENFILE_CREATETAB;
+		if (  i == (size - 1) 
+			&& !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE_NEWWIN))
+			dwOpenFlags |= D_OPENFILE_ACTIVATE;	// リンクを開くときアクティブにしないに従う
+		DonutOpenFile(strUrl, dwOpenFlags);
+	}
 }
 
 /// ポップアップ抑止に追加して閉じます。

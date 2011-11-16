@@ -12,7 +12,6 @@
 #include "DLListWindow.h"
 #include "../MainFrame.h"
 
-
 namespace {
 
 /////////////////////////////////////////////////////////////////
@@ -77,8 +76,14 @@ private:
 };	// namespace
 
 
+////////////////////////////////////////////////////////////////
+// CDownloadingListView
+
 // Constructor/Destructor
-CDownloadingListView::CDownloadingListView() : m_bTimer(false), m_pItemPopup(nullptr)
+CDownloadingListView::CDownloadingListView() : 
+	m_bTimer(false), 
+	m_pItemPopup(nullptr),
+	m_dwLastTime(0)
 { }
 
 CDownloadingListView::~CDownloadingListView()
@@ -356,17 +361,16 @@ void CDownloadingListView::OnRButtonUp(UINT nFlags, CPoint point)
 
 
 void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
-{		
-	static DWORD dwTime = ::timeGetTime();
-	DWORD dwNowTime = ::timeGetTime();
-	DWORD dwTimeMargin = dwNowTime - dwTime;
-	if (dwTimeMargin <= 0) {
-		return;
-	} else {
-		dwTime = dwNowTime;
-	}
-
+{
 	if (nIDEvent == 1) {
+		DWORD dwNowTime = ::timeGetTime();
+		DWORD dwTimeMargin = dwNowTime - m_dwLastTime;
+		if (dwTimeMargin <= 0) {
+			return;
+		} else {
+			m_dwLastTime = dwNowTime;
+		}
+
 		int	nMaxTotalSecondTime = 0;
 		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
 			DLItem& item = *(*it);
@@ -385,7 +389,7 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 				nProgressMargin += itq->first;
 				nTotalTime		+= itq->second;
 			}
-			
+			TRACEIN(_T("Margin : %d   ToalTime : %d"), nProgressMargin, nTotalTime);
 			double dKbTransferRate = (double)nProgressMargin / (double)nTotalTime;	// kbyte / second
 			double MbTransferRate = dKbTransferRate / 1000.0;
 			if (MbTransferRate > 1) {
@@ -465,7 +469,6 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			GetTopLevelWindow().SetWindowText(_T("\0"));
 		}
 		Invalidate(FALSE);
-
 	}
 }
 
@@ -516,6 +519,7 @@ LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lPara
 {
 	if (m_bTimer == false) {	
 		SetTimer(1, 1000);		// 画面更新タイマーを開始
+		m_dwLastTime = ::timeGetTime();
 		m_bTimer = true;
 	}
 	_AddItemToList((DLItem*)wParam);

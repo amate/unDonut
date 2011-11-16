@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <DownloadMgr.h>
 #include "DocHostUIHandlerDispatch.h"
 #include "MtlBrowser.h"
 #include "HLinkDataObject.h"
@@ -35,7 +36,8 @@ class CDonutView :
 	public CWebBrowser2,
 	public IServiceProvider,
 	public IDropTarget,
-	public IDispatch
+	public IDispatch,
+	public IDownloadManager
 {
 public:
 	// Declaration
@@ -92,6 +94,17 @@ public:
 			VARIANT *		pvarResult,
 			EXCEPINFO * 	pexcepinfo,
 			UINT *			puArgErr);
+
+	// IDownloadManager
+	STDMETHODIMP Download(
+		IMoniker* pmk,  
+		IBindCtx* pbc,  
+		DWORD	  dwBindVerb,  
+		LONG	  grfBINDF,  
+		BINDINFO* pBindInfo,  
+		LPCOLESTR pszHeaders,  
+		LPCOLESTR pszRedir,  
+		UINT	  uiCP );
 
 
 	// Message map and handlers
@@ -182,14 +195,12 @@ private:
 	bool						m_bDragAccept;
 	bool						m_bExternalDrag;
 	CComPtr<IDropTargetHelper>	m_spDropTargetHelper;
-
 	DWORD						m_dwDLControlFlags;
-
 	DWORD		m_dwAutoRefreshStyle;
 	DWORD		m_dwExStyle;
+	DWORD		m_dwCurrentThreadId;
 
 	CChildFrameUIStateChange&	m_UIChange;
-
 public:
 	bool	m_bLightRefresh;
 };

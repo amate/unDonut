@@ -238,6 +238,8 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 			if (_GetFileName() == false) {
 				// ƒLƒƒƒ“ƒZƒ‹‚³‚ê‚½‚Ì‚Å‹A‚é
 				Cancel();
+				if (m_dwThreadId)
+					::PostThreadMessage(m_dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
 				return E_ABORT;
 			}
 

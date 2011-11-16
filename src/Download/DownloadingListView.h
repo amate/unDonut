@@ -158,6 +158,7 @@ private:
 
 	CToolTipCtrl			m_ToolTip;
 	bool					m_bTimer;
+	DWORD					m_dwLastTime;
 	DLItem*	m_pItemPopup;
 };
 

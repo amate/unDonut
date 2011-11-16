@@ -683,6 +683,14 @@ enum TabCreateOption {
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)
+#define USER_MSG_WM_INCREMENTTHREADREFCOUNT()	\
+	if (uMsg == WM_INCREMENTTHREADREFCOUNT) {	   \
+		SetMsgHandled(TRUE);		   \
+		++(*m_pThreadRefCount);			\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
 
 //----------------------------------------------------------------------------
 #define BEGIN_MSG_MAP_EX_decl(theClass) 				\

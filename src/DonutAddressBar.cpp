@@ -765,6 +765,15 @@ LRESULT CDonutAddressBar::Impl::OnCbnEditChange(UINT uNotifyCode, int nID, CWind
 {
 	if (m_bNowSetWindowText)
 		return 0;
+
+	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
+	if (pChild == NULL)
+		return 0;
+	CString strUrl  = pChild->GetLocationURL();
+	CString strText = MtlGetWindowText(m_edit);
+	if (strUrl == strText)
+		return 0;
+
 	_SetEditIconIndex(0);
 	return 0;
 }

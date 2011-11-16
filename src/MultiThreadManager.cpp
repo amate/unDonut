@@ -200,12 +200,9 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 		virtual BOOL PreTranslateMessage(MSG* pMsg)
 		{
 			switch (pMsg->message) {
-			case WM_INCREMENTTHREADREFCOUNT:
-				++(*m_pThreadRefCount);
-				return TRUE;
-
 			case WM_DECREMENTTHREADREFCOUNT:
 				--(*m_pThreadRefCount);
+				TRACEIN(_T("WM_DECREMENTTHREADREFCOUNT : %d"), *m_pThreadRefCount);
 				if (*m_pThreadRefCount == 0) {
 					TRACEIN(_T("ChildFreameƒXƒŒƒbƒh‚Ì”jŠü"));
 					PostQuitMessage(0);

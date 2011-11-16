@@ -723,9 +723,11 @@ LRESULT	CExplorerMenu::Impl::OnRButtonUp(HWND hWnd, UINT /*uMsg*/, WPARAM wParam
 	nPos	+= 2;
 
 	// 戻り値はメニュー項目の数？
-	hr	= m_pContMenu2->QueryContextMenu(menuC, nPos, s_nIDLast, 0x7FFF, CMF_NORMAL);
+	hr	= m_pContMenu2->QueryContextMenu(menuC, nPos, s_nIDLast, 0x7FFF, CMF_NORMAL | CMF_CANRENAME);
 	if (hr == 0) 
 		goto CleanUp;
+
+	int nRenameID  = MtlGetCmdIDFromAccessKey( menuC.m_hMenu, _T("&M") );
 
 	//m_bMessageStop = TRUE;
 	flags	  = TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RIGHTBUTTON | 0x00000001; //TPM_RECURSE
@@ -743,18 +745,25 @@ LRESULT	CExplorerMenu::Impl::OnRButtonUp(HWND hWnd, UINT /*uMsg*/, WPARAM wParam
 	}
 
 	if (iCmd == 0) {
-		goto CleanUp;
+
 	} else if (iCmd == s_nIDExProp) {	// 拡張プロパティを表示する
 		::SendMessage(CWindow(hWnd).GetTopLevelParent(), WM_SET_EXPROPERTY, (WPARAM) (LPCTSTR) strFileName, 0);
-		goto CleanUp;
+	} else if (iCmd == nRenameID) {
+		CDonutRenameFileDialog	dlg;
+		dlg.m_strName = Misc::GetFileBaseName(strFileName);
+		if ( dlg.DoModal() == IDOK && !dlg.m_strName.IsEmpty() ) {
+			CString strNewFileName;
+			strNewFileName.Format(_T("%s\\%s"), Misc::GetDirName(strFileName), dlg.m_strName);
+			::MoveFileEx(strFileName, strNewFileName, MOVEFILE_REPLACE_EXISTING);
+		}
+	} else {
+
+		InvokeInfo.fMask	= 0;
+		InvokeInfo.hwnd 	= m_hWnd;
+		InvokeInfo.lpVerb	= (LPCSTR)MAKEINTRESOURCE(iCmd - s_nIDLast);
+		InvokeInfo.nShow	= SW_SHOWNORMAL;
+		hr					= m_pContMenu2->InvokeCommand(&InvokeInfo);
 	}
-
-	InvokeInfo.fMask	= 0;
-	InvokeInfo.hwnd 	= m_hWnd;
-	InvokeInfo.lpVerb	= (LPCSTR)MAKEINTRESOURCE(iCmd - s_nIDLast);
-	InvokeInfo.nShow	= SW_SHOWNORMAL;
-	hr					= m_pContMenu2->InvokeCommand(&InvokeInfo);
-
 CleanUp:
 	m_pContMenu2.Release();
 

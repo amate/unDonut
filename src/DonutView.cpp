@@ -55,6 +55,7 @@ CDonutView::CDonutView(CChildFrameUIStateChange& UI)
 	, m_bLightRefresh(false)
 	, m_dwAutoRefreshStyle(0)
 	, m_dwExStyle(0)
+	, m_dwCurrentThreadId(0)
 { }
 
 
@@ -190,6 +191,9 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 	} else if (iid == IID_IUnknown) {
 		if (m_bUseCustomDropTarget)
 			*ppvObject = (IUnknown*)(IDropTarget*)this;
+// IID_IDownloadManager
+	} else if (iid == IID_IDownloadManager) {
+		*ppvObject = (IDownloadManager*)this;
 	}
 
 	if (*ppvObject == NULL)
@@ -202,9 +206,7 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** ppv)
 {
 	if (guidService == SID_SDownloadManager && CDownloadManager::UseDownloadManager()) {
-		CString strReferer = GetLocationURL();
-		CDownloadManager::SetReferer(strReferer);
-		*ppv = (IDownloadManager*)CDownloadManager::GetInstance();
+		*ppv = (IDownloadManager*)this;
 		return S_OK;
 	}
 
@@ -314,6 +316,75 @@ STDMETHODIMP	CDonutView::Invoke(
 	return DISP_E_MEMBERNOTFOUND;
 }
 
+// IDownloadManager
+
+//--------------------------------------------
+/// DLが開始されるときに呼ばれる
+STDMETHODIMP CDonutView::Download(
+	IMoniker* pmk,  
+	IBindCtx* pbc,  
+	DWORD	  dwBindVerb,  
+	LONG	  grfBINDF,  
+	BINDINFO* pBindInfo,  
+	LPCOLESTR pszHeaders,  
+	LPCOLESTR pszRedir,  
+	UINT	  uiCP )
+{
+	if (CDLControlOption::s_bUseDLManager == false)
+		return E_FAIL;
+
+	if (::GetKeyState(VK_SHIFT) < 0)
+		return E_FAIL;	// shiftを押しているとデフォルトに任せる
+
+	if (CDLOptions::bShowWindowOnDL)
+		CDownloadManager::GetInstance()->OnShowDLManager(0, 0, NULL);
+
+	CString strReferer = GetLocationURL();
+	CCustomBindStatusCallBack* pCBSCB = CDownloadManager::GetInstance()->_CreateCustomBindStatusCallBack();
+	IBindStatusCallback* pbscbPrev;
+	HRESULT hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, &pbscbPrev, 0);
+	if (FAILED(hr) && pbscbPrev) {
+		hr = pbc->RevokeObjectParam(L"_BSCB_Holder_");
+		if (SUCCEEDED(hr)) {
+			TRACEIN(_T("Download() : _BSCB_Holder_"));
+			// 今度は成功する
+			hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, NULL, 0);
+			if (SUCCEEDED(hr)) {				
+				pCBSCB->SetReferer(strReferer);
+				pCBSCB->SetBSCB(pbscbPrev);
+				pCBSCB->SetBindCtx(pbc);
+			}
+		}
+	} else {
+#if 0	//\\ 自前でやっちゃうとまずいっぽい
+		// pbscbPrevがNULLだったときの場合
+		LPOLESTR strUrl;
+		hr = pmk->GetDisplayName(pbc, NULL, &strUrl);
+		if (SUCCEEDED(hr)) {
+			DownloadStart(strUrl);
+			::CoTaskMemFree(strUrl);
+			return S_OK;
+		}
+#endif
+		if (pszHeaders == nullptr) {
+			TRACEIN(_T("Download() : Referer : %s"), (LPCTSTR)strReferer);
+			pCBSCB->SetReferer(strReferer);
+			IBindCtx* pBC;
+			hr = ::CreateAsyncBindCtx(0, pCBSCB, NULL, &pBC);
+			pbc = pBC;
+		}
+	}
+	if (SUCCEEDED(hr)) {
+		pCBSCB->SetThreadId(m_dwCurrentThreadId);
+		GetParent().SendMessage(WM_INCREMENTTHREADREFCOUNT);
+		CComPtr<IStream>	spStream;
+		hr = pmk->BindToStorage(pbc, NULL, IID_IStream, (void**)&spStream);
+	} else {
+		delete pCBSCB;
+	}
+
+	return hr;
+}
 
 
 
@@ -371,6 +442,8 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	// Let me initialize itself
 	LRESULT lRet = DefWindowProc();
+
+	m_dwCurrentThreadId = ::GetCurrentThreadId();
 	try {
 		HRESULT hr = QueryControl(IID_IWebBrowser2, (void**)&m_spBrowser);
 		ATLASSERT(m_spBrowser);

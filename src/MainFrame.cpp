@@ -7,6 +7,7 @@
 
 #include "stdafx.h"
 #include "MainFrame.h"
+#include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
 #include "XmlFile.h"
@@ -1060,9 +1061,10 @@ BOOL CMainFrame::PreTranslateMessage(MSG *pMsg)
 	if (bFocus == false && TranslateMessageToBHO(pMsg) )											//+++ bFocusチェック
 		return TRUE;
 
+#if 0	//::: これが固まる原因？
 	if (bFocus == false && hWnd && ::SendMessage(hWnd, WM_FORWARDMSG, 0, (LPARAM) pMsg) )	//+++ bFocusチェック
 		return TRUE;
-
+#endif
 	return FALSE; // IsDialogMessage(pMsg);
 }
 
@@ -1498,22 +1500,23 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 {
 	MtlRemoveStringHeaderAndFooter(strFileOrURL);
 
-	if ( MtlIsExt( strFileOrURL, _T(".url") ) ) {	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
+	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
+	if ( MtlIsExt( strFileOrURL, _T(".url") ) ) {	
 		// OpenInternetShortcut
-		if ( !MTL::ParseInternetShortcutFile(strFileOrURL) )
+		CString strUrl = strFileOrURL;
+		if ( !MTL::ParseInternetShortcutFile(strUrl) )	// ~.url -> http://~
 			return NULL;
 
-		//:::return OpenUrlWithExProp(strFileOrURL, openFlag, strFileOrURL);
 		CChildFrame *pActiveChild = GetActiveChildFrame();
 
 		bool	bJavascript = false;
-		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+		if (strUrl.Left(11).CompareNoCase(_T("javascript:")) == 0) {
 			bJavascript = true;
 			openFlag |= D_OPENFILE_NOCREATE;
 		}
 
 		NewChildFrameData	data(m_ChildFrameClient);
-		data.strURL		= strFileOrURL;
+		data.strURL		= strUrl;
 		DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
 		DWORD dwExProp2= 0x8;			//+++ 拡張プロパティを増設.
 		if (CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, strFileOrURL)) {
@@ -1531,7 +1534,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 				pActiveChild->SetExStyle(data.dwExStyle);
 
 			if (bJavascript) {
-				::PostMessage(pActiveChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
+				::PostMessage(pActiveChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strUrl), 0);
 			} else {
 				pActiveChild->Navigate2(data.strURL);
 			}
@@ -1542,7 +1545,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 		} else {
 			// 新規タブを作成する
 			data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
-				|| m_ChildFrameClient.GetActiveChildFrameWindow() != 0;
+				|| m_ChildFrameClient.GetActiveChildFrameWindow() == NULL;
 			CChildFrame::AsyncCreate(data);
 		}
 		return NULL;
@@ -2263,79 +2266,16 @@ void	CMainFrame::SaveAllTab()
 			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
 		}
 		using namespace boost::property_tree::xml_parser;
-		std::wstringstream	strstream;
-		//std::wofstream	filestream;
-		//filestream.imbue(std::locale("japanese"));
-		//filestream.open(TabList, std::ios::out | std::ios::trunc);
-		//Misc::tcs_to_utf8(strstream.str().c_str())
-		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
 
-		FILE* fp = nullptr;
-		if (_wfopen_s(&fp, TabList, L"w, ccs=UTF-8") != 0) 
+		std::wofstream filestream(TabList);
+		if (!filestream)
 			throw "error";
-		CString str = strstream.str().c_str();
-		fwrite(str, sizeof(wchar_t), str.GetLength(), fp);
-		fclose(fp);
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
+
 	} catch (...) {
 		MessageBox(_T("SaveAllTabでエラー発生!"));
 	}
-#if 0
-	try {
-		CXmlFileWrite	xmlWrite(TabList);
-
-		// <TabList>
-		xmlWrite.WriteStartElement(L"TabList");
-		CString strActiveIndex;
-		strActiveIndex.Format(_T("%d"), f.m_nActiveIndex);
-		xmlWrite.WriteAttributeString(L"ActiveIndex", strActiveIndex);
-
-		std::list<SDfgSaveInfo>::iterator it = SaveInfoList.begin();
-		for (; it != SaveInfoList.end(); ++it) {
-			xmlWrite.WriteStartElement(L"Tab");
-			xmlWrite.WriteAttributeString(L"title"		, it->m_title);
-			xmlWrite.WriteAttributeString(L"url"		, it->m_location_URL);
-			CString strDLCtrlFlags;
-			strDLCtrlFlags.Format(_T("%d"), it->m_DL_Control_Flags);
-			xmlWrite.WriteAttributeString(L"DLCtrlFlags", strDLCtrlFlags);
-			CString	strExStyle;
-			strExStyle.Format(_T("%d"), it->m_dwExStyle);
-			xmlWrite.WriteAttributeString(L"ExStyle"	, strExStyle);
-			CString strAutoRefreshStyle;
-			strAutoRefreshStyle.Format(_T("%d"), it->m_dwAutoRefreshStyle);
-			xmlWrite.WriteAttributeString(L"AutoRefreshStyle", strAutoRefreshStyle);
-
-			xmlWrite.WriteStartElement(L"TravelLog");
-			xmlWrite.WriteStartElement(L"Back");
-			std::vector<std::pair<CString, CString> >::iterator itback = it->m_listBack.begin();
-			for (; itback != it->m_listBack.end(); ++itback) {
-				xmlWrite.WriteStartElement(L"item");
-				xmlWrite.WriteAttributeString(L"title", itback->first);
-				xmlWrite.WriteAttributeString(L"url"  , itback->second);
-				xmlWrite.WriteFullEndElement();	// </item>
-			}
-			xmlWrite.WriteFullEndElement();	// </Back>
-
-			xmlWrite.WriteStartElement(L"Fore");
-			std::vector<std::pair<CString, CString> >::iterator itfore = it->m_listFore.begin();
-			for (; itfore != it->m_listFore.end();++itfore) {
-				xmlWrite.WriteStartElement(L"item");
-				xmlWrite.WriteAttributeString(L"title", itfore->first);
-				xmlWrite.WriteAttributeString(L"url"  , itfore->second);
-				xmlWrite.WriteFullEndElement();	// </item>
-			}
-			xmlWrite.WriteFullEndElement();	// </Fore>
-			xmlWrite.WriteFullEndElement();	// </TravelLog>
-
-			xmlWrite.WriteFullEndElement();	// </Tab>
-		}
-	}
-	catch (LPCTSTR strError) {
-		MessageBox(strError);
-	}
-	catch (...) {
-		MessageBox(_T("SaveAllTabListに失敗"));
-	}
-#endif
 }
 
 
@@ -2371,26 +2311,15 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	try {
 		using boost::property_tree::wptree;
 
-		wptree	pt;
-		
-		FILE* fp = nullptr;
-		if (_wfopen_s(&fp, TabList, L"r, ccs=UTF-8") != 0) {
+		std::wifstream	filestream(TabList);
+		if (!filestream) {
 			PostMessage(WM_INITPROCESSFINISHED);
 			return ;
 		}
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 
-		std::wstringstream	strstream;
-		enum { kBuffSize = 512 };
-		wchar_t	temp[kBuffSize + 1];
-		while (!feof(fp)) {
-			size_t n = fread(temp, sizeof(wchar_t), kBuffSize, fp);
-			temp[n] = L'\0';
-			strstream << temp;
-			//str += Misc::utf8_to_wcs(temp).data();
-		}
-		fclose(fp);
-
-		boost::property_tree::read_xml(strstream, pt);
+		wptree	pt;
+		boost::property_tree::read_xml(filestream, pt);
 
 		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
 			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
@@ -2402,13 +2331,11 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 		};
 
 		wptree&	ptChild = pt.get_child(L"TabList");
-		for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
+		auto it = ptChild.begin();
+		nActiveIndex = it->second.get(L"ActiveIndex", 0);
+		++it;
+		for (; it != ptChild.end(); ++it) {
 			wptree& ptItem = it->second;
-			if (it == ptChild.begin()) {
-				nActiveIndex = ptItem.get(L"ActiveIndex", 0);
-				continue;
-			}
-
 			unique_ptr<ChildFrameDataOnClose>	pdata(new ChildFrameDataOnClose);
 
 			pdata->strTitle	= ptItem.get(L"<xmlattr>.title", L"").c_str();
@@ -2474,166 +2401,6 @@ void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath, bool bClose)
 	} else {
 		PostMessage(WM_INITPROCESSFINISHED);
 	}
-
-#if 0
-	try {
-		CXmlFileRead	xmlRead(TabList);
-		CString 		Element;
-		XmlNodeType 	nodeType;
-		while (xmlRead.Read(&nodeType) == S_OK) {
-			switch (nodeType) {
-			case XmlNodeType_Element:
-				{
-					Element = xmlRead.GetLocalName();	// 要素を取得
-					if (Element == _T("TabList")) {
-						if (xmlRead.MoveToFirstAttribute()) {
-							if (xmlRead.GetLocalName() == _T("ActiveIndex")) {
-								nActiveIndex = _ttoi(xmlRead.GetValue());
-							}
-						}
-					}else if (Element == _T("Tab")) {
-						if (xmlRead.MoveToFirstAttribute()) {
-							do {
-								CString strName = xmlRead.GetLocalName();
-								if (strName == _T("title")) {
-									Info.m_title = xmlRead.GetValue();
-								} else if (strName == _T("url")) {
-									Info.m_location_URL = xmlRead.GetValue();
-								} else if (strName == _T("DLCtrlFlags")) {
-									Info.m_DL_Control_Flags = _ttoi(xmlRead.GetValue());
-								} else if (strName == _T("ExStyle")) {
-									Info.m_dwExStyle = _ttoi(xmlRead.GetValue());
-								} else if (strName == _T("AutoRefreshStyle")) {
-									Info.m_dwAutoRefreshStyle = _ttoi(xmlRead.GetValue());
-								}
-							} while (xmlRead.MoveToNextAttribute());
-						}
-					} else if (Element == _T("Back")) {
-						CString	strItem;
-						while (xmlRead.GetInternalElement(_T("Back"), strItem)) {
-							if (strItem == _T("item")) {
-								CString title;
-								CString url;
-								if (xmlRead.MoveToFirstAttribute()) {
-									title = xmlRead.GetValue();
-									if (xmlRead.MoveToNextAttribute()) {
-										url = xmlRead.GetValue();
-										Info.m_listBack.push_back(std::make_pair(title, url));
-									}
-								}
-							}
-						}
-
-					} else if (Element == _T("Fore")) {
-						CString	strItem;
-						while (xmlRead.GetInternalElement(_T("Fore"), strItem)) {
-							if (strItem == _T("item")) {
-								CString title;
-								CString url;
-								if (xmlRead.MoveToFirstAttribute()) {
-									title = xmlRead.GetValue();
-									if (xmlRead.MoveToNextAttribute()) {
-										url = xmlRead.GetValue();
-										Info.m_listFore.push_back(std::make_pair(title, url));
-									}
-								}
-							}
-						}
-					}
-					break;
-				}
-			case XmlNodeType_EndElement:
-				{
-					if (xmlRead.GetLocalName() == _T("Tab")) {
-						// </Tab>にきたので
-						vecSaveInfo.push_back(Info);
-
-						Info.m_listBack.clear();
-						Info.m_listFore.clear();
-					}
-					break;
-				}
-			}
-		}
-
-		/////////////////////////////////////////////////////////////
-		// タブを復元する
-#if 0	//:::
-		CLockRedrawMDIClient	 lock(m_hWndMDIClient);
-		CDonutTabBar::CLockRedraw lock2(m_MDITab);
-		CWaitCursor 			 cur;
-
-		if (bClose) {
-			MtlCloseAllMDIChildren(m_hWndMDIClient);
-		}
-
-		DWORD			dwCount 	= 0;
-		bool			bActiveChildExistAlready = (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL);
-
-		m_MDITab.InsertHere(true);
-		int nInsertIndex = m_MDITab.GetItemCount();
-		m_MDITab.SetInsertIndex(nInsertIndex);
-
-		CChildFrame *	pChildActive = NULL;
-		/* タブに追加していく */
-		for (UINT i = 0; i < vecSaveInfo.size(); ++i) {
-			CChildFrame *pChild = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar);
-			if (pChild == NULL)
-				continue;
-
-			++nInsertIndex;
-			m_MDITab.SetInsertIndex(nInsertIndex);
-
-			// if tab mode, no need to load window placement.
-			//pChild->view().m_ViewOption.GetProfile(strFileName, dw, !CMainOption::s_bTabMode);
-
-			// DLCtrlを設定
-			pChild->view().PutDLControlFlags(vecSaveInfo[i].m_DL_Control_Flags);
-			// Navigateする
-			pChild->Navigate2(vecSaveInfo[i].m_location_URL);
-			//
-			pChild->view().m_ViewOption.m_dwExStyle	= vecSaveInfo[i].m_dwExStyle;
-
-			pChild->view().m_ViewOption.m_dwAutoRefreshStyle = vecSaveInfo[i].m_dwAutoRefreshStyle;
-			pChild->view().m_ViewOption.Init();	// タイマーを開始
-
-			// activate now!
-			pChild->ActivateFrame(m_ChildFrameClient.GetActiveChildFrameWindow() != NULL ? SW_SHOWNOACTIVATE : -1);
-
-			/* 戻る・進むの項目を設定する */
-			if (CMainOption::s_bTravelLogGroup) {
-				pChild->SetArrayHist(vecSaveInfo[i].m_listFore, vecSaveInfo[i].m_listBack);
-			}
-
-			if (i == nActiveIndex) {
-				pChildActive = pChild;
-			}
-		}
-
-		m_MDITab.InsertHere(false);
-		m_MDITab.SetInsertIndex(-1);
-
-		if (pChildActive == NULL)
-			return;
-
-		if (bActiveChildExistAlready == false) {						// there was no active window
-			MDIActivate(pChildActive->m_hWnd);
-			if (CMainOption::s_bTabMode) {	// in tab mode
-				MDIMaximize(pChildActive->m_hWnd);
-			}
-		} else {												// already an active window exists
-			if ( !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE) )
-				MDIActivate(pChildActive->m_hWnd);
-		}
-#endif
-	}
-	catch (LPCTSTR strError) {
-		MessageBox(strError);
-	}
-	catch (...) {
-		MessageBox(_T("RestoreAllTabに失敗"));
-	}
-#endif
 }
 
 
@@ -3010,7 +2777,7 @@ void	CMainFrame::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
 
 void	CMainFrame::OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon)
 {
-	m_AddressBar.SetWindowText(strURL);
+	m_AddressBar.SetWindowText(strURL);	
 	m_AddressBar.ReplaceIcon(hFavicon);
 }
 

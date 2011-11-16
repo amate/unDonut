@@ -12,14 +12,15 @@
 class CMainFrame;
 class CChildFrame;
 class CCustomBindStatusCallBack;
+class CDonutView;
 
 ///////////////////////////////////////////////////////////////
 // CDownloadManager
 
 class CDownloadManager : 
-	public CWindowImpl<CDownloadManager>,
-	public IDownloadManager
+	public CWindowImpl<CDownloadManager>
 {
+	friend class CDonutView;
 public:
 	// Constructor
 	CDownloadManager();
@@ -31,23 +32,6 @@ public:
 
 	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = DLO_OVERWRITEPROMPT );
 	int		GetDownloadingCount() const;
-
-	// IUnknown
-	STDMETHODIMP QueryInterface(REFIID iid, void ** ppvObject);
-	STDMETHODIMP_(ULONG) AddRef() { return 1; }
-	STDMETHODIMP_(ULONG) Release(){ return 1; }
-
-	// IDownloadManager
-	STDMETHODIMP Download(
-		IMoniker* pmk,  
-		IBindCtx* pbc,  
-		DWORD	  dwBindVerb,  
-		LONG	  grfBINDF,  
-		BINDINFO* pBindInfo,  
-		LPCOLESTR pszHeaders,  
-		LPCOLESTR pszRedir,  
-		UINT	  uiCP );
-
 
 	// Message map and Handler
 	BEGIN_MSG_MAP_EX(CDownloadManager)
