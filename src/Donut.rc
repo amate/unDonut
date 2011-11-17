@@ -2503,7 +2503,11 @@ BEGIN
     ID_VIEW_FONT_SIZE       "フォントの大きさを変更します。\nサイズ"
     ID_VIEW_ADDBAR_DROPDOWN "アドレスバーをドロップダウンします。\nアドレスバーを開く"
     ID_FAVORITES_DROPDOWN   "お気に入り\nお気に入り"
+#ifdef WIN64
+    IDR_MAINFRAME           "64unDonut"
+#else
     IDR_MAINFRAME           "unDonut"
+#endif
     IDR_MDICHILD            "Loading..."
     ID_FAVORITES_GROUP_DROPDOWN "お気に入りグループ\nグループ"
     ID_CSS_DROPDOWN         "スタイルシートを変更します。\nCSS"

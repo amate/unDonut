@@ -2215,6 +2215,7 @@ void	CChildFrame::Impl::_InitTravelLog()
 void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 {	
 	data.strTitle	= GetLocationName();
+	data.strTitle.Replace(_T('\"'), _T('_'));
 	data.strURL		= GetLocationURL();
 	data.dwDLCtrl	= m_view.GetDLControlFlags();
 	data.dwExStyle	= m_view.GetExStyle();
@@ -2256,6 +2257,8 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 			if (   SUCCEEDED( pTLEntry->GetTitle(&szTitle) ) && szTitle
 				&& SUCCEEDED( pTLEntry->GetURL  (&szURL  ) ) && szURL  )
 			{
+				CString strTitle = szTitle;
+				strTitle.Replace(_T('\"'), _T('_'));
 				vecLog.push_back(std::make_pair<CString, CString>(szTitle, szURL));
 				++count;
 			}
