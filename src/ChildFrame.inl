@@ -149,6 +149,18 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 		return;
 	}
 
+	// ユーザースクリプトをインストールするかどうか
+	if (strURL.Right(8).CompareNoCase(_T(".user.js")) == 0) {
+		if (CUserDefinedJsOption::UserDefinedScriptInstall(strURL, m_hWnd)) {
+			bCancel = true;
+
+			CString strLocation = GetLocationURL();
+			if (strLocation.IsEmpty())
+				PostMessage(WM_CLOSE);
+			return ;
+		}
+	}
+
 	if (bTopWindow) {
 		if (m_dwMarshalDLCtrlFlags) {
 			m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
@@ -300,40 +312,30 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 
 		/* ユーザー定義Javascript */
 		if (auto value = CUserDefinedJsOption::FindURL(strURL)) {
-			FILE* fp = nullptr;
-			if (_wfopen_s(&fp, value.get(), L"r, ccs=UTF-8") != 0)
-				goto ADDJSFINISH;
-			std::wstringstream	strstream;
-			enum { kBuffSize = 512 };
-			wchar_t	temp[kBuffSize + 1];
-			while (!feof(fp)) {
-				size_t n = fread(temp, sizeof(wchar_t), kBuffSize, fp);
-				temp[n] = L'\0';
-				strstream << temp;
-			}
-			fclose(fp);
-
-			CComPtr<IDispatch>	spDisp;
-			m_spBrowser->get_Document(&spDisp);
-			CComQIPtr<IHTMLDocument2> spDoc = spDisp;
-			if (spDoc) {
-				CComPtr<IHTMLElement>	spScriptElm;
-				spDoc->createElement(CComBSTR(L"script"), &spScriptElm);
-				if (spScriptElm == nullptr)
-					goto ADDJSFINISH;
+			for (auto it = value->cbegin(); it != value->cend(); ++it) {
+				CComPtr<IDispatch>	spDisp;
+				m_spBrowser->get_Document(&spDisp);
+				CComQIPtr<IHTMLDocument2> spDoc = spDisp;
+				if (spDoc) {
+					CComPtr<IHTMLElement>	spScriptElm;
+					spDoc->createElement(CComBSTR(L"script"), &spScriptElm);
+					if (spScriptElm == nullptr)
+						goto ADDJSFINISH;
  
-				CComQIPtr<IHTMLScriptElement>	spScript = spScriptElm;
-				spScript->put_type(CComBSTR(L"text/javascript"));
-				spScript->put_text(CComBSTR(strstream.str().c_str()));
+					CComQIPtr<IHTMLScriptElement>	spScript = spScriptElm;
+					spScript->put_type(CComBSTR(L"text/javascript"));
+					spScript->put_text(*(*it));
 
-				CComPtr<IHTMLElement>	spBodyElm;
-				spDoc->get_body(&spBodyElm);
-				CComQIPtr<IHTMLDOMNode>	spBodyNode = spBodyElm;
-				if (spBodyNode == nullptr)
-					goto ADDJSFINISH;
-				CComQIPtr<IHTMLDOMNode>	spScriptNode = spScript;
-				CComPtr<IHTMLDOMNode>	sptempNode;
-				spBodyNode->appendChild(spScriptNode, &sptempNode);
+					CComPtr<IHTMLElement>	spBodyElm;
+					spDoc->get_body(&spBodyElm);
+					CComQIPtr<IHTMLDOMNode>	spBodyNode = spBodyElm;
+					if (spBodyNode == nullptr)
+						goto ADDJSFINISH;
+					CComQIPtr<IHTMLDOMNode>	spScriptNode = spScript;
+					CComPtr<IHTMLDOMNode>	sptempNode;
+					spBodyNode->appendChild(spScriptNode, &sptempNode);
+				}
+				
 			}
 		}
 		ADDJSFINISH:
@@ -2287,13 +2289,21 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 		if (spDoc == nullptr)
 			return ;
 		CComBSTR	strmineType;
-		spDoc->get_mimeType(&strmineType);
-		if (strmineType == nullptr)
-			return ;
-
-		CString strExt = CString(strmineType).Left(3);
-		if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF"))
-			return ;
+		HRESULT hr = spDoc->get_mimeType(&strmineType);
+		if (strmineType) {
+			CString strExt = CString(strmineType).Left(3);
+			if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF"))
+				return ;
+		} else {
+			CString strUrl = GetLocationURL();
+			if (GetLocationName() == strUrl) {
+				CString strExt = strUrl.Right(4);
+				strExt.MakeUpper();
+				if (strExt != _T(".JPG") && strExt != _T(".PNG") && strExt != _T(".GIF"))
+					return ;
+			} else 
+				return ;
+		}
 	
 		m_bImagePage = true;
 	}

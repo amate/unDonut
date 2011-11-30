@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLFIND_H__
 #define __ATLFIND_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifdef _WIN32_WCE
 	#error atlfind.h is not supported on Windows CE
@@ -51,17 +50,17 @@ template <class T, class TFindReplaceDialog = CFindReplaceDialog>
 class CEditFindReplaceImplBase
 {
 protected:
- // Typedefs
+// Typedefs
 	typedef CEditFindReplaceImplBase<T, TFindReplaceDialog> thisClass;
 
- // Data members
-	TFindReplaceDialog* 	m_pFindReplaceDialog;
-	_CSTRING_NS::CString 	m_sFindNext, 	m_sReplaceWith;
-	BOOL 					m_bFindOnly, 	m_bFirstSearch, 	m_bMatchCase, 	m_bWholeWord, 	m_bFindDown;
-	LONG 					m_nInitialSearchPos;
-	HCURSOR 				m_hOldCursor;
+// Data members
+	TFindReplaceDialog* m_pFindReplaceDialog;
+	_CSTRING_NS::CString m_sFindNext, m_sReplaceWith;
+	BOOL m_bFindOnly, m_bFirstSearch, m_bMatchCase, m_bWholeWord, m_bFindDown;
+	LONG m_nInitialSearchPos;
+	HCURSOR m_hOldCursor;
 
- // Enumerations
+// Enumerations
 	enum TranslationTextItem
 	{
 		eText_OnReplaceAllMessage   = 0,
@@ -71,7 +70,7 @@ protected:
 	};
 
 public:
- // Constructors
+// Constructors
 	CEditFindReplaceImplBase() :
 		m_pFindReplaceDialog(NULL),
 		m_bFindOnly(TRUE),
@@ -84,19 +83,19 @@ public:
 	{
 	}
 
- // Message Handlers
+// Message Handlers
 	BEGIN_MSG_MAP(thisClass)
 	ALT_MSG_MAP(1)
-		MESSAGE_HANDLER(WM_DESTROY								, OnDestroy			)
-		MESSAGE_HANDLER(TFindReplaceDialog::GetFindReplaceMsg()	, OnFindReplaceCmd	)
-		COMMAND_ID_HANDLER(ID_EDIT_FIND							, OnEditFind		)
-		COMMAND_ID_HANDLER(ID_EDIT_REPEAT						, OnEditRepeat		)
-		COMMAND_ID_HANDLER(ID_EDIT_REPLACE						, OnEditReplace		)
+		MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
+		MESSAGE_HANDLER(TFindReplaceDialog::GetFindReplaceMsg(), OnFindReplaceCmd)
+		COMMAND_ID_HANDLER(ID_EDIT_FIND, OnEditFind)
+		COMMAND_ID_HANDLER(ID_EDIT_REPEAT, OnEditRepeat)
+		COMMAND_ID_HANDLER(ID_EDIT_REPLACE, OnEditReplace)
 	END_MSG_MAP()
 
 	LRESULT OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		if (m_pFindReplaceDialog != NULL)
+		if(m_pFindReplaceDialog != NULL)
 		{
 			m_pFindReplaceDialog->SendMessage(WM_CLOSE);
 			ATLASSERT(m_pFindReplaceDialog == NULL);
@@ -108,10 +107,10 @@ public:
 
 	LRESULT OnFindReplaceCmd(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& /*bHandled*/)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 
 		TFindReplaceDialog* pDialog = TFindReplaceDialog::GetNotifier(lParam);
-		if (pDialog == NULL)
+		if(pDialog == NULL)
 		{
 			ATLASSERT(FALSE);
 			::MessageBeep(MB_ICONERROR);
@@ -120,25 +119,25 @@ public:
 		ATLASSERT(pDialog == m_pFindReplaceDialog);
 
 		LPFINDREPLACE findReplace = (LPFINDREPLACE)lParam;
-		if ((m_pFindReplaceDialog != NULL) && (findReplace != NULL))
+		if((m_pFindReplaceDialog != NULL) && (findReplace != NULL))
 		{
-			if (pDialog->FindNext())
+			if(pDialog->FindNext())
 			{
 				pT->OnFindNext(pDialog->GetFindString(), pDialog->SearchDown(),
 					pDialog->MatchCase(), pDialog->MatchWholeWord());
 			}
-			else if (pDialog->ReplaceCurrent())
+			else if(pDialog->ReplaceCurrent())
 			{
 				pT->OnReplaceSel(pDialog->GetFindString(),
 					pDialog->SearchDown(), pDialog->MatchCase(), pDialog->MatchWholeWord(),
 					pDialog->GetReplaceString());
 			}
-			else if (pDialog->ReplaceAll())
+			else if(pDialog->ReplaceAll())
 			{
 				pT->OnReplaceAll(pDialog->GetFindString(), pDialog->GetReplaceString(),
 					pDialog->MatchCase(), pDialog->MatchWholeWord());
 			}
-			else if (pDialog->IsTerminating())
+			else if(pDialog->IsTerminating())
 			{
 				// Dialog is going away (but hasn't gone away yet)
 				// OnFinalMessage will "delete this"
@@ -152,7 +151,7 @@ public:
 
 	LRESULT OnEditFind(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->FindReplace(TRUE);
 
 		return 0;
@@ -160,7 +159,7 @@ public:
 
 	LRESULT OnEditRepeat(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 
 		// If the user is holding down SHIFT when hitting F3, we'll
 		// search in reverse. Otherwise, we'll search forward.
@@ -168,13 +167,13 @@ public:
 		// for both F3 and Shift+F3)
 		m_bFindDown = !((::GetKeyState(VK_SHIFT) & 0x8000) == 0x8000);
 
-		if (m_sFindNext.IsEmpty())
+		if(m_sFindNext.IsEmpty())
 		{
 			pT->FindReplace(TRUE);
 		}
 		else
 		{
-			if (!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
+			if(!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
 				pT->TextNotFound(m_sFindNext);
 		}
 
@@ -183,10 +182,10 @@ public:
 
 	LRESULT OnEditReplace(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& bHandled)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 
 		DWORD style = pT->GetStyle();
-		if ((style & ES_READONLY) != ES_READONLY)
+		if((style & ES_READONLY) != ES_READONLY)
 		{
 			pT->FindReplace(FALSE);
 		}
@@ -199,17 +198,17 @@ public:
 		return 0;
 	}
 
- // Operations (overrideable)
-	TFindReplaceDialog* CreateFindReplaceDialog(BOOL 		bFindOnly,			// TRUE for Find, FALSE for FindReplace
-												LPCTSTR 	lpszFindWhat,
-												LPCTSTR 	lpszReplaceWith = NULL,
-												DWORD 		dwFlags = FR_DOWN,
-												HWND 		hWndParent = NULL)
+// Operations (overrideable)
+	TFindReplaceDialog* CreateFindReplaceDialog(BOOL bFindOnly, // TRUE for Find, FALSE for FindReplace
+			LPCTSTR lpszFindWhat,
+			LPCTSTR lpszReplaceWith = NULL,
+			DWORD dwFlags = FR_DOWN,
+			HWND hWndParent = NULL)
 	{
 		// You can override all of this in a derived class
 
 		TFindReplaceDialog* findReplaceDialog = new TFindReplaceDialog();
-		if (findReplaceDialog == NULL)
+		if(findReplaceDialog == NULL)
 		{
 			::MessageBeep(MB_ICONHAND);
 		}
@@ -217,7 +216,7 @@ public:
 		{
 			HWND hWndFindReplace = findReplaceDialog->Create(bFindOnly,
 				lpszFindWhat, lpszReplaceWith, dwFlags, hWndParent);
-			if (hWndFindReplace == NULL)
+			if(hWndFindReplace == NULL)
 			{
 				delete findReplaceDialog;
 				findReplaceDialog = NULL;
@@ -245,16 +244,16 @@ public:
 		::ClientToScreen(pT->GetParent(), &point);
 		CRect rect;
 		::GetWindowRect(hWndDialog, &rect);
-		if (rect.PtInRect(point))
+		if(rect.PtInRect(point))
 		{
-			if (point.y > rect.Height())
+			if(point.y > rect.Height())
 			{
 				rect.OffsetRect(0, point.y - rect.bottom - 20);
 			}
 			else
 			{
 				int nVertExt = GetSystemMetrics(SM_CYSCREEN);
-				if (point.y + rect.Height() < nVertExt)
+				if(point.y + rect.Height() < nVertExt)
 					rect.OffsetRect(0, 40 + point.y - rect.top);
 			}
 
@@ -266,11 +265,11 @@ public:
 	{
 		DWORD dwFlags = 0;
 
-		if (m_bFindDown)
+		if(m_bFindDown)
 			dwFlags |= FR_DOWN;
-		if (m_bMatchCase)
+		if(m_bMatchCase)
 			dwFlags |= FR_MATCHCASE;
-		if (m_bWholeWord)
+		if(m_bWholeWord)
 			dwFlags |= FR_WHOLEWORD;
 
 		return dwFlags;
@@ -280,9 +279,9 @@ public:
 	{
 		T* pT = static_cast<T*>(this);
 		m_bFirstSearch = TRUE;
-		if (m_pFindReplaceDialog != NULL)
+		if(m_pFindReplaceDialog != NULL)
 		{
-			if (m_bFindOnly == bFindOnly)
+			if(m_bFindOnly == bFindOnly)
 			{
 				m_pFindReplaceDialog->SetActiveWindow();
 				m_pFindReplaceDialog->ShowWindow(SW_SHOW);
@@ -300,7 +299,7 @@ public:
 		_CSTRING_NS::CString findNext;
 		pT->GetSelText(findNext);
 		// if selection is empty or spans multiple lines use old find text
-		if (findNext.IsEmpty() || (findNext.FindOneOf(_T("\n\r")) != -1))
+		if(findNext.IsEmpty() || (findNext.FindOneOf(_T("\n\r")) != -1))
 			findNext = m_sFindNext;
 		_CSTRING_NS::CString replaceWith = m_sReplaceWith;
 		DWORD dwFlags = pT->GetFindReplaceDialogFlags();
@@ -308,7 +307,7 @@ public:
 		m_pFindReplaceDialog = pT->CreateFindReplaceDialog(bFindOnly,
 			findNext, replaceWith, dwFlags, pT->operator HWND());
 		ATLASSERT(m_pFindReplaceDialog != NULL);
-		if (m_pFindReplaceDialog != NULL)
+		if(m_pFindReplaceDialog != NULL)
 			m_bFindOnly = bFindOnly;
 	}
 
@@ -322,7 +321,7 @@ public:
 		// Send EM_GETSEL so we can use both Edit and RichEdit
 		// (CEdit::GetSel uses int&, and CRichEditCtrlT::GetSel uses LONG&)
 		::SendMessage(pT->m_hWnd, EM_GETSEL, (WPARAM)&nStartChar, (LPARAM)&nEndChar);
-		if (nLen != (size_t)(nEndChar - nStartChar))
+		if(nLen != (size_t)(nEndChar - nStartChar))
 			return FALSE;
 
 		// length is the same, check contents
@@ -335,7 +334,7 @@ public:
 
 	void TextNotFound(LPCTSTR lpszFind)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		m_bFirstSearch = TRUE;
 		pT->OnTextNotFound(lpszFind);
 	}
@@ -343,7 +342,7 @@ public:
 	_CSTRING_NS::CString GetTranslationText(enum TranslationTextItem eItem) const
 	{
 		_CSTRING_NS::CString text;
-		switch (eItem)
+		switch(eItem)
 		{
 		case eText_OnReplaceAllMessage:
 			text = _T("Replaced %d occurances of \"%s\" with \"%s\"");
@@ -362,17 +361,17 @@ public:
 		return text;
 	}
 
- // Overrideable Handlers
+// Overrideable Handlers
 	void OnFindNext(LPCTSTR lpszFind, BOOL bFindDown, BOOL bMatchCase, BOOL bWholeWord)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 
-		m_sFindNext 	= lpszFind;
-		m_bMatchCase 	= bMatchCase;
-		m_bWholeWord 	= bWholeWord;
-		m_bFindDown 	= bFindDown;
+		m_sFindNext = lpszFind;
+		m_bMatchCase = bMatchCase;
+		m_bWholeWord = bWholeWord;
+		m_bFindDown = bFindDown;
 
-		if (!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
+		if(!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
 			pT->TextNotFound(m_sFindNext);
 		else
 			pT->AdjustDialogPosition(m_pFindReplaceDialog->operator HWND());
@@ -388,10 +387,10 @@ public:
 		m_bWholeWord = bWholeWord;
 		m_bFindDown = bFindDown;
 
-		if (pT->SameAsSelected(m_sFindNext, m_bMatchCase, m_bWholeWord))
+		if(pT->SameAsSelected(m_sFindNext, m_bMatchCase, m_bWholeWord))
 			pT->ReplaceSel(m_sReplaceWith);
 
-		if (!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
+		if(!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
 			pT->TextNotFound(m_sFindNext);
 		else
 			pT->AdjustDialogPosition(m_pFindReplaceDialog->operator HWND());
@@ -408,9 +407,9 @@ public:
 		m_bFindDown = TRUE;
 
 		// no selection or different than what looking for
-		if (!pT->SameAsSelected(m_sFindNext, m_bMatchCase, m_bWholeWord))
+		if(!pT->SameAsSelected(m_sFindNext, m_bMatchCase, m_bWholeWord))
 		{
-			if (!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
+			if(!pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown))
 			{
 				pT->TextNotFound(m_sFindNext);
 				return;
@@ -424,7 +423,7 @@ public:
 		{
 			++replaceCount;
 			pT->ReplaceSel(m_sReplaceWith);
-		} while (pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown));
+		} while(pT->FindTextSimple(m_sFindNext, m_bMatchCase, m_bWholeWord, m_bFindDown));
 
 		pT->OnReplaceAllCoreEnd(replaceCount);
 	}
@@ -447,12 +446,12 @@ public:
 		::SetCursor(m_hOldCursor);
 
 		_CSTRING_NS::CString message = pT->GetTranslationText(eText_OnReplaceAllMessage);
-		if (message.GetLength() > 0)
+		if(message.GetLength() > 0)
 		{
 			_CSTRING_NS::CString formattedMessage;
 			formattedMessage.Format(message,
 				replaceCount, m_sFindNext, m_sReplaceWith);
-			if (m_pFindReplaceDialog != NULL)
+			if(m_pFindReplaceDialog != NULL)
 			{
 				m_pFindReplaceDialog->MessageBox(formattedMessage,
 					pT->GetTranslationText(eText_OnReplaceAllTitle),
@@ -471,11 +470,11 @@ public:
 	{
 		T* pT = static_cast<T*>(this);
 		_CSTRING_NS::CString message = pT->GetTranslationText(eText_OnTextNotFoundMessage);
-		if (message.GetLength() > 0)
+		if(message.GetLength() > 0)
 		{
 			_CSTRING_NS::CString formattedMessage;
 			formattedMessage.Format(message, lpszFind);
-			if (m_pFindReplaceDialog != NULL)
+			if(m_pFindReplaceDialog != NULL)
 			{
 				m_pFindReplaceDialog->MessageBox(formattedMessage,
 					pT->GetTranslationText(eText_OnTextNotFoundTitle),
@@ -524,13 +523,13 @@ protected:
 	typedef CEditFindReplaceImpl<T, TFindReplaceDialog> thisClass;
 	typedef CEditFindReplaceImplBase<T, TFindReplaceDialog> baseClass;
 
- // Data members
-	LPTSTR 		m_pShadowBuffer;     // Special shadow buffer only used in some cases.
-	UINT 		m_nShadowSize;
-	int 		m_bShadowBufferNeeded;  // TRUE, FALSE, < 0 => Need to check
+// Data members
+	LPTSTR m_pShadowBuffer;     // Special shadow buffer only used in some cases.
+	UINT m_nShadowSize;
+	int m_bShadowBufferNeeded;  // TRUE, FALSE, < 0 => Need to check
 
 public:
- // Constructors
+// Constructors
 	CEditFindReplaceImpl() :
 		m_pShadowBuffer(NULL),
 		m_nShadowSize(0),
@@ -540,79 +539,79 @@ public:
 
 	virtual ~CEditFindReplaceImpl()
 	{
-		if (m_pShadowBuffer != NULL)
+		if(m_pShadowBuffer != NULL)
 		{
 			delete [] m_pShadowBuffer;
 			m_pShadowBuffer = NULL;
 		}
 	}
 
- // Message Handlers
+// Message Handlers
 	BEGIN_MSG_MAP(thisClass)
 	ALT_MSG_MAP(1)
 		CHAIN_MSG_MAP_ALT(baseClass, 1)
 	END_MSG_MAP()
 
- // Operations
+// Operations
 	// Supported only for RichEdit, so this does nothing for Edit
 	void HideSelection(BOOL /*bHide*/ = TRUE, BOOL /*bChangeStyle*/ = FALSE)
 	{
 	}
 
- // Operations (overrideable)
+// Operations (overrideable)
 	BOOL FindTextSimple(LPCTSTR lpszFind, BOOL bMatchCase, BOOL bWholeWord, BOOL bFindDown = TRUE)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 
-		ATLASSERT(lpszFind  != NULL);
+		ATLASSERT(lpszFind != NULL);
 		ATLASSERT(*lpszFind != _T('\0'));
 
-		UINT 	nLen 		= pT->GetBufferLength();
-		int 	nStartChar 	= 0	, 	nEndChar = 0;
+		UINT nLen = pT->GetBufferLength();
+		int nStartChar = 0, nEndChar = 0;
 		pT->GetSel(nStartChar, nEndChar);
-		UINT 	nStart 		= nStartChar;
-		int 	iDir 		= bFindDown ? +1 : -1;
+		UINT nStart = nStartChar;
+		int iDir = bFindDown ? +1 : -1;
 
 		// can't find a match before the first character
-		if (nStart == 0 && iDir < 0)
+		if(nStart == 0 && iDir < 0)
 			return FALSE;
 
-		LPCTSTR lpszText 	= pT->LockBuffer();
+		LPCTSTR lpszText = pT->LockBuffer();
 
-		bool 	isDBCS 		= false;
-	  #ifdef _MBCS
-		CPINFO 	info 		= { 0 };
+		bool isDBCS = false;
+#ifdef _MBCS
+		CPINFO info = { 0 };
 		::GetCPInfo(::GetOEMCP(), &info);
-		isDBCS 				= (info.MaxCharSize > 1);
-	  #endif
+		isDBCS = (info.MaxCharSize > 1);
+#endif
 
-		if (iDir < 0)
+		if(iDir < 0)
 		{
 			// always go back one for search backwards
-			nStart 	-= int((lpszText + nStart) - ::CharPrev(lpszText, lpszText + nStart));
+			nStart -= int((lpszText + nStart) - ::CharPrev(lpszText, lpszText + nStart));
 		}
-		else if (nStartChar != nEndChar && pT->SameAsSelected(lpszFind, bMatchCase, bWholeWord))
+		else if(nStartChar != nEndChar && pT->SameAsSelected(lpszFind, bMatchCase, bWholeWord))
 		{
 			// easy to go backward/forward with SBCS
-		  #ifndef _UNICODE
-			if (::IsDBCSLeadByte(lpszText[nStart]))
+#ifndef _UNICODE
+			if(::IsDBCSLeadByte(lpszText[nStart]))
 				nStart++;
-		  #endif
+#endif
 			nStart += iDir;
 		}
 
 		// handle search with nStart past end of buffer
 		UINT nLenFind = ::lstrlen(lpszFind);
-		if (nStart + nLenFind - 1 >= nLen)
+		if(nStart + nLenFind - 1 >= nLen)
 		{
-			if (iDir < 0 && nLen >= nLenFind)
+			if(iDir < 0 && nLen >= nLenFind)
 			{
-				if (isDBCS)
+				if(isDBCS)
 				{
 					// walk back to previous character n times
-					nStart 		= nLen;
-					int 	n 	= nLenFind;
-					while (n--)
+					nStart = nLen;
+					int n = nLenFind;
+					while(n--)
 					{
 						nStart -= int((lpszText + nStart) - ::CharPrev(lpszText, lpszText + nStart));
 					}
@@ -632,15 +631,15 @@ public:
 		}
 
 		// start the search at nStart
-		LPCTSTR 		lpsz 		= lpszText + nStart;
+		LPCTSTR lpsz = lpszText + nStart;
 		typedef int (WINAPI* CompareProc)(LPCTSTR str1, LPCTSTR str2);
-		CompareProc 	pfnCompare 	= bMatchCase ? lstrcmp : lstrcmpi;
+		CompareProc pfnCompare = bMatchCase ? lstrcmp : lstrcmpi;
 
-		if (isDBCS)
+		if(isDBCS)
 		{
 			// double-byte string search
 			LPCTSTR lpszStop = NULL;
-			if (iDir > 0)
+			if(iDir > 0)
 			{
 				// start at current and find _first_ occurrance
 				lpszStop = lpszText + nLen - nLenFind + 1;
@@ -648,28 +647,28 @@ public:
 			else
 			{
 				// start at top and find _last_ occurrance
-				lpszStop 	= lpsz;
-				lpsz 		= lpszText;
+				lpszStop = lpsz;
+				lpsz = lpszText;
 			}
 
 			LPCTSTR lpszFound = NULL;
-			while (lpsz <= lpszStop)
+			while(lpsz <= lpszStop)
 			{
-			  #ifndef _UNICODE
-				if (!bMatchCase || (*lpsz == *lpszFind && (!::IsDBCSLeadByte(*lpsz) || lpsz[1] == lpszFind[1])))
-			  #else
-				if (!bMatchCase || (*lpsz == *lpszFind && lpsz[1] == lpszFind[1]))
-			  #endif
+#ifndef _UNICODE
+				if(!bMatchCase || (*lpsz == *lpszFind && (!::IsDBCSLeadByte(*lpsz) || lpsz[1] == lpszFind[1])))
+#else
+				if(!bMatchCase || (*lpsz == *lpszFind && lpsz[1] == lpszFind[1]))
+#endif
 				{
-					LPTSTR	lpch 	= (LPTSTR)(lpsz + nLenFind);
-					TCHAR	chSave 	= *lpch;
-					*lpch 			= _T('\0');
-					int 	nResult = (*pfnCompare)(lpsz, lpszFind);
+					LPTSTR lpch = (LPTSTR)(lpsz + nLenFind);
+					TCHAR chSave = *lpch;
+					*lpch = _T('\0');
+					int nResult = (*pfnCompare)(lpsz, lpszFind);
 					*lpch = chSave;
-					if (nResult == 0)
+					if(nResult == 0)
 					{
 						lpszFound = lpsz;
-						if (iDir > 0)
+						if(iDir > 0)
 							break;
 					}
 				}
@@ -677,7 +676,7 @@ public:
 			}
 			pT->UnlockBuffer();
 
-			if (lpszFound != NULL)
+			if(lpszFound != NULL)
 			{
 				int n = (int)(lpszFound - lpszText);
 				pT->SetSel(n, n + nLenFind);
@@ -688,35 +687,35 @@ public:
 		{
 			// single-byte string search
 			UINT nCompare;
-			if (iDir < 0)
+			if(iDir < 0)
 				nCompare = (UINT)(lpsz - lpszText) + 1;
 			else
 				nCompare = nLen - (UINT)(lpsz - lpszText) - nLenFind + 1;
 
-			while (nCompare > 0)
+			while(nCompare > 0)
 			{
 				ATLASSERT(lpsz >= lpszText);
 				ATLASSERT(lpsz + nLenFind - 1 <= lpszText + nLen - 1);
 
-				LPSTR	lpch 	= (LPSTR)(lpsz + nLenFind);
-				char 	chSave	= *lpch;
-				*lpch 			= '\0';
-				int 	nResult = (*pfnCompare)(lpsz, lpszFind);
-				*lpch 			= chSave;
-				if (nResult == 0)
+				LPSTR lpch = (LPSTR)(lpsz + nLenFind);
+				char chSave = *lpch;
+				*lpch = '\0';
+				int nResult = (*pfnCompare)(lpsz, lpszFind);
+				*lpch = chSave;
+				if(nResult == 0)
 				{
 					pT->UnlockBuffer();
-					int n 		= (int)(lpsz - lpszText);
+					int n = (int)(lpsz - lpszText);
 					pT->SetSel(n, n + nLenFind);
 					return TRUE;
 				}
 
 				// restore character at end of search
-				*lpch 	= chSave;
+				*lpch = chSave;
 
 				// move on to next substring
 				nCompare--;
-				lpsz 	+= iDir;
+				lpsz += iDir;
 			}
 			pT->UnlockBuffer();
 		}
@@ -731,21 +730,21 @@ public:
 		ATLASSERT(pT->m_hWnd != NULL);
 
 		BOOL useShadowBuffer = pT->UseShadowBuffer();
-		if (useShadowBuffer)
+		if(useShadowBuffer)
 		{
-			if (m_pShadowBuffer == NULL || pT->GetModify())
+			if(m_pShadowBuffer == NULL || pT->GetModify())
 			{
 				ATLASSERT(m_pShadowBuffer != NULL || m_nShadowSize == 0);
-				UINT 	nSize = pT->GetWindowTextLength() + 1;
-				if (nSize > m_nShadowSize)
+				UINT nSize = pT->GetWindowTextLength() + 1;
+				if(nSize > m_nShadowSize)
 				{
 					// need more room for shadow buffer
-					T* 			pThisNoConst 		= const_cast<T*>(pT);
-					delete[] 	m_pShadowBuffer;
-					pThisNoConst->m_pShadowBuffer 	= NULL;
-					pThisNoConst->m_nShadowSize 	= 0;
-					pThisNoConst->m_pShadowBuffer 	= new TCHAR[nSize];
-					pThisNoConst->m_nShadowSize 	= nSize;
+					T* pThisNoConst = const_cast<T*>(pT);
+					delete[] m_pShadowBuffer;
+					pThisNoConst->m_pShadowBuffer = NULL;
+					pThisNoConst->m_nShadowSize = 0;
+					pThisNoConst->m_pShadowBuffer = new TCHAR[nSize];
+					pThisNoConst->m_nShadowSize = nSize;
 				}
 
 				// update the shadow buffer with GetWindowText
@@ -767,14 +766,14 @@ public:
 
 	void UnlockBuffer() const
 	{
-		const T* 	pT 	= static_cast<const T*>(this);
+		const T* pT = static_cast<const T*>(this);
 
 		ATLASSERT(pT->m_hWnd != NULL);
 
-		BOOL 		useShadowBuffer = pT->UseShadowBuffer();
-		if (!useShadowBuffer)
+		BOOL useShadowBuffer = pT->UseShadowBuffer();
+		if(!useShadowBuffer)
 		{
-			HLOCAL 	hLocal = pT->GetHandle();
+			HLOCAL hLocal = pT->GetHandle();
 			ATLASSERT(hLocal != NULL);
 			::LocalUnlock(hLocal);
 		}
@@ -782,12 +781,12 @@ public:
 
 	UINT GetBufferLength() const
 	{
-		const T* 	pT 		 = static_cast<const T*>(this);
+		const T* pT = static_cast<const T*>(this);
 
 		ATLASSERT(pT->m_hWnd != NULL);
-		UINT 		nLen 	 = 0;
-		LPCTSTR 	lpszText = pT->LockBuffer();
-		if (lpszText != NULL)
+		UINT nLen = 0;
+		LPCTSTR lpszText = pT->LockBuffer();
+		if(lpszText != NULL)
 			nLen = ::lstrlen(lpszText);
 		pT->UnlockBuffer();
 
@@ -796,22 +795,22 @@ public:
 
 	LONG EndOfLine(LPCTSTR lpszText, UINT nLen, UINT nIndex) const
 	{
-		LPCTSTR 	lpsz 		= lpszText + nIndex;
-		LPCTSTR 	lpszStop 	= lpszText + nLen;
-		while (lpsz < lpszStop && *lpsz != _T('\r'))
+		LPCTSTR lpsz = lpszText + nIndex;
+		LPCTSTR lpszStop = lpszText + nLen;
+		while(lpsz < lpszStop && *lpsz != _T('\r'))
 			++lpsz;
 		return LONG(lpsz - lpszText);
 	}
 
 	LONG GetSelText(_CSTRING_NS::CString& strText) const
 	{
-		const T* 	pT = static_cast<const T*>(this);
+		const T* pT = static_cast<const T*>(this);
 
-		int 		nStartChar 	= 0, nEndChar = 0;
+		int nStartChar = 0, nEndChar = 0;
 		pT->GetSel(nStartChar, nEndChar);
 		ATLASSERT((UINT)nEndChar <= pT->GetBufferLength());
-		LPCTSTR 	lpszText 	= pT->LockBuffer();
-		LONG 		nLen 		= pT->EndOfLine(lpszText, nEndChar, nStartChar) - nStartChar;
+		LPCTSTR lpszText = pT->LockBuffer();
+		LONG nLen = pT->EndOfLine(lpszText, nEndChar, nStartChar) - nStartChar;
 		SecureHelper::memcpy_x(strText.GetBuffer(nLen), nLen * sizeof(TCHAR), lpszText + nStartChar, nLen * sizeof(TCHAR));
 		strText.ReleaseBuffer(nLen);
 		pT->UnlockBuffer();
@@ -823,7 +822,7 @@ public:
 	{
 		const T* pT = static_cast<const T*>(this);
 
-		if (pT->m_bShadowBufferNeeded < 0)
+		if(pT->m_bShadowBufferNeeded < 0)
 		{
 			T* pThisNoConst = const_cast<T*>(pT);
 
@@ -832,7 +831,7 @@ public:
 			::GetVersionEx(&ovi);
 
 			bool bWin9x = (ovi.dwPlatformId == VER_PLATFORM_WIN32_WINDOWS);
-			if (bWin9x)
+			if(bWin9x)
 			{
 				// Windows 95, 98, ME
 				// Under Win9x, it is necessary to maintain a shadow buffer.
@@ -844,7 +843,7 @@ public:
 				// Windows NT, 2000, XP, etc.
 				pThisNoConst->m_bShadowBufferNeeded = FALSE;
 
-			  #ifndef _UNICODE
+#ifndef _UNICODE
 				// On Windows XP (or later), if common controls version 6 is in use
 				// (such as via theming), then EM_GETHANDLE will always return a UNICODE string.
 				// If theming is enabled and Common Controls version 6 is in use,
@@ -853,30 +852,30 @@ public:
 				// Using a shadow buffer uses GetWindowText instead, so it solves
 				// this problem for us (although it makes it a little less efficient).
 
-				if ((ovi.dwMajorVersion == 5 && ovi.dwMinorVersion >= 1) || (ovi.dwMajorVersion > 5))
+				if((ovi.dwMajorVersion == 5 && ovi.dwMinorVersion >= 1) || (ovi.dwMajorVersion > 5))
 				{
 					// We use DLLVERSIONINFO_private so we don't have to depend on shlwapi.h
 					typedef struct _DLLVERSIONINFO_private
 					{
-						DWORD 	cbSize;
-						DWORD 	dwMajorVersion;
-						DWORD 	dwMinorVersion;
-						DWORD 	dwBuildNumber;
-						DWORD 	dwPlatformID;
+						DWORD cbSize;
+						DWORD dwMajorVersion;
+						DWORD dwMinorVersion;
+						DWORD dwBuildNumber;
+						DWORD dwPlatformID;
 					} DLLVERSIONINFO_private;
 
 					HMODULE hModule = ::LoadLibrary("comctl32.dll");
-					if (hModule != NULL)
+					if(hModule != NULL)
 					{
 						typedef HRESULT (CALLBACK *LPFN_DllGetVersion)(DLLVERSIONINFO_private *);
 						LPFN_DllGetVersion fnDllGetVersion = (LPFN_DllGetVersion)::GetProcAddress(hModule, "DllGetVersion");
-						if (fnDllGetVersion != NULL)
+						if(fnDllGetVersion != NULL)
 						{
 							DLLVERSIONINFO_private version = { 0 };
 							version.cbSize = sizeof(DLLVERSIONINFO_private);
-							if (SUCCEEDED(fnDllGetVersion(&version)))
+							if(SUCCEEDED(fnDllGetVersion(&version)))
 							{
-								if (version.dwMajorVersion >= 6)
+								if(version.dwMajorVersion >= 6)
 								{
 									pThisNoConst->m_bShadowBufferNeeded = TRUE;
 
@@ -890,11 +889,11 @@ public:
 						hModule = NULL;
 					}
 				}
-			  #endif // !_UNICODE
+#endif // !_UNICODE
 			}
 		}
 
-		return (pT->m_bShadowBufferNeeded == TRUE);
+		return (pT->m_bShadowBufferNeeded != FALSE);
 	}
 };
 
@@ -929,7 +928,7 @@ public:
 		CHAIN_MSG_MAP_ALT(baseClass, 1)
 	END_MSG_MAP()
 
-  // Operations (overrideable)
+// Operations (overrideable)
 	BOOL FindTextSimple(LPCTSTR lpszFind, BOOL bMatchCase, BOOL bWholeWord, BOOL bFindDown = TRUE)
 	{
 		T* pT = static_cast<T*>(this);
@@ -938,25 +937,25 @@ public:
 		FINDTEXTEX ft = { 0 };
 
 		pT->GetSel(ft.chrg);
-		if (m_bFirstSearch)
+		if(m_bFirstSearch)
 		{
-			if (bFindDown)
+			if(bFindDown)
 				m_nInitialSearchPos = ft.chrg.cpMin;
 			else
 				m_nInitialSearchPos = ft.chrg.cpMax;
 			m_bFirstSearch = FALSE;
 		}
 
-	  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 		ft.lpstrText = (LPTSTR)lpszFind;
-	  #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 		USES_CONVERSION;
 		ft.lpstrText = T2A((LPTSTR)lpszFind);
-	  #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 
-		if (ft.chrg.cpMin != ft.chrg.cpMax) // i.e. there is a selection
+		if(ft.chrg.cpMin != ft.chrg.cpMax) // i.e. there is a selection
 		{
-			if (bFindDown)
+			if(bFindDown)
 			{
 				ft.chrg.cpMin++;
 			}
@@ -967,47 +966,47 @@ public:
 			}
 		}
 
-		DWORD 	dwFlags  = bMatchCase ? FR_MATCHCASE : 0;
-		dwFlags 		|= bWholeWord ? FR_WHOLEWORD : 0;
+		DWORD dwFlags = bMatchCase ? FR_MATCHCASE : 0;
+		dwFlags |= bWholeWord ? FR_WHOLEWORD : 0;
 
-		ft.chrg.cpMax	 = pT->GetTextLength() + m_nInitialSearchPos;
+		ft.chrg.cpMax = pT->GetTextLength() + m_nInitialSearchPos;
 
-		if (bFindDown)
+		if(bFindDown)
 		{
-			if (m_nInitialSearchPos >= 0)
-				ft.chrg.cpMax 		= pT->GetTextLength();
+			if(m_nInitialSearchPos >= 0)
+				ft.chrg.cpMax = pT->GetTextLength();
 
-			dwFlags 				|= FR_DOWN;
+			dwFlags |= FR_DOWN;
 			ATLASSERT(ft.chrg.cpMax >= ft.chrg.cpMin);
 		}
 		else
 		{
-			if (m_nInitialSearchPos >= 0)
-				ft.chrg.cpMax 		=  0;
+			if(m_nInitialSearchPos >= 0)
+				ft.chrg.cpMax = 0;
 
-			dwFlags 				&= ~FR_DOWN;
+			dwFlags &= ~FR_DOWN;
 			ATLASSERT(ft.chrg.cpMax <= ft.chrg.cpMin);
 		}
 
-		BOOL bRet	= FALSE;
+		BOOL bRet = FALSE;
 
-		if (pT->FindAndSelect(dwFlags, ft) != -1)
+		if(pT->FindAndSelect(dwFlags, ft) != -1)
 		{
-			bRet 	= TRUE;   // we found the text
+			bRet = TRUE;   // we found the text
 		}
-		else if (m_nInitialSearchPos > 0)
+		else if(m_nInitialSearchPos > 0)
 		{
 			// if the original starting point was not the beginning
 			// of the buffer and we haven't already been here
-			if (bFindDown)
+			if(bFindDown)
 			{
-				ft.chrg.cpMin 	= 0;
-				ft.chrg.cpMax 	= m_nInitialSearchPos;
+				ft.chrg.cpMin = 0;
+				ft.chrg.cpMax = m_nInitialSearchPos;
 			}
 			else
 			{
-				ft.chrg.cpMin 	= pT->GetTextLength();
-				ft.chrg.cpMax 	= m_nInitialSearchPos;
+				ft.chrg.cpMin = pT->GetTextLength();
+				ft.chrg.cpMax = m_nInitialSearchPos;
 			}
 			m_nInitialSearchPos = m_nInitialSearchPos - pT->GetTextLength();
 
@@ -1019,9 +1018,9 @@ public:
 
 	long FindAndSelect(DWORD dwFlags, FINDTEXTEX& ft)
 	{
-		T* 		pT 		= static_cast<T*>(this);
-		LONG 	index 	= pT->FindText(dwFlags, ft);
-		if (index != -1) // i.e. we found something
+		T* pT = static_cast<T*>(this);
+		LONG index = pT->FindText(dwFlags, ft);
+		if(index != -1) // i.e. we found something
 			pT->SetSel(ft.chrgText);
 
 		return index;

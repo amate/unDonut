@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLCTRLS_H__
 #define __ATLCTRLS_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifndef __ATLAPP_H__
 	#error atlctrls.h requires atlapp.h to be included first
@@ -21,10 +20,6 @@
 
 #ifndef __ATLWIN_H__
 	#error atlctrls.h requires atlwin.h to be included first
-#endif
-
-#if (_WIN32_IE < 0x0300)
-	#error atlctrls.h requires IE Version 3.0 or higher
 #endif
 
 #ifndef _WIN32_WCE
@@ -114,7 +109,7 @@ template <class TBase>
 class CStaticT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CStaticT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -131,13 +126,13 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return _T("STATIC");
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	HICON GetIcon() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -161,7 +156,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (HENHMETAFILE)::SendMessage(m_hWnd, STM_SETIMAGE, IMAGE_ENHMETAFILE, (LPARAM)hMetaFile);
 	}
- #else // CE specific
+#else // CE specific
 	HICON GetIcon() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -173,7 +168,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (HICON)::SendMessage(m_hWnd, STM_SETIMAGE, IMAGE_ICON, (LPARAM)hIcon);
 	}
- #endif // _WIN32_WCE
+#endif // _WIN32_WCE
 
 	CBitmapHandle GetBitmap() const
 	{
@@ -210,7 +205,7 @@ template <class TBase>
 class CButtonT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CButtonT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -227,7 +222,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return _T("BUTTON");
@@ -269,7 +264,7 @@ public:
 		::SendMessage(m_hWnd, BM_SETSTYLE, nStyle, (LPARAM)bRedraw);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	HICON GetIcon() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -293,9 +288,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CBitmapHandle((HBITMAP)::SendMessage(m_hWnd, BM_SETIMAGE, IMAGE_BITMAP, (LPARAM)hBitmap));
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	BOOL GetIdealSize(LPSIZE lpSize) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -325,17 +320,17 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, BCM_SETTEXTMARGIN, 0, (LPARAM)lpRect);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (WINVER >= 0x0600)
+#if (WINVER >= 0x0600)
 	void SetDontClick(BOOL bDontClick)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, BM_SETDONTCLICK, (WPARAM)bDontClick, 0L);
 	}
- #endif // (WINVER >= 0x0600)
+#endif // (WINVER >= 0x0600)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	BOOL SetDropDownState(BOOL bDropDown)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -383,9 +378,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return ::SendMessage(m_hWnd, BCM_SETSHIELD, 0, (LPARAM)bSet);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	void Click()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -403,7 +398,7 @@ template <class TBase>
 class CListBoxT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CListBoxT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -478,17 +473,17 @@ public:
 		return (LCID)::SendMessage(m_hWnd, LB_SETLOCALE, (WPARAM)nNewLocale, 0L);
 	}
 
- #if (WINVER >= 0x0500) && !defined(_WIN32_WCE)
+#if (WINVER >= 0x0500) && !defined(_WIN32_WCE)
 	DWORD GetListBoxInfo() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 		return (DWORD)::SendMessage(m_hWnd, LB_GETLISTBOXINFO, 0, 0L);
-	  #else // !(_WIN32_WINNT >= 0x0501)
+#else // !(_WIN32_WINNT >= 0x0501)
 		return ::GetListBoxInfo(m_hWnd);
-	  #endif // !(_WIN32_WINNT >= 0x0501)
+#endif // !(_WIN32_WINNT >= 0x0501)
 	}
- #endif // (WINVER >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (WINVER >= 0x0500) && !defined(_WIN32_WCE)
 
 	// for single-selection listboxes
 	int GetCurSel() const
@@ -596,8 +591,8 @@ public:
 		return (int)::SendMessage(m_hWnd, LB_GETTEXT, nIndex, (LPARAM)lpszBuffer);
 	}
 
- #ifndef _ATL_NO_COM
-  #ifdef _OLEAUTO_H_
+#ifndef _ATL_NO_COM
+#ifdef _OLEAUTO_H_
 	BOOL GetTextBSTR(int nIndex, BSTR& bstrText) const
 	{
 		USES_CONVERSION;
@@ -605,40 +600,40 @@ public:
 		ATLASSERT(bstrText == NULL);
 
 		int nLen = GetTextLen(nIndex);
-		if (nLen == LB_ERR)
+		if(nLen == LB_ERR)
 			return FALSE;
 
 		CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPTSTR lpstrText = buff.Allocate(nLen + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return FALSE;
 
-		if (GetText(nIndex, lpstrText) == LB_ERR)
+		if(GetText(nIndex, lpstrText) == LB_ERR)
 			return FALSE;
 
 		bstrText = ::SysAllocString(T2OLE(lpstrText));
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
-  #endif // _OLEAUTO_H_
- #endif // !_ATL_NO_COM
+#endif // _OLEAUTO_H_
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	int GetText(int nIndex, _CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		int cchLen = GetTextLen(nIndex);
-		if (cchLen == LB_ERR)
+		if(cchLen == LB_ERR)
 			return LB_ERR;
 		int nRet = LB_ERR;
 		LPTSTR lpstr = strText.GetBufferSetLength(cchLen);
-		if (lpstr != NULL)
+		if(lpstr != NULL)
 		{
 			nRet = GetText(nIndex, lpstr);
 			strText.ReleaseBuffer();
 		}
 		return nRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	int GetTextLen(int nIndex) const
 	{
@@ -726,7 +721,7 @@ public:
 		return (int)::SendMessage(m_hWnd, LB_INSERTSTRING, nIndex, (LPARAM)lpszItem);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int Dir(UINT attr, LPCTSTR lpszWildCard)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -738,7 +733,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LB_ADDFILE, 0, (LPARAM)lpstrFileName);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	// selection helpers
 	int FindString(int nStartAfter, LPCTSTR lpszItem) const
@@ -767,7 +762,7 @@ public:
 		return bSelect ? (int)::SendMessage(m_hWnd, LB_SELITEMRANGEEX, nFirstItem, nLastItem) : (int)::SendMessage(m_hWnd, LB_SELITEMRANGEEX, nLastItem, nFirstItem);
 	}
 
- #ifdef WIN32_PLATFORM_WFSP   // SmartPhone only messages
+#ifdef WIN32_PLATFORM_WFSP   // SmartPhone only messages
 	DWORD GetInputMode(BOOL bCurrentMode = TRUE)
 	{
 		return SendMessage(LB_GETINPUTMODE, 0, (LPARAM)bCurrentMode);
@@ -777,7 +772,7 @@ public:
 	{
 		return SendMessage(LB_SETINPUTMODE, 0, (LPARAM)dwMode);
 	}
- #endif // WIN32_PLATFORM_WFSP
+#endif // WIN32_PLATFORM_WFSP
 };
 
 typedef CListBoxT<ATL::CWindow>   CListBox;
@@ -809,7 +804,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return _T("COMBOBOX");
@@ -882,17 +877,17 @@ public:
 		return (int)::SendMessage(m_hWnd, CB_SETDROPPEDWIDTH, nWidth, 0L);
 	}
 
- #if ((WINVER >= 0x0500) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
+#if ((WINVER >= 0x0500) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
 	BOOL GetComboBoxInfo(PCOMBOBOXINFO pComboBoxInfo) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if ((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
+#if ((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
 		return (BOOL)::SendMessage(m_hWnd, CB_GETCOMBOBOXINFO, 0, (LPARAM)pComboBoxInfo);
-	  #else // !((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
+#else // !((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
 		return ::GetComboBoxInfo(m_hWnd, pComboBoxInfo);
-	  #endif // !((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
+#endif // !((_WIN32_WINNT >= 0x0501) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
 	}
- #endif // ((WINVER >= 0x0500) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
+#endif // ((WINVER >= 0x0500) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 420))
 
 	// for edit control
 	DWORD GetEditSel() const
@@ -938,7 +933,7 @@ public:
 		return (int)::SendMessage(m_hWnd, CB_GETLBTEXT, nIndex, (LPARAM)lpszText);
 	}
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetLBTextBSTR(int nIndex, BSTR& bstrText) const
 	{
 		USES_CONVERSION;
@@ -946,39 +941,39 @@ public:
 		ATLASSERT(bstrText == NULL);
 
 		int nLen = GetLBTextLen(nIndex);
-		if (nLen == CB_ERR)
+		if(nLen == CB_ERR)
 			return FALSE;
 
 		CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPTSTR lpstrText = buff.Allocate(nLen + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return FALSE;
 
-		if (GetLBText(nIndex, lpstrText) == CB_ERR)
+		if(GetLBText(nIndex, lpstrText) == CB_ERR)
 			return FALSE;
 
 		bstrText = ::SysAllocString(T2OLE(lpstrText));
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	int GetLBText(int nIndex, _CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		int cchLen = GetLBTextLen(nIndex);
-		if (cchLen == CB_ERR)
+		if(cchLen == CB_ERR)
 			return CB_ERR;
 		int nRet = CB_ERR;
-		LPTSTR lpstr = strText.GetBuffer(cchLen + 128);	//\\+ GetLBTextLenとGetLBTextの間のラグで同期がとれてないみたい？　とりあえず大目に確保しておく
-		if (lpstr != NULL)
+		LPTSTR lpstr = strText.GetBufferSetLength(cchLen);
+		if(lpstr != NULL)
 		{
 			nRet = GetLBText(nIndex, lpstr);
 			strText.ReleaseBuffer();
 		}
 		return nRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	int GetLBTextLen(int nIndex) const
 	{
@@ -1022,7 +1017,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, CB_GETDROPPEDSTATE, 0, 0L);
 	}
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	int GetMinVisible() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1038,9 +1033,9 @@ public:
 	// Vista only
 	BOOL GetCueBannerText(LPWSTR lpwText, int cchText) const
 	{
-	  #ifndef CB_GETCUEBANNER
+#ifndef CB_GETCUEBANNER
 		const UINT CB_GETCUEBANNER = (CBM_FIRST + 4);
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, CB_GETCUEBANNER, (WPARAM)lpwText, cchText);
 	}
@@ -1048,15 +1043,15 @@ public:
 	// Vista only
 	BOOL SetCueBannerText(LPCWSTR lpcwText)
 	{
-	  #ifndef CB_SETCUEBANNER
+#ifndef CB_SETCUEBANNER
 		const UINT CB_SETCUEBANNER = (CBM_FIRST + 3);
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, CB_SETCUEBANNER, 0, (LPARAM)lpcwText);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- // Operations
+// Operations
 	int InitStorage(int nItems, UINT nBytes)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1102,13 +1097,13 @@ public:
 		return (int)::SendMessage(m_hWnd, CB_INSERTSTRING, nIndex, (LPARAM)lpszString);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int Dir(UINT attr, LPCTSTR lpszWildCard)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, CB_DIR, attr, (LPARAM)lpszWildCard);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	// selection helpers
 	int FindString(int nStartAfter, LPCTSTR lpszString) const
@@ -1166,7 +1161,7 @@ template <class TBase>
 class CEditT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CEditT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -1183,7 +1178,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return _T("EDIT");
@@ -1231,7 +1226,7 @@ public:
 		::SendMessage(m_hWnd, EM_GETSEL, (WPARAM)&nStartChar, (LPARAM)&nEndChar);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	HLOCAL GetHandle() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1243,7 +1238,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SETHANDLE, (WPARAM)hBuffer, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	DWORD GetMargins() const
 	{
@@ -1281,7 +1276,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, EM_CHARFROMPOS, 0, MAKELPARAM(pt.x, pt.y));
-		if (pLine != NULL)
+		if(pLine != NULL)
 			*pLine = (int)(short)HIWORD(dwRet);
 		return (int)(short)LOWORD(dwRet);
 	}
@@ -1312,7 +1307,7 @@ public:
 		::SendMessage(m_hWnd, EM_SETPASSWORDCHAR, ch, 0L);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	EDITWORDBREAKPROC GetWordBreakProc() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1324,7 +1319,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SETWORDBREAKPROC, 0, (LPARAM)ewbprc);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int GetFirstVisibleLine() const
 	{
@@ -1332,14 +1327,14 @@ public:
 		return (int)::SendMessage(m_hWnd, EM_GETFIRSTVISIBLELINE, 0, 0L);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int GetThumb() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT((GetStyle() & ES_MULTILINE) != 0);
 		return (int)::SendMessage(m_hWnd, EM_GETTHUMB, 0, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	BOOL SetReadOnly(BOOL bReadOnly = TRUE)
 	{
@@ -1347,7 +1342,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, EM_SETREADONLY, bReadOnly, 0L);
 	}
 
- #if (WINVER >= 0x0500) && !defined(_WIN32_WCE)
+#if (WINVER >= 0x0500) && !defined(_WIN32_WCE)
 	UINT GetImeStatus(UINT uStatus) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1359,9 +1354,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (UINT)::SendMessage(m_hWnd, EM_SETIMESTATUS, uStatus, uData);
 	}
- #endif // (WINVER >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (WINVER >= 0x0500) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	BOOL GetCueBannerText(LPCWSTR lpstrText, int cchText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1374,9 +1369,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, EM_SETCUEBANNER, (WPARAM)bKeepWithFocus, (LPARAM)(lpstrText));
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- // Operations
+// Operations
 	void EmptyUndoBuffer()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1441,7 +1436,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SETSEL, LOWORD(dwSelection), HIWORD(dwSelection));
-		if (!bNoScroll)
+		if(!bNoScroll)
 			::SendMessage(m_hWnd, EM_SCROLLCARET, 0, 0L);
 	}
 
@@ -1449,7 +1444,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SETSEL, nStartChar, nEndChar);
-		if (!bNoScroll)
+		if(!bNoScroll)
 			::SendMessage(m_hWnd, EM_SCROLLCARET, 0, 0L);
 	}
 
@@ -1492,10 +1487,10 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT((GetStyle() & ES_MULTILINE) != 0);
 		LRESULT lRet = ::SendMessage(m_hWnd, EM_SCROLL, nScrollAction, 0L);
-		if (!(BOOL)HIWORD(lRet))
+		if(!(BOOL)HIWORD(lRet))
 			return -1;   // failed
 		return (int)(short)LOWORD(lRet);
-
+		
 	}
 
 	void InsertText(int nInsertAfterChar, LPCTSTR lpstrText, BOOL bNoScroll = FALSE, BOOL bCanUndo = FALSE)
@@ -1509,7 +1504,7 @@ public:
 		InsertText(GetWindowTextLength(), lpstrText, bNoScroll, bCanUndo);
 	}
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	BOOL ShowBalloonTip(PEDITBALLOONTIP pEditBaloonTip)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1521,9 +1516,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, EM_HIDEBALLOONTIP, 0, 0L);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	DWORD GetHilite() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1533,9 +1528,9 @@ public:
 	void GetHilite(int& nStartChar, int& nEndChar) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		DWORD	dwRet	= (DWORD)::SendMessage(m_hWnd, EM_GETHILITE, 0, 0L);
-		nStartChar		= (int)(short)LOWORD(dwRet);
-		nEndChar		= (int)(short)HIWORD(dwRet);
+		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, EM_GETHILITE, 0, 0L);
+		nStartChar = (int)(short)LOWORD(dwRet);
+		nEndChar = (int)(short)HIWORD(dwRet);
 	}
 
 	void SetHilite(int nStartChar, int nEndChar)
@@ -1543,7 +1538,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SETHILITE, nStartChar, nEndChar);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
 	// Clipboard operations
 	BOOL Undo()
@@ -1576,7 +1571,7 @@ public:
 		::SendMessage(m_hWnd, WM_PASTE, 0, 0L);
 	}
 
- #ifdef WIN32_PLATFORM_WFSP   // SmartPhone only messages
+#ifdef WIN32_PLATFORM_WFSP   // SmartPhone only messages
 	DWORD GetExtendedStyle()
 	{
 		return SendMessage(EM_GETEXTENDEDSTYLE);
@@ -1606,7 +1601,7 @@ public:
 	{
 		return SendMessage(EM_SETSYMBOLS);
 	}
- #endif // WIN32_PLATFORM_WFSP
+#endif // WIN32_PLATFORM_WFSP
 };
 
 typedef CEditT<ATL::CWindow>   CEdit;
@@ -1634,13 +1629,13 @@ class CEditCommands
 public:
 	BEGIN_MSG_MAP(CEditCommands< T >)
 	ALT_MSG_MAP(1)
-		COMMAND_ID_HANDLER(ID_EDIT_CLEAR     , OnEditClear		)
-		COMMAND_ID_HANDLER(ID_EDIT_CLEAR_ALL , OnEditClearAll	)
-		COMMAND_ID_HANDLER(ID_EDIT_COPY      , OnEditCopy		)
-		COMMAND_ID_HANDLER(ID_EDIT_CUT       , OnEditCut		)
-		COMMAND_ID_HANDLER(ID_EDIT_PASTE     , OnEditPaste		)
-		COMMAND_ID_HANDLER(ID_EDIT_SELECT_ALL, OnEditSelectAll	)
-		COMMAND_ID_HANDLER(ID_EDIT_UNDO      , OnEditUndo		)
+		COMMAND_ID_HANDLER(ID_EDIT_CLEAR, OnEditClear)
+		COMMAND_ID_HANDLER(ID_EDIT_CLEAR_ALL, OnEditClearAll)
+		COMMAND_ID_HANDLER(ID_EDIT_COPY, OnEditCopy)
+		COMMAND_ID_HANDLER(ID_EDIT_CUT, OnEditCut)
+		COMMAND_ID_HANDLER(ID_EDIT_PASTE, OnEditPaste)
+		COMMAND_ID_HANDLER(ID_EDIT_SELECT_ALL, OnEditSelectAll)
+		COMMAND_ID_HANDLER(ID_EDIT_UNDO, OnEditUndo)
 	END_MSG_MAP()
 
 	LRESULT OnEditClear(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
@@ -1693,7 +1688,7 @@ public:
 		return 0;
 	}
 
- // State (update UI) helpers
+// State (update UI) helpers
 	BOOL CanCut() const
 	{ return HasSelection(); }
 
@@ -1718,7 +1713,7 @@ public:
 	BOOL CanClearAll() const
 	{ return HasText(); }
 
- // Implementation
+// Implementation
 	BOOL HasSelection() const
 	{
 		const T* pT = static_cast<const T*>(this);
@@ -1742,7 +1737,7 @@ template <class TBase>
 class CScrollBarT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CScrollBarT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -1759,19 +1754,19 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return _T("SCROLLBAR");
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int GetScrollPos() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return ::GetScrollPos(m_hWnd, SB_CTL);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int SetScrollPos(int nPos, BOOL bRedraw = TRUE)
 	{
@@ -1779,13 +1774,13 @@ public:
 		return ::SetScrollPos(m_hWnd, SB_CTL, nPos, bRedraw);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	void GetScrollRange(LPINT lpMinPos, LPINT lpMaxPos) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::GetScrollRange(m_hWnd, SB_CTL, lpMinPos, lpMaxPos);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	void SetScrollRange(int nMinPos, int nMaxPos, BOOL bRedraw = TRUE)
 	{
@@ -1805,7 +1800,7 @@ public:
 		return ::SetScrollInfo(m_hWnd, SB_CTL, lpScrollInfo, bRedraw);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int GetScrollLimit() const
 	{
 		int nMin = 0, nMax = 0;
@@ -1813,25 +1808,25 @@ public:
 		SCROLLINFO info = { 0 };
 		info.cbSize = sizeof(SCROLLINFO);
 		info.fMask = SIF_PAGE;
-		if (::GetScrollInfo(m_hWnd, SB_CTL, &info))
+		if(::GetScrollInfo(m_hWnd, SB_CTL, &info))
 			nMax -= ((info.nPage - 1) > 0) ? (info.nPage - 1) : 0;
 
 		return nMax;
 	}
 
-  #if (WINVER >= 0x0500)
+#if (WINVER >= 0x0500)
 	BOOL GetScrollBarInfo(PSCROLLBARINFO pScrollBarInfo) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 		return (BOOL)::SendMessage(m_hWnd, SBM_GETSCROLLBARINFO, 0, (LPARAM)pScrollBarInfo);
-	  #else // !(_WIN32_WINNT >= 0x0501)
+#else // !(_WIN32_WINNT >= 0x0501)
 		return ::GetScrollBarInfo(m_hWnd, OBJID_CLIENT, pScrollBarInfo);
-	  #endif // !(_WIN32_WINNT >= 0x0501)
+#endif // !(_WIN32_WINNT >= 0x0501)
 	}
-  #endif // (WINVER >= 0x0500)
+#endif // (WINVER >= 0x0500)
 
-  // Operations
+// Operations
 	void ShowScrollBar(BOOL bShow = TRUE)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1843,7 +1838,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return ::EnableScrollBar(m_hWnd, SB_CTL, nArrowFlags);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 };
 
 typedef CScrollBarT<ATL::CWindow>   CScrollBar;
@@ -1859,11 +1854,11 @@ class CImageList
 public:
 	HIMAGELIST m_hImageList;
 
- // Constructor
+// Constructor
 	CImageList(HIMAGELIST hImageList = NULL) : m_hImageList(hImageList)
 	{ }
 
- // Operators, etc.
+// Operators, etc.
 	CImageList& operator =(HIMAGELIST hImageList)
 	{
 		m_hImageList = hImageList;
@@ -1984,23 +1979,23 @@ public:
 		return (m_hImageList != NULL) ? TRUE : FALSE;
 	}
 
- #ifndef _WIN32_WCE
-  #ifdef __IStream_INTERFACE_DEFINED__
+#ifndef _WIN32_WCE
+#ifdef __IStream_INTERFACE_DEFINED__
 	BOOL CreateFromStream(LPSTREAM lpStream)
 	{
 		ATLASSERT(m_hImageList == NULL);
 		m_hImageList = ImageList_Read(lpStream);
 		return (m_hImageList != NULL) ? TRUE : FALSE;
 	}
-  #endif // __IStream_INTERFACE_DEFINED__
- #endif // !_WIN32_WCE
+#endif // __IStream_INTERFACE_DEFINED__
+#endif // !_WIN32_WCE
 
 	BOOL Destroy()
 	{
 		if (m_hImageList == NULL)
 			return FALSE;
 		BOOL bRet = ImageList_Destroy(m_hImageList);
-		if (bRet)
+		if(bRet)
 			m_hImageList = NULL;
 		return bRet;
 	}
@@ -2092,8 +2087,8 @@ public:
 		return ImageList_Copy(m_hImageList, nDst, m_hImageList, nSrc, uFlags);
 	}
 
- #ifdef __IStream_INTERFACE_DEFINED__
-  #ifndef _WIN32_WCE
+#ifdef __IStream_INTERFACE_DEFINED__
+#ifndef _WIN32_WCE
 	static HIMAGELIST Read(LPSTREAM lpStream)
 	{
 		return ImageList_Read(lpStream);
@@ -2104,9 +2099,9 @@ public:
 		ATLASSERT(m_hImageList != NULL);
 		return ImageList_Write(m_hImageList, lpStream);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
-  #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	static HRESULT ReadEx(DWORD dwFlags, LPSTREAM lpStream, REFIID riid, PVOID* ppv)
 	{
 		return ImageList_ReadEx(dwFlags, lpStream, riid, ppv);
@@ -2117,8 +2112,8 @@ public:
 		ATLASSERT(m_hImageList != NULL);
 		return ImageList_WriteEx(m_hImageList, dwFlags, lpStream);
 	}
-  #endif // (_WIN32_WINNT >= 0x0501)
- #endif // __IStream_INTERFACE_DEFINED__
+#endif // (_WIN32_WINNT >= 0x0501)
+#endif // __IStream_INTERFACE_DEFINED__
 
 	// Drag operations
 	BOOL BeginDrag(int nImage, POINT ptHotSpot)
@@ -2185,7 +2180,7 @@ public:
 		return ImageList_DragLeave(hWnd);
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	CImageList Duplicate() const
 	{
 		ATLASSERT(m_hImageList != NULL);
@@ -2197,7 +2192,7 @@ public:
 		ATLASSERT(hImageList != NULL);
 		return CImageList(ImageList_Duplicate(hImageList));
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 };
 
 
@@ -2222,24 +2217,24 @@ public:
 	{
 		ATLASSERT(::IsWindow(hWnd));
 		memset(this, 0, sizeof(TOOLINFO));
-		cbSize 		= sizeof(TOOLINFO);
-		uFlags 		= nFlags;
-		if (nIDTool == 0)
+		cbSize = sizeof(TOOLINFO);
+		uFlags = nFlags;
+		if(nIDTool == 0)
 		{
-			hwnd 	= ::GetParent(hWnd);
+			hwnd = ::GetParent(hWnd);
 			uFlags |= TTF_IDISHWND;
-			uId 	= (UINT_PTR)hWnd;
+			uId = (UINT_PTR)hWnd;
 		}
 		else
 		{
-			hwnd 	= hWnd;
-			uId 	= nIDTool;
+			hwnd = hWnd;
+			uId = nIDTool;
 		}
-		if (lpRect != NULL)
-			rect 	= *lpRect;
+		if(lpRect != NULL)
+			rect = *lpRect;
 		hinst = ModuleHelper::GetResourceInstance();
-		lpszText 	= lpstrText;
-		lParam 		= lUserParam;
+		lpszText = lpstrText;
+		lParam = lUserParam;
 	}
 };
 
@@ -2247,7 +2242,7 @@ template <class TBase>
 class CToolTipCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CToolTipCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -2264,7 +2259,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return TOOLTIPS_CLASS;
@@ -2298,7 +2293,7 @@ public:
 		ATLASSERT(lpRect != NULL);
 		CToolInfo ti(0, hWnd, nIDTool, NULL, lpstrText);
 		BOOL bRet = (BOOL)::SendMessage(m_hWnd, TTM_GETTOOLINFO, 0, ti);
-		if (bRet != FALSE)
+		if(bRet != FALSE)
 		{
 			*puFlags = ti.uFlags;
 			*lpRect = ti.rect;
@@ -2400,7 +2395,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TTM_GETCURRENTTOOL, 0, (LPARAM)lpToolInfo);
 	}
 
- #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	SIZE GetBubbleSize(LPTOOLINFO lpToolInfo) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2414,9 +2409,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TTM_SETTITLE, uIcon, (LPARAM)lpstrTitle);
 	}
- #endif // (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0500)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	void GetTitle(PTTGETTITLE pTTGetTitle) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2428,9 +2423,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TTM_SETWINDOWTHEME, 0, (LPARAM)lpstrTheme);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- // Operations
+// Operations
 	void Activate(BOOL bActivate)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2486,7 +2481,7 @@ public:
 		hti.hwnd = hWnd;
 		hti.pt.x = pt.x;
 		hti.pt.y = pt.y;
-		if ((BOOL)::SendMessage(m_hWnd, TTM_HITTEST, 0, (LPARAM)&hti) != FALSE)
+		if((BOOL)::SendMessage(m_hWnd, TTM_HITTEST, 0, (LPARAM)&hti) != FALSE)
 		{
 			*lpToolInfo = hti.ti;
 			return TRUE;
@@ -2539,29 +2534,29 @@ public:
 		::SendMessage(m_hWnd, TTM_TRACKPOSITION, 0, MAKELPARAM(xPos, yPos));
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	void Update()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TTM_UPDATE, 0, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	BOOL AdjustRect(LPRECT lpRect, BOOL bLarger /*= TRUE*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TTM_ADJUSTRECT, bLarger, (LPARAM)lpRect);
 	}
- #endif // (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0500)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	void Popup()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TTM_POPUP, 0, 0L);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 };
 
 typedef CToolTipCtrlT<ATL::CWindow>   CToolTipCtrl;
@@ -2576,7 +2571,7 @@ template <class TBase>
 class CHeaderCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CHeaderCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -2593,7 +2588,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_HEADER;
@@ -2653,7 +2648,7 @@ public:
 		return (int)::SendMessage(m_hWnd, HDM_SETHOTDIVIDER, bPos, dwInputValue);
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2665,9 +2660,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, HDM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	int GetBitmapMargin() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2685,9 +2680,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, HDM_SETFILTERCHANGETIMEOUT, 0, dwTimeOut);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	BOOL GetItemDropDownRect(int nIndex, LPRECT lpRect) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2711,9 +2706,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, HDM_SETFOCUSEDITEM, 0, nIndex);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	int InsertItem(int nIndex, LPHDITEM phdi)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2755,7 +2750,7 @@ public:
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, HDM_CREATEDRAGIMAGE, nIndex, 0L));
 	}
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	int EditFilter(int nColumn, BOOL bDiscardChanges)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -2773,7 +2768,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, HDM_CLEARFILTER, (WPARAM)-1, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 };
 
 typedef CHeaderCtrlT<ATL::CWindow>   CHeaderCtrl;
@@ -2786,7 +2781,7 @@ template <class TBase>
 class CListViewCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CListViewCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -2803,7 +2798,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_LISTVIEW;
@@ -2829,7 +2824,7 @@ public:
 
 	CImageList SetImageList(HIMAGELIST hImageList, int nImageList)
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, LVM_SETIMAGELIST, nImageList, (LPARAM)hImageList));
 	}
 
@@ -2861,15 +2856,15 @@ public:
 		int nImage, UINT nState, UINT nStateMask, LPARAM lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVITEM 		lvi = { 0 };
-		lvi.mask 		= nMask;
-		lvi.iItem 		= nItem;
-		lvi.iSubItem 	= nSubItem;
-		lvi.stateMask 	= nStateMask;
-		lvi.state 		= nState;
-		lvi.pszText 	= (LPTSTR) lpszItem;
-		lvi.iImage 		= nImage;
-		lvi.lParam 		= lParam;
+		LVITEM lvi = { 0 };
+		lvi.mask = nMask;
+		lvi.iItem = nItem;
+		lvi.iSubItem = nSubItem;
+		lvi.stateMask = nStateMask;
+		lvi.state = nState;
+		lvi.pszText = (LPTSTR) lpszItem;
+		lvi.iImage = nImage;
+		lvi.lParam = lParam;
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETITEM, 0, (LPARAM)&lvi);
 	}
 
@@ -2894,77 +2889,77 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETITEMSTATE, nItem, (LPARAM)pItem);
 	}
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetItemText(int nItem, int nSubItem, BSTR& bstrText) const
 	{
 		USES_CONVERSION;
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(bstrText == NULL);
-		LVITEM 		lvi 	= { 0 };
-		lvi.iSubItem 		= nSubItem;
+		LVITEM lvi = { 0 };
+		lvi.iSubItem = nSubItem;
 
-		LPTSTR 	lpstrText 	= NULL;
-		int 	nRes 		= 0;
-		for (int nLen = 256; ; nLen *= 2)
+		LPTSTR lpstrText = NULL;
+		int nRes = 0;
+		for(int nLen = 256; ; nLen *= 2)
 		{
 			ATLTRY(lpstrText = new TCHAR[nLen]);
-			if (lpstrText == NULL)
+			if(lpstrText == NULL)
 				break;
-			lpstrText[0] 	= NULL;
-			lvi.cchTextMax 	= nLen;
-			lvi.pszText 	= lpstrText;
-			nRes  			= (int)::SendMessage(m_hWnd, LVM_GETITEMTEXT, (WPARAM)nItem, (LPARAM)&lvi);
-			if (nRes < nLen - 1)
+			lpstrText[0] = NULL;
+			lvi.cchTextMax = nLen;
+			lvi.pszText = lpstrText;
+			nRes  = (int)::SendMessage(m_hWnd, LVM_GETITEMTEXT, (WPARAM)nItem, (LPARAM)&lvi);
+			if(nRes < nLen - 1)
 				break;
 			delete [] lpstrText;
-			lpstrText 		= NULL;
+			lpstrText = NULL;
 		}
 
-		if (lpstrText != NULL)
+		if(lpstrText != NULL)
 		{
-			if (nRes != 0)
+			if(nRes != 0)
 				bstrText = ::SysAllocString(T2OLE(lpstrText));
 			delete [] lpstrText;
 		}
 
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	int GetItemText(int nItem, int nSubItem, _CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVITEM 		lvi = { 0 };
-		lvi.iSubItem 	= nSubItem;
+		LVITEM lvi = { 0 };
+		lvi.iSubItem = nSubItem;
 
 		strText.Empty();
-		int 		nRes = 0;
-		for (int nLen = 256; ; nLen *= 2)
+		int nRes = 0;
+		for(int nLen = 256; ; nLen *= 2)
 		{
-			lvi.cchTextMax 	= nLen;
-			lvi.pszText 	= strText.GetBufferSetLength(nLen);
-			if (lvi.pszText == NULL)
+			lvi.cchTextMax = nLen;
+			lvi.pszText = strText.GetBufferSetLength(nLen);
+			if(lvi.pszText == NULL)
 			{
 				nRes = 0;
 				break;
 			}
 			nRes  = (int)::SendMessage(m_hWnd, LVM_GETITEMTEXT, (WPARAM)nItem, (LPARAM)&lvi);
-			if (nRes < nLen - 1)
+			if(nRes < nLen - 1)
 				break;
 		}
 		strText.ReleaseBuffer();
 		return nRes;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	int GetItemText(int nItem, int nSubItem, LPTSTR lpszText, int nLen) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVITEM 		lvi = { 0 };
-		lvi.iSubItem 	= nSubItem;
-		lvi.cchTextMax 	= nLen;
-		lvi.pszText 	= lpszText;
+		LVITEM lvi = { 0 };
+		lvi.iSubItem = nSubItem;
+		lvi.cchTextMax = nLen;
+		lvi.pszText = lpszText;
 		return (int)::SendMessage(m_hWnd, LVM_GETITEMTEXT, (WPARAM)nItem, (LPARAM)&lvi);
 	}
 
@@ -2977,10 +2972,10 @@ public:
 	DWORD_PTR GetItemData(int nItem) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVITEM lvi 		= { 0 };
-		lvi.iItem 		= nItem;
-		lvi.mask 		= LVIF_PARAM;
-		BOOL 	bRet	= (BOOL)::SendMessage(m_hWnd, LVM_GETITEM, 0, (LPARAM)&lvi);
+		LVITEM lvi = { 0 };
+		lvi.iItem = nItem;
+		lvi.mask = LVIF_PARAM;
+		BOOL bRet = (BOOL)::SendMessage(m_hWnd, LVM_GETITEM, 0, (LPARAM)&lvi);
 		return (DWORD_PTR)(bRet ? lvi.lParam : NULL);
 	}
 
@@ -3019,7 +3014,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(((GetStyle() & LVS_TYPEMASK) == LVS_ICON) || ((GetStyle() & LVS_TYPEMASK) == LVS_SMALLICON));
-		POINT 	pt = { x, y };
+		POINT pt = { x, y };
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETITEMPOSITION32, nItem, (LPARAM)&pt);
 	}
 
@@ -3120,7 +3115,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, LVM_GETITEMRECT, (WPARAM)nItem, (LPARAM)lpRect);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	HCURSOR GetHotCursor() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3144,7 +3139,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LVM_SETHOTITEM, nIndex, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	BOOL GetColumnOrderArray(int nCount, int* lpnArray) const
 	{
@@ -3195,13 +3190,13 @@ public:
 		sizeSpacing.cy = GET_Y_LPARAM(dwRet);
 	}
 
- #if (_WIN32_WCE >= 410)
+#if (_WIN32_WCE >= 410)
 	void SetItemSpacing(INT cySpacing)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ListView_SetItemSpacing(m_hWnd, cySpacing);
 	}
- #endif // (_WIN32_WCE >= 410)
+#endif // (_WIN32_WCE >= 410)
 
 	// single-selection only
 	int GetSelectedIndex() const
@@ -3217,7 +3212,7 @@ public:
 		ATLASSERT((GetStyle() & LVS_SINGLESEL) != 0);
 		ATLASSERT(pItem != NULL);
 		pItem->iItem = (int)::SendMessage(m_hWnd, LVM_GETNEXTITEM, (WPARAM)-1, MAKELPARAM(LVNI_ALL | LVNI_SELECTED, 0));
-		if (pItem->iItem == -1)
+		if(pItem->iItem == -1)
 			return FALSE;
 		return (BOOL)::SendMessage(m_hWnd, LVM_GETITEM, 0, (LPARAM)pItem);
 	}
@@ -3263,13 +3258,13 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(dwType == LVS_ICON || dwType == LVS_SMALLICON || dwType == LVS_LIST || dwType == LVS_REPORT);
 		DWORD dwOldType = GetViewType();
-		if (dwType != dwOldType)
+		if(dwType != dwOldType)
 			ModifyStyle(LVS_TYPEMASK, (dwType & LVS_TYPEMASK));
 		return dwOldType;
 	}
 
- #if (_WIN32_IE >= 0x0400)
-  #ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
 	BOOL GetBkImage(LPLVBKIMAGE plvbki) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3281,7 +3276,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETBKIMAGE, 0, (LPARAM)plvbki);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int GetSelectionMark() const
 	{
@@ -3295,7 +3290,7 @@ public:
 		return (int)::SendMessage(m_hWnd, LVM_SETSELECTIONMARK, 0, nIndex);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetWorkAreas(int nWorkAreas, LPRECT lpRect) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3327,7 +3322,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, LVM_GETNUMBEROFWORKAREAS, 0, (LPARAM)pnWorkAreas);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	BOOL SetItemCountEx(int nItems, DWORD dwFlags)
 	{
@@ -3336,7 +3331,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETITEMCOUNT, nItems, dwFlags);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetToolTips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3360,10 +3355,10 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, LVM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	int GetSelectedColumn() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3483,9 +3478,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (COLORREF)::SendMessage(m_hWnd, LVM_SETOUTLINECOLOR, 0, clr);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	int GetGroupCount() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3502,7 +3497,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(lpRect != NULL);
-		if (lpRect != NULL)
+		if(lpRect != NULL)
 			lpRect->top = nType;
 		return (BOOL)::SendMessage(m_hWnd, LVM_GETGROUPRECT, nGroupID, (LPARAM)lpRect);
 	}
@@ -3554,7 +3549,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(pItemIndex != NULL);
 		ATLASSERT(lpRect != NULL);
-		if (lpRect != NULL)
+		if(lpRect != NULL)
 		{
 			lpRect->top = nSubItem;
 			lpRect->left = nType;
@@ -3576,16 +3571,16 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, LVM_GETNEXTITEMINDEX, (WPARAM)pItemIndex, MAKELPARAM(wFlags, 0));
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	int InsertColumn(int nCol, const LVCOLUMN* pColumn)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LVM_INSERTCOLUMN, nCol, (LPARAM)pColumn);
 	}
 
-	int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT,
+	int InsertColumn(int nCol, LPCTSTR lpszColumnHeading, int nFormat = LVCFMT_LEFT, 
 			int nWidth = -1, int nSubItem = -1, int iImage = -1, int iOrder = -1)
 	{
 		LVCOLUMN column = { 0 };
@@ -3688,7 +3683,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		LVHITTESTINFO hti = { 0 };
-		hti.pt 	 = pt;
+		hti.pt = pt;
 		int nRes = (int)::SendMessage(m_hWnd, LVM_HITTEST, 0, (LPARAM)&hti);
 		if (pFlags != NULL)
 			*pFlags = hti.flags;
@@ -3762,48 +3757,48 @@ public:
 	}
 
 	int AddColumn(LPCTSTR strItem, int nItem, int nSubItem = -1,
-			int  nMask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM,
-			int  nFmt  = LVCFMT_LEFT)
+			int nMask = LVCF_FMT | LVCF_WIDTH | LVCF_TEXT | LVCF_SUBITEM,
+			int nFmt = LVCFMT_LEFT)
 	{
 		const int cxOffset = 15;
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVCOLUMN 	lvc 	= { 0 };
-		lvc.mask 			= nMask;
-		lvc.fmt 			= nFmt;
-		lvc.pszText 		= (LPTSTR)strItem;
-		lvc.cx 				= GetStringWidth(lvc.pszText) + cxOffset;
-		if (nMask & LVCF_SUBITEM)
-			lvc.iSubItem 	= (nSubItem != -1) ? nSubItem : nItem;
+		LVCOLUMN lvc = { 0 };
+		lvc.mask = nMask;
+		lvc.fmt = nFmt;
+		lvc.pszText = (LPTSTR)strItem;
+		lvc.cx = GetStringWidth(lvc.pszText) + cxOffset;
+		if(nMask & LVCF_SUBITEM)
+			lvc.iSubItem = (nSubItem != -1) ? nSubItem : nItem;
 		return InsertColumn(nItem, &lvc);
 	}
 
 	int AddItem(int nItem, int nSubItem, LPCTSTR strItem, int nImageIndex = -1)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		LVITEM 		lvItem 	= { 0 };
-		lvItem.mask 		= LVIF_TEXT;
-		lvItem.iItem 		= nItem;
-		lvItem.iSubItem 	= nSubItem;
-		lvItem.pszText 		= (LPTSTR)strItem;
-		if (nImageIndex != -1)
+		LVITEM lvItem = { 0 };
+		lvItem.mask = LVIF_TEXT;
+		lvItem.iItem = nItem;
+		lvItem.iSubItem = nSubItem;
+		lvItem.pszText = (LPTSTR)strItem;
+		if(nImageIndex != -1)
 		{
-			lvItem.mask 	|= LVIF_IMAGE;
-			lvItem.iImage 	=  nImageIndex;
+			lvItem.mask |= LVIF_IMAGE;
+			lvItem.iImage = nImageIndex;
 		}
-		if (nSubItem == 0)
+		if(nSubItem == 0)
 			return InsertItem(&lvItem);
 		return SetItem(&lvItem) ? nItem : -1;
 	}
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	BOOL SortItemsEx(PFNLVCOMPARE pfnCompare, LPARAM lParamSort)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, LVM_SORTITEMSEX, (WPARAM)lParamSort, (LPARAM)pfnCompare);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	int InsertGroup(int nItem, PLVGROUP pGroup)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3892,9 +3887,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LVM_MAPIDTOINDEX, uID, 0L);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	int HitTestEx(LPLVHITTESTINFO lpHitTestInfo) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3917,7 +3912,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LVM_SUBITEMHITTEST, (WPARAM)-1, (LPARAM)lpHitTestInfo);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
 	// Note: selects only one item
 	BOOL SelectItem(int nIndex)
@@ -3929,7 +3924,7 @@ public:
 			SetItemState(-1, 0, LVIS_SELECTED);
 
 		BOOL bRet = SetItemState(nIndex, LVIS_SELECTED | LVIS_FOCUSED, LVIS_SELECTED | LVIS_FOCUSED);
-		if (bRet)
+		if(bRet)
 			bRet = EnsureVisible(nIndex, FALSE);
 
 		return bRet;
@@ -3946,7 +3941,7 @@ template <class TBase>
 class CTreeViewCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CTreeViewCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -3963,7 +3958,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_TREEVIEW;
@@ -4015,15 +4010,15 @@ public:
 		int nSelectedImage, UINT nState, UINT nStateMask, LPARAM lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVITEM 		item 	= { 0 };
-		item.hItem 		 	= hItem;
-		item.mask 		 	= nMask;
-		item.pszText 	 	= (LPTSTR) lpszItem;
-		item.iImage 	 	= nImage;
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = nMask;
+		item.pszText = (LPTSTR) lpszItem;
+		item.iImage = nImage;
 		item.iSelectedImage = nSelectedImage;
-		item.state 		 	= nState;
-		item.stateMask 	 	= nStateMask;
-		item.lParam 		= lParam;
+		item.state = nState;
+		item.stateMask = nStateMask;
+		item.lParam = lParam;
 		return (BOOL)::SendMessage(m_hWnd, TVM_SETITEM, 0, (LPARAM)&item);
 	}
 
@@ -4032,80 +4027,80 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(lpstrText != NULL);
 
-		TVITEM item 	= { 0 };
-		item.hItem 		= hItem;
-		item.mask 		= TVIF_TEXT;
-		item.pszText 	= lpstrText;
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = TVIF_TEXT;
+		item.pszText = lpstrText;
 		item.cchTextMax = nLen;
 
 		return (BOOL)::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
 	}
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetItemText(HTREEITEM hItem, BSTR& bstrText) const
 	{
 		USES_CONVERSION;
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(bstrText == NULL);
-		TVITEM 		item 		= { 0 };
-		item.hItem 				= hItem;
-		item.mask 		 		= TVIF_TEXT;
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = TVIF_TEXT;
 
-		LPTSTR 		lpstrText	= NULL;
-		BOOL 		bRet 		= FALSE;
-		for (int nLen = 256; ; nLen *= 2)
+		LPTSTR lpstrText = NULL;
+		BOOL bRet = FALSE;
+		for(int nLen = 256; ; nLen *= 2)
 		{
 			ATLTRY(lpstrText = new TCHAR[nLen]);
-			if (lpstrText == NULL)
+			if(lpstrText == NULL)
 				break;
-			lpstrText[0] 	= NULL;
-			item.pszText 	= lpstrText;
+			lpstrText[0] = NULL;
+			item.pszText = lpstrText;
 			item.cchTextMax = nLen;
 			bRet = (BOOL)::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
-			if (!bRet || (lstrlen(item.pszText) < nLen - 1))
+			if(!bRet || (lstrlen(item.pszText) < nLen - 1))
 				break;
 			delete [] lpstrText;
 			lpstrText = NULL;
 		}
 
-		if (lpstrText != NULL)
+		if(lpstrText != NULL)
 		{
-			if (bRet)
+			if(bRet)
 				bstrText = ::SysAllocString(T2OLE(lpstrText));
 			delete [] lpstrText;
 		}
 
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL GetItemText(HTREEITEM hItem, _CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVITEM 	item 	= { 0 };
-		item.hItem 	 	= hItem;
-		item.mask 		= TVIF_TEXT;
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = TVIF_TEXT;
 
 		strText.Empty();
-		BOOL 	bRet 	= FALSE;
-		for (int nLen = 256; ; nLen *= 2)
+		BOOL bRet = FALSE;
+		for(int nLen = 256; ; nLen *= 2)
 		{
 			item.pszText = strText.GetBufferSetLength(nLen);
-			if (item.pszText == NULL)
+			if(item.pszText == NULL)
 			{
 				bRet = FALSE;
 				break;
 			}
 			item.cchTextMax = nLen;
 			bRet = (BOOL)::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
-			if (!bRet || (lstrlen(item.pszText) < nLen - 1))
+			if(!bRet || (lstrlen(item.pszText) < nLen - 1))
 				break;
 		}
 		strText.ReleaseBuffer();
 		return bRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	BOOL SetItemText(HTREEITEM hItem, LPCTSTR lpszItem)
 	{
@@ -4137,17 +4132,17 @@ public:
 	UINT GetItemState(HTREEITEM hItem, UINT nStateMask) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 		return (((UINT)::SendMessage(m_hWnd, TVM_GETITEMSTATE, (WPARAM)hItem, (LPARAM)nStateMask)) & nStateMask);
-	  #else // !((_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE))
-		TVITEM 		item = { 0 };
-		item.hItem 		 = hItem;
-		item.mask 		 = TVIF_STATE;
-		item.state 		 = 0;
-		item.stateMask 	 = nStateMask;
+#else // !((_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE))
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = TVIF_STATE;
+		item.state = 0;
+		item.stateMask = nStateMask;
 		::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
 		return (item.state & nStateMask);
-	  #endif // !((_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE))
+#endif // !((_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE))
 	}
 
 	BOOL SetItemState(HTREEITEM hItem, UINT nState, UINT nStateMask)
@@ -4159,10 +4154,10 @@ public:
 	DWORD_PTR GetItemData(HTREEITEM hItem) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVITEM 	item = { 0 };
-		item.hItem 	 = hItem;
-		item.mask 	 = TVIF_PARAM;
-		BOOL 	bRet = (BOOL)::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
+		TVITEM item = { 0 };
+		item.hItem = hItem;
+		item.mask = TVIF_PARAM;
+		BOOL bRet = (BOOL)::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
 		return (DWORD_PTR)(bRet ? item.lParam : NULL);
 	}
 
@@ -4195,13 +4190,13 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		TVITEM item = { 0 };
-		item.hItem 	= hItem;
-		item.mask 	= TVIF_CHILDREN;
+		item.hItem = hItem;
+		item.mask = TVIF_CHILDREN;
 		::SendMessage(m_hWnd, TVM_GETITEM, 0, (LPARAM)&item);
 		return item.cChildren;
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetToolTips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4213,7 +4208,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CToolTipCtrl((HWND)::SendMessage(m_hWnd, TVM_SETTOOLTIPS, (WPARAM)hWndTT, 0L));
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int GetISearchString(LPTSTR lpstr) const
 	{
@@ -4236,7 +4231,7 @@ public:
 		return SetItemState(hItem, INDEXTOSTATEIMAGEMASK(nCheck), TVIS_STATEIMAGEMASK);
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	COLORREF GetBkColor() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4308,9 +4303,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TVM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	COLORREF GetLineColor() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4322,9 +4317,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (COLORREF)::SendMessage(m_hWnd, TVM_SETLINECOLOR, 0, (LPARAM)clrNew);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL GetItem(LPTVITEMEX pItem) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4336,27 +4331,27 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TVM_SETITEM, 0, (LPARAM)pItem);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
 	DWORD GetExtendedStyle() const
 	{
-	  #ifndef TVM_GETEXTENDEDSTYLE
+#ifndef TVM_GETEXTENDEDSTYLE
 		const UINT TVM_GETEXTENDEDSTYLE = (TV_FIRST + 45);
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (DWORD)::SendMessage(m_hWnd, TVM_GETEXTENDEDSTYLE, 0, 0L);
 	}
 
 	DWORD SetExtendedStyle(DWORD dwStyle, DWORD dwMask)
 	{
-	  #ifndef TVM_SETEXTENDEDSTYLE
+#ifndef TVM_SETEXTENDEDSTYLE
 		const UINT TVM_SETEXTENDEDSTYLE = (TV_FIRST + 44);
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (DWORD)::SendMessage(m_hWnd, TVM_SETEXTENDEDSTYLE, dwMask, dwStyle);
 	}
 
-  #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	BOOL SetAutoScrollInfo(UINT uPixPerSec, UINT uUpdateTime)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4375,9 +4370,9 @@ public:
 		TVGETITEMPARTRECTINFO gipri = { hItem, lpRect, partID };
 		return (BOOL)::SendMessage(m_hWnd, TVM_GETITEMPARTRECT, 0, (LPARAM)&gipri);
 	}
-  #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	HTREEITEM InsertItem(LPTVINSERTSTRUCT lpInsertStruct)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4388,7 +4383,7 @@ public:
 		int nSelectedImage, HTREEITEM hParent, HTREEITEM hInsertAfter)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		return InsertItem(TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, lpszItem, nImage, nSelectedImage, 0, 0, 0, hParent, hInsertAfter);
+		return InsertItem(TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, lpszItem, nImage, nSelectedImage, 0, 0, 0, hParent, hInsertAfter); 
 	}
 
 	HTREEITEM InsertItem(LPCTSTR lpszItem, HTREEITEM hParent, HTREEITEM hInsertAfter)
@@ -4402,16 +4397,16 @@ public:
 		HTREEITEM hParent, HTREEITEM hInsertAfter)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVINSERTSTRUCT 	tvis 	 = { 0 };
-		tvis.hParent 		 	 = hParent;
-		tvis.hInsertAfter 	 	 = hInsertAfter;
-		tvis.item.mask 		 	 = nMask;
-		tvis.item.pszText 	 	 = (LPTSTR) lpszItem;
-		tvis.item.iImage 	 	 = nImage;
+		TVINSERTSTRUCT tvis = { 0 };
+		tvis.hParent = hParent;
+		tvis.hInsertAfter = hInsertAfter;
+		tvis.item.mask = nMask;
+		tvis.item.pszText = (LPTSTR) lpszItem;
+		tvis.item.iImage = nImage;
 		tvis.item.iSelectedImage = nSelectedImage;
-		tvis.item.state 		 = nState;
-		tvis.item.stateMask 	 = nStateMask;
-		tvis.item.lParam 		 = lParam;
+		tvis.item.state = nState;
+		tvis.item.stateMask = nStateMask;
+		tvis.item.lParam = lParam;
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_INSERTITEM, 0, (LPARAM)&tvis);
 	}
 
@@ -4435,37 +4430,37 @@ public:
 
 	HTREEITEM GetNextItem(HTREEITEM hItem, UINT nCode) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, nCode, (LPARAM)hItem);
 	}
 
 	HTREEITEM GetChildItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hItem);
 	}
 
 	HTREEITEM GetNextSiblingItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
-		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXT, (LPARAM)hItem);
+		ATLASSERT(::IsWindow(m_hWnd)); 
+		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXT, (LPARAM)hItem); 
 	}
 
 	HTREEITEM GetPrevSiblingItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PREVIOUS, (LPARAM)hItem);
 	}
 
 	HTREEITEM GetParentItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
-		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PARENT, (LPARAM)hItem);
+		ATLASSERT(::IsWindow(m_hWnd)); 
+		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PARENT, (LPARAM)hItem); 
 	}
 
 	HTREEITEM GetFirstVisibleItem() const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_FIRSTVISIBLE, 0L);
 	}
 
@@ -4499,21 +4494,21 @@ public:
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_ROOT, 0L);
 	}
 
- #if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
 	HTREEITEM GetLastVisibleItem() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0L);
 	}
- #endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0600)
+#if (_WIN32_IE >= 0x0600)
 	HTREEITEM GetNextSelectedItem() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0600)
+#endif // (_WIN32_IE >= 0x0600)
 
 	BOOL Select(HTREEITEM hItem, UINT nCode)
 	{
@@ -4560,12 +4555,12 @@ public:
 	HTREEITEM HitTest(POINT pt, UINT* pFlags) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVHITTESTINFO 	hti = { 0 };
-		hti.pt 				= pt;
+		TVHITTESTINFO hti = { 0 };
+		hti.pt = pt;
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_HITTEST, 0, (LPARAM)&hti);
 		if (pFlags != NULL)
-			*pFlags 		= hti.flags;
-		return 		hTreeItem;
+			*pFlags = hti.flags;
+		return hTreeItem;
 	}
 
 	BOOL SortChildren(HTREEITEM hItem, BOOL bRecurse = FALSE)
@@ -4598,7 +4593,7 @@ public:
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, TVM_CREATEDRAGIMAGE, 0, (LPARAM)hItem));
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL SetInsertMark(HTREEITEM hTreeItem, BOOL bAfter)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4610,9 +4605,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TVM_SETINSERTMARK, 0, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	HTREEITEM MapAccIDToHTREEITEM(UINT uID) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4624,15 +4619,15 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (UINT)::SendMessage(m_hWnd, TVM_MAPHTREEITEMTOACCID, (WPARAM)hTreeItem, 0L);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	void ShowInfoTip(HTREEITEM hItem)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TVM_SHOWINFOTIP, 0, (LPARAM)hItem);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 };
 
 typedef CTreeViewCtrlT<ATL::CWindow>   CTreeViewCtrl;
@@ -4652,10 +4647,10 @@ public:
 	HTREEITEM m_hTreeItem;
 	CTreeViewCtrlExT<TBase>* m_pTreeView;
 
- // Construction
+// Construction
 	CTreeItemT(HTREEITEM hTreeItem = NULL, CTreeViewCtrlExT<TBase>* pTreeView = NULL) : m_hTreeItem(hTreeItem), m_pTreeView(pTreeView)
 	{ }
-
+ 
 	CTreeItemT(const CTreeItemT<TBase>& posSrc)
 	{
 		*this = posSrc;
@@ -4670,21 +4665,21 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	CTreeViewCtrlExT<TBase>* GetTreeView() const { return m_pTreeView; }
 
 	BOOL operator !() const { return m_hTreeItem == NULL; }
 
 	BOOL IsNull() const { return m_hTreeItem == NULL; }
-
+	
 	BOOL GetRect(LPRECT lpRect, BOOL bTextOnly) const;
 	BOOL GetText(LPTSTR lpstrText, int nLen) const;
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetText(BSTR& bstrText) const;
- #endif // !_ATL_NO_COM
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // !_ATL_NO_COM
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL GetText(_CSTRING_NS::CString& strText) const;
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL SetText(LPCTSTR lpszItem);
 	BOOL GetImage(int& nImage, int& nSelectedImage) const;
 	BOOL SetImage(int nImage, int nSelectedImage);
@@ -4694,7 +4689,7 @@ public:
 	BOOL SetData(DWORD_PTR dwData);
 	BOOL SetItem(UINT nMask, LPCTSTR lpszItem, int nImage, int nSelectedImage, UINT nState, UINT nStateMask, LPARAM lParam);
 
- // Operations
+// Operations
 	CTreeItemT<TBase> InsertAfter(LPCTSTR lpstrItem, HTREEITEM hItemAfter, int nImageIndex)
 	{
 		return _Insert(lpstrItem, nImageIndex, hItemAfter);
@@ -4721,12 +4716,12 @@ public:
 	CTreeItemT<TBase> GetSelected() const;
 	CTreeItemT<TBase> GetDropHilight() const;
 	CTreeItemT<TBase> GetRoot() const;
- #if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
 	CTreeItemT<TBase> GetLastVisible() const;
- #endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
- #if (_WIN32_IE >= 0x0600)
+#endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0600)
 	CTreeItemT<TBase> GetNextSelected() const;
- #endif // (_WIN32_IE >= 0x0600)
+#endif // (_WIN32_IE >= 0x0600)
 	BOOL HasChildren() const;
 	BOOL Delete();
 	BOOL Expand(UINT nCode = TVE_EXPAND);
@@ -4740,16 +4735,16 @@ public:
 	BOOL EnsureVisible();
 	CTreeItemT<TBase> _Insert(LPCTSTR lpstrItem, int nImageIndex, HTREEITEM hItemAfter);
 	int GetImageIndex() const;
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL SetInsertMark(BOOL bAfter);
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
- #if (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_WINNT >= 0x0501)
 	UINT MapHTREEITEMToAccID() const;
- #endif // (_WIN32_WINNT >= 0x0501)
- #if (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0600)
 	void ShowInfoTip();
 	BOOL GetPartRect(TVITEMPART partID, LPRECT lpRect) const;
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 };
 
 typedef CTreeItemT<ATL::CWindow>   CTreeItem;
@@ -4759,7 +4754,7 @@ template <class TBase>
 class CTreeViewCtrlExT : public CTreeViewCtrlT< TBase >
 {
 public:
- // Constructors
+// Constructors
 	CTreeViewCtrlExT(HWND hWnd = NULL) : CTreeViewCtrlT< TBase >(hWnd)
 	{ }
 
@@ -4769,7 +4764,7 @@ public:
 		return *this;
 	}
 
- // Operations (overides that return CTreeItem)
+// Operations (overides that return CTreeItem)
 	CTreeItemT<TBase> InsertItem(LPTVINSERTSTRUCT lpInsertStruct)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4781,7 +4776,7 @@ public:
 		int nSelectedImage, HTREEITEM hParent, HTREEITEM hInsertAfter)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		return InsertItem(TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, lpszItem, nImage, nSelectedImage, 0, 0, 0, hParent, hInsertAfter);
+		return InsertItem(TVIF_TEXT | TVIF_IMAGE | TVIF_SELECTEDIMAGE, lpszItem, nImage, nSelectedImage, 0, 0, 0, hParent, hInsertAfter); 
 	}
 
 	CTreeItemT<TBase> InsertItem(LPCTSTR lpszItem, HTREEITEM hParent, HTREEITEM hInsertAfter)
@@ -4792,42 +4787,42 @@ public:
 
 	CTreeItemT<TBase> GetNextItem(HTREEITEM hItem, UINT nCode) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, nCode, (LPARAM)hItem);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
 	CTreeItemT<TBase> GetChildItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_CHILD, (LPARAM)hItem);
-		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
+		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this); 
 	}
 
 	CTreeItemT<TBase> GetNextSiblingItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
-		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXT, (LPARAM)hItem);
+		ATLASSERT(::IsWindow(m_hWnd)); 
+		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXT, (LPARAM)hItem); 
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
 	CTreeItemT<TBase> GetPrevSiblingItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PREVIOUS, (LPARAM)hItem);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
 	CTreeItemT<TBase> GetParentItem(HTREEITEM hItem) const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
-		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PARENT, (LPARAM)hItem);
+		ATLASSERT(::IsWindow(m_hWnd)); 
+		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_PARENT, (LPARAM)hItem); 
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
 	CTreeItemT<TBase> GetFirstVisibleItem() const
 	{
-		ATLASSERT(::IsWindow(m_hWnd));
+		ATLASSERT(::IsWindow(m_hWnd)); 
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_FIRSTVISIBLE, 0L);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
@@ -4867,23 +4862,23 @@ public:
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
- #if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#if !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
 	CTreeItemT<TBase> GetLastVisibleItem() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_LASTVISIBLE, 0L);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
- #endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
+#endif // !defined(_WIN32_WCE) && (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0600)
+#if (_WIN32_IE >= 0x0600)
 	CTreeItemT<TBase> GetNextSelectedItem() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_GETNEXTITEM, TVGN_NEXTSELECTED, 0L);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
- #endif // (_WIN32_IE >= 0x0600)
+#endif // (_WIN32_IE >= 0x0600)
 
 	CTreeItemT<TBase> HitTest(TVHITTESTINFO* pHitTestInfo) const
 	{
@@ -4897,39 +4892,39 @@ public:
 		HTREEITEM hParent, HTREEITEM hInsertAfter)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVINSERTSTRUCT 	tvis		= { 0 };
-		tvis.hParent 		 		= hParent;
-		tvis.hInsertAfter 	 		= hInsertAfter;
-		tvis.item.mask 		 		= nMask;
-		tvis.item.pszText 	 		= (LPTSTR) lpszItem;
-		tvis.item.iImage 	 		= nImage;
-		tvis.item.iSelectedImage	= nSelectedImage;
-		tvis.item.state 	 		= nState;
-		tvis.item.stateMask  		= nStateMask;
-		tvis.item.lParam 	 		= lParam;
-		HTREEITEM 		hTreeItem	= (HTREEITEM)::SendMessage(m_hWnd, TVM_INSERTITEM, 0, (LPARAM)&tvis);
+		TVINSERTSTRUCT tvis = { 0 };
+		tvis.hParent = hParent;
+		tvis.hInsertAfter = hInsertAfter;
+		tvis.item.mask = nMask;
+		tvis.item.pszText = (LPTSTR) lpszItem;
+		tvis.item.iImage = nImage;
+		tvis.item.iSelectedImage = nSelectedImage;
+		tvis.item.state = nState;
+		tvis.item.stateMask = nStateMask;
+		tvis.item.lParam = lParam;
+		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_INSERTITEM, 0, (LPARAM)&tvis);
 		return CTreeItemT<TBase>(hTreeItem, this);
 	}
 
 	CTreeItemT<TBase> HitTest(POINT pt, UINT* pFlags) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TVHITTESTINFO 	hti 		= { 0 };
-		hti.pt 						= pt;
-		HTREEITEM 		hTreeItem 	= (HTREEITEM)::SendMessage(m_hWnd, TVM_HITTEST, 0, (LPARAM)&hti);
+		TVHITTESTINFO hti = { 0 };
+		hti.pt = pt;
+		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_HITTEST, 0, (LPARAM)&hti);
 		if (pFlags != NULL)
-			*pFlags 	= hti.flags;
+			*pFlags = hti.flags;
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
 
-  #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	CTreeItemT<TBase> MapAccIDToHTREEITEM(UINT uID) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		HTREEITEM 	hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_MAPACCIDTOHTREEITEM, uID, 0L);
+		HTREEITEM hTreeItem = (HTREEITEM)::SendMessage(m_hWnd, TVM_MAPACCIDTOHTREEITEM, uID, 0L);
 		return CTreeItemT<TBase>(hTreeItem, (CTreeViewCtrlExT<TBase>*)this);
 	}
-  #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 };
 
 typedef CTreeViewCtrlExT<ATL::CWindow>   CTreeViewCtrlEx;
@@ -5203,16 +5198,16 @@ template <class TBase>
 inline CTreeItemT<TBase> CTreeItemT<TBase>::_Insert(LPCTSTR lpstrItem, int nImageIndex, HTREEITEM hItemAfter)
 {
 	ATLASSERT(m_pTreeView != NULL);
-	TVINSERTSTRUCT 	ins = { 0 };
-	ins.hParent 		= m_hTreeItem;
-	ins.hInsertAfter 	= hItemAfter;
-	ins.item.mask 		= TVIF_TEXT;
-	ins.item.pszText 	= (LPTSTR)lpstrItem;
-	if (nImageIndex != -1)
+	TVINSERTSTRUCT ins = { 0 };
+	ins.hParent = m_hTreeItem;
+	ins.hInsertAfter = hItemAfter;
+	ins.item.mask = TVIF_TEXT;
+	ins.item.pszText = (LPTSTR)lpstrItem;
+	if(nImageIndex != -1)
 	{
-		ins.item.mask 			|= TVIF_IMAGE | TVIF_SELECTEDIMAGE;
-		ins.item.iImage 		=  nImageIndex;
-		ins.item.iSelectedImage =  nImageIndex;
+		ins.item.mask |= TVIF_IMAGE | TVIF_SELECTEDIMAGE;
+		ins.item.iImage = nImageIndex;
+		ins.item.iSelectedImage = nImageIndex;
 	}
 	return CTreeItemT<TBase>(m_pTreeView->InsertItem(&ins), m_pTreeView);
 }
@@ -5221,9 +5216,9 @@ template <class TBase>
 inline int CTreeItemT<TBase>::GetImageIndex() const
 {
 	ATLASSERT(m_pTreeView != NULL);
-	TVITEM 		item = { 0 };
-	item.mask 		 = TVIF_HANDLE | TVIF_IMAGE;
-	item.hItem 		 = m_hTreeItem;
+	TVITEM item = { 0 };
+	item.mask = TVIF_HANDLE | TVIF_IMAGE;
+	item.hItem = m_hTreeItem;
 	m_pTreeView->GetItem(&item);
 	return item.iImage;
 }
@@ -5270,7 +5265,7 @@ template <class TBase>
 class CToolBarCtrlT : public TBase
 {
 public:
- // Construction
+// Construction
 	CToolBarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -5287,7 +5282,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return TOOLBARCLASSNAME;
@@ -5383,7 +5378,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TB_SETBITMAPSIZE, 0, MAKELPARAM(cx, cy));
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetToolTips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5395,7 +5390,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TB_SETTOOLTIPS, (WPARAM)hWndToolTip, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	void SetNotifyWnd(HWND hWnd)
 	{
@@ -5467,7 +5462,7 @@ public:
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, TB_SETDISABLEDIMAGELIST, nIndex, (LPARAM)hImageList));
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	// nIndex - IE5 or higher only
 	CImageList GetHotImageList(int nIndex = 0) const
 	{
@@ -5481,7 +5476,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, TB_SETHOTIMAGELIST, nIndex, (LPARAM)hImageList));
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	DWORD GetStyle() const
 	{
@@ -5539,8 +5534,8 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TB_SETMAXTEXTROWS, nMaxTextRows, 0L);
 	}
 
- #if (_WIN32_IE >= 0x0400)
-  #ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
 	BOOL GetAnchorHighlight() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5552,7 +5547,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TB_SETANCHORHIGHLIGHT, bEnable, 0L);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int GetButtonInfo(int nID, LPTBBUTTONINFO lptbbi) const
 	{
@@ -5566,24 +5561,24 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TB_SETBUTTONINFO, nID, (LPARAM)lptbbi);
 	}
 
-	BOOL SetButtonInfo(int nID, DWORD dwMask, BYTE Style, BYTE State, LPCTSTR lpszItem,
+	BOOL SetButtonInfo(int nID, DWORD dwMask, BYTE Style, BYTE State, LPCTSTR lpszItem, 
 	                   int iImage, WORD cx, int iCommand, DWORD_PTR lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TBBUTTONINFO 	tbbi = { 0 };
-		tbbi.cbSize 		 = sizeof(TBBUTTONINFO);
-		tbbi.dwMask 		 = dwMask;
-		tbbi.idCommand 		 = iCommand;
-		tbbi.iImage 		 = iImage;
-		tbbi.fsState 		 = State;
-		tbbi.fsStyle 		 = Style;
-		tbbi.cx 			 = cx;
-		tbbi.pszText 		 = (LPTSTR) lpszItem;
-		tbbi.lParam 		 = lParam;
+		TBBUTTONINFO tbbi = { 0 };
+		tbbi.cbSize = sizeof(TBBUTTONINFO);
+		tbbi.dwMask = dwMask;
+		tbbi.idCommand = iCommand;
+		tbbi.iImage = iImage;
+		tbbi.fsState = State;
+		tbbi.fsStyle = Style;
+		tbbi.cx = cx;
+		tbbi.pszText = (LPTSTR) lpszItem;
+		tbbi.lParam = lParam;
 		return (BOOL)::SendMessage(m_hWnd, TB_SETBUTTONINFO, nID, (LPARAM)&tbbi);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	int GetHotItem() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5595,7 +5590,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, TB_SETHOTITEM, nItem, 0L);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	BOOL IsButtonHighlighted(int nButtonID) const
 	{
@@ -5609,7 +5604,7 @@ public:
 		return (DWORD)::SendMessage(m_hWnd, TB_SETDRAWTEXTFLAGS, dwMask, dwFlags);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetColorScheme(LPCOLORSCHEME lpcs) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5677,7 +5672,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, TB_SETPADDING, 0, MAKELPARAM(cx, cy));
-		if (lpSizePadding != NULL)
+		if(lpSizePadding != NULL)
 		{
 			lpSizePadding->cx = GET_X_LPARAM(dwRet);
 			lpSizePadding->cy = GET_Y_LPARAM(dwRet);
@@ -5695,10 +5690,10 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TB_SETUNICODEFORMAT, bUnicode, 0L);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	int GetString(int nString, LPTSTR lpstrString, int cchMaxLen) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5711,14 +5706,14 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(bstrString == NULL);
 		int nLength = (int)(short)LOWORD(::SendMessage(m_hWnd, TB_GETSTRING, MAKEWPARAM(0, nString), NULL));
-		if (nLength != -1)
+		if(nLength != -1)
 		{
 			CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 			LPTSTR lpstrText = buff.Allocate(nLength + 1);
-			if (lpstrText != NULL)
+			if(lpstrText != NULL)
 			{
 				nLength = (int)::SendMessage(m_hWnd, TB_GETSTRING, MAKEWPARAM(nLength + 1, nString), (LPARAM)lpstrText);
-				if (nLength != -1)
+				if(nLength != -1)
 					bstrString = ::SysAllocString(T2OLE(lpstrText));
 			}
 			else
@@ -5730,15 +5725,15 @@ public:
 		return nLength;
 	}
 
-  #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	int GetString(int nString, _CSTRING_NS::CString& str) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		int nLength = (int)(short)LOWORD(::SendMessage(m_hWnd, TB_GETSTRING, MAKEWPARAM(0, nString), NULL));
-		if (nLength != -1)
+		if(nLength != -1)
 		{
 			LPTSTR lpstr = str.GetBufferSetLength(nLength + 1);
-			if (lpstr != NULL)
+			if(lpstr != NULL)
 				nLength = (int)::SendMessage(m_hWnd, TB_GETSTRING, MAKEWPARAM(nLength + 1, nString), (LPARAM)lpstr);
 			else
 				nLength = -1;
@@ -5746,10 +5741,10 @@ public:
 		}
 		return nLength;
 	}
-  #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	void GetMetrics(LPTBMETRICS lptbm) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5767,9 +5762,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TB_SETWINDOWTHEME, 0, (LPARAM)lpstrTheme);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	CImageList GetPressedImageList(int nIndex = 0) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5781,9 +5776,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, TB_SETPRESSEDIMAGELIST, nIndex, (LPARAM)hImageList));
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	BOOL EnableButton(int nID, BOOL bEnable = TRUE)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5818,9 +5813,9 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		TBADDBITMAP tbab = { 0 };
-		tbab.hInst 		 = ModuleHelper::GetResourceInstance();
+		tbab.hInst = ModuleHelper::GetResourceInstance();
 		ATLASSERT(tbab.hInst != NULL);
-		tbab.nID 		 = nBitmapID;
+		tbab.nID = nBitmapID;
 		return (int)::SendMessage(m_hWnd, TB_ADDBITMAP, (WPARAM)nNumButtons, (LPARAM)&tbab);
 	}
 
@@ -5828,8 +5823,8 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		TBADDBITMAP tbab = { 0 };
-		tbab.hInst 		 = NULL;
-		tbab.nID 		 = (UINT_PTR)hBitmap;
+		tbab.hInst = NULL;
+		tbab.nID = (UINT_PTR)hBitmap;
 		return (int)::SendMessage(m_hWnd, TB_ADDBITMAP, (WPARAM)nNumButtons, (LPARAM)&tbab);
 	}
 
@@ -5845,21 +5840,21 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TB_INSERTBUTTON, nIndex, (LPARAM)lpButton);
 	}
 
-	BOOL InsertButton(int nIndex, int iCommand, BYTE Style, BYTE State, int iBitmap,
+	BOOL InsertButton(int nIndex, int iCommand, BYTE Style, BYTE State, int iBitmap, 
 	                  INT_PTR iString, DWORD_PTR lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TBBUTTON 	tbb = { 0 };
-		tbb.fsStyle 	= Style;
-		tbb.fsState 	= State;
-		tbb.idCommand 	= iCommand;
-		tbb.iBitmap 	= iBitmap;
-		tbb.iString 	= iString;
-		tbb.dwData 		= lParam;
+		TBBUTTON tbb = { 0 };
+		tbb.fsStyle = Style;
+		tbb.fsState = State;
+		tbb.idCommand = iCommand;
+		tbb.iBitmap = iBitmap;
+		tbb.iString = iString;
+		tbb.dwData = lParam;
 		return (BOOL)::SendMessage(m_hWnd, TB_INSERTBUTTON, nIndex, (LPARAM)&tbb);
 	}
 
-	BOOL InsertButton(int nIndex, int iCommand, BYTE Style, BYTE State, int iBitmap,
+	BOOL InsertButton(int nIndex, int iCommand, BYTE Style, BYTE State, int iBitmap, 
 	                  LPCTSTR lpszItem, DWORD_PTR lParam)
 	{
 		return InsertButton(nIndex, iCommand, Style, State, iBitmap, (INT_PTR)lpszItem, lParam);
@@ -5892,24 +5887,24 @@ public:
 		return (UINT)::SendMessage(m_hWnd, TB_COMMANDTOINDEX, nID, 0L);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	void SaveState(HKEY hKeyRoot, LPCTSTR lpszSubKey, LPCTSTR lpszValueName)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TBSAVEPARAMS 	tbs = { 0 };
-		tbs.hkr 			= hKeyRoot;
-		tbs.pszSubKey 		= lpszSubKey;
-		tbs.pszValueName 	= lpszValueName;
+		TBSAVEPARAMS tbs = { 0 };
+		tbs.hkr = hKeyRoot;
+		tbs.pszSubKey = lpszSubKey;
+		tbs.pszValueName = lpszValueName;
 		::SendMessage(m_hWnd, TB_SAVERESTORE, (WPARAM)TRUE, (LPARAM)&tbs);
 	}
 
 	void RestoreState(HKEY hKeyRoot, LPCTSTR lpszSubKey, LPCTSTR lpszValueName)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TBSAVEPARAMS 	tbs = { 0 };
-		tbs.hkr 			= hKeyRoot;
-		tbs.pszSubKey 		= lpszSubKey;
-		tbs.pszValueName 	= lpszValueName;
+		TBSAVEPARAMS tbs = { 0 };
+		tbs.hkr = hKeyRoot;
+		tbs.pszSubKey = lpszSubKey;
+		tbs.pszValueName = lpszValueName;
 		::SendMessage(m_hWnd, TB_SAVERESTORE, (WPARAM)FALSE, (LPARAM)&tbs);
 	}
 
@@ -5918,7 +5913,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TB_CUSTOMIZE, 0, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int AddString(UINT nStringID)
 	{
@@ -5962,14 +5957,14 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, TB_REPLACEBITMAP, 0, (LPARAM)ptbrb);
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	int HitTest(LPPOINT lpPoint) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, TB_HITTEST, 0, (LPARAM)lpPoint);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL InsertMarkHitTest(LPPOINT lpPoint, LPTBINSERTMARK lptbim) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6006,8 +6001,8 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (HRESULT)::SendMessage(m_hWnd, TB_GETOBJECT, (WPARAM)&iid, (LPARAM)ppvObject);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 };
 
 typedef CToolBarCtrlT<ATL::CWindow>   CToolBarCtrl;
@@ -6020,7 +6015,7 @@ template <class TBase>
 class CStatusBarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CStatusBarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -6037,7 +6032,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Methods
+// Methods
 	static LPCTSTR GetWndClassName()
 	{
 		return STATUSCLASSNAME;
@@ -6070,12 +6065,12 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(nPane < 256);
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, SB_GETTEXT, (WPARAM)nPane, (LPARAM)lpszText);
-		if (pType != NULL)
+		if(pType != NULL)
 			*pType = (int)(short)HIWORD(dwRet);
 		return (int)(short)LOWORD(dwRet);
 	}
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetTextBSTR(int nPane, BSTR& bstrText, int* pType = NULL) const
 	{
 		USES_CONVERSION;
@@ -6083,37 +6078,37 @@ public:
 		ATLASSERT(nPane < 256);
 		ATLASSERT(bstrText == NULL);
 		int nLength = (int)(short)LOWORD(::SendMessage(m_hWnd, SB_GETTEXTLENGTH, (WPARAM)nPane, 0L));
-		if (nLength == 0)
+		if(nLength == 0)
 			return FALSE;
 
 		CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPTSTR lpstrText = buff.Allocate(nLength + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return FALSE;
 
-		if (!GetText(nPane, lpstrText, pType))
+		if(!GetText(nPane, lpstrText, pType))
 			return FALSE;
 
 		bstrText = ::SysAllocString(T2OLE(lpstrText));
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	int GetText(int nPane, _CSTRING_NS::CString& strText, int* pType = NULL) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(nPane < 256);
 		int nLength = (int)(short)LOWORD(::SendMessage(m_hWnd, SB_GETTEXTLENGTH, (WPARAM)nPane, 0L));
-		if (nLength == 0)
+		if(nLength == 0)
 			return 0;
 
 		LPTSTR lpstr = strText.GetBufferSetLength(nLength);
-		if (lpstr == NULL)
+		if(lpstr == NULL)
 			return 0;
 		return GetText(nPane, lpstr, pType);
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	BOOL SetText(int nPane, LPCTSTR lpszText, int nType = 0)
 	{
@@ -6140,7 +6135,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		int borders[3] = { 0, 0, 0 };
 		BOOL bResult = (BOOL)::SendMessage(m_hWnd, SB_GETBORDERS, 0, (LPARAM)&borders);
-		if (bResult)
+		if(bResult)
 		{
 			nHorz = borders[0];
 			nVert = borders[1];
@@ -6167,7 +6162,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, SB_ISSIMPLE, 0, 0L);
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6193,9 +6188,9 @@ public:
 		ATLASSERT(nPane < 256);
 		::SendMessage(m_hWnd, SB_SETTIPTEXT, nPane, (LPARAM)lpstrText);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if ((_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 0x0500))
+#if ((_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 0x0500))
 	COLORREF SetBkColor(COLORREF clrBk)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6215,7 +6210,7 @@ public:
 		ATLASSERT(nPane < 256);
 		return (BOOL)::SendMessage(m_hWnd, SB_SETICON, nPane, (LPARAM)hIcon);
 	}
- #endif // ((_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 0x0500))
+#endif // ((_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)) || (defined(_WIN32_WCE) && (_WIN32_WCE >= 0x0500))
 };
 
 typedef CStatusBarCtrlT<ATL::CWindow>   CStatusBarCtrl;
@@ -6228,7 +6223,7 @@ template <class TBase>
 class CTabCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CTabCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -6245,7 +6240,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_TABCONTROL;
@@ -6284,13 +6279,13 @@ public:
 	int SetItem(int nItem, UINT mask, LPCTSTR lpszItem, DWORD dwState, DWORD dwStateMask, int iImage, LPARAM lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TCITEM 		tci = { 0 };
-		tci.mask 		= mask;
-		tci.pszText 	= (LPTSTR) lpszItem;
-		tci.dwState 	= dwState;
+		TCITEM tci = { 0 };
+		tci.mask = mask;
+		tci.pszText = (LPTSTR) lpszItem;
+		tci.dwState = dwState;
 		tci.dwStateMask = dwStateMask;
-		tci.iImage 		= iImage;
-		tci.lParam 		= lParam;
+		tci.iImage = iImage;
+		tci.lParam = lParam;
 		return (int)::SendMessage(m_hWnd, TCM_SETITEM, nItem, (LPARAM)&tci);
 	}
 
@@ -6338,7 +6333,7 @@ public:
 		return (int)::SendMessage(m_hWnd, TCM_GETROWCOUNT, 0, 0L);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetTooltips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6350,7 +6345,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, TCM_SETTOOLTIPS, (WPARAM)hWndToolTip, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	int GetCurFocus() const
 	{
@@ -6377,7 +6372,7 @@ public:
 		return (int)::SendMessage(m_hWnd, TCM_SETMINTABWIDTH, 0, nWidth);
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	DWORD GetExtendedStyle() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6390,7 +6385,7 @@ public:
 		return (DWORD)::SendMessage(m_hWnd, TCM_SETEXTENDEDSTYLE, dwExMask, dwExStyle);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6402,10 +6397,10 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TCM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- // Operations
+// Operations
 	int InsertItem(int nItem, LPTCITEM pTabCtrlItem)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6483,13 +6478,13 @@ public:
 		::SendMessage(m_hWnd, TCM_DESELECTALL, bExcludeFocus, 0L);
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	BOOL HighlightItem(int nIndex, BOOL bHighlight = TRUE)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TCM_HIGHLIGHTITEM, nIndex, MAKELPARAM(bHighlight, 0));
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 };
 
 typedef CTabCtrlT<ATL::CWindow>   CTabCtrl;
@@ -6502,7 +6497,7 @@ template <class TBase>
 class CTrackBarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CTrackBarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -6519,7 +6514,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return TRACKBAR_CLASS;
@@ -6712,7 +6707,7 @@ public:
 		return ATL::CWindow((HWND)::SendMessage(m_hWnd, TBM_SETBUDDY, bLeft, (LPARAM)hWndBuddy));
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetToolTips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6730,9 +6725,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, TBM_SETTIPSIDE, nSide, 0L);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6744,9 +6739,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, TBM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- // Operations
+// Operations
 	void ClearSel(BOOL bRedraw = FALSE)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6776,7 +6771,7 @@ template <class TBase>
 class CUpDownCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CUpDownCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -6793,7 +6788,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return UPDOWN_CLASS;
@@ -6841,7 +6836,7 @@ public:
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, UDM_GETPOS, 0, 0L);
 		// Note: Seems that Windows always sets error to TRUE if
 		// UDS_SETBUDDYINT style is not used
-		if (lpbError != NULL)
+		if(lpbError != NULL)
 			*lpbError = (HIWORD(dwRet) != 0) ? TRUE : FALSE;
 		return (int)(short)LOWORD(dwRet);
 	}
@@ -6872,7 +6867,7 @@ public:
 		::SendMessage(m_hWnd, UDM_SETRANGE, 0, MAKELPARAM(nUpper, nLower));
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	void SetRange32(int nLower, int nUpper)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6885,7 +6880,7 @@ public:
 		::SendMessage(m_hWnd, UDM_GETRANGE32, (WPARAM)&nLower, (LPARAM)&nUpper);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6897,10 +6892,10 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, UDM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	int GetPos32(LPBOOL lpbError = NULL) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -6914,7 +6909,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, UDM_SETPOS32, 0, (LPARAM)nPos);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 };
 
 typedef CUpDownCtrlT<ATL::CWindow>   CUpDownCtrl;
@@ -6927,7 +6922,7 @@ template <class TBase>
 class CProgressBarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CProgressBarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -6944,7 +6939,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return PROGRESS_CLASS;
@@ -6990,10 +6985,10 @@ public:
 	void GetRange(int& nLower, int& nUpper) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		PBRANGE range	= { 0 };
+		PBRANGE range = { 0 };
 		::SendMessage(m_hWnd, PBM_GETRANGE, TRUE, (LPARAM)&range);
-		nLower 			= range.iLow;
-		nUpper 			= range.iHigh;
+		nLower = range.iLow;
+		nUpper = range.iHigh;
 	}
 
 	int GetRangeLimit(BOOL bLowLimit) const
@@ -7008,7 +7003,7 @@ public:
 		return (DWORD)::SendMessage(m_hWnd, PBM_SETRANGE32, nMin, nMax);
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	COLORREF SetBarColor(COLORREF clr)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7020,17 +7015,17 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (COLORREF)::SendMessage(m_hWnd, PBM_SETBKCOLOR, 0, (LPARAM)clr);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if (_WIN32_WINNT >= 0x0501) && defined(PBM_SETMARQUEE)
+#if (_WIN32_WINNT >= 0x0501) && defined(PBM_SETMARQUEE)
 	BOOL SetMarquee(BOOL bMarquee, UINT uUpdateTime = 0U)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, PBM_SETMARQUEE, (WPARAM)bMarquee, (LPARAM)uUpdateTime);
 	}
- #endif // (_WIN32_WINNT >= 0x0501) && defined(PBM_SETMARQUEE)
+#endif // (_WIN32_WINNT >= 0x0501) && defined(PBM_SETMARQUEE)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	int GetStep() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7060,9 +7055,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, PBM_SETSTATE, nState, 0L);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 
- // Operations
+// Operations
 	int StepIt()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7082,7 +7077,7 @@ template <class TBase>
 class CHotKeyCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CHotKeyCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -7099,7 +7094,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return HOTKEY_CLASS;
@@ -7146,7 +7141,7 @@ template <class TBase>
 class CAnimateCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CAnimateCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -7163,13 +7158,13 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return ANIMATE_CLASS;
 	}
 
- // Operations
+// Operations
 	BOOL Open(ATL::_U_STRINGorID FileName)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7203,9 +7198,9 @@ public:
 	// Vista only
 	BOOL IsPlaying() const
 	{
-	  #ifndef ACM_ISPLAYING
+#ifndef ACM_ISPLAYING
 		const UINT ACM_ISPLAYING = (WM_USER+104);
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, ACM_ISPLAYING, 0, 0L);
 	}
@@ -7232,7 +7227,7 @@ template <class TBase>
 class CRichEditCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CRichEditCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -7249,7 +7244,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return RICHEDIT_CLASS;
@@ -7257,11 +7252,11 @@ public:
 
 	static LPCTSTR GetLibraryName()
 	{
-	  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 		return _T("RICHED20.DLL");
-	  #else
+#else
 		return _T("RICHED32.DLL");
-	  #endif
+#endif
 	}
 
 	int GetLineCount() const
@@ -7397,22 +7392,22 @@ public:
 		return (DWORD)::SendMessage(m_hWnd, EM_GETPARAFORMAT, 0, (LPARAM)&pf);
 	}
 
- #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 	LONG GetSelText(LPTSTR lpstrBuff) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (LONG)::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrBuff);
 	}
- #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 	// RichEdit 1.0 EM_GETSELTEXT is ANSI only
 	LONG GetSelText(LPSTR lpstrBuff) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (LONG)::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrBuff);
 	}
- #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetSelTextBSTR(BSTR& bstrText) const
 	{
 		USES_CONVERSION;
@@ -7422,31 +7417,31 @@ public:
 		CHARRANGE cr = { 0, 0 };
 		::SendMessage(m_hWnd, EM_EXGETSEL, 0, (LPARAM)&cr);
 
-	  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 		CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPTSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return FALSE;
-		if (::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
+		if(::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
 			return FALSE;
 
 		bstrText = ::SysAllocString(T2W(lpstrText));
-	  #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 		CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return FALSE;
-		if (::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
+		if(::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText) == 0)
 			return FALSE;
 
 		bstrText = ::SysAllocString(A2W(lpstrText));
-	  #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	LONG GetSelText(_CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7454,30 +7449,30 @@ public:
 		CHARRANGE cr = { 0, 0 };
 		::SendMessage(m_hWnd, EM_EXGETSEL, 0, (LPARAM)&cr);
 
-	  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 		LONG lLen = 0;
 		LPTSTR lpstrText = strText.GetBufferSetLength(cr.cpMax - cr.cpMin);
-		if (lpstrText != NULL)
+		if(lpstrText != NULL)
 		{
 			lLen = (LONG)::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText);
 			strText.ReleaseBuffer();
 		}
-	  #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 		CTempBuffer<char, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		LPSTR lpstrText = buff.Allocate(cr.cpMax - cr.cpMin + 1);
-		if (lpstrText == NULL)
+		if(lpstrText == NULL)
 			return 0;
 		LONG lLen = (LONG)::SendMessage(m_hWnd, EM_GETSELTEXT, 0, (LPARAM)lpstrText);
-		if (lLen == 0)
+		if(lLen == 0)
 			return 0;
 
 		USES_CONVERSION;
 		strText = A2T(lpstrText);
-	  #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 
 		return lLen;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	WORD GetSelectionType() const
 	{
@@ -7580,30 +7575,30 @@ public:
 		return (int)::SendMessage(m_hWnd, EM_GETTEXTRANGE, 0, (LPARAM)pTextRange);
 	}
 
- #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 	int GetTextRange(LONG nStartChar, LONG nEndChar, LPTSTR lpstrText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TEXTRANGE 	tr 	= { 0 };
-		tr.chrg.cpMin 	= nStartChar;
-		tr.chrg.cpMax 	= nEndChar;
-		tr.lpstrText 	= lpstrText;
+		TEXTRANGE tr = { 0 };
+		tr.chrg.cpMin = nStartChar;
+		tr.chrg.cpMax = nEndChar;
+		tr.lpstrText = lpstrText;
 		return (int)::SendMessage(m_hWnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
 	}
- #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 
 	int GetTextRange(LONG nStartChar, LONG nEndChar, LPSTR lpstrText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		TEXTRANGE 	tr 	= { 0 };
-		tr.chrg.cpMin 	= nStartChar;
-		tr.chrg.cpMax 	= nEndChar;
-		tr.lpstrText 	= lpstrText;
+		TEXTRANGE tr = { 0 };
+		tr.chrg.cpMin = nStartChar;
+		tr.chrg.cpMax = nEndChar;
+		tr.lpstrText = lpstrText;
 		return (int)::SendMessage(m_hWnd, EM_GETTEXTRANGE, 0, (LPARAM)&tr);
 	}
- #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 
- #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 	DWORD GetDefaultCharFormat(CHARFORMAT2& cf) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7726,12 +7721,12 @@ public:
 	int GetTextEx(LPTSTR lpstrText, int nTextLen, DWORD dwFlags = GT_DEFAULT, UINT uCodePage = CP_ACP, LPCSTR lpDefaultChar = NULL, LPBOOL lpUsedDefChar = NULL) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		GETTEXTEX 	gte 	= { 0 };
-		gte.cb 				= nTextLen * sizeof(TCHAR);
-		gte.codepage 		= uCodePage;
-		gte.flags 			= dwFlags;
-		gte.lpDefaultChar 	= lpDefaultChar;
-		gte.lpUsedDefChar 	= lpUsedDefChar;
+		GETTEXTEX gte = { 0 };
+		gte.cb = nTextLen * sizeof(TCHAR);
+		gte.codepage = uCodePage;
+		gte.flags = dwFlags;
+		gte.lpDefaultChar = lpDefaultChar;
+		gte.lpUsedDefChar = lpUsedDefChar;
 		return (int)::SendMessage(m_hWnd, EM_GETTEXTEX, (WPARAM)&gte, (LPARAM)lpstrText);
 	}
 
@@ -7749,9 +7744,9 @@ public:
 		gtle.flags = dwFlags;
 		return (int)::SendMessage(m_hWnd, EM_GETTEXTLENGTHEX, (WPARAM)&gtle, 0L);
 	}
- #endif // (_RICHEDIT_VER >= 0x0200)
+#endif // (_RICHEDIT_VER >= 0x0200)
 
- #if (_RICHEDIT_VER >= 0x0300)
+#if (_RICHEDIT_VER >= 0x0300)
 	int SetTextEx(SETTEXTEX* pSetTextEx, LPCTSTR lpstrText)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7761,9 +7756,9 @@ public:
 	int SetTextEx(LPCTSTR lpstrText, DWORD dwFlags = ST_DEFAULT, UINT uCodePage = CP_ACP)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		SETTEXTEX 	ste = { 0 };
-		ste.flags 		= dwFlags;
-		ste.codepage 	= uCodePage;
+		SETTEXTEX ste = { 0 };
+		ste.flags = dwFlags;
+		ste.codepage = uCodePage;
 		return (int)::SendMessage(m_hWnd, EM_SETTEXTEX, (WPARAM)&ste, (LPARAM)lpstrText);
 	}
 
@@ -7776,7 +7771,7 @@ public:
 	int SetEditStyle(int nStyle, int nMask = -1)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		if (nMask == -1)
+		if(nMask == -1)
 			nMask = nStyle;   // set everything specified
 		return (int)::SendMessage(m_hWnd, EM_SETEDITSTYLE, nStyle, nMask);
 	}
@@ -7821,9 +7816,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, EM_SETZOOM, 0, 0L);
 	}
- #endif // (_RICHEDIT_VER >= 0x0300)
+#endif // (_RICHEDIT_VER >= 0x0300)
 
- // Operations
+// Operations
 	void LimitText(LONG nChars = 0)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -7896,21 +7891,21 @@ public:
 	LONG FindText(DWORD dwFlags, FINDTEXT& ft) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if (_RICHEDIT_VER >= 0x0200) && defined(_UNICODE)
+#if (_RICHEDIT_VER >= 0x0200) && defined(_UNICODE)
 		return (LONG)::SendMessage(m_hWnd, EM_FINDTEXTW, dwFlags, (LPARAM)&ft);
-	  #else
+#else
 		return (LONG)::SendMessage(m_hWnd, EM_FINDTEXT, dwFlags, (LPARAM)&ft);
-	  #endif
+#endif
 	}
 
 	LONG FindText(DWORD dwFlags, FINDTEXTEX& ft) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #if (_RICHEDIT_VER >= 0x0200) && defined(_UNICODE)
+#if (_RICHEDIT_VER >= 0x0200) && defined(_UNICODE)
 		return (LONG)::SendMessage(m_hWnd, EM_FINDTEXTEXW, dwFlags, (LPARAM)&ft);
-	  #else
+#else
 		return (LONG)::SendMessage(m_hWnd, EM_FINDTEXTEX, dwFlags, (LPARAM)&ft);
-	  #endif
+#endif
 	}
 
 	LONG FormatRange(FORMATRANGE& fr, BOOL bDisplay = TRUE)
@@ -8027,7 +8022,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, EM_SETOLECALLBACK, 0, (LPARAM)pCallback);
 	}
 
- #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 	BOOL Redo()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8045,9 +8040,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, EM_SHOWSCROLLBAR, nBarType, bVisible);
 	}
- #endif // (_RICHEDIT_VER >= 0x0200)
+#endif // (_RICHEDIT_VER >= 0x0200)
 
- #if (_RICHEDIT_VER >= 0x0300)
+#if (_RICHEDIT_VER >= 0x0300)
 	BOOL SetTabStops(int nTabStops, LPINT rgTabStops)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8065,7 +8060,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, EM_SETTABSTOPS, 1, (LPARAM)(LPINT)&cxEachStop);
 	}
- #endif // (_RICHEDIT_VER >= 0x0300)
+#endif // (_RICHEDIT_VER >= 0x0300)
 };
 
 typedef CRichEditCtrlT<ATL::CWindow>   CRichEditCtrl;
@@ -8095,30 +8090,30 @@ template <class T>
 class CRichEditCommands : public CEditCommands< T >
 {
 public:
-	BEGIN_MSG_MAP( CRichEditCommands< T > )
+	BEGIN_MSG_MAP(CRichEditCommands< T >)
 	ALT_MSG_MAP(1)
-		COMMAND_ID_HANDLER(ID_EDIT_CLEAR	 , CEditCommands< T >::OnEditClear	  )
-		COMMAND_ID_HANDLER(ID_EDIT_CLEAR_ALL , CEditCommands< T >::OnEditClearAll )
-		COMMAND_ID_HANDLER(ID_EDIT_COPY		 , CEditCommands< T >::OnEditCopy	  )
-		COMMAND_ID_HANDLER(ID_EDIT_CUT		 , CEditCommands< T >::OnEditCut	  )
-		COMMAND_ID_HANDLER(ID_EDIT_PASTE	 , CEditCommands< T >::OnEditPaste	  )
+		COMMAND_ID_HANDLER(ID_EDIT_CLEAR, CEditCommands< T >::OnEditClear)
+		COMMAND_ID_HANDLER(ID_EDIT_CLEAR_ALL, CEditCommands< T >::OnEditClearAll)
+		COMMAND_ID_HANDLER(ID_EDIT_COPY, CEditCommands< T >::OnEditCopy)
+		COMMAND_ID_HANDLER(ID_EDIT_CUT, CEditCommands< T >::OnEditCut)
+		COMMAND_ID_HANDLER(ID_EDIT_PASTE, CEditCommands< T >::OnEditPaste)
 		COMMAND_ID_HANDLER(ID_EDIT_SELECT_ALL, CEditCommands< T >::OnEditSelectAll)
-		COMMAND_ID_HANDLER(ID_EDIT_UNDO		 , CEditCommands< T >::OnEditUndo	  )
-	  #if (_RICHEDIT_VER >= 0x0200)
-		COMMAND_ID_HANDLER(ID_EDIT_REDO		 , OnEditRedo						  )
-	  #endif // (_RICHEDIT_VER >= 0x0200)
+		COMMAND_ID_HANDLER(ID_EDIT_UNDO, CEditCommands< T >::OnEditUndo)
+#if (_RICHEDIT_VER >= 0x0200)
+		COMMAND_ID_HANDLER(ID_EDIT_REDO, OnEditRedo)
+#endif // (_RICHEDIT_VER >= 0x0200)
 	END_MSG_MAP()
 
-  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 	LRESULT OnEditRedo(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 	{
 		T* pT = static_cast<T*>(this);
 		pT->Redo();
 		return 0;
 	}
-  #endif // (_RICHEDIT_VER >= 0x0200)
+#endif // (_RICHEDIT_VER >= 0x0200)
 
- // State (update UI) helpers
+// State (update UI) helpers
 	BOOL CanCut() const
 	{ return HasSelection(); }
 
@@ -8128,7 +8123,7 @@ public:
 	BOOL CanClear() const
 	{ return HasSelection(); }
 
- // Implementation
+// Implementation
 	BOOL HasSelection() const
 	{
 		const T* pT = static_cast<const T*>(this);
@@ -8148,7 +8143,7 @@ template <class TBase>
 class CDragListBoxT : public CListBoxT< TBase >
 {
 public:
- // Constructors
+// Constructors
 	CDragListBoxT(HWND hWnd = NULL) : CListBoxT< TBase >(hWnd)
 	{ }
 
@@ -8163,12 +8158,12 @@ public:
 			ATL::_U_MENUorID MenuOrID = 0U, LPVOID lpCreateParam = NULL)
 	{
 		HWND hWnd = TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
-		if (hWnd != NULL)
+		if(hWnd != NULL)
 			MakeDragList();
 		return hWnd;
 	}
 
- // Operations
+// Operations
 	BOOL MakeDragList()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8191,17 +8186,17 @@ public:
 	static UINT GetDragListMessage()
 	{
 		static UINT uDragListMessage = 0;
-		if (uDragListMessage == 0)
+		if(uDragListMessage == 0)
 		{
 			CStaticDataInitCriticalSectionLock lock;
-			if (FAILED(lock.Lock()))
+			if(FAILED(lock.Lock()))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ERROR : Unable to lock critical section in CDragListBox::GetDragListMessage.\n"));
 				ATLASSERT(FALSE);
 				return 0;
 			}
 
-			if (uDragListMessage == 0)
+			if(uDragListMessage == 0)
 				uDragListMessage = ::RegisterWindowMessage(DRAGLISTMSGSTRING);
 
 			lock.Unlock();
@@ -8228,7 +8223,7 @@ public:
 		T* pT = static_cast<T*>(this);
 		LPDRAGLISTINFO lpDragListInfo = (LPDRAGLISTINFO)lParam;
 		LRESULT lRet = 0;
-		switch (lpDragListInfo->uNotification)
+		switch(lpDragListInfo->uNotification)
 		{
 		case DL_BEGINDRAG:
 			lRet = (LPARAM)pT->OnBeginDrag((int)wParam, lpDragListInfo->hWnd, lpDragListInfo->ptCursor);
@@ -8250,7 +8245,7 @@ public:
 		return lRet;
 	}
 
- // Overrideables
+// Overrideables
 	BOOL OnBeginDrag(int /*nCtlID*/, HWND /*hWndDragList*/, POINT /*ptCursor*/)
 	{
 		return TRUE;   // allow dragging
@@ -8282,7 +8277,7 @@ template <class TBase>
 class CReBarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CReBarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -8299,7 +8294,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return REBARCLASSNAME;
@@ -8341,7 +8336,7 @@ public:
 		REBARINFO rbi = { 0 };
 		rbi.cbSize = sizeof(REBARINFO);
 		rbi.fMask = RBIM_IMAGELIST;
-		if ( (BOOL)::SendMessage(m_hWnd, RB_GETBARINFO, 0, (LPARAM)&rbi) == FALSE ) return CImageList();
+		if( (BOOL)::SendMessage(m_hWnd, RB_GETBARINFO, 0, (LPARAM)&rbi) == FALSE ) return CImageList();
 		return CImageList(rbi.himl);
 	}
 
@@ -8367,7 +8362,7 @@ public:
 		return (UINT)::SendMessage(m_hWnd, RB_GETROWHEIGHT, nBand, 0L);
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	COLORREF GetTextColor() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8404,7 +8399,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, RB_GETRECT, nBand, (LPARAM)lpRect);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	CToolTipCtrl GetToolTips() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8416,7 +8411,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, RB_SETTOOLTIPS, (WPARAM)hwndToolTip, 0L);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	void GetBandBorders(int nBand, LPRECT lpRect) const
 	{
@@ -8425,7 +8420,7 @@ public:
 		::SendMessage(m_hWnd, RB_GETBANDBORDERS, nBand, (LPARAM)lpRect);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetColorScheme(LPCOLORSCHEME lpColorScheme) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8463,14 +8458,14 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, RB_SETUNICODEFORMAT, bUnicode, 0L);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	// requires uxtheme.h to be included to use MARGINS struct
-  #ifndef _UXTHEME_H_
+#ifndef _UXTHEME_H_
 	typedef struct _MARGINS*   PMARGINS;
-  #endif // !_UXTHEME_H_
+#endif // !_UXTHEME_H_
 	void GetBandMargins(PMARGINS pMargins) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8482,9 +8477,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, RB_SETWINDOWTHEME, 0, (LPARAM)lpstrTheme);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- #if (_WIN32_IE >= 0x0600)
+#if (_WIN32_IE >= 0x0600)
 	DWORD GetExtendedStyle() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8496,9 +8491,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (DWORD)::SendMessage(m_hWnd, RB_SETEXTENDEDSTYLE, dwMask, dwStyle);
 	}
- #endif // (_WIN32_IE >= 0x0600)
+#endif // (_WIN32_IE >= 0x0600)
 
- // Operations
+// Operations
 	BOOL InsertBand(int nBand, LPREBARBANDINFO lprbbi)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8522,7 +8517,7 @@ public:
 		return ATL::CWindow((HWND)::SendMessage(m_hWnd, RB_SETPARENT, (WPARAM)hWnd, 0L));
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	void BeginDrag(int nBand, DWORD dwPos)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8553,13 +8548,13 @@ public:
 		::SendMessage(m_hWnd, RB_DRAGMOVE, 0, MAKELPARAM(xPos, yPos));
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	void GetDropTarget(IDropTarget** ppDropTarget) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, RB_GETDROPTARGET, 0, (LPARAM)ppDropTarget);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	void MaximizeBand(int nBand, BOOL bIdeal = FALSE)
 	{
@@ -8597,37 +8592,37 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, RB_SHOWBAND, nBand, bShow);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL MoveBand(int nBand, int nNewPos)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(nNewPos >= 0 && nNewPos <= ((int)GetBandCount() - 1));
 		return (BOOL)::SendMessage(m_hWnd, RB_MOVEBAND, nBand, nNewPos);
 	}
-  #endif // !_WIN32_WCE
- #endif // (_WIN32_IE >= 0x0400)
+#endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	void PushChevron(int nBand, LPARAM lAppValue)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, RB_PUSHCHEVRON, nBand, lAppValue);
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- // Extra operations
- #if (_WIN32_IE >= 0x0400)
+// Extra operations
+#if (_WIN32_IE >= 0x0400)
 	void LockBands(bool bLock)
 	{
 		int nBandCount = GetBandCount();
-		for (int i =0; i < nBandCount; i++)
+		for(int i =0; i < nBandCount; i++)
 		{
 			REBARBANDINFO rbbi = { RunTimeHelper::SizeOf_REBARBANDINFO() };
 			rbbi.fMask = RBBIM_STYLE;
 			BOOL bRet = GetBandInfo(i, &rbbi);
 			ATLASSERT(bRet);
 
-			if ((rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0)
+			if((rbbi.fStyle & RBBS_GRIPPERALWAYS) == 0)
 			{
 				rbbi.fStyle |= RBBS_GRIPPERALWAYS;
 				bRet = SetBandInfo(i, &rbbi);
@@ -8635,7 +8630,7 @@ public:
 				rbbi.fStyle &= ~RBBS_GRIPPERALWAYS;
 			}
 
-			if (bLock)
+			if(bLock)
 				rbbi.fStyle |= RBBS_NOGRIPPER;
 			else
 				rbbi.fStyle &= ~RBBS_NOGRIPPER;
@@ -8644,15 +8639,15 @@ public:
 			ATLASSERT(bRet);
 		}
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_WINNT >= 0x0600)
+#if (_WIN32_WINNT >= 0x0600)
 	BOOL SetBandWidth(int nBand, int cxWidth)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, RB_SETBANDWIDTH, nBand, cxWidth);
 	}
- #endif // (_WIN32_WINNT >= 0x0600)
+#endif // (_WIN32_WINNT >= 0x0600)
 };
 
 typedef CReBarCtrlT<ATL::CWindow>   CReBarCtrl;
@@ -8667,7 +8662,7 @@ template <class TBase>
 class CComboBoxExT : public CComboBoxT< TBase >
 {
 public:
- // Constructors
+// Constructors
 	CComboBoxExT(HWND hWnd = NULL) : CComboBoxT< TBase >(hWnd)
 	{ }
 
@@ -8684,7 +8679,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_COMBOBOXEX;
@@ -8702,7 +8697,7 @@ public:
 		return CImageList((HIMAGELIST)::SendMessage(m_hWnd, CBEM_SETIMAGELIST, 0, (LPARAM)hImageList));
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	DWORD GetExtendedStyle() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -8726,50 +8721,50 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, CBEM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
- #if (_WIN32_WINNT >= 0x0501)
+#if (_WIN32_WINNT >= 0x0501)
 	void SetWindowTheme(LPCWSTR lpstrTheme)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, CBEM_SETWINDOWTHEME, 0, (LPARAM)lpstrTheme);
 	}
- #endif // (_WIN32_WINNT >= 0x0501)
+#endif // (_WIN32_WINNT >= 0x0501)
 
- // Operations
+// Operations
 	int InsertItem(const COMBOBOXEXITEM* lpcCBItem)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, CBEM_INSERTITEM, 0, (LPARAM)lpcCBItem);
 	}
 
-	int InsertItem(UINT nMask, int nIndex, LPCTSTR lpszItem, int nImage, int nSelImage,
+	int InsertItem(UINT nMask, int nIndex, LPCTSTR lpszItem, int nImage, int nSelImage, 
 	               int iIndent, int iOverlay, LPARAM lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		COMBOBOXEXITEM 	cbex 	= { 0 };
-		cbex.mask 				= nMask;
-		cbex.iItem 				= nIndex;
-		cbex.pszText 			= (LPTSTR) lpszItem;
-		cbex.iImage 			= nImage;
-		cbex.iSelectedImage 	= nSelImage;
-		cbex.iIndent 			= iIndent;
-		cbex.iOverlay 			= iOverlay;
-		cbex.lParam 			= lParam;
+		COMBOBOXEXITEM cbex = { 0 };
+		cbex.mask = nMask;
+		cbex.iItem = nIndex;
+		cbex.pszText = (LPTSTR) lpszItem;
+		cbex.iImage = nImage;
+		cbex.iSelectedImage = nSelImage;
+		cbex.iIndent = iIndent;
+		cbex.iOverlay = iOverlay;
+		cbex.lParam = lParam;
 		return (int)::SendMessage(m_hWnd, CBEM_INSERTITEM, 0, (LPARAM)&cbex);
 	}
 
 	int InsertItem(int nIndex, LPCTSTR lpszItem, int nImage, int nSelImage, int iIndent, LPARAM lParam = 0)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		COMBOBOXEXITEM 	cbex 	= { 0 };
-		cbex.mask 				= CBEIF_TEXT | CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_INDENT | CBEIF_LPARAM;
-		cbex.iItem 				= nIndex;
-		cbex.pszText 			= (LPTSTR) lpszItem;
-		cbex.iImage 			= nImage;
-		cbex.iSelectedImage 	= nSelImage;
-		cbex.iIndent 			= iIndent;
-		cbex.lParam 			= lParam;
+		COMBOBOXEXITEM cbex = { 0 };
+		cbex.mask = CBEIF_TEXT | CBEIF_IMAGE | CBEIF_SELECTEDIMAGE | CBEIF_INDENT | CBEIF_LPARAM;
+		cbex.iItem = nIndex;
+		cbex.pszText = (LPTSTR) lpszItem;
+		cbex.iImage = nImage;
+		cbex.iSelectedImage = nSelImage;
+		cbex.iIndent = iIndent;
+		cbex.lParam = lParam;
 		return (int)::SendMessage(m_hWnd, CBEM_INSERTITEM, 0, (LPARAM)&cbex);
 	}
 
@@ -8801,19 +8796,19 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, CBEM_SETITEM, 0, (LPARAM)lpcCBItem);
 	}
 
-	int SetItem(int nIndex, UINT nMask, LPCTSTR lpszItem, int nImage, int nSelImage,
+	int SetItem(int nIndex, UINT nMask, LPCTSTR lpszItem, int nImage, int nSelImage, 
 	            int iIndent, int iOverlay, LPARAM lParam)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		COMBOBOXEXITEM 	cbex = { 0 };
-		cbex.mask 			 = nMask;
-		cbex.iItem 			 = nIndex;
-		cbex.pszText 		 = (LPTSTR) lpszItem;
-		cbex.iImage 		 = nImage;
-		cbex.iSelectedImage  = nSelImage;
-		cbex.iIndent 		 = iIndent;
-		cbex.iOverlay 		 = iOverlay;
-		cbex.lParam 		 = lParam;
+		COMBOBOXEXITEM cbex = { 0 };
+		cbex.mask = nMask;
+		cbex.iItem = nIndex;
+		cbex.pszText = (LPTSTR) lpszItem;
+		cbex.iImage = nImage;
+		cbex.iSelectedImage = nSelImage;
+		cbex.iIndent = iIndent;
+		cbex.iOverlay = iOverlay;
+		cbex.lParam = lParam;
 		return (int)::SendMessage(m_hWnd, CBEM_SETITEM, 0, (LPARAM)&cbex);
 	}
 
@@ -8823,15 +8818,15 @@ public:
 		ATLASSERT(lpszItem != NULL);
 
 		COMBOBOXEXITEM cbex = { 0 };
-		cbex.mask 			= CBEIF_TEXT;
-		cbex.iItem 			= nIndex;
-		cbex.pszText 		= lpszItem;
-		cbex.cchTextMax 	= nLen;
+		cbex.mask = CBEIF_TEXT;
+		cbex.iItem = nIndex;
+		cbex.pszText = lpszItem;
+		cbex.cchTextMax = nLen;
 
 		return (BOOL)::SendMessage(m_hWnd, CBEM_GETITEM, 0, (LPARAM)&cbex);
 	}
 
- #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	BOOL GetItemText(int nIndex, BSTR& bstrText) const
 	{
 		USES_CONVERSION;
@@ -8839,65 +8834,65 @@ public:
 		ATLASSERT(bstrText == NULL);
 
 		COMBOBOXEXITEM cbex = { 0 };
-		cbex.mask 			= CBEIF_TEXT;
-		cbex.iItem 			= nIndex;
+		cbex.mask = CBEIF_TEXT;
+		cbex.iItem = nIndex;
 
-		LPTSTR lpstrText 	= NULL;
-		BOOL bRet 		 	= FALSE;
-		for (int nLen = 256; ; nLen *= 2)
+		LPTSTR lpstrText = NULL;
+		BOOL bRet = FALSE;
+		for(int nLen = 256; ; nLen *= 2)
 		{
 			ATLTRY(lpstrText = new TCHAR[nLen]);
-			if (lpstrText == NULL)
+			if(lpstrText == NULL)
 				break;
-			lpstrText[0] 	= NULL;
-			cbex.pszText 	= lpstrText;
+			lpstrText[0] = NULL;
+			cbex.pszText = lpstrText;
 			cbex.cchTextMax = nLen;
 			bRet = (BOOL)::SendMessage(m_hWnd, CBEM_GETITEM, 0, (LPARAM)&cbex);
-			if (!bRet || (lstrlen(cbex.pszText) < nLen - 1))
+			if(!bRet || (lstrlen(cbex.pszText) < nLen - 1))
 				break;
 			delete [] lpstrText;
-			lpstrText 		= NULL;
+			lpstrText = NULL;
 		}
 
-		if (lpstrText != NULL)
+		if(lpstrText != NULL)
 		{
-			if (bRet)
+			if(bRet)
 				bstrText = ::SysAllocString(T2OLE(lpstrText));
 			delete [] lpstrText;
 		}
 
 		return (bstrText != NULL) ? TRUE : FALSE;
 	}
- #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL GetItemText(int nIndex, _CSTRING_NS::CString& strText) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 
-		COMBOBOXEXITEM 	cbex = { 0 };
-		cbex.mask 			 = CBEIF_TEXT;
-		cbex.iItem 			 = nIndex;
+		COMBOBOXEXITEM cbex = { 0 };
+		cbex.mask = CBEIF_TEXT;
+		cbex.iItem = nIndex;
 
 		strText.Empty();
-		BOOL 			bRet = FALSE;
-		for (int nLen = 256; ; nLen *= 2)
+		BOOL bRet = FALSE;
+		for(int nLen = 256; ; nLen *= 2)
 		{
 			cbex.pszText = strText.GetBufferSetLength(nLen);
-			if (cbex.pszText == NULL)
+			if(cbex.pszText == NULL)
 			{
 				bRet = FALSE;
 				break;
 			}
 			cbex.cchTextMax = nLen;
 			bRet = (BOOL)::SendMessage(m_hWnd, CBEM_GETITEM, 0, (LPARAM)&cbex);
-			if (!bRet || (lstrlen(cbex.pszText) < nLen - 1))
+			if(!bRet || (lstrlen(cbex.pszText) < nLen - 1))
 				break;
 		}
 		strText.ReleaseBuffer();
 		return bRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	BOOL SetItemText(int nIndex, LPCTSTR lpszItem)
 	{
@@ -8923,7 +8918,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, CBEM_HASEDITCHANGED, 0, 0L);
 	}
 
- // Non-functional
+// Non-functional
 	int AddString(LPCTSTR /*lpszItem*/)
 	{
 		ATLASSERT(FALSE);  // Not available in CComboBoxEx; use InsertItem
@@ -8961,7 +8956,7 @@ template <class TBase>
 class CMonthCalendarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CMonthCalendarCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -8978,7 +8973,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return MONTHCAL_CLASS;
@@ -9012,7 +9007,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, MCM_GETFIRSTDAYOFWEEK, 0, 0L);
-		if (pbLocaleVal != NULL)
+		if(pbLocaleVal != NULL)
 			*pbLocaleVal = (BOOL)HIWORD(dwRet);
 		return (int)(short)LOWORD(dwRet);
 	}
@@ -9021,7 +9016,7 @@ public:
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		DWORD dwRet = (DWORD)::SendMessage(m_hWnd, MCM_SETFIRSTDAYOFWEEK, 0, nDay);
-		if (pbLocaleVal != NULL)
+		if(pbLocaleVal != NULL)
 			*pbLocaleVal = (BOOL)HIWORD(dwRet);
 		return (int)(short)LOWORD(dwRet);
 	}
@@ -9098,7 +9093,7 @@ public:
 		return (int)::SendMessage(m_hWnd, MCM_GETMAXTODAYWIDTH, 0, 0L);
 	}
 
- #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	BOOL GetUnicodeFormat() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9110,9 +9105,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (BOOL)::SendMessage(m_hWnd, MCM_SETUNICODEFORMAT, bUnicode, 0L);
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- #if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 	DWORD GetCurrentView() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9160,9 +9155,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, MCM_SETCALENDARBORDER, (WPARAM)bSet, (LPARAM)cxyBorder);
 	}
- #endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 
- // Operations
+// Operations
 	int GetMonthRange(DWORD dwFlags, LPSYSTEMTIME lprgSysTimeArray) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9181,13 +9176,13 @@ public:
 		return (DWORD)::SendMessage(m_hWnd, MCM_HITTEST, 0, (LPARAM)pMCHitTest);
 	}
 
- #if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 	void SizeRectToMin(LPRECT lpRect)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, MCM_SIZERECTTOMIN, 0, (LPARAM)lpRect);
 	}
- #endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 };
 
 typedef CMonthCalendarCtrlT<ATL::CWindow>   CMonthCalendarCtrl;
@@ -9200,7 +9195,7 @@ template <class TBase>
 class CDateTimePickerCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CDateTimePickerCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -9217,7 +9212,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Operations
+// Operations
 	static LPCTSTR GetWndClassName()
 	{
 		return DATETIMEPICK_CLASS;
@@ -9271,7 +9266,7 @@ public:
 		return CMonthCalendarCtrl((HWND)::SendMessage(m_hWnd, DTM_GETMONTHCAL, 0, 0L));
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	CFontHandle GetMonthCalFont() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9283,9 +9278,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, DTM_SETMCFONT, (WPARAM)hFont, MAKELPARAM(bRedraw, 0));
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
- #if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#if defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 	DWORD GetMonthCalStyle() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9315,7 +9310,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, DTM_CLOSEMONTHCAL, 0, 0L);
 	}
- #endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
+#endif // defined(NTDDI_VERSION) && (NTDDI_VERSION >= NTDDI_LONGHORN)
 };
 
 typedef CDateTimePickerCtrlT<ATL::CWindow>   CDateTimePickerCtrl;
@@ -9330,7 +9325,7 @@ template <class T>
 class CFlatScrollBarImpl
 {
 public:
- // Initialization
+// Initialization
 	BOOL FlatSB_Initialize()
 	{
 		T* pT = static_cast<T*>(this);
@@ -9345,7 +9340,7 @@ public:
 		return ::UninitializeFlatSB(pT->m_hWnd);
 	}
 
- // Flat scroll bar properties
+// Flat scroll bar properties
 	BOOL FlatSB_GetScrollProp(UINT uIndex, LPINT lpnValue) const
 	{
 		const T* pT = static_cast<const T*>(this);
@@ -9360,7 +9355,7 @@ public:
 		return ::FlatSB_SetScrollProp(pT->m_hWnd, uIndex, nValue, bRedraw);
 	}
 
- // Attributes
+// Attributes
 	int FlatSB_GetScrollPos(int nBar) const
 	{
 		const T* pT = static_cast<const T*>(this);
@@ -9403,7 +9398,7 @@ public:
 		return ::FlatSB_SetScrollInfo(pT->m_hWnd, nBar, lpScrollInfo, bRedraw);
 	}
 
- // Operations
+// Operations
 	BOOL FlatSB_ShowScrollBar(UINT nBar, BOOL bShow = TRUE)
 	{
 		T* pT = static_cast<T*>(this);
@@ -9447,7 +9442,7 @@ template <class TBase>
 class CIPAddressCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CIPAddressCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -9464,7 +9459,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Atteributes
+// Atteributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_IPADDRESS;
@@ -9527,7 +9522,7 @@ template <class TBase>
 class CPagerCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CPagerCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -9544,7 +9539,7 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
 		return WC_PAGESCROLLER;
@@ -9605,7 +9600,7 @@ public:
 		return (int)::SendMessage(m_hWnd, PGM_SETPOS, 0, nPos);
 	}
 
- // Operations
+// Operations
 	void SetChild(HWND hWndChild)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9646,7 +9641,7 @@ template <class TBase>
 class CLinkCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CLinkCtrlT(HWND hWnd = NULL) : TBase(hWnd)
 	{ }
 
@@ -9663,14 +9658,14 @@ public:
 		return TBase::Create(GetWndClassName(), hWndParent, rect.m_lpRect, szWindowName, dwStyle, dwExStyle, MenuOrID.m_hMenu, lpCreateParam);
 	}
 
- // Attributes
+// Attributes
 	static LPCTSTR GetWndClassName()
 	{
-	  #ifdef _UNICODE
+#ifdef _UNICODE
 		return WC_LINK;
-	  #else // !_UNICODE
+#else // !_UNICODE
 		return "SysLink";
-	  #endif // !_UNICODE
+#endif // !_UNICODE
 	}
 
 	int GetIdealHeight(int cxMaxWidth = 0) const
@@ -9694,14 +9689,14 @@ public:
 	// Vista only
 	int GetIdealSize(SIZE& size, int cxMaxWidth = 0) const
 	{
-	  #ifndef LM_GETIDEALSIZE
+#ifndef LM_GETIDEALSIZE
 		const UINT LM_GETIDEALSIZE = LM_GETIDEALHEIGHT;
-	  #endif
+#endif
 		ATLASSERT(::IsWindow(m_hWnd));
 		return (int)::SendMessage(m_hWnd, LM_GETIDEALSIZE, cxMaxWidth, (LPARAM)&size);
 	}
 
- // Operations
+// Operations
 	BOOL HitTest(PLHITTESTINFO pLHitTestInfo) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -9721,7 +9716,7 @@ template <class T>
 class CCustomDraw
 {
 public:
- #if (_ATL_VER < 0x0700)
+#if (_ATL_VER < 0x0700)
 	BOOL m_bHandledCD;
 
 	BOOL IsMsgHandled() const
@@ -9733,53 +9728,53 @@ public:
 	{
 		m_bHandledCD = bHandled;
 	}
- #endif // !(_ATL_VER < 0x0700)
+#endif // !(_ATL_VER < 0x0700)
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CCustomDraw< T >)
 		NOTIFY_CODE_HANDLER(NM_CUSTOMDRAW, OnCustomDraw)
 	ALT_MSG_MAP(1)
 		REFLECTED_NOTIFY_CODE_HANDLER(NM_CUSTOMDRAW, OnCustomDraw)
 	END_MSG_MAP()
 
- // message handler
+// message handler
 	LRESULT OnCustomDraw(int idCtrl, LPNMHDR pnmh, BOOL& bHandled)
 	{
 		T* pT = static_cast<T*>(this);
 		pT->SetMsgHandled(TRUE);
 		LPNMCUSTOMDRAW lpNMCustomDraw = (LPNMCUSTOMDRAW)pnmh;
 		DWORD dwRet = 0;
-		switch (lpNMCustomDraw->dwDrawStage)
+		switch(lpNMCustomDraw->dwDrawStage)
 		{
 		case CDDS_PREPAINT:
-			dwRet 	= pT->OnPrePaint		(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnPrePaint(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_POSTPAINT:
-			dwRet 	= pT->OnPostPaint		(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnPostPaint(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_PREERASE:
-			dwRet 	= pT->OnPreErase		(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnPreErase(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_POSTERASE:
-			dwRet 	= pT->OnPostErase		(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnPostErase(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_ITEMPREPAINT:
-			dwRet 	= pT->OnItemPrePaint	(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnItemPrePaint(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_ITEMPOSTPAINT:
-			dwRet 	= pT->OnItemPostPaint	(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnItemPostPaint(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_ITEMPREERASE:
-			dwRet 	= pT->OnItemPreErase	(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnItemPreErase(idCtrl, lpNMCustomDraw);
 			break;
 		case CDDS_ITEMPOSTERASE:
-			dwRet 	= pT->OnItemPostErase	(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnItemPostErase(idCtrl, lpNMCustomDraw);
 			break;
-	  #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 		case (CDDS_ITEMPREPAINT | CDDS_SUBITEM):
-			dwRet 	= pT->OnSubItemPrePaint	(idCtrl, lpNMCustomDraw);
+			dwRet = pT->OnSubItemPrePaint(idCtrl, lpNMCustomDraw);
 			break;
-	  #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 		default:
 			pT->SetMsgHandled(FALSE);
 			break;
@@ -9788,7 +9783,7 @@ public:
 		return dwRet;
 	}
 
- // Overrideables
+// Overrideables
 	DWORD OnPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/)
 	{
 		return CDRF_DODEFAULT;
@@ -9829,12 +9824,12 @@ public:
 		return CDRF_DODEFAULT;
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	DWORD OnSubItemPrePaint(int /*idCtrl*/, LPNMCUSTOMDRAW /*lpNMCustomDraw*/)
 	{
 		return CDRF_DODEFAULT;
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 };
 
 
@@ -9849,7 +9844,7 @@ template <class TBase>
 class CCECommandBarCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CCECommandBarCtrlT(HWND hWnd = NULL) : TBase(hWnd) { }
 
 	CCECommandBarCtrlT< TBase >& operator=(HWND hWnd)
@@ -9858,7 +9853,7 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	BOOL IsVisible() const
 	{
 		return IsWindowVisible();
@@ -9876,7 +9871,7 @@ public:
 		return ::CommandBar_GetMenu(m_hWnd, wButton);
 	}
 
- // Operations
+// Operations
 	HWND Create(HWND hWndParent, int nCmdBarID)
 	{
 		m_hWnd = ::CommandBar_Create(ModuleHelper::GetModuleInstance(), hWndParent, nCmdBarID);
@@ -9969,7 +9964,7 @@ template <class TBase>
 class CCECommandBandsCtrlT : public TBase
 {
 public:
- // Constructors
+// Constructors
 	CCECommandBandsCtrlT(HWND hWnd = NULL) : TBase(hWnd) { }
 
 	CCECommandBandsCtrlT< TBase >& operator=(HWND hWnd)
@@ -9978,19 +9973,19 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	BOOL IsVisible() const
 	{
 		return IsWindowVisible();
 	}
 
- #if (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0400)
 	UINT GetHeight() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CommandBands_Height(m_hWnd);
 	}
- #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
 	HWND GetCommandBar(UINT uBand) const
 	{
@@ -10004,7 +9999,7 @@ public:
 		return ::CommandBands_GetRestoreInformation(m_hWnd, uBand, pcbr);
 	}
 
- // Operations
+// Operations
 	HWND Create(HWND hWndParent, UINT wID, DWORD dwStyles, HIMAGELIST hImageList = NULL)
 	{
 		m_hWnd = ::CommandBands_Create(ModuleHelper::GetModuleInstance(), hWndParent, wID, dwStyles, hImageList);

@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLPRINT_H__
 #define __ATLPRINT_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifdef _WIN32_WCE
 	#error atlprint.h is not supported on Windows CE
@@ -51,7 +50,7 @@ namespace WTL
 //                and provided by ::GetPrinter.
 
 template <unsigned int t_nInfo>
-class  _printer_info
+class _printer_info
 {
 public:
 	typedef void infotype;
@@ -75,10 +74,10 @@ template <unsigned int t_nInfo>
 class CPrinterInfo
 {
 public:
- // Data members
+// Data members
 	typename _printer_info<t_nInfo>::infotype* m_pi;
 
- // Constructor/destructor
+// Constructor/destructor
 	CPrinterInfo() : m_pi(NULL)
 	{ }
 
@@ -92,14 +91,14 @@ public:
 		Cleanup();
 	}
 
- // Operations
+// Operations
 	bool GetPrinterInfo(HANDLE hPrinter)
 	{
 		Cleanup();
 		return GetPrinterInfoHelper(hPrinter, (BYTE**)&m_pi, t_nInfo);
 	}
 
- // Implementation
+// Implementation
 	void Cleanup()
 	{
 		delete [] (BYTE*)m_pi;
@@ -109,8 +108,8 @@ public:
 	static bool GetPrinterInfoHelper(HANDLE hPrinter, BYTE** pi, int nIndex)
 	{
 		ATLASSERT(pi != NULL);
-		DWORD 	dw = 0;
-		BYTE* 	pb = NULL;
+		DWORD dw = 0;
+		BYTE* pb = NULL;
 		::GetPrinter(hPrinter, nIndex, NULL, 0, &dw);
 		if (dw > 0)
 		{
@@ -118,7 +117,7 @@ public:
 			if (pb != NULL)
 			{
 				memset(pb, 0, dw);
-				DWORD 	dwNew;
+				DWORD dwNew;
 				if (!::GetPrinter(hPrinter, nIndex, pb, dw, &dwNew))
 				{
 					delete [] pb;
@@ -139,10 +138,10 @@ template <bool t_bManaged>
 class CPrinterT
 {
 public:
- // Data members
-	HANDLE 		m_hPrinter;
+// Data members
+	HANDLE m_hPrinter;
 
- // Constructor/destructor
+// Constructor/destructor
 	CPrinterT(HANDLE hPrinter = NULL) : m_hPrinter(hPrinter)
 	{ }
 
@@ -151,7 +150,7 @@ public:
 		ClosePrinter();
 	}
 
- // Operations
+// Operations
 	CPrinterT& operator =(HANDLE hPrinter)
 	{
 		if (hPrinter != m_hPrinter)
@@ -166,11 +165,11 @@ public:
 
 	bool OpenPrinter(HANDLE hDevNames, const DEVMODE* pDevMode = NULL)
 	{
-		bool 		b 	= false;
-		DEVNAMES* 	pdn = (DEVNAMES*)::GlobalLock(hDevNames);
+		bool b = false;
+		DEVNAMES* pdn = (DEVNAMES*)::GlobalLock(hDevNames);
 		if (pdn != NULL)
 		{
-			LPTSTR 	lpszPrinterName = (LPTSTR)pdn + pdn->wDeviceOffset;
+			LPTSTR lpszPrinterName = (LPTSTR)pdn + pdn->wDeviceOffset;
 			b = OpenPrinter(lpszPrinterName, pDevMode);
 			::GlobalUnlock(hDevNames);
 		}
@@ -196,14 +195,14 @@ public:
 	bool OpenDefaultPrinter(const DEVMODE* pDevMode = NULL)
 	{
 		ClosePrinter();
-		const int 	cchBuff = 512;
-		TCHAR 		buffer[cchBuff];
-		buffer[0] 			= 0;
+		const int cchBuff = 512;
+		TCHAR buffer[cchBuff];
+		buffer[0] = 0;
 		::GetProfileString(_T("windows"), _T("device"), _T(",,,"), buffer, cchBuff);
-		int 		nLen 	= lstrlen(buffer);
+		int nLen = lstrlen(buffer);
 		if (nLen != 0)
 		{
-			LPTSTR 	lpsz = buffer;
+			LPTSTR lpsz = buffer;
 			while (*lpsz)
 			{
 				if (*lpsz == _T(','))
@@ -213,7 +212,7 @@ public:
 				}
 				lpsz = CharNext(lpsz);
 			}
-			PRINTER_DEFAULTS 	pdefs = { NULL, (DEVMODE*)pDevMode, PRINTER_ACCESS_USE };
+			PRINTER_DEFAULTS pdefs = { NULL, (DEVMODE*)pDevMode, PRINTER_ACCESS_USE };
 			::OpenPrinter(buffer, &m_hPrinter, (pDevMode == NULL) ? NULL : &pdefs);
 		}
 		return m_hPrinter != NULL;
@@ -238,10 +237,10 @@ public:
 
 	HANDLE CopyToHDEVNAMES() const
 	{
-		HANDLE 				h 		= NULL;
-		CPrinterInfo<5> 	pinfon5;
-		CPrinterInfo<2> 	pinfon2;
-		LPTSTR 				lpszPrinterName = NULL;
+		HANDLE h = NULL;
+		CPrinterInfo<5> pinfon5;
+		CPrinterInfo<2> pinfon2;
+		LPTSTR lpszPrinterName = NULL;
 		// Some printers fail for PRINTER_INFO_5 in some situations
 		if (pinfon5.GetPrinterInfo(m_hPrinter))
 			lpszPrinterName = pinfon5.m_pi->pPrinterName;
@@ -249,15 +248,15 @@ public:
 			lpszPrinterName = pinfon2.m_pi->pPrinterName;
 		if (lpszPrinterName != NULL)
 		{
-			int 		nLen = sizeof(DEVNAMES) + (lstrlen(lpszPrinterName) + 1) * sizeof(TCHAR);
-			h 				 = ::GlobalAlloc(GMEM_MOVEABLE, nLen);
-			BYTE* 		pv 	 = (BYTE*)::GlobalLock(h);
-			DEVNAMES* 	pdev = (DEVNAMES*)pv;
+			int nLen = sizeof(DEVNAMES) + (lstrlen(lpszPrinterName) + 1) * sizeof(TCHAR);
+			h = ::GlobalAlloc(GMEM_MOVEABLE, nLen);
+			BYTE* pv = (BYTE*)::GlobalLock(h);
+			DEVNAMES* pdev = (DEVNAMES*)pv;
 			if (pv != NULL)
 			{
 				memset(pv, 0, nLen);
 				pdev->wDeviceOffset = sizeof(DEVNAMES) / sizeof(TCHAR);
-				pv 					= pv + sizeof(DEVNAMES); // now points to end
+				pv = pv + sizeof(DEVNAMES); // now points to end
 				SecureHelper::strcpy_x((LPTSTR)pv, lstrlen(lpszPrinterName) + 1, lpszPrinterName);
 				::GlobalUnlock(h);
 			}
@@ -267,10 +266,10 @@ public:
 
 	HDC CreatePrinterDC(const DEVMODE* pdm = NULL) const
 	{
-		CPrinterInfo<5> 	pinfo5;
-		CPrinterInfo<2> 	pinfo2;
-		HDC 				hDC 			= NULL;
-		LPTSTR 				lpszPrinterName = NULL;
+		CPrinterInfo<5> pinfo5;
+		CPrinterInfo<2> pinfo2;
+		HDC hDC = NULL;
+		LPTSTR lpszPrinterName = NULL;
 		// Some printers fail for PRINTER_INFO_5 in some situations
 		if (pinfo5.GetPrinterInfo(m_hPrinter))
 			lpszPrinterName = pinfo5.m_pi->pPrinterName;
@@ -324,11 +323,11 @@ template <bool t_bManaged>
 class CDevModeT
 {
 public:
- // Data members
-	HANDLE 		m_hDevMode;
-	DEVMODE*	m_pDevMode;
+// Data members
+	HANDLE m_hDevMode;
+	DEVMODE* m_pDevMode;
 
- // Constructor/destructor
+// Constructor/destructor
 	CDevModeT(HANDLE hDevMode = NULL) : m_hDevMode(hDevMode)
 	{
 		m_pDevMode = (m_hDevMode != NULL) ? (DEVMODE*)::GlobalLock(m_hDevMode) : NULL;
@@ -339,7 +338,7 @@ public:
 		Cleanup();
 	}
 
- // Operations
+// Operations
 	CDevModeT<t_bManaged>& operator =(HANDLE hDevMode)
 	{
 		Attach(hDevMode);
@@ -377,11 +376,11 @@ public:
 	{
 		if (pdm == NULL)
 			return false;
-		int 	nSize 	= pdm->dmSize + pdm->dmDriverExtra;
-		HANDLE 	h 		= ::GlobalAlloc(GMEM_MOVEABLE, nSize);
+		int nSize = pdm->dmSize + pdm->dmDriverExtra;
+		HANDLE h = ::GlobalAlloc(GMEM_MOVEABLE, nSize);
 		if (h != NULL)
 		{
-			void*    p = ::GlobalLock(h);
+			void* p = ::GlobalLock(h);
 			SecureHelper::memcpy_x(p, nSize, pdm, nSize);
 			::GlobalUnlock(h);
 		}
@@ -395,7 +394,7 @@ public:
 		if (hdm != NULL)
 		{
 			DEVMODE* pdm = (DEVMODE*)::GlobalLock(hdm);
-			b 			 = CopyFromDEVMODE(pdm);
+			b = CopyFromDEVMODE(pdm);
 			::GlobalUnlock(hdm);
 		}
 		return b;
@@ -424,7 +423,7 @@ public:
 		LONG nLen = ::DocumentProperties(NULL, hPrinter, NULL, NULL, NULL, 0);
 		CTempBuffer<DEVMODE, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		DEVMODE* pdm = buff.AllocateBytes(nLen);
-		if (pdm != NULL)
+		if(pdm != NULL)
 		{
 			memset(pdm, 0, nLen);
 			LONG l = ::DocumentProperties(NULL, hPrinter, NULL, pdm, m_pDevMode, DM_IN_BUFFER | DM_OUT_BUFFER);
@@ -446,7 +445,7 @@ public:
 		LONG nLen = ::DocumentProperties(hWnd, hPrinter, pi.m_pi->pName, NULL, NULL, 0);
 		CTempBuffer<DEVMODE, _WTL_STACK_ALLOC_THRESHOLD> buff;
 		DEVMODE* pdm = buff.AllocateBytes(nLen);
-		if (pdm != NULL)
+		if(pdm != NULL)
 		{
 			memset(pdm, 0, nLen);
 			LONG l = ::DocumentProperties(hWnd, hPrinter, pi.m_pi->pName, pdm, m_pDevMode, DM_IN_BUFFER | DM_OUT_BUFFER | DM_PROMPT);
@@ -461,13 +460,13 @@ public:
 
 	operator DEVMODE*() const { return m_pDevMode; }
 
- // Implementation
+// Implementation
 	void Cleanup()
 	{
 		if (m_hDevMode != NULL)
 		{
 			::GlobalUnlock(m_hDevMode);
-			if (t_bManaged)
+			if(t_bManaged)
 				::GlobalFree(m_hDevMode);
 			m_hDevMode = NULL;
 		}
@@ -484,7 +483,7 @@ typedef CDevModeT<true>    CDevMode;
 class CPrinterDC : public CDC
 {
 public:
- // Constructors/destructor
+// Constructors/destructor
 	CPrinterDC()
 	{
 		CPrinter printer;
@@ -516,19 +515,19 @@ public:
 class ATL_NO_VTABLE IPrintJobInfo
 {
 public:
-	virtual void 		BeginPrintJob(HDC hDC) 				= 0;        // allocate handles needed, etc.
-	virtual void 		EndPrintJob(HDC hDC, bool bAborted) = 0;		// free handles, etc.
-	virtual void 		PrePrintPage(UINT nPage, HDC hDC) 	= 0;
-	virtual bool 		PrintPage(UINT nPage, HDC hDC) 		= 0;
-	virtual void 		PostPrintPage(UINT nPage, HDC hDC) 	= 0;
+	virtual void BeginPrintJob(HDC hDC) = 0;                // allocate handles needed, etc.
+	virtual void EndPrintJob(HDC hDC, bool bAborted) = 0;   // free handles, etc.
+	virtual void PrePrintPage(UINT nPage, HDC hDC) = 0;
+	virtual bool PrintPage(UINT nPage, HDC hDC) = 0;
+	virtual void PostPrintPage(UINT nPage, HDC hDC) = 0;
 	// If you want per page devmodes, return the DEVMODE* to use for nPage.
 	// You can optimize by only returning a new DEVMODE* when it is different
 	// from the one for nLastPage, otherwise return NULL.
 	// When nLastPage==0, the current DEVMODE* will be the default passed to
 	// StartPrintJob.
 	// Note: During print preview, nLastPage will always be "0".
-	virtual DEVMODE* 	GetNewDevModeForPage(UINT nLastPage, UINT nPage) = 0;
-	virtual bool 		IsValidPage(UINT nPage) 						 = 0;
+	virtual DEVMODE* GetNewDevModeForPage(UINT nLastPage, UINT nPage) = 0;
+	virtual bool IsValidPage(UINT nPage) = 0;
 };
 
 // Provides a default implementatin for IPrintJobInfo
@@ -536,11 +535,11 @@ public:
 class ATL_NO_VTABLE CPrintJobInfo : public IPrintJobInfo
 {
 public:
-	virtual void BeginPrintJob(HDC /*hDC*/)   					// allocate handles needed, etc
+	virtual void BeginPrintJob(HDC /*hDC*/)   // allocate handles needed, etc
 	{
 	}
 
-	virtual void EndPrintJob(HDC /*hDC*/, bool /*bAborted*/)   	// free handles, etc
+	virtual void EndPrintJob(HDC /*hDC*/, bool /*bAborted*/)   // free handles, etc
 	{
 	}
 
@@ -566,26 +565,26 @@ public:
 		return true;
 	}
 
- // Implementation - data
-	int 	m_nPJState;
+// Implementation - data
+	int m_nPJState;
 };
 
 
 class CPrintJob
 {
 public:
- // Data members
-	CPrinterHandle 	m_printer;
-	IPrintJobInfo* 	m_pInfo;
-	DEVMODE* 		m_pDefDevMode;
-	DOCINFO 		m_docinfo;
-	int 			m_nJobID;
-	bool 			m_bCancel;
-	bool 			m_bComplete;
-	unsigned long 	m_nStartPage;
-	unsigned long 	m_nEndPage;
+// Data members
+	CPrinterHandle m_printer;
+	IPrintJobInfo* m_pInfo;
+	DEVMODE* m_pDefDevMode;
+	DOCINFO m_docinfo;
+	int m_nJobID;
+	bool m_bCancel;
+	bool m_bComplete;
+	unsigned long m_nStartPage;
+	unsigned long m_nEndPage;
 
- // Constructor/destructor
+// Constructor/destructor
 	CPrintJob() : m_nJobID(0), m_bCancel(false), m_bComplete(true)
 	{ }
 
@@ -594,47 +593,47 @@ public:
 		ATLASSERT(IsJobComplete()); // premature destruction?
 	}
 
- // Operations
+// Operations
 	bool IsJobComplete() const
 	{
 		return m_bComplete;
 	}
 
-	bool StartPrintJob( bool 			bBackground			, HANDLE 		 hPrinter	, DEVMODE* pDefaultDevMode,
-						IPrintJobInfo*  pInfo	 			, LPCTSTR 		 lpszDocName,
-						unsigned long 	nStartPage 			, unsigned long  nEndPage	,
-						bool 			bPrintToFile = false, LPCTSTR 		 lpstrOutputFile = NULL)
+	bool StartPrintJob(bool bBackground, HANDLE hPrinter, DEVMODE* pDefaultDevMode,
+			IPrintJobInfo* pInfo, LPCTSTR lpszDocName, 
+			unsigned long nStartPage, unsigned long nEndPage,
+			bool bPrintToFile = false, LPCTSTR lpstrOutputFile = NULL)
 	{
 		ATLASSERT(m_bComplete); // previous job not done yet?
 		if (pInfo == NULL)
 			return false;
 
 		memset(&m_docinfo, 0, sizeof(m_docinfo));
-		m_docinfo.cbSize 		= sizeof(m_docinfo);
-		m_docinfo.lpszDocName	= lpszDocName;
-		m_pInfo 				= pInfo;
-		m_nStartPage 			= nStartPage;
-		m_nEndPage 				= nEndPage;
+		m_docinfo.cbSize = sizeof(m_docinfo);
+		m_docinfo.lpszDocName = lpszDocName;
+		m_pInfo = pInfo;
+		m_nStartPage = nStartPage;
+		m_nEndPage = nEndPage;
 		m_printer.Attach(hPrinter);
-		m_pDefDevMode 			= pDefaultDevMode;
-		m_bComplete 			= false;
+		m_pDefDevMode = pDefaultDevMode;
+		m_bComplete = false;
 
-		if (bPrintToFile)
+		if(bPrintToFile)
 			m_docinfo.lpszOutput = (lpstrOutputFile != NULL) ? lpstrOutputFile : _T("FILE:");
 
 		if (!bBackground)
 		{
-			m_bComplete 		= true;
+			m_bComplete = true;
 			return StartHelper();
 		}
 
 		// Create a thread and return
 		DWORD dwThreadID = 0;
-	  #if !defined(_ATL_MIN_CRT) && defined(_MT)
+#if !defined(_ATL_MIN_CRT) && defined(_MT)
 		HANDLE hThread = (HANDLE)_beginthreadex(NULL, 0, (UINT (WINAPI*)(void*))StartProc, this, 0, (UINT*)&dwThreadID);
-	  #else
+#else
 		HANDLE hThread = ::CreateThread(NULL, 0, StartProc, (void*)this, 0, &dwThreadID);
-	  #endif
+#endif
 		if (hThread == NULL)
 			return false;
 
@@ -646,7 +645,7 @@ public:
 // Implementation
 	static DWORD WINAPI StartProc(void* p)
 	{
-		CPrintJob* 	pThis = (CPrintJob*)p;
+		CPrintJob* pThis = (CPrintJob*)p;
 		pThis->StartHelper();
 		pThis->m_bComplete = true;
 		return 0;
@@ -654,11 +653,11 @@ public:
 
 	bool StartHelper()
 	{
-		CDC 	dcPrinter;
+		CDC dcPrinter;
 		dcPrinter.Attach(m_printer.CreatePrinterDC(m_pDefDevMode));
 		if (dcPrinter.IsNull())
 			return false;
-
+			
 		m_nJobID = ::StartDoc(dcPrinter, &m_docinfo);
 		if (m_nJobID <= 0)
 			return false;
@@ -708,29 +707,29 @@ public:
 class CPrintPreview
 {
 public:
- // Data members
-	IPrintJobInfo* 	m_pInfo;
-	CPrinterHandle 	m_printer;
-	CEnhMetaFile 	m_meta;
-	DEVMODE* 		m_pDefDevMode;
-	DEVMODE* 		m_pCurDevMode;
-	SIZE 			m_sizeCurPhysOffset;
+// Data members
+	IPrintJobInfo* m_pInfo;
+	CPrinterHandle m_printer;
+	CEnhMetaFile m_meta;
+	DEVMODE* m_pDefDevMode;
+	DEVMODE* m_pCurDevMode;
+	SIZE m_sizeCurPhysOffset;
 
- // Constructor
+// Constructor
 	CPrintPreview() : m_pInfo(NULL), m_pDefDevMode(NULL), m_pCurDevMode(NULL)
 	{
 		m_sizeCurPhysOffset.cx = 0;
 		m_sizeCurPhysOffset.cy = 0;
 	}
 
- // Operations
+// Operations
 	void SetPrintPreviewInfo(HANDLE hPrinter, DEVMODE* pDefaultDevMode, IPrintJobInfo* pji)
 	{
 		m_printer.Attach(hPrinter);
-		m_pDefDevMode 	= pDefaultDevMode;
-		m_pInfo 		= pji;
-		m_nCurPage 		= 0;
-		m_pCurDevMode 	= NULL;
+		m_pDefDevMode = pDefaultDevMode;
+		m_pInfo = pji;
+		m_nCurPage = 0;
+		m_pCurDevMode = NULL;
 	}
 
 	void SetEnhMetaFile(HENHMETAFILE hEMF)
@@ -742,22 +741,22 @@ public:
 	{
 		if (!m_pInfo->IsValidPage(nPage))
 			return;
-		m_nCurPage 		  = nPage;
-		m_pCurDevMode 	  = m_pInfo->GetNewDevModeForPage(0, nPage);
+		m_nCurPage = nPage;
+		m_pCurDevMode = m_pInfo->GetNewDevModeForPage(0, nPage);
 		if (m_pCurDevMode == NULL)
 			m_pCurDevMode = m_pDefDevMode;
-		CDC dcPrinter 	  = m_printer.CreatePrinterDC(m_pCurDevMode);
+		CDC dcPrinter = m_printer.CreatePrinterDC(m_pCurDevMode);
 
-		int iWidth 	= dcPrinter.GetDeviceCaps(PHYSICALWIDTH);
-		int iHeight = dcPrinter.GetDeviceCaps(PHYSICALHEIGHT);
-		int nLogx 	= dcPrinter.GetDeviceCaps(LOGPIXELSX);
-		int nLogy 	= dcPrinter.GetDeviceCaps(LOGPIXELSY);
+		int iWidth = dcPrinter.GetDeviceCaps(PHYSICALWIDTH); 
+		int iHeight = dcPrinter.GetDeviceCaps(PHYSICALHEIGHT); 
+		int nLogx = dcPrinter.GetDeviceCaps(LOGPIXELSX);
+		int nLogy = dcPrinter.GetDeviceCaps(LOGPIXELSY);
 
 		RECT rcMM = { 0, 0, ::MulDiv(iWidth, 2540, nLogx), ::MulDiv(iHeight, 2540, nLogy) };
 
 		m_sizeCurPhysOffset.cx = dcPrinter.GetDeviceCaps(PHYSICALOFFSETX);
 		m_sizeCurPhysOffset.cy = dcPrinter.GetDeviceCaps(PHYSICALOFFSETY);
-
+		
 		CEnhMetaFileDC dcMeta(dcPrinter, &rcMM);
 		m_pInfo->PrePrintPage(nPage, dcMeta);
 		m_pInfo->PrintPage(nPage, dcMeta);
@@ -767,37 +766,37 @@ public:
 
 	void GetPageRect(RECT& rc, LPRECT prc)
 	{
-		int 	x1 = rc.right-rc.left;
-		int 	y1 = rc.bottom - rc.top;
+		int x1 = rc.right-rc.left;
+		int y1 = rc.bottom - rc.top;
 		if ((x1 < 0) || (y1 < 0))
 			return;
 
-		CEnhMetaFileInfo 	emfinfo(m_meta);
-		ENHMETAHEADER* 		pmh 	= emfinfo.GetEnhMetaFileHeader();
+		CEnhMetaFileInfo emfinfo(m_meta);
+		ENHMETAHEADER* pmh = emfinfo.GetEnhMetaFileHeader();
 
 		// Compute whether we are OK vertically or horizontally
-		int 	x2 	= pmh->szlDevice.cx;
-		int 	y2 	= pmh->szlDevice.cy;
-		int 	y1p = MulDiv(x1, y2, x2);
-		int 	x1p = MulDiv(y1, x2, y2);
+		int x2 = pmh->szlDevice.cx;
+		int y2 = pmh->szlDevice.cy;
+		int y1p = MulDiv(x1, y2, x2);
+		int x1p = MulDiv(y1, x2, y2);
 		ATLASSERT((x1p <= x1) || (y1p <= y1));
 		if (x1p <= x1)
 		{
-			prc->left 	= rc.left + (x1 - x1p) / 2;
-			prc->right 	= prc->left + x1p;
-			prc->top 	= rc.top;
+			prc->left = rc.left + (x1 - x1p) / 2;
+			prc->right = prc->left + x1p;
+			prc->top = rc.top;
 			prc->bottom = rc.bottom;
 		}
 		else
 		{
-			prc->left 	= rc.left;
-			prc->right 	= rc.right;
-			prc->top 	= rc.top + (y1 - y1p) / 2;
+			prc->left = rc.left;
+			prc->right = rc.right;
+			prc->top = rc.top + (y1 - y1p) / 2;
 			prc->bottom = prc->top + y1p;
 		}
 	}
 
- // Painting helpers
+// Painting helpers
 	void DoPaint(CDCHandle dc)
 	{
 		// this one is not used
@@ -805,10 +804,10 @@ public:
 
 	void DoPaint(CDCHandle dc, RECT& rc)
 	{
-		CEnhMetaFileInfo 	emfinfo(m_meta);
-		ENHMETAHEADER* 		pmh 		= emfinfo.GetEnhMetaFileHeader();
-		int 				nOffsetX	= MulDiv(m_sizeCurPhysOffset.cx, rc.right-rc.left, pmh->szlDevice.cx);
-		int 				nOffsetY	= MulDiv(m_sizeCurPhysOffset.cy, rc.bottom-rc.top, pmh->szlDevice.cy);
+		CEnhMetaFileInfo emfinfo(m_meta);
+		ENHMETAHEADER* pmh = emfinfo.GetEnhMetaFileHeader();
+		int nOffsetX = MulDiv(m_sizeCurPhysOffset.cx, rc.right-rc.left, pmh->szlDevice.cx);
+		int nOffsetY = MulDiv(m_sizeCurPhysOffset.cy, rc.bottom-rc.top, pmh->szlDevice.cy);
 
 		dc.OffsetWindowOrg(-nOffsetX, -nOffsetY);
 		dc.PlayMetaFile(m_meta, &rc);
@@ -830,23 +829,23 @@ public:
 
 	enum { m_cxOffset = 10, m_cyOffset = 10 };
 
- // Constructor
+// Constructor
 	CPrintPreviewWindowImpl() : m_nMaxPage(0), m_nMinPage(0)
 	{ }
 
- // Operations
-	void SetPrintPreviewInfo(HANDLE hPrinter, DEVMODE* pDefaultDevMode,
+// Operations
+	void SetPrintPreviewInfo(HANDLE hPrinter, DEVMODE* pDefaultDevMode, 
 		IPrintJobInfo* pji, int nMinPage, int nMaxPage)
 	{
 		CPrintPreview::SetPrintPreviewInfo(hPrinter, pDefaultDevMode, pji);
-		m_nMinPage 	= nMinPage;
-		m_nMaxPage 	= nMaxPage;
+		m_nMinPage = nMinPage;
+		m_nMaxPage = nMaxPage;
 	}
 
 	bool NextPage()
 	{
 		if (m_nCurPage == m_nMaxPage)
-			return  false;
+			return false;
 		SetPage(m_nCurPage + 1);
 		Invalidate();
 		return true;
@@ -855,19 +854,19 @@ public:
 	bool PrevPage()
 	{
 		if (m_nCurPage == m_nMinPage)
-			return  false;
+			return false;
 		if (m_nCurPage == 0)
-			return  false;
+			return false;
 		SetPage(m_nCurPage - 1);
 		Invalidate();
 		return true;
 	}
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CPrintPreviewWindowImpl)
-		MESSAGE_HANDLER( WM_ERASEBKGND	, OnEraseBkgnd	)
-		MESSAGE_HANDLER( WM_PAINT		, OnPaint		)
-		MESSAGE_HANDLER( WM_PRINTCLIENT	, OnPaint		)
+		MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgnd)
+		MESSAGE_HANDLER(WM_PAINT, OnPaint)
+		MESSAGE_HANDLER(WM_PRINTCLIENT, OnPaint)
 	END_MSG_MAP()
 
 	LRESULT OnEraseBkgnd(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& /*bHandled*/)
@@ -877,39 +876,39 @@ public:
 
 	LRESULT OnPaint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 	{
-		T* 		pT 	= static_cast<T*>(this);
-		RECT 	rc 	= { 0 };
+		T* pT = static_cast<T*>(this);
+		RECT rc = { 0 };
 
-		if (wParam != NULL)
+		if(wParam != NULL)
 		{
 			pT->DoPrePaint((HDC)wParam, rc);
-			pT->DoPaint   ((HDC)wParam, rc);
+			pT->DoPaint((HDC)wParam, rc);
 		}
 		else
 		{
-			CPaintDC 	dc(m_hWnd);
+			CPaintDC dc(m_hWnd);
 			pT->DoPrePaint(dc.m_hDC, rc);
-			pT->DoPaint   (dc.m_hDC, rc);
+			pT->DoPaint(dc.m_hDC, rc);
 		}
 
 		return 0;
 	}
 
- // Painting helper
+// Painting helper
 	void DoPrePaint(CDCHandle dc, RECT& rc)
 	{
-		RECT 	rcClient 	= { 0 };
+		RECT rcClient = { 0 };
 		GetClientRect(&rcClient);
-		RECT 	rcArea 		= rcClient;
-		T* 		pT 			= static_cast<T*>(this);
-		pT;   	// avoid level 4 warning
+		RECT rcArea = rcClient;
+		T* pT = static_cast<T*>(this);
+		pT;   // avoid level 4 warning
 		::InflateRect(&rcArea, -pT->m_cxOffset, -pT->m_cyOffset);
 		if (rcArea.left > rcArea.right)
 			rcArea.right = rcArea.left;
 		if (rcArea.top > rcArea.bottom)
 			rcArea.bottom = rcArea.top;
 		GetPageRect(rcArea, &rc);
-		CRgn 	rgn1, rgn2;
+		CRgn rgn1, rgn2;
 		rgn1.CreateRectRgnIndirect(&rc);
 		rgn2.CreateRectRgnIndirect(&rcClient);
 		rgn2.CombineRgn(rgn1, RGN_DIFF);
@@ -919,9 +918,9 @@ public:
 		dc.FillRect(&rc, (HBRUSH)::GetStockObject(WHITE_BRUSH));
 	}
 
- // Implementation - data
-	int 		m_nMinPage;
-	int 		m_nMaxPage;
+// Implementation - data
+	int m_nMinPage;
+	int m_nMaxPage;
 };
 
 
@@ -941,71 +940,71 @@ template <class T, class TBase = ATL::CWindow, class TWinTraits = ATL::CControlW
 class ATL_NO_VTABLE CZoomPrintPreviewWindowImpl : public CPrintPreviewWindowImpl< T, TBase, TWinTraits >, public CZoomScrollImpl< T >
 {
 public:
-	bool 		m_bSized;
+	bool m_bSized;
 
-	CZoomPrintPreviewWindowImpl()
+	CZoomPrintPreviewWindowImpl()  
 	{
 		SetScrollExtendedStyle(SCRL_DISABLENOSCROLL);
 		InitZoom();
 	}
 
-	// should be called to reset data members before recreating window
+	// should be called to reset data members before recreating window 
 	void InitZoom()
 	{
-		m_bSized 		= false;
-		m_nZoomMode 	= ZOOMMODE_OFF;
+		m_bSized = false;	
+		m_nZoomMode = ZOOMMODE_OFF;
 		m_fZoomScaleMin = 1.0;
-		m_fZoomScale 	= 1.0;
+		m_fZoomScale = 1.0;
 	}
 
 	BEGIN_MSG_MAP(CZoomPrintPreviewWindowImpl)
-		MESSAGE_HANDLER(WM_SETCURSOR			, CZoomScrollImpl< T >::OnSetCursor		)
-		MESSAGE_HANDLER(WM_VSCROLL				, CScrollImpl< T >::OnVScroll			)
-		MESSAGE_HANDLER(WM_HSCROLL				, CScrollImpl< T >::OnHScroll			)
-		MESSAGE_HANDLER(WM_MOUSEWHEEL			, CScrollImpl< T >::OnMouseWheel		)
-	  #if !((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
-		MESSAGE_HANDLER(m_uMsgMouseWheel		, CScrollImpl< T >::OnMouseWheel		)
-	  #endif // !((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
-		MESSAGE_HANDLER(WM_SETTINGCHANGE		, CScrollImpl< T >::OnSettingChange		)
-		MESSAGE_HANDLER(WM_LBUTTONDOWN			, CZoomScrollImpl< T >::OnLButtonDown	)
-		MESSAGE_HANDLER(WM_MOUSEMOVE			, CZoomScrollImpl< T >::OnMouseMove		)
-		MESSAGE_HANDLER(WM_LBUTTONUP			, CZoomScrollImpl< T >::OnLButtonUp		)
-		MESSAGE_HANDLER(WM_CAPTURECHANGED		, CZoomScrollImpl< T >::OnCaptureChanged)
-		MESSAGE_HANDLER(WM_SIZE					, OnSize								)
-		MESSAGE_HANDLER(WM_ERASEBKGND			, OnEraseBkgnd							)
-		MESSAGE_HANDLER(WM_PAINT				, OnPaint								)
-		MESSAGE_HANDLER(WM_PRINTCLIENT			, OnPaint								)
+		MESSAGE_HANDLER(WM_SETCURSOR, CZoomScrollImpl< T >::OnSetCursor)
+		MESSAGE_HANDLER(WM_VSCROLL, CScrollImpl< T >::OnVScroll)
+		MESSAGE_HANDLER(WM_HSCROLL, CScrollImpl< T >::OnHScroll)
+		MESSAGE_HANDLER(WM_MOUSEWHEEL, CScrollImpl< T >::OnMouseWheel)
+#if !((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
+		MESSAGE_HANDLER(m_uMsgMouseWheel, CScrollImpl< T >::OnMouseWheel)
+#endif // !((_WIN32_WINNT >= 0x0400) || (_WIN32_WINDOWS > 0x0400))
+		MESSAGE_HANDLER(WM_SETTINGCHANGE, CScrollImpl< T >::OnSettingChange)
+		MESSAGE_HANDLER(WM_LBUTTONDOWN, CZoomScrollImpl< T >::OnLButtonDown)
+		MESSAGE_HANDLER(WM_MOUSEMOVE, CZoomScrollImpl< T >::OnMouseMove)
+		MESSAGE_HANDLER(WM_LBUTTONUP, CZoomScrollImpl< T >::OnLButtonUp)
+		MESSAGE_HANDLER(WM_CAPTURECHANGED, CZoomScrollImpl< T >::OnCaptureChanged)
+		MESSAGE_HANDLER(WM_SIZE, OnSize)
+		MESSAGE_HANDLER(WM_ERASEBKGND, OnEraseBkgnd)
+		MESSAGE_HANDLER(WM_PAINT, OnPaint)
+		MESSAGE_HANDLER(WM_PRINTCLIENT, OnPaint)
 	ALT_MSG_MAP(1)
-		COMMAND_ID_HANDLER(ID_SCROLL_UP			, CScrollImpl< T >::OnScrollUp			)
-		COMMAND_ID_HANDLER(ID_SCROLL_DOWN		, CScrollImpl< T >::OnScrollDown		)
-		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_UP	, CScrollImpl< T >::OnScrollPageUp		)
-		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_DOWN	, CScrollImpl< T >::OnScrollPageDown	)
-		COMMAND_ID_HANDLER(ID_SCROLL_TOP		, CScrollImpl< T >::OnScrollTop			)
-		COMMAND_ID_HANDLER(ID_SCROLL_BOTTOM		, CScrollImpl< T >::OnScrollBottom		)
-		COMMAND_ID_HANDLER(ID_SCROLL_LEFT		, CScrollImpl< T >::OnScrollLeft		)
-		COMMAND_ID_HANDLER(ID_SCROLL_RIGHT		, CScrollImpl< T >::OnScrollRight		)
-		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_LEFT	, CScrollImpl< T >::OnScrollPageLeft	)
-		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_RIGHT	, CScrollImpl< T >::OnScrollPageRight	)
-		COMMAND_ID_HANDLER(ID_SCROLL_ALL_LEFT	, CScrollImpl< T >::OnScrollAllLeft		)
-		COMMAND_ID_HANDLER(ID_SCROLL_ALL_RIGHT	, CScrollImpl< T >::OnScrollAllRight	)
+		COMMAND_ID_HANDLER(ID_SCROLL_UP, CScrollImpl< T >::OnScrollUp)
+		COMMAND_ID_HANDLER(ID_SCROLL_DOWN, CScrollImpl< T >::OnScrollDown)
+		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_UP, CScrollImpl< T >::OnScrollPageUp)
+		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_DOWN, CScrollImpl< T >::OnScrollPageDown)
+		COMMAND_ID_HANDLER(ID_SCROLL_TOP, CScrollImpl< T >::OnScrollTop)
+		COMMAND_ID_HANDLER(ID_SCROLL_BOTTOM, CScrollImpl< T >::OnScrollBottom)
+		COMMAND_ID_HANDLER(ID_SCROLL_LEFT, CScrollImpl< T >::OnScrollLeft)
+		COMMAND_ID_HANDLER(ID_SCROLL_RIGHT, CScrollImpl< T >::OnScrollRight)
+		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_LEFT, CScrollImpl< T >::OnScrollPageLeft)
+		COMMAND_ID_HANDLER(ID_SCROLL_PAGE_RIGHT, CScrollImpl< T >::OnScrollPageRight)
+		COMMAND_ID_HANDLER(ID_SCROLL_ALL_LEFT, CScrollImpl< T >::OnScrollAllLeft)
+		COMMAND_ID_HANDLER(ID_SCROLL_ALL_RIGHT, CScrollImpl< T >::OnScrollAllRight)
 	END_MSG_MAP()
-
+	
 	LRESULT OnSize(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
-		SIZE 	sizeClient 	= {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
-		POINT 	ptOffset 	= m_ptOffset;
-		SIZE 	sizeAll 	= m_sizeAll;
+		SIZE sizeClient = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+		POINT ptOffset = m_ptOffset;
+		SIZE sizeAll = m_sizeAll;
 		SetScrollSize(sizeClient);
-		if (sizeAll.cx > 0)
+		if(sizeAll.cx > 0)
 			ptOffset.x = ::MulDiv(ptOffset.x, m_sizeAll.cx, sizeAll.cx);
-		if (sizeAll.cy > 0)
+		if(sizeAll.cy > 0)
 			ptOffset.y = ::MulDiv(ptOffset.y, m_sizeAll.cy, sizeAll.cy);
 		SetScrollOffset(ptOffset);
 		CScrollImpl< T >::OnSize(uMsg, wParam, lParam, bHandled);
-		if (!m_bSized)
+		if(!m_bSized)
 		{
-			m_bSized	= true;
-			T* 		pT	= static_cast<T*>(this);
+			m_bSized = true;
+			T* pT = static_cast<T*>(this);
 			pT->ShowScrollBar(SB_HORZ, TRUE);
 			pT->ShowScrollBar(SB_VERT, TRUE);
 		}
@@ -1019,19 +1018,19 @@ public:
 
 	LRESULT OnPaint(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& /*bHandled*/)
 	{
-		T* 	 pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		RECT rc = { 0 };
 
-		if (wParam != NULL)
+		if(wParam != NULL)
 		{
-			CDCHandle 	dc 				= (HDC)wParam;
-			int 		nMapModeSav 	= dc.GetMapMode();
+			CDCHandle dc = (HDC)wParam;
+			int nMapModeSav = dc.GetMapMode();
 			dc.SetMapMode(MM_ANISOTROPIC);
-			SIZE 		szWindowExt 	= { 0, 0 };
+			SIZE szWindowExt = { 0, 0 };
 			dc.SetWindowExt(m_sizeLogAll, &szWindowExt);
-			SIZE 		szViewportExt 	= { 0, 0 };
+			SIZE szViewportExt = { 0, 0 };
 			dc.SetViewportExt(m_sizeAll, &szViewportExt);
-			POINT 		ptViewportOrg 	= { 0, 0 };
+			POINT ptViewportOrg = { 0, 0 };
 			dc.SetViewportOrg(-m_ptOffset.x, -m_ptOffset.y, &ptViewportOrg);
 
 			pT->DoPrePaint(dc, rc);
@@ -1061,36 +1060,36 @@ public:
 
 	void DoPrePaint(CDCHandle dc, RECT& rc)
 	{
-		RECT 	rcClient;
+		RECT rcClient;
 		GetClientRect(&rcClient);
-		RECT 	rcArea 	= rcClient;
-		T* 		pT 		= static_cast<T*>(this);
+		RECT rcArea = rcClient;
+		T* pT = static_cast<T*>(this);
 		pT;   // avoid level 4 warning
 		::InflateRect(&rcArea, -pT->m_cxOffset, -pT->m_cyOffset);
 		if (rcArea.left > rcArea.right)
-			rcArea.right  = rcArea.left;
+			rcArea.right = rcArea.left;
 		if (rcArea.top > rcArea.bottom)
 			rcArea.bottom = rcArea.top;
 		GetPageRect(rcArea, &rc);
 		HBRUSH hbrOld = dc.SelectBrush(::GetSysColorBrush(COLOR_BTNSHADOW));
-		dc.PatBlt(rcClient.left , rcClient.top, rc.left - rcClient.left	,  rcClient.bottom - rcClient.top, PATCOPY);
-		dc.PatBlt(rc.left	    , rcClient.top, rc.right - rc.left		,  rc.top - rcClient.top		 , PATCOPY);
-		dc.PatBlt(rc.right		, rcClient.top, rcClient.right - rc.right, rcClient.bottom - rcClient.top, PATCOPY);
-		dc.PatBlt(rc.left		, rc.bottom   , rc.right - rc.left		,  rcClient.bottom - rc.bottom	 , PATCOPY);
+		dc.PatBlt(rcClient.left, rcClient.top, rc.left - rcClient.left, rcClient.bottom - rcClient.top, PATCOPY);
+		dc.PatBlt(rc.left, rcClient.top, rc.right - rc.left, rc.top - rcClient.top, PATCOPY);
+		dc.PatBlt(rc.right, rcClient.top, rcClient.right - rc.right, rcClient.bottom - rcClient.top, PATCOPY);
+		dc.PatBlt(rc.left, rc.bottom, rc.right - rc.left, rcClient.bottom - rc.bottom, PATCOPY);
 		dc.SelectBrush((HBRUSH)::GetStockObject(WHITE_BRUSH));
-		dc.PatBlt(rc.left		, rc.top	  , rc.right - rc.left		, rc.bottom - rc.top			 , PATCOPY);
+		dc.PatBlt(rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top, PATCOPY);
 		dc.SelectBrush(::GetSysColorBrush(COLOR_3DDKSHADOW));
-		dc.PatBlt(rc.right		, rc.top + 4  , 4						, rc.bottom - rc.top			 , PATCOPY);
-		dc.PatBlt(rc.left + 4	, rc.bottom	  , rc.right - rc.left		, 4								 , PATCOPY);
+		dc.PatBlt(rc.right, rc.top + 4, 4, rc.bottom - rc.top, PATCOPY);
+		dc.PatBlt(rc.left + 4, rc.bottom, rc.right - rc.left, 4, PATCOPY);
 		dc.SelectBrush(hbrOld);
 	}
 
 	void DoPaint(CDCHandle dc, RECT& rc)
 	{
 		CEnhMetaFileInfo emfinfo(m_meta);
-		ENHMETAHEADER* pmh 	= emfinfo.GetEnhMetaFileHeader();
-		int 	nOffsetX 	= MulDiv(m_sizeCurPhysOffset.cx, rc.right-rc.left, pmh->szlDevice.cx);
-		int 	nOffsetY 	= MulDiv(m_sizeCurPhysOffset.cy, rc.bottom-rc.top, pmh->szlDevice.cy);
+		ENHMETAHEADER* pmh = emfinfo.GetEnhMetaFileHeader();
+		int nOffsetX = MulDiv(m_sizeCurPhysOffset.cx, rc.right-rc.left, pmh->szlDevice.cx);
+		int nOffsetY = MulDiv(m_sizeCurPhysOffset.cy, rc.bottom-rc.top, pmh->szlDevice.cy);
 
 		dc.OffsetWindowOrg(-nOffsetX, -nOffsetY);
 		dc.PlayMetaFile(m_meta, &rc);

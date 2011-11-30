@@ -3,8 +3,11 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLRES_H__
 #define __ATLRES_H__
@@ -214,6 +217,7 @@
 #define ID_VIEW_TOOLBAR                 0xE800
 #define ID_VIEW_STATUS_BAR              0xE801
 #define ID_VIEW_REFRESH                 0xE803
+#define ID_VIEW_RIBBON                  0xE804 // Ribbon
 
 ///////////////////////////////////////////////////////////////////////////////
 // Standard control IDs

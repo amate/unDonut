@@ -1847,24 +1847,40 @@ BEGIN
     LTEXT           "URLは部分一致で判定するので""*""などは不要です\r\n例) URLに「http://www.google.co.jp/」と入れている場合\r\n「http://www.google.co.jp/search?hl=ja&q=test」は一致しますが\r\n「http://www.google.com/」は一致しません",IDC_STATIC,5,225,305,35
 END
 
-IDD_PROPPAGE_USERDEFINEDJAVASCRIPT DIALOGEX 0, 0, 317, 274
+IDD_PROPPAGE_USERDEFINEDJAVASCRIPT DIALOGEX 0, 0, 320, 274
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_CAPTION
 CAPTION "ユーザー定義JS"
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LISTBOX         IDC_LIST_URL,5,80,305,140,LBS_OWNERDRAWVARIABLE | LBS_NOINTEGRALHEIGHT | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "ページが読み込まれたときに自動的に読み込むJavaScriptを選択します。\r\nunDonut.exeのあるフォルダ/javascript フォルダ以下にある ""*.js""ファイルを選択してください。",IDC_STATIC,5,5,290,20
-    EDITTEXT        IDC_EDIT_URL,25,25,285,12,ES_LOWERCASE | ES_AUTOHSCROLL
-    LTEXT           "URL:",IDC_STATIC,5,25,15,10,SS_CENTERIMAGE
-    LTEXT           "JSファイル:",IDC_STATIC,7,43,40,10,SS_CENTERIMAGE
-    COMBOBOX        IDC_COMBO_JS,47,42,215,170,CBS_DROPDOWNLIST | CBS_SORT | WS_VSCROLL | WS_TABSTOP
-    PUSHBUTTON      "JS編集",IDC_BUTTON_JSEDIT,267,42,45,15
-    PUSHBUTTON      "javascriptフォルダを開く",IDC_BUTTON_OPENJSFOLDER,225,60,85,15
-    PUSHBUTTON      "追加",IDC_BUTTON_ADD,5,60,30,15
-    PUSHBUTTON      "削除",IDC_BUTTON_DELETE,40,60,30,15
-    PUSHBUTTON      "変更の適用",IDC_BUTTON_CHANGEAPPLY,80,60,50,15
-    LTEXT           "URLは部分一致で判定するので""*""などは不要です\r\n例) URLに「http://www.google.co.jp/」と入れている場合\r\n「http://www.google.co.jp/search?hl=ja&q=test」は一致しますが\r\n「http://www.google.com/」は一致しません",IDC_STATIC,5,225,305,35
-    LTEXT           "※""*.js""の文字コードはUTF-8である必要があります。",IDC_STATIC,5,260,305,10
+    LTEXT           "インストールしたユーザースクリプトを表示しています。",IDC_STATIC,5,5,163,8
+    PUSHBUTTON      "javascriptフォルダを開く",IDC_BUTTON_OPENJSFOLDER,229,2,85,16
+    LTEXT           "スタティック",IDC_STATIC_SCRIPTPOSITION,4,20,312,248
+    PUSHBUTTON      "再読み込み",IDC_BUTTON_RELOAD,175,2,52,16
+END
+
+IDD_SCRIPTDETAIL DIALOGEX 0, 0, 268, 179
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "スクリプトの詳細"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "閉じる",IDOK,211,161,50,14
+    LTEXT           "名前",IDC_STATIC,8,4,24,8
+    LTEXT           "説明",IDC_STATIC,8,28,16,8
+    LTEXT           "バージョン",IDC_STATIC,8,60,40,8
+    LTEXT           "ホームページ",IDC_STATIC,8,76,40,8
+    LTEXT           "",IDC_STATIC,52,0,1,158,0,WS_EX_STATICEDGE
+    LTEXT           "",IDC_STATIC,0,156,281,1,0,WS_EX_STATICEDGE
+    LTEXT           "ファイル名",IDC_STATIC,8,92,40,8
+    LTEXT           "スタティック",IDC_STATIC_NAME,56,4,208,20
+    LTEXT           "スタティック",IDC_STATIC_DISCRIPTION,56,28,208,28
+    LTEXT           "スタティック",IDC_STATIC_VERSION,56,60,208,8
+    CONTROL         "",IDC_SYSLINK_HP,"SysLink",WS_TABSTOP,56,76,208,12
+    LTEXT           "スタティック",IDC_STATIC_FILENAME,56,92,208,8
+    EDITTEXT        IDC_EDIT_INCLUDE,56,108,208,20,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    EDITTEXT        IDC_EDIT_EXCLUDE,56,132,208,20,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
+    LTEXT           "スクリプトを\r\n実行するURL",IDC_STATIC,4,108,44,16
+    LTEXT           "実行から\r\n除外するURL",IDC_STATIC,4,132,44,16
+    PUSHBUTTON      "インストール",IDC_BUTTON_INSTALL,140,161,64,14,NOT WS_VISIBLE
 END
 
 
@@ -2282,9 +2298,17 @@ BEGIN
     IDD_PROPPAGE_USERDEFINEDJAVASCRIPT, DIALOG
     BEGIN
         LEFTMARGIN, 7
-        RIGHTMARGIN, 310
+        RIGHTMARGIN, 313
         TOPMARGIN, 7
         BOTTOMMARGIN, 267
+    END
+
+    IDD_SCRIPTDETAIL, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 261
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 172
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -748,7 +748,7 @@ private:
 
 		// ここでスプリットウィンドウの設定
 		m_wndSplit.SetSplitterPanes(m_hWnd, hWndMDIClient);
-		m_wndSplit.SetSplitterPaneParents( NULL, GetTopLevelParent() );
+		//:::m_wndSplit.SetSplitterPaneParents( NULL, GetTopLevelParent() );
 		m_wndSplit.m_xySplitterPos = dwcxLeftSplitter;
 
 		if (dwSplitterVisible == FALSE) {

@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLDDX_H__
 #define __ATLDDX_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifndef __ATLAPP_H__
 	#error atlddx.h requires atlapp.h to be included first
@@ -49,90 +48,90 @@ namespace WTL
 		nCtlID;
 
 #define DDX_TEXT(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Text(nID, var, sizeof(var), bSaveAndValidate)) \
+			if(!DDX_Text(nID, var, sizeof(var), bSaveAndValidate)) \
 				return FALSE; \
 		}
 
 #define DDX_TEXT_LEN(nID, var, len) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Text(nID, var, sizeof(var), bSaveAndValidate, TRUE, len)) \
+			if(!DDX_Text(nID, var, sizeof(var), bSaveAndValidate, TRUE, len)) \
 				return FALSE; \
 		}
 
 #define DDX_INT(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Int(nID, var, TRUE, bSaveAndValidate)) \
+			if(!DDX_Int(nID, var, TRUE, bSaveAndValidate)) \
 				return FALSE; \
 		}
 
 #define DDX_INT_RANGE(nID, var, min, max) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Int(nID, var, TRUE, bSaveAndValidate, TRUE, min, max)) \
+			if(!DDX_Int(nID, var, TRUE, bSaveAndValidate, TRUE, min, max)) \
 				return FALSE; \
 		}
 
 #define DDX_UINT(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Int(nID, var, FALSE, bSaveAndValidate)) \
+			if(!DDX_Int(nID, var, FALSE, bSaveAndValidate)) \
 				return FALSE; \
 		}
 
 #define DDX_UINT_RANGE(nID, var, min, max) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Int(nID, var, FALSE, bSaveAndValidate, TRUE, min, max)) \
+			if(!DDX_Int(nID, var, FALSE, bSaveAndValidate, TRUE, min, max)) \
 				return FALSE; \
 		}
 
 #ifdef _ATL_USE_DDX_FLOAT
 #define DDX_FLOAT(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Float(nID, var, bSaveAndValidate)) \
+			if(!DDX_Float(nID, var, bSaveAndValidate)) \
 				return FALSE; \
 		}
 
 #define DDX_FLOAT_RANGE(nID, var, min, max) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Float(nID, var, bSaveAndValidate, TRUE, min, max)) \
+			if(!DDX_Float(nID, var, bSaveAndValidate, TRUE, min, max)) \
 				return FALSE; \
 		}
 #define DDX_FLOAT_P(nID, var, precision) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Float(nID, var, bSaveAndValidate, FALSE, 0, 0, precision)) \
+			if(!DDX_Float(nID, var, bSaveAndValidate, FALSE, 0, 0, precision)) \
 				return FALSE; \
 		}
 
 #define DDX_FLOAT_P_RANGE(nID, var, min, max, precision) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 		{ \
-			if (!DDX_Float(nID, var, bSaveAndValidate, TRUE, min, max, precision)) \
+			if(!DDX_Float(nID, var, bSaveAndValidate, TRUE, min, max, precision)) \
 				return FALSE; \
 		}
 #endif // _ATL_USE_DDX_FLOAT
 
 #define DDX_CONTROL(nID, obj) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 			DDX_Control(nID, obj, bSaveAndValidate);
 
 #define DDX_CONTROL_HANDLE(nID, obj) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 			DDX_Control_Handle(nID, obj, bSaveAndValidate);
 
 #define DDX_CHECK(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 			DDX_Check(nID, var, bSaveAndValidate);
 
 #define DDX_RADIO(nID, var) \
-		if (nCtlID == (UINT)-1 || nCtlID == nID) \
+		if(nCtlID == (UINT)-1 || nCtlID == nID) \
 			DDX_Radio(nID, var, bSaveAndValidate);
 
 #define END_DDX_MAP() \
@@ -140,20 +139,17 @@ namespace WTL
 	}
 
 // DDX support for Tab, Combo, ListBox and ListView selection index
-//
-// Note: ListView selection DDX support requires atlctrls.h included first
-
+// Note: Specialized versions require atlctrls.h to be included first
 #define DDX_INDEX(CtrlClass, nID, var) \
 	if(nCtlID == (UINT)-1 || nCtlID == nID) \
-	{ \
-		if(!DDX_Index<CtrlClass>(nID, var, bSaveAndValidate)) \
-		return FALSE; \
-	}
+		DDX_Index<CtrlClass>(nID, var, bSaveAndValidate);
 
-#define DDX_TAB_INDEX(nID, var) DDX_INDEX(WTL::CTabCtrl, nID, var) 
-#define DDX_COMBO_INDEX(nID, var) DDX_INDEX(WTL::CComboBox, nID, var) 
-#define DDX_LISTBOX_INDEX(nID, var) DDX_INDEX(WTL::CListBox, nID, var) 
-#define DDX_LISTVIEW_INDEX(nID, var) DDX_INDEX(WTL::CListViewCtrl, nID, var) 
+#ifdef __ATLCTRLS_H__
+  #define DDX_TAB_INDEX(nID, var)      DDX_INDEX(WTL::CTabCtrl, nID, var)
+  #define DDX_COMBO_INDEX(nID, var)    DDX_INDEX(WTL::CComboBox, nID, var)
+  #define DDX_LISTBOX_INDEX(nID, var)  DDX_INDEX(WTL::CListBox, nID, var)
+  #define DDX_LISTVIEW_INDEX(nID, var) DDX_INDEX(WTL::CListViewCtrl, nID, var)
+#endif // __ATLCTRLS_H__
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -163,7 +159,7 @@ template <class T>
 class CWinDataExchange
 {
 public:
- // Data exchange method - override in your derived class
+// Data exchange method - override in your derived class
 	BOOL DoDataExchange(BOOL /*bSaveAndValidate*/ = FALSE, UINT /*nCtlID*/ = (UINT)-1)
 	{
 		// this one should never be called, override it in
@@ -172,27 +168,27 @@ public:
 		return FALSE;
 	}
 
- // Helpers for validation error reporting
+// Helpers for validation error reporting
 	enum _XDataType
 	{
-		ddxDataNull 	= 0,
-		ddxDataText 	= 1,
-		ddxDataInt 		= 2,
-		ddxDataFloat 	= 3,
-		ddxDataDouble 	= 4
+		ddxDataNull = 0,
+		ddxDataText = 1,
+		ddxDataInt = 2,
+		ddxDataFloat = 3,
+		ddxDataDouble = 4
 	};
 
 	struct _XTextData
 	{
-		int 	nLength;
-		int 	nMaxLength;
+		int nLength;
+		int nMaxLength;
 	};
 
 	struct _XIntData
 	{
-		long 	nVal;
-		long 	nMin;
-		long 	nMax;
+		long nVal;
+		long nMin;
+		long nMax;
 	};
 
 	struct _XFloatData
@@ -204,11 +200,11 @@ public:
 
 	struct _XData
 	{
-		_XDataType 		nDataType;
+		_XDataType nDataType;
 		union
 		{
-			_XTextData 	textData;
-			_XIntData 	intData;
+			_XTextData textData;
+			_XIntData intData;
 			_XFloatData floatData;
 		};
 	};
@@ -216,15 +212,15 @@ public:
 // Text exchange
 	BOOL DDX_Text(UINT nID, LPTSTR lpstrText, int cbSize, BOOL bSave, BOOL bValidate = FALSE, int nLength = 0)
 	{
-		T* 		pT 			= static_cast<T*>(this);
-		BOOL 	bSuccess 	= TRUE;
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
 
-		if (bSave)
+		if(bSave)
 		{
-			HWND hWndCtrl 	= pT->GetDlgItem(nID);
-			int nRetLen 	= ::GetWindowText(hWndCtrl, lpstrText, cbSize / sizeof(TCHAR));
-			if (nRetLen < ::GetWindowTextLength(hWndCtrl))
-				bSuccess 	= FALSE;
+			HWND hWndCtrl = pT->GetDlgItem(nID);
+			int nRetLen = ::GetWindowText(hWndCtrl, lpstrText, cbSize / sizeof(TCHAR));
+			if(nRetLen < ::GetWindowTextLength(hWndCtrl))
+				bSuccess = FALSE;
 		}
 		else
 		{
@@ -232,20 +228,20 @@ public:
 			bSuccess = pT->SetDlgItemText(nID, lpstrText);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nLength > 0);
-			if (lstrlen(lpstrText) > nLength)
+			if(lstrlen(lpstrText) > nLength)
 			{
-				_XData 		data 			= { ddxDataText };
-				data.textData.nLength 		= lstrlen(lpstrText);
-				data.textData.nMaxLength 	= nLength;
+				_XData data = { ddxDataText };
+				data.textData.nLength = lstrlen(lpstrText);
+				data.textData.nMaxLength = nLength;
 				pT->OnDataValidateError(nID, bSave, data);
-				bSuccess 					= FALSE;
+				bSuccess = FALSE;
 			}
 		}
 		return bSuccess;
@@ -253,35 +249,35 @@ public:
 
 	BOOL DDX_Text(UINT nID, BSTR& bstrText, int /*cbSize*/, BOOL bSave, BOOL bValidate = FALSE, int nLength = 0)
 	{
-		T* 		pT 		 = static_cast<T*>(this);
-		BOOL 	bSuccess = TRUE;
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
 
-		if (bSave)
+		if(bSave)
 		{
-			bSuccess 	= pT->GetDlgItemText(nID, bstrText);
+			bSuccess = pT->GetDlgItemText(nID, bstrText);
 		}
 		else
 		{
 			USES_CONVERSION;
-			LPTSTR 		lpstrText = OLE2T(bstrText);
+			LPTSTR lpstrText = OLE2T(bstrText);
 			ATLASSERT(!bValidate || lstrlen(lpstrText) <= nLength);
-			bSuccess 	= pT->SetDlgItemText(nID, lpstrText);
+			bSuccess = pT->SetDlgItemText(nID, lpstrText);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nLength > 0);
-			if ((int)::SysStringLen(bstrText) > nLength)
+			if((int)::SysStringLen(bstrText) > nLength)
 			{
-				_XData 	data 			 = { ddxDataText };
-				data.textData.nLength 	 = (int)::SysStringLen(bstrText);
+				_XData data = { ddxDataText };
+				data.textData.nLength = (int)::SysStringLen(bstrText);
 				data.textData.nMaxLength = nLength;
 				pT->OnDataValidateError(nID, bSave, data);
-				bSuccess 				 = FALSE;
+				bSuccess = FALSE;
 			}
 		}
 		return bSuccess;
@@ -289,58 +285,58 @@ public:
 
 	BOOL DDX_Text(UINT nID, ATL::CComBSTR& bstrText, int /*cbSize*/, BOOL bSave, BOOL bValidate = FALSE, int nLength = 0)
 	{
-		T* 		pT 		 = static_cast<T*>(this);
-		BOOL 	bSuccess = TRUE;
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
 
-		if (bSave)
+		if(bSave)
 		{
-			bSuccess 	= pT->GetDlgItemText(nID, (BSTR&)bstrText);
+			bSuccess = pT->GetDlgItemText(nID, (BSTR&)bstrText);
 		}
 		else
 		{
 			USES_CONVERSION;
-			LPTSTR 		lpstrText = OLE2T(bstrText);
+			LPTSTR lpstrText = OLE2T(bstrText);
 			ATLASSERT(!bValidate || lstrlen(lpstrText) <= nLength);
-			bSuccess 	= pT->SetDlgItemText(nID, lpstrText);
+			bSuccess = pT->SetDlgItemText(nID, lpstrText);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nLength > 0);
-			if ((int)bstrText.Length() > nLength)
+			if((int)bstrText.Length() > nLength)
 			{
-				_XData 		data 		 = { ddxDataText };
-				data.textData.nLength 	 = (int)bstrText.Length();
+				_XData data = { ddxDataText };
+				data.textData.nLength = (int)bstrText.Length();
 				data.textData.nMaxLength = nLength;
 				pT->OnDataValidateError(nID, bSave, data);
-				bSuccess 				 = FALSE;
+				bSuccess = FALSE;
 			}
 		}
 		return bSuccess;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL DDX_Text(UINT nID, _CSTRING_NS::CString& strText, int /*cbSize*/, BOOL bSave, BOOL bValidate = FALSE, int nLength = 0)
 	{
 		T* pT = static_cast<T*>(this);
 		BOOL bSuccess = TRUE;
 
-		if (bSave)
+		if(bSave)
 		{
-			HWND 	hWndCtrl = pT->GetDlgItem(nID);
-			int 	nLen 	 = ::GetWindowTextLength(hWndCtrl);
-			int 	nRetLen  = -1;
-			LPTSTR lpstr 	 = strText.GetBufferSetLength(nLen);
-			if (lpstr != NULL)
+			HWND hWndCtrl = pT->GetDlgItem(nID);
+			int nLen = ::GetWindowTextLength(hWndCtrl);
+			int nRetLen = -1;
+			LPTSTR lpstr = strText.GetBufferSetLength(nLen);
+			if(lpstr != NULL)
 			{
-				nRetLen 	 = ::GetWindowText(hWndCtrl, lpstr, nLen + 1);
+				nRetLen = ::GetWindowText(hWndCtrl, lpstr, nLen + 1);
 				strText.ReleaseBuffer();
 			}
-			if (nRetLen < nLen)
+			if(nRetLen < nLen)
 				bSuccess = FALSE;
 		}
 		else
@@ -348,17 +344,17 @@ public:
 			bSuccess = pT->SetDlgItemText(nID, strText);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nLength > 0);
-			if (strText.GetLength() > nLength)
+			if(strText.GetLength() > nLength)
 			{
-				_XData 		data 		 = { ddxDataText };
-				data.textData.nLength 	 = strText.GetLength();
+				_XData data = { ddxDataText };
+				data.textData.nLength = strText.GetLength();
 				data.textData.nMaxLength = nLength;
 				pT->OnDataValidateError(nID, bSave, data);
 				bSuccess = FALSE;
@@ -366,16 +362,16 @@ public:
 		}
 		return bSuccess;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
- // Numeric exchange
+// Numeric exchange
 	template <class Type>
 	BOOL DDX_Int(UINT nID, Type& nVal, BOOL bSigned, BOOL bSave, BOOL bValidate = FALSE, Type nMin = 0, Type nMax = 0)
 	{
-		T* 		pT 			= static_cast<T*>(this);
-		BOOL 	bSuccess 	= TRUE;
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
 
-		if (bSave)
+		if(bSave)
 		{
 			nVal = (Type)pT->GetDlgItemInt(nID, &bSuccess, bSigned);
 		}
@@ -385,35 +381,35 @@ public:
 			bSuccess = pT->SetDlgItemInt(nID, nVal, bSigned);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nMin != nMax);
-			if (nVal < nMin || nVal > nMax)
+			if(nVal < nMin || nVal > nMax)
 			{
-				_XData 		data  = { ddxDataInt };
+				_XData data = { ddxDataInt };
 				data.intData.nVal = (long)nVal;
 				data.intData.nMin = (long)nMin;
 				data.intData.nMax = (long)nMax;
 				pT->OnDataValidateError(nID, bSave, data);
-				bSuccess 		  = FALSE;
+				bSuccess = FALSE;
 			}
 		}
 		return bSuccess;
 	}
 
- // Float exchange
- #ifdef _ATL_USE_DDX_FLOAT
+// Float exchange
+#ifdef _ATL_USE_DDX_FLOAT
 	static BOOL _AtlSimpleFloatParse(LPCTSTR lpszText, double& d)
 	{
 		ATLASSERT(lpszText != NULL);
 		while (*lpszText == _T(' ') || *lpszText == _T('\t'))
 			lpszText++;
 
-		TCHAR 	chFirst = lpszText[0];
+		TCHAR chFirst = lpszText[0];
 		d = _tcstod(lpszText, (LPTSTR*)&lpszText);
 		if (d == 0.0 && chFirst != _T('0'))
 			return FALSE;   // could not convert
@@ -428,16 +424,16 @@ public:
 
 	BOOL DDX_Float(UINT nID, float& nVal, BOOL bSave, BOOL bValidate = FALSE, float nMin = 0.F, float nMax = 0.F, int nPrecision = FLT_DIG)
 	{
-		T* 			pT 		  		= static_cast<T*>(this);
-		BOOL 		bSuccess  		= TRUE;
-		const int 	cchBuff 		= 32;
-		TCHAR 		szBuff[cchBuff] = { 0 };
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
+		const int cchBuff = 32;
+		TCHAR szBuff[cchBuff] = { 0 };
 
-		if (bSave)
+		if(bSave)
 		{
 			pT->GetDlgItemText(nID, szBuff, cchBuff);
 			double d = 0;
-			if (_AtlSimpleFloatParse(szBuff, d))
+			if(_AtlSimpleFloatParse(szBuff, d))
 				nVal = (float)d;
 			else
 				bSuccess = FALSE;
@@ -449,14 +445,14 @@ public:
 			bSuccess = pT->SetDlgItemText(nID, szBuff);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nMin != nMax);
-			if (nVal < nMin || nVal > nMax)
+			if(nVal < nMin || nVal > nMax)
 			{
 				_XData data = { ddxDataFloat };
 				data.floatData.nVal = (double)nVal;
@@ -471,16 +467,16 @@ public:
 
 	BOOL DDX_Float(UINT nID, double& nVal, BOOL bSave, BOOL bValidate = FALSE, double nMin = 0., double nMax = 0., int nPrecision = DBL_DIG)
 	{
-		T* 			pT 				= static_cast<T*>(this);
-		BOOL 		bSuccess 		= TRUE;
-		const int 	cchBuff 		= 32;
-		TCHAR 		szBuff[cchBuff] = { 0 };
+		T* pT = static_cast<T*>(this);
+		BOOL bSuccess = TRUE;
+		const int cchBuff = 32;
+		TCHAR szBuff[cchBuff] = { 0 };
 
-		if (bSave)
+		if(bSave)
 		{
 			pT->GetDlgItemText(nID, szBuff, cchBuff);
 			double d = 0;
-			if (_AtlSimpleFloatParse(szBuff, d))
+			if(_AtlSimpleFloatParse(szBuff, d))
 				nVal = d;
 			else
 				bSuccess = FALSE;
@@ -492,14 +488,14 @@ public:
 			bSuccess = pT->SetDlgItemText(nID, szBuff);
 		}
 
-		if (!bSuccess)
+		if(!bSuccess)
 		{
 			pT->OnDataExchangeError(nID, bSave);
 		}
-		else if (bSave && bValidate)   // validation
+		else if(bSave && bValidate)   // validation
 		{
 			ATLASSERT(nMin != nMax);
-			if (nVal < nMin || nVal > nMax)
+			if(nVal < nMin || nVal > nMax)
 			{
 				_XData data = { ddxDataFloat };
 				data.floatData.nVal = nVal;
@@ -511,43 +507,43 @@ public:
 		}
 		return bSuccess;
 	}
- #endif // _ATL_USE_DDX_FLOAT
+#endif // _ATL_USE_DDX_FLOAT
 
- // Full control subclassing (for CWindowImpl derived controls)
+// Full control subclassing (for CWindowImpl derived controls)
 	template <class TControl>
 	void DDX_Control(UINT nID, TControl& ctrl, BOOL bSave)
 	{
-		if (!bSave && ctrl.m_hWnd == NULL)
+		if(!bSave && ctrl.m_hWnd == NULL)
 		{
 			T* pT = static_cast<T*>(this);
 			ctrl.SubclassWindow(pT->GetDlgItem(nID));
 		}
 	}
 
- // Simple control attaching (for HWND wrapper controls)
+// Simple control attaching (for HWND wrapper controls)
 	template <class TControl>
 	void DDX_Control_Handle(UINT nID, TControl& ctrl, BOOL bSave)
 	{
-		if (!bSave && ctrl.m_hWnd == NULL)
+		if(!bSave && ctrl.m_hWnd == NULL)
 		{
 			T* pT = static_cast<T*>(this);
 			ctrl = pT->GetDlgItem(nID);
 		}
 	}
 
- // Control state
+// Control state
 	void DDX_Check(UINT nID, int& nValue, BOOL bSave)
 	{
-		T* 		pT 		 = static_cast<T*>(this);
-		HWND 	hWndCtrl = pT->GetDlgItem(nID);
-		if (bSave)
+		T* pT = static_cast<T*>(this);
+		HWND hWndCtrl = pT->GetDlgItem(nID);
+		if(bSave)
 		{
 			nValue = (int)::SendMessage(hWndCtrl, BM_GETCHECK, 0, 0L);
 			ATLASSERT(nValue >= 0 && nValue <= 2);
 		}
 		else
 		{
-			if (nValue < 0 || nValue > 2)
+			if(nValue < 0 || nValue > 2)
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ATL: Warning - dialog data checkbox value (%d) out of range.\n"), nValue);
 				nValue = 0;  // default to off
@@ -559,12 +555,12 @@ public:
 	// variant that supports bool (checked/not-checked, no intermediate state)
 	void DDX_Check(UINT nID, bool& bCheck, BOOL bSave)
 	{
-		int nValue = bCheck != 0;		//+++ int nValue = bCheck ? 1 : 0;
+		int nValue = bCheck ? 1 : 0;
 		DDX_Check(nID, nValue, bSave);
 
-		if (bSave)
+		if(bSave)
 		{
-			if (nValue == 2)
+			if(nValue == 2)
 				ATLTRACE2(atlTraceUI, 0, _T("ATL: Warning - checkbox state (%d) out of supported range.\n"), nValue);
 			bCheck = (nValue == 1);
 		}
@@ -572,27 +568,27 @@ public:
 
 	void DDX_Radio(UINT nID, int& nValue, BOOL bSave)
 	{
-		T* 		pT 		 = static_cast<T*>(this);
-		HWND 	hWndCtrl = pT->GetDlgItem(nID);
+		T* pT = static_cast<T*>(this);
+		HWND hWndCtrl = pT->GetDlgItem(nID);
 		ATLASSERT(hWndCtrl != NULL);
 
 		// must be first in a group of auto radio buttons
 		ATLASSERT(::GetWindowLong(hWndCtrl, GWL_STYLE) & WS_GROUP);
 		ATLASSERT(::SendMessage(hWndCtrl, WM_GETDLGCODE, 0, 0L) & DLGC_RADIOBUTTON);
 
-		if (bSave)
+		if(bSave)
 			nValue = -1;     // value if none found
 
 		// walk all children in group
 		int nButton = 0;
 		do
 		{
-			if (::SendMessage(hWndCtrl, WM_GETDLGCODE, 0, 0L) & DLGC_RADIOBUTTON)
+			if(::SendMessage(hWndCtrl, WM_GETDLGCODE, 0, 0L) & DLGC_RADIOBUTTON)
 			{
 				// control in group is a radio button
-				if (bSave)
+				if(bSave)
 				{
-					if (::SendMessage(hWndCtrl, BM_GETCHECK, 0, 0L) != 0)
+					if(::SendMessage(hWndCtrl, BM_GETCHECK, 0, 0L) != 0)
 					{
 						ATLASSERT(nValue == -1);    // only set once
 						nValue = nButton;
@@ -615,8 +611,6 @@ public:
 	}
 
 // DDX support for Tab, Combo, ListBox and ListView selection index
-//
-
 	template <class TCtrl>
 	INT _getSel(TCtrl& tCtrl)
 	{
@@ -624,72 +618,45 @@ public:
 	}
 
 	template <class TCtrl>
-	BOOL _setSel(TCtrl& tCtrl, INT iSel)
+	void _setSel(TCtrl& tCtrl, INT iSel)
 	{
-		return tCtrl.SetCurSel(iSel);
+		if(iSel < 0)
+			tCtrl.SetCurSel(-1);
+		else
+			tCtrl.SetCurSel(iSel);
 	}
 
 #ifdef __ATLCTRLS_H__
-
 	// ListViewCtrl specialization
 	template <>
-	INT _getSel(CListViewCtrl& tCtrl)
+	INT _getSel(WTL::CListViewCtrl& tCtrl)
 	{
 		return tCtrl.GetSelectedIndex();
 	}
 
 	template <>
-	BOOL _setSel(CListViewCtrl& tCtrl, INT iSel)
+	void _setSel(WTL::CListViewCtrl& tCtrl, INT iSel)
 	{
-		return tCtrl.SelectItem(iSel);
+		if(iSel < 0)
+			tCtrl.SelectItem(-1);
+		else
+			tCtrl.SelectItem(iSel);
 	}
-
 #endif // __ATLCTRLS_H__
 
-public:
 	template <class TCtrl>
-	BOOL DDX_Index(UINT nID, 
-		 INT& nVal, 
-		 BOOL bSave, 
-		 BOOL bValidate = FALSE, 
-		 INT nMin = 0, 
-		 INT nMax = 0)
+	void DDX_Index(UINT nID, INT& nVal, BOOL bSave)
 	{
-		 T* pT = static_cast<T*>(this);
-		 BOOL bSuccess = TRUE;
+		T* pT = static_cast<T*>(this);
+		TCtrl ctrl(pT->GetDlgItem(nID));
 
 		if(bSave)
-		{
-			 nVal = _getSel(TCtrl(pT->GetDlgItem(nID)));
-			 bSuccess = nVal != -1;
-		}
+			nVal = _getSel(ctrl);
 		else
-		{
-			ATLASSERT(!bValidate || nVal >= nMin && nVal <= nMax);
-			bSuccess = _setSel(TCtrl(pT->GetDlgItem(nID)), nVal);
-		}
-			
-		if(!bSuccess)
-		{
-			pT->OnDataExchangeError(nID, bSave);
-		}
-		else if(bSave && bValidate)	// validation
-		{
-			ATLASSERT(nMin != nMax);
-			if(nVal < nMin || nVal > nMax)
-			{
-                _XData data = {ddxDataInt};
-                _XIntData id = {nVal, nMin, nMax};
-				data.intData = id;
+			_setSel(ctrl, nVal);
+	}
 
-                pT->OnDataValidateError(nID, bSave, data);
-				bSuccess = FALSE;
-			}
-		}
-		return bSuccess;
-	}  
-
- // Overrideables
+// Overrideables
 	void OnDataExchangeError(UINT nCtrlID, BOOL /*bSave*/)
 	{
 		// Override to display an error message

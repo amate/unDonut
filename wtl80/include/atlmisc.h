@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLMISC_H__
 #define __ATLMISC_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifndef __ATLAPP_H__
 	#error atlmisc.h requires atlapp.h to be included first
@@ -52,22 +51,6 @@
 // CFindFile
 //
 // Global functions:
-//   AtlLoadAccelerators()
-//   AtlLoadMenu()
-//   AtlLoadBitmap()
-//   AtlLoadSysBitmap()
-//   AtlLoadCursor()
-//   AtlLoadSysCursor()
-//   AtlLoadIcon()
-//   AtlLoadSysIcon()
-//   AtlLoadBitmapImage()
-//   AtlLoadCursorImage()
-//   AtlLoadIconImage()
-//   AtlLoadSysBitmapImage()
-//   AtlLoadSysCursorImage()
-//   AtlLoadSysIconImage()
-//   AtlLoadString()
-//
 //   AtlGetStockPen()
 //   AtlGetStockBrush()
 //   AtlGetStockFont()
@@ -92,7 +75,7 @@ class CRect;
 class CSize : public SIZE
 {
 public:
- // Constructors
+// Constructors
 	CSize()
 	{
 		cx = 0;
@@ -121,7 +104,7 @@ public:
 		cy = (short)HIWORD(dwSize);
 	}
 
- // Operations
+// Operations
 	BOOL operator ==(SIZE size) const
 	{
 		return (cx == size.cx && cy == size.cy);
@@ -150,7 +133,7 @@ public:
 		cy = CY;
 	}
 
- // Operators returning CSize values
+// Operators returning CSize values
 	CSize operator +(SIZE size) const
 	{
 		return CSize(cx + size.cx, cy + size.cy);
@@ -166,11 +149,11 @@ public:
 		return CSize(-cx, -cy);
 	}
 
- // Operators returning CPoint values
+// Operators returning CPoint values
 	CPoint operator +(POINT point) const;
 	CPoint operator -(POINT point) const;
 
- // Operators returning CRect values
+// Operators returning CRect values
 	CRect operator +(const RECT* lpRect) const;
 	CRect operator -(const RECT* lpRect) const;
 };
@@ -182,17 +165,17 @@ public:
 class CPoint : public POINT
 {
 public:
- // Constructors
+// Constructors
 	CPoint()
 	{
-		x 	= 0;
-		y 	= 0;
+		x = 0;
+		y = 0;
 	}
 
 	CPoint(int initX, int initY)
 	{
-		x 	= initX;
-		y 	= initY;
+		x = initX;
+		y = initY;
 	}
 
 	CPoint(POINT initPt)
@@ -207,11 +190,11 @@ public:
 
 	CPoint(DWORD dwPoint)
 	{
-		x 	= (short)LOWORD(dwPoint);
-		y 	= (short)HIWORD(dwPoint);
+		x = (short)LOWORD(dwPoint);
+		y = (short)HIWORD(dwPoint);
 	}
 
- // Operations
+// Operations
 	void Offset(int xOffset, int yOffset)
 	{
 		x += xOffset;
@@ -291,17 +274,16 @@ public:
 		return CPoint(x + point.x, y + point.y);
 	}
 
- // Operators returning CSize values
+// Operators returning CSize values
 	CSize operator -(POINT point) const
 	{
 		return CSize(x - point.x, y - point.y);
 	}
 
- // Operators returning CRect values
+// Operators returning CRect values
 	CRect operator +(const RECT* lpRect) const;
 	CRect operator -(const RECT* lpRect) const;
 };
-
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -310,21 +292,21 @@ public:
 class CRect : public RECT
 {
 public:
- // Constructors
+// Constructors
 	CRect()
 	{
-		left 	= 0;
-		top 	= 0;
-		right 	= 0;
-		bottom 	= 0;
+		left = 0;
+		top = 0;
+		right = 0;
+		bottom = 0;
 	}
 
 	CRect(int l, int t, int r, int b)
 	{
-		left 	= l;
-		top 	= t;
-		right 	= r;
-		bottom 	= b;
+		left = l;
+		top = t;
+		right = r;
+		bottom = b;
 	}
 
 	CRect(const RECT& srcRect)
@@ -339,19 +321,19 @@ public:
 
 	CRect(POINT point, SIZE size)
 	{
-		right 	= (left = point.x) + size.cx;
-		bottom 	= (top  = point.y) + size.cy;
+		right = (left = point.x) + size.cx;
+		bottom = (top = point.y) + size.cy;
 	}
 
 	CRect(POINT topLeft, POINT bottomRight)
 	{
-		left 	= topLeft.x;
-		top 	= topLeft.y;
-		right 	= bottomRight.x;
-		bottom 	= bottomRight.y;
+		left = topLeft.x;
+		top = topLeft.y;
+		right = bottomRight.x;
+		bottom = bottomRight.y;
 	}
 
- // Attributes (in addition to RECT members)
+// Attributes (in addition to RECT members)
 	int Width() const
 	{
 		return right - left;
@@ -418,7 +400,7 @@ public:
 		return ::PtInRect(this, point);
 	}
 
- // Operations
+// Operations
 	void SetRect(int x1, int y1, int x2, int y2)
 	{
 		::SetRect(this, x1, y1, x2, y2);
@@ -456,18 +438,18 @@ public:
 
 	void InflateRect(LPCRECT lpRect)
 	{
-		left 	-= lpRect->left;
-		top 	-= lpRect->top;
-		right 	+= lpRect->right;
-		bottom 	+= lpRect->bottom;
+		left -= lpRect->left;
+		top -= lpRect->top;
+		right += lpRect->right;
+		bottom += lpRect->bottom;
 	}
 
 	void InflateRect(int l, int t, int r, int b)
 	{
-		left 	-= l;
-		top 	-= t;
-		right 	+= r;
-		bottom 	+= b;
+		left -= l;
+		top -= t;
+		right += r;
+		bottom += b;
 	}
 
 	void DeflateRect(int x, int y)
@@ -482,18 +464,18 @@ public:
 
 	void DeflateRect(LPCRECT lpRect)
 	{
-		left 	+= lpRect->left;
-		top 	+= lpRect->top;
-		right 	-= lpRect->right;
-		bottom 	-= lpRect->bottom;
+		left += lpRect->left;
+		top += lpRect->top;
+		right -= lpRect->right;
+		bottom -= lpRect->bottom;
 	}
 
 	void DeflateRect(int l, int t, int r, int b)
 	{
-		left 	+= l;
-		top 	+= t;
-		right 	-= r;
-		bottom 	-= b;
+		left += l;
+		top += t;
+		right -= r;
+		bottom -= b;
 	}
 
 	void OffsetRect(int x, int y)
@@ -512,17 +494,17 @@ public:
 
 	void NormalizeRect()
 	{
-		int 	nTemp;
+		int nTemp;
 		if (left > right)
 		{
 			nTemp = left;
-			left  = right;
+			left = right;
 			right = nTemp;
 		}
 		if (top > bottom)
 		{
-			nTemp  = top;
-			top    = bottom;
+			nTemp = top;
+			top = bottom;
 			bottom = nTemp;
 		}
 	}
@@ -530,14 +512,14 @@ public:
 	// absolute position of rectangle
 	void MoveToY(int y)
 	{
-		bottom 	= Height() + y;
-		top 	= y;
+		bottom = Height() + y;
+		top = y;
 	}
 
 	void MoveToX(int x)
 	{
-		right 	= Width() + x;
-		left 	= x;
+		right = Width() + x;
+		left = x;
 	}
 
 	void MoveToXY(int x, int y)
@@ -568,7 +550,7 @@ public:
 		return ::SubtractRect(this, lpRectSrc1, lpRectSrc2);
 	}
 
- // Additional Operations
+// Additional Operations
 	void operator =(const RECT& srcRect)
 	{
 		::CopyRect(this, &srcRect);
@@ -624,59 +606,59 @@ public:
 		::UnionRect(this, this, &rect);
 	}
 
- // Operators returning CRect values
+// Operators returning CRect values
 	CRect operator +(POINT pt) const
 	{
-		CRect 	rect(*this);
+		CRect rect(*this);
 		::OffsetRect(&rect, pt.x, pt.y);
 		return rect;
 	}
 
 	CRect operator -(POINT pt) const
 	{
-		CRect 	rect(*this);
+		CRect rect(*this);
 		::OffsetRect(&rect, -pt.x, -pt.y);
 		return rect;
 	}
 
 	CRect operator +(LPCRECT lpRect) const
 	{
-		CRect 	rect(this);
+		CRect rect(this);
 		rect.InflateRect(lpRect);
 		return rect;
 	}
 
 	CRect operator +(SIZE size) const
 	{
-		CRect 	rect(*this);
+		CRect rect(*this);
 		::OffsetRect(&rect, size.cx, size.cy);
 		return rect;
 	}
 
 	CRect operator -(SIZE size) const
 	{
-		CRect 	rect(*this);
+		CRect rect(*this);
 		::OffsetRect(&rect, -size.cx, -size.cy);
 		return rect;
 	}
 
 	CRect operator -(LPCRECT lpRect) const
 	{
-		CRect 	rect(this);
+		CRect rect(this);
 		rect.DeflateRect(lpRect);
 		return rect;
 	}
 
 	CRect operator &(const RECT& rect2) const
 	{
-		CRect 	rect;
+		CRect rect;
 		::IntersectRect(&rect, this, &rect2);
 		return rect;
 	}
 
 	CRect operator |(const RECT& rect2) const
 	{
-		CRect 	rect;
+		CRect rect;
 		::UnionRect(&rect, this, &rect2);
 		return rect;
 	}
@@ -684,10 +666,10 @@ public:
 	CRect MulDiv(int nMultiplier, int nDivisor) const
 	{
 		return CRect(
-			::MulDiv(left	, nMultiplier, nDivisor),
-			::MulDiv(top	, nMultiplier, nDivisor),
-			::MulDiv(right	, nMultiplier, nDivisor),
-			::MulDiv(bottom	, nMultiplier, nDivisor));
+			::MulDiv(left, nMultiplier, nDivisor),
+			::MulDiv(top, nMultiplier, nDivisor),
+			::MulDiv(right, nMultiplier, nDivisor),
+			::MulDiv(bottom, nMultiplier, nDivisor));
 	}
 };
 
@@ -718,12 +700,12 @@ inline CRect CPoint::operator -(const RECT* lpRect) const
 #endif // !_WTL_NO_WTYPES
 
 
-// WTL::CSize or ATL::CSize scalar operators
+// WTL::CSize or ATL::CSize scalar operators 
 
 #if !defined(_WTL_NO_SIZE_SCALAR) && (!defined(_WTL_NO_WTYPES) || defined(__ATLTYPES_H__))
 
 template <class Num>
-inline CSize operator *(SIZE s, Num n)
+inline CSize operator *(SIZE s, Num n) 
 {
 	return CSize((int)(s.cx * n), (int)(s.cy * n));
 };
@@ -732,10 +714,10 @@ template <class Num>
 inline void operator *=(SIZE & s, Num n)
 {
 	s = s * n;
-};
+};	
 
 template <class Num>
-inline CSize operator /(SIZE s, Num n)
+inline CSize operator /(SIZE s, Num n) 
 {
 	return CSize((int)(s.cx / n), (int)(s.cy / n));
 };
@@ -744,7 +726,7 @@ template <class Num>
 inline void operator /=(SIZE & s, Num n)
 {
 	s = s / n;
-};
+};	
 
 #endif // !defined(_WTL_NO_SIZE_SCALAR) && (!defined(_WTL_NO_WTYPES) || defined(__ATLTYPES_H__))
 
@@ -756,13 +738,13 @@ inline void operator /=(SIZE & s, Num n)
 
 struct CStringData
 {
-	long 		nRefs;     // reference count
-	int 		nDataLength;
-	int 		nAllocLength;
-	//TCHAR 	data[nAllocLength]
+	long nRefs;     // reference count
+	int nDataLength;
+	int nAllocLength;
+	// TCHAR data[nAllocLength]
 
-	TCHAR* 		data()
-				{ return (TCHAR*)(this + 1); }
+	TCHAR* data()
+	{ return (TCHAR*)(this + 1); }
 };
 
 // Globals
@@ -770,15 +752,15 @@ struct CStringData
 // For an empty string, m_pchData will point here
 // (note: avoids special case of checking for NULL m_pchData)
 // empty string data (and locked)
-_declspec(selectany) int 			rgInitData[] 	= { -1, 0, 0, 0 };
-_declspec(selectany) CStringData* 	_atltmpDataNil 	= (CStringData*)&rgInitData;
-_declspec(selectany) LPCTSTR 		_atltmpPchNil 	= (LPCTSTR)(((BYTE*)&rgInitData) + sizeof(CStringData));
+_declspec(selectany) int rgInitData[] = { -1, 0, 0, 0 };
+_declspec(selectany) CStringData* _atltmpDataNil = (CStringData*)&rgInitData;
+_declspec(selectany) LPCTSTR _atltmpPchNil = (LPCTSTR)(((BYTE*)&rgInitData) + sizeof(CStringData));
 
 
 class CString
 {
 public:
- // Constructors
+// Constructors
 	CString()
 	{
 		Init();
@@ -806,14 +788,14 @@ public:
 		Init();
 		if (nRepeat >= 1)
 		{
-			if (AllocBuffer(nRepeat))
+			if(AllocBuffer(nRepeat))
 			{
-			  #ifdef _UNICODE
+#ifdef _UNICODE
 				for (int i = 0; i < nRepeat; i++)
 					m_pchData[i] = ch;
-			  #else
+#else
 				memset(m_pchData, ch, nRepeat);
-			  #endif
+#endif
 			}
 		}
 	}
@@ -832,83 +814,83 @@ public:
 			int nLen = SafeStrlen(lpsz);
 			if (nLen != 0)
 			{
-				if (AllocBuffer(nLen))
+				if(AllocBuffer(nLen))
 					SecureHelper::memcpy_x(m_pchData, (nLen + 1) * sizeof(TCHAR), lpsz, nLen * sizeof(TCHAR));
 			}
 		}
 	}
 
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	CString(LPCSTR lpsz)
 	{
 		Init();
-	  #if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
+#if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
 		int nSrcLen = (lpsz != NULL) ? ATL::lstrlenA(lpsz) : 0;
-	  #else
+#else
 		int nSrcLen = (lpsz != NULL) ? lstrlenA(lpsz) : 0;
-	  #endif
+#endif
 		if (nSrcLen != 0)
 		{
-			if (AllocBuffer(nSrcLen))
+			if(AllocBuffer(nSrcLen))
 			{
 				_mbstowcsz(m_pchData, lpsz, nSrcLen + 1);
 				ReleaseBuffer();
 			}
 		}
 	}
-  #else // !_UNICODE
+#else // !_UNICODE
 	CString(LPCWSTR lpsz)
 	{
 		Init();
 		int nSrcLen = (lpsz != NULL) ? (int)wcslen(lpsz) : 0;
 		if (nSrcLen != 0)
 		{
-			if (AllocBuffer(nSrcLen * 2))
+			if(AllocBuffer(nSrcLen * 2))
 			{
 				_wcstombsz(m_pchData, lpsz, (nSrcLen * 2) + 1);
 				ReleaseBuffer();
 			}
 		}
 	}
-  #endif // !_UNICODE
+#endif // !_UNICODE
 
 	CString(LPCTSTR lpch, int nLength)
 	{
 		Init();
 		if (nLength != 0)
 		{
-			if (AllocBuffer(nLength))
+			if(AllocBuffer(nLength))
 				SecureHelper::memcpy_x(m_pchData, (nLength + 1) * sizeof(TCHAR), lpch, nLength * sizeof(TCHAR));
 		}
 	}
 
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	CString(LPCSTR lpsz, int nLength)
 	{
 		Init();
 		if (nLength != 0)
 		{
-			if (AllocBuffer(nLength))
+			if(AllocBuffer(nLength))
 			{
 				int n = ::MultiByteToWideChar(CP_ACP, 0, lpsz, nLength, m_pchData, nLength + 1);
 				ReleaseBuffer((n >= 0) ? n : -1);
 			}
 		}
 	}
-  #else // !_UNICODE
+#else // !_UNICODE
 	CString(LPCWSTR lpsz, int nLength)
 	{
 		Init();
 		if (nLength != 0)
 		{
-			if (((nLength * 2) > nLength) && AllocBuffer(nLength * 2))
+			if(((nLength * 2) > nLength) && AllocBuffer(nLength * 2))
 			{
 				int n = ::WideCharToMultiByte(CP_ACP, 0, lpsz, nLength, m_pchData, (nLength * 2) + 1, NULL, NULL);
 				ReleaseBuffer((n >= 0) ? n : -1);
 			}
 		}
 	}
-  #endif // !_UNICODE
+#endif // !_UNICODE
 
 	CString(const unsigned char* lpsz)
 	{
@@ -916,25 +898,15 @@ public:
 		*this = (LPCSTR)lpsz;
 	}
 
- // Attributes & Operations
+// Attributes & Operations
 	int GetLength() const   // as an array of characters
 	{
-	  #ifdef NDEBUG //+++.
-		ATLASSERT(m_pchData != NULL);
-		if (m_pchData == 0)
-			return 0;
-	  #endif
 		return GetData()->nDataLength;
 	}
 
 	BOOL IsEmpty() const
 	{
-	  #ifdef NDEBUG //+++.
-		ATLASSERT(m_pchData != NULL);
-		return (m_pchData == 0) || (GetData()->nDataLength == 0);
-	  #else
 		return GetData()->nDataLength == 0;
-	  #endif
 	}
 
 	void Empty()   // free up the data
@@ -1009,13 +981,13 @@ public:
 		return *this;
 	}
 
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	CString& operator =(char ch)
 	{
 		*this = (TCHAR)ch;
 		return *this;
 	}
-  #endif
+#endif
 
 	CString& operator =(LPCTSTR lpsz)
 	{
@@ -1024,33 +996,33 @@ public:
 		return *this;
 	}
 
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	CString& operator =(LPCSTR lpsz)
 	{
-	  #if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
+#if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
 		int nSrcLen = (lpsz != NULL) ? ATL::lstrlenA(lpsz) : 0;
-	  #else
+#else
 		int nSrcLen = (lpsz != NULL) ? lstrlenA(lpsz) : 0;
-	  #endif
-		if (AllocBeforeWrite(nSrcLen))
+#endif
+		if(AllocBeforeWrite(nSrcLen))
 		{
 			_mbstowcsz(m_pchData, lpsz, nSrcLen + 1);
 			ReleaseBuffer();
 		}
 		return *this;
 	}
-  #else // !_UNICODE
+#else // !_UNICODE
 	CString& operator =(LPCWSTR lpsz)
 	{
 		int nSrcLen = (lpsz != NULL) ? (int)wcslen(lpsz) : 0;
-		if (AllocBeforeWrite(nSrcLen * 2))
+		if(AllocBeforeWrite(nSrcLen * 2))
 		{
 			_wcstombsz(m_pchData, lpsz, (nSrcLen * 2) + 1);
 			ReleaseBuffer();
 		}
 		return *this;
 	}
-  #endif  // !_UNICODE
+#endif  // !_UNICODE
 
 	CString& operator =(const unsigned char* lpsz)
 	{
@@ -1071,13 +1043,13 @@ public:
 		return *this;
 	}
 
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	CString& operator +=(char ch)
 	{
 		*this += (TCHAR)ch;
 		return *this;
 	}
-  #endif
+#endif
 
 	CString& operator +=(LPCTSTR lpsz)
 	{
@@ -1089,10 +1061,10 @@ public:
 	friend CString __stdcall operator +(const CString& string1, const CString& string2);
 	friend CString __stdcall operator +(const CString& string, TCHAR ch);
 	friend CString __stdcall operator +(TCHAR ch, const CString& string);
-  #ifdef _UNICODE
+#ifdef _UNICODE
 	friend CString __stdcall operator +(const CString& string, char ch);
 	friend CString __stdcall operator +(char ch, const CString& string);
-  #endif
+#endif
 	friend CString __stdcall operator +(const CString& string, LPCTSTR lpsz);
 	friend CString __stdcall operator +(LPCTSTR lpsz, const CString& string);
 
@@ -1107,7 +1079,7 @@ public:
 		return _cstrcmpi(m_pchData, lpsz);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	// CString::Collate is often slower than Compare but is MBSC/Unicode
 	//  aware as well as locale-sensitive with respect to sort order.
 	int Collate(LPCTSTR lpsz) const   // NLS aware
@@ -1119,7 +1091,7 @@ public:
 	{
 		return _cstrcolli(m_pchData, lpsz);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	// simple sub-string extraction
 	CString Mid(int nFirst, int nCount) const
@@ -1206,8 +1178,8 @@ public:
 		CopyBeforeWrite();
 
 		// find beginning of trailing spaces by starting at beginning (DBCS aware)
-		LPTSTR 	lpsz 	= m_pchData;
-		LPTSTR 	lpszLast = NULL;
+		LPTSTR lpsz = m_pchData;
+		LPTSTR lpszLast = NULL;
 		while (*lpsz != _T('\0'))
 		{
 			if (_cstrisspace(*lpsz))
@@ -1235,12 +1207,12 @@ public:
 		CopyBeforeWrite();
 
 		// find first non-space character
-		LPCTSTR 	lpsz = m_pchData;
+		LPCTSTR lpsz = m_pchData;
 		while (_cstrisspace(*lpsz))
 			lpsz = ::CharNext(lpsz);
 
 		// fix up data and length
-		int 		nDataLength = GetData()->nDataLength - (int)(DWORD_PTR)(lpsz - m_pchData);
+		int nDataLength = GetData()->nDataLength - (int)(DWORD_PTR)(lpsz - m_pchData);
 		SecureHelper::memmove_x(m_pchData, (GetData()->nAllocLength + 1) * sizeof(TCHAR), lpsz, (nDataLength + 1) * sizeof(TCHAR));
 		GetData()->nDataLength = nDataLength;
 	}
@@ -1252,8 +1224,8 @@ public:
 		// by starting at beginning (DBCS aware)
 
 		CopyBeforeWrite();
-		LPTSTR 	lpsz 		= m_pchData;
-		LPTSTR 	lpszLast 	= NULL;
+		LPTSTR lpsz = m_pchData;
+		LPTSTR lpszLast = NULL;
 
 		while (*lpsz != _T('\0'))
 		{
@@ -1281,13 +1253,13 @@ public:
 		// find beginning of trailing matches by starting at beginning (DBCS aware)
 
 		CopyBeforeWrite();
-		LPTSTR 	lpsz 	 = m_pchData;
-		LPTSTR 	lpszLast = NULL;
+		LPTSTR lpsz = m_pchData;
+		LPTSTR lpszLast = NULL;
 
 		while (*lpsz != _T('\0'))
 		{
 			TCHAR* pNext = ::CharNext(lpsz);
-			if (pNext > lpsz + 1)
+			if(pNext > lpsz + 1)
 			{
 				if (_cstrchr_db(lpszTargetList, *lpsz, *(lpsz + 1)) != NULL)
 				{
@@ -1329,7 +1301,7 @@ public:
 		// find first non-matching character
 
 		CopyBeforeWrite();
-		LPCTSTR 	lpsz = m_pchData;
+		LPCTSTR lpsz = m_pchData;
 
 		while (chTarget == *lpsz)
 			lpsz = ::CharNext(lpsz);
@@ -1351,12 +1323,12 @@ public:
 			return;
 
 		CopyBeforeWrite();
-		LPCTSTR 	lpsz = m_pchData;
+		LPCTSTR lpsz = m_pchData;
 
 		while (*lpsz != _T('\0'))
 		{
 			TCHAR* pNext = ::CharNext(lpsz);
-			if (pNext > lpsz + 1)
+			if(pNext > lpsz + 1)
 			{
 				if (_cstrchr_db(lpszTargets, *lpsz, *(lpsz + 1)) == NULL)
 					break;
@@ -1389,8 +1361,8 @@ public:
 		{
 			// otherwise modify each character that matches in the string
 			CopyBeforeWrite();
-			LPTSTR 	psz 	= m_pchData;
-			LPTSTR 	pszEnd 	= psz + GetData()->nDataLength;
+			LPTSTR psz = m_pchData;
+			LPTSTR pszEnd = psz + GetData()->nDataLength;
 			while (psz < pszEnd)
 			{
 				// replace instances of the specified character only
@@ -1417,10 +1389,10 @@ public:
 		int nReplacementLen = SafeStrlen(lpszNew);
 
 		// loop once to figure out the size of the result string
-		int 	nCount 		= 0;
-		LPTSTR 	lpszStart 	= m_pchData;
-		LPTSTR 	lpszEnd 	= m_pchData + GetData()->nDataLength;
-		LPTSTR 	lpszTarget 	= NULL;
+		int nCount = 0;
+		LPTSTR lpszStart = m_pchData;
+		LPTSTR lpszEnd = m_pchData + GetData()->nDataLength;
+		LPTSTR lpszTarget = NULL;
 		while (lpszStart < lpszEnd)
 		{
 			while ((lpszTarget = (TCHAR*)_cstrstr(lpszStart, lpszOld)) != NULL)
@@ -1437,33 +1409,33 @@ public:
 			CopyBeforeWrite();
 
 			// if the buffer is too small, just allocate a new buffer (slow but sure)
-			int 	nOldLength = GetData()->nDataLength;
-			int 	nNewLength =  nOldLength + (nReplacementLen - nSourceLen) * nCount;
+			int nOldLength = GetData()->nDataLength;
+			int nNewLength =  nOldLength + (nReplacementLen - nSourceLen) * nCount;
 			if (GetData()->nAllocLength < nNewLength || GetData()->nRefs > 1)
 			{
 				CStringData* pOldData = GetData();
-				LPTSTR 		 pstr 	  = m_pchData;
-				if (!AllocBuffer(nNewLength))
+				LPTSTR pstr = m_pchData;
+				if(!AllocBuffer(nNewLength))
 					return -1;
 				SecureHelper::memcpy_x(m_pchData, (nNewLength + 1) * sizeof(TCHAR), pstr, pOldData->nDataLength * sizeof(TCHAR));
 				CString::Release(pOldData);
 			}
 			// else, we just do it in-place
-			lpszStart 	= m_pchData;
-			lpszEnd 	= m_pchData + GetData()->nDataLength;
+			lpszStart = m_pchData;
+			lpszEnd = m_pchData + GetData()->nDataLength;
 
 			// loop again to actually do the work
 			while (lpszStart < lpszEnd)
 			{
 				while ((lpszTarget = (TCHAR*)_cstrstr(lpszStart, lpszOld)) != NULL)
 				{
-					int 	nBalance 	= nOldLength - ((int)(DWORD_PTR)(lpszTarget - m_pchData) + nSourceLen);
-					int 	cchBuffLen 	= GetData()->nAllocLength - (int)(DWORD_PTR)(lpszTarget - m_pchData);
+					int nBalance = nOldLength - ((int)(DWORD_PTR)(lpszTarget - m_pchData) + nSourceLen);
+					int cchBuffLen = GetData()->nAllocLength - (int)(DWORD_PTR)(lpszTarget - m_pchData);
 					SecureHelper::memmove_x(lpszTarget + nReplacementLen, (cchBuffLen - nReplacementLen + 1) * sizeof(TCHAR), lpszTarget + nSourceLen, nBalance * sizeof(TCHAR));
 					SecureHelper::memcpy_x(lpszTarget, (cchBuffLen + 1) * sizeof(TCHAR), lpszNew, nReplacementLen * sizeof(TCHAR));
-					lpszStart 			= lpszTarget + nReplacementLen;
+					lpszStart = lpszTarget + nReplacementLen;
 					lpszStart[nBalance] = _T('\0');
-					nOldLength 		   += (nReplacementLen - nSourceLen);
+					nOldLength += (nReplacementLen - nSourceLen);
 				}
 				lpszStart += lstrlen(lpszStart) + 1;
 			}
@@ -1479,21 +1451,21 @@ public:
 	{
 		CopyBeforeWrite();
 
-		LPTSTR 	pstrSource 	= m_pchData;
-		LPTSTR 	pstrDest 	= m_pchData;
-		LPTSTR 	pstrEnd 	= m_pchData + GetData()->nDataLength;
+		LPTSTR pstrSource = m_pchData;
+		LPTSTR pstrDest = m_pchData;
+		LPTSTR pstrEnd = m_pchData + GetData()->nDataLength;
 
 		while (pstrSource < pstrEnd)
 		{
 			if (*pstrSource != chRemove)
 			{
-				*pstrDest	= *pstrSource;
-				pstrDest	= ::CharNext(pstrDest);
+				*pstrDest = *pstrSource;
+				pstrDest = ::CharNext(pstrDest);
 			}
-			pstrSource	= ::CharNext(pstrSource);
+			pstrSource = ::CharNext(pstrSource);
 		}
-		*pstrDest 	= _T('\0');
-		int  nCount	= (int)(DWORD_PTR)(pstrSource - pstrDest);
+		*pstrDest = _T('\0');
+		int nCount = (int)(DWORD_PTR)(pstrSource - pstrDest);
 		GetData()->nDataLength -= nCount;
 
 		return nCount;
@@ -1516,7 +1488,7 @@ public:
 		{
 			CStringData* pOldData = GetData();
 			LPTSTR pstr = m_pchData;
-			if (!AllocBuffer(nNewLength))
+			if(!AllocBuffer(nNewLength))
 				return -1;
 			SecureHelper::memcpy_x(m_pchData, (nNewLength + 1) * sizeof(TCHAR), pstr, (pOldData->nDataLength + 1) * sizeof(TCHAR));
 			CString::Release(pOldData);
@@ -1549,7 +1521,7 @@ public:
 			{
 				CStringData* pOldData = GetData();
 				LPTSTR pstr = m_pchData;
-				if (!AllocBuffer(nNewLength))
+				if(!AllocBuffer(nNewLength))
 					return -1;
 				SecureHelper::memcpy_x(m_pchData, (nNewLength + 1) * sizeof(TCHAR), pstr, (pOldData->nDataLength + 1) * sizeof(TCHAR));
 				CString::Release(pOldData);
@@ -1572,7 +1544,7 @@ public:
 		int nLength = GetData()->nDataLength;
 		if (nCount > 0 && nIndex < nLength)
 		{
-			if ((nIndex + nCount) > nLength)
+			if((nIndex + nCount) > nLength)
 				nCount = nLength - nIndex;
 			CopyBeforeWrite();
 			int nBytesToCopy = nLength - (nIndex + nCount) + 1;
@@ -1603,7 +1575,7 @@ public:
 
 	int Find(TCHAR ch, int nStart) const   // starting at index
 	{
-		int 	nLength = GetData()->nDataLength;
+		int nLength = GetData()->nDataLength;
 		if (nStart < 0 || nStart >= nLength)
 			return -1;
 
@@ -1685,15 +1657,15 @@ public:
 
 		enum _FormatModifiers
 		{
-			FORCE_ANSI 		=	0x10000,
-			FORCE_UNICODE 	=	0x20000,
-			FORCE_INT64 	=	0x40000
+			FORCE_ANSI =	0x10000,
+			FORCE_UNICODE =	0x20000,
+			FORCE_INT64 =	0x40000
 		};
 
-		va_list 	argListSave = argList;
+		va_list argListSave = argList;
 
 		// make a guess at the maximum length of the resulting string
-		int 	nMaxLen = 0;
+		int nMaxLen = 0;
 		for (LPCTSTR lpsz = lpszFormat; *lpsz != _T('\0'); lpsz = ::CharNext(lpsz))
 		{
 			// handle '%' character, but watch out for '%%'
@@ -1752,7 +1724,7 @@ public:
 
 			// should be on type modifier or specifier
 			int nModifier = 0;
-			if (lpsz[0] == _T('I') && lpsz[1] == _T('6') && lpsz[2] == _T('4'))
+			if(lpsz[0] == _T('I') && lpsz[1] == _T('6') && lpsz[2] == _T('4'))
 			{
 				lpsz += 3;
 				nModifier = FORCE_INT64;
@@ -1818,7 +1790,7 @@ public:
 
 			case _T('S'):
 			{
-			  #ifndef _UNICODE
+#ifndef _UNICODE
 				LPWSTR pstrNextArg = va_arg(argList, LPWSTR);
 				if (pstrNextArg == NULL)
 				{
@@ -1829,7 +1801,7 @@ public:
 					nItemLen = (int)wcslen(pstrNextArg);
 					nItemLen = max(1, nItemLen);
 				}
-			  #else // _UNICODE
+#else // _UNICODE
 				LPCSTR pstrNextArg = va_arg(argList, LPCSTR);
 				if (pstrNextArg == NULL)
 				{
@@ -1837,14 +1809,14 @@ public:
 				}
 				else
 				{
-				  #if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
+#if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
 					nItemLen = ATL::lstrlenA(pstrNextArg);
-				  #else
+#else
 					nItemLen = lstrlenA(pstrNextArg);
-				  #endif
+#endif
 					nItemLen = max(1, nItemLen);
 				}
-			  #endif // _UNICODE
+#endif // _UNICODE
 				break;
 			}
 
@@ -1858,11 +1830,11 @@ public:
 				}
 				else
 				{
-				  #if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
+#if defined(_WIN32_WCE) && (_ATL_VER >= 0x0800)
 					nItemLen = ATL::lstrlenA(pstrNextArg);
-				  #else
+#else
 					nItemLen = lstrlenA(pstrNextArg);
-				  #endif
+#endif
 					nItemLen = max(1, nItemLen);
 				}
 				break;
@@ -1911,23 +1883,23 @@ public:
 					nItemLen = max(nItemLen, nWidth + nPrecision);
 					break;
 
-			  #ifndef _ATL_USE_CSTRING_FLOAT
+#ifndef _ATL_USE_CSTRING_FLOAT
 				case _T('e'):
 				case _T('E'):
 				case _T('f'):
 				case _T('g'):
 				case _T('G'):
 					ATLASSERT(!"Floating point (%%e, %%E, %%f, %%g, and %%G) is not supported by the WTL::CString class.");
-				 #ifndef _DEBUG
+#ifndef _DEBUG
 					::OutputDebugString(_T("Floating point (%%e, %%f, %%g, and %%G) is not supported by the WTL::CString class."));
-			      #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 					::DebugBreak();
-			  	  #else // CE specific
+#else // CE specific
 					DebugBreak();
-			  	  #endif // _WIN32_WCE
-				 #endif // !_DEBUG
+#endif // _WIN32_WCE
+#endif // !_DEBUG
 					break;
-			  #else // _ATL_USE_CSTRING_FLOAT
+#else // _ATL_USE_CSTRING_FLOAT
 				case _T('e'):
 				case _T('E'):
 				case _T('g'):
@@ -1946,7 +1918,7 @@ public:
 						int cchLen = max(nWidth, 312 + nPrecision + 6);
 						CTempBuffer<TCHAR, _WTL_STACK_ALLOC_THRESHOLD> buff;
 						LPTSTR pszTemp = buff.Allocate(cchLen);
-						if (pszTemp != NULL)
+						if(pszTemp != NULL)
 						{
 							SecureHelper::sprintf_x(pszTemp, cchLen, _T("%*.*f"), nWidth, nPrecision + 6, f);
 							nItemLen = (int)_tcslen(pszTemp);
@@ -1957,7 +1929,7 @@ public:
 						}
 					}
 					break;
-			  #endif // _ATL_USE_CSTRING_FLOAT
+#endif // _ATL_USE_CSTRING_FLOAT
 
 				case _T('p'):
 					va_arg(argList, void*);
@@ -1979,13 +1951,13 @@ public:
 			nMaxLen += nItemLen;
 		}
 
-		if (GetBuffer(nMaxLen) == NULL)
+		if(GetBuffer(nMaxLen) == NULL)
 			return FALSE;
-	  #ifndef _ATL_USE_CSTRING_FLOAT
+#ifndef _ATL_USE_CSTRING_FLOAT
 		int nRet = SecureHelper::wvsprintf_x(m_pchData, GetAllocLength() + 1, lpszFormat, argListSave);
-	  #else // _ATL_USE_CSTRING_FLOAT
-		int nRet = SecureHelper::vsprintf_x (m_pchData, GetAllocLength() + 1, lpszFormat, argListSave);
-	  #endif // _ATL_USE_CSTRING_FLOAT
+#else // _ATL_USE_CSTRING_FLOAT
+		int nRet = SecureHelper::vsprintf_x(m_pchData, GetAllocLength() + 1, lpszFormat, argListSave);
+#endif // _ATL_USE_CSTRING_FLOAT
 		nRet;   // ref
 		ATLASSERT(nRet <= GetAllocLength());
 		ReleaseBuffer();
@@ -1999,10 +1971,10 @@ public:
 	BOOL __cdecl FormatMessage(LPCTSTR lpszFormat, ...)
 	{
 		// format message into temporary buffer lpszTemp
-		va_list 	argList;
+		va_list argList;
 		va_start(argList, lpszFormat);
-		LPTSTR 		lpszTemp;
-		BOOL 		bRet 	= TRUE;
+		LPTSTR lpszTemp;
+		BOOL bRet = TRUE;
 
 		if (::FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
 				lpszFormat, 0, 0, (LPTSTR)&lpszTemp, 0, &argList) == 0 || lpszTemp == NULL)
@@ -2018,16 +1990,16 @@ public:
 	BOOL __cdecl FormatMessage(UINT nFormatID, ...)
 	{
 		// get format string from string table
-		CString 	strFormat;
-		BOOL 		bRetTmp = strFormat.LoadString(nFormatID);
+		CString strFormat;
+		BOOL bRetTmp = strFormat.LoadString(nFormatID);
 		bRetTmp;   // ref
 		ATLASSERT(bRetTmp != 0);
 
 		// format message into temporary buffer lpszTemp
-		va_list 	argList;
+		va_list argList;
 		va_start(argList, nFormatID);
-		LPTSTR 		lpszTemp;
-		BOOL 		bRet = TRUE;
+		LPTSTR lpszTemp;
+		BOOL bRet = TRUE;
 
 		if (::FormatMessage(FORMAT_MESSAGE_FROM_STRING | FORMAT_MESSAGE_ALLOCATE_BUFFER,
 				strFormat, 0, 0, (LPTSTR)&lpszTemp, 0, &argList) == 0 || lpszTemp == NULL)
@@ -2043,16 +2015,16 @@ public:
 	// Windows support
 	BOOL LoadString(UINT nID)   // load from string resource (255 chars max.)
 	{
-	  #ifdef _UNICODE
+#ifdef _UNICODE
 		const int CHAR_FUDGE = 1;   // one TCHAR unused is good enough
-	  #else
-	 	const int CHAR_FUDGE = 2;   // two BYTES unused for case of DBC last char
-	  #endif
+#else
+		const int CHAR_FUDGE = 2;   // two BYTES unused for case of DBC last char
+#endif
 
 		// try fixed buffer first (to avoid wasting space in the heap)
-		TCHAR 	szTemp[256];
-		int 	nCount 	=  sizeof(szTemp) / sizeof(szTemp[0]);
-		int 	nLen 	= _LoadString(nID, szTemp, nCount);
+		TCHAR szTemp[256];
+		int nCount =  sizeof(szTemp) / sizeof(szTemp[0]);
+		int nLen = _LoadString(nID, szTemp, nCount);
 		if (nCount - nLen > CHAR_FUDGE)
 		{
 			*this = szTemp;
@@ -2060,12 +2032,12 @@ public:
 		}
 
 		// try buffer size of 512, then larger size until entire string is retrieved
-		int 	nSize = 256;
+		int nSize = 256;
 		do
 		{
 			nSize += 256;
 			LPTSTR lpstr = GetBuffer(nSize - 1);
-			if (lpstr == NULL)
+			if(lpstr == NULL)
 			{
 				nLen = 0;
 				break;
@@ -2077,7 +2049,7 @@ public:
 		return (nLen > 0);
 	}
 
-  #ifndef _UNICODE
+#ifndef _UNICODE
 	// ANSI <-> OEM support (convert string in place)
 	void AnsiToOem()
 	{
@@ -2090,38 +2062,38 @@ public:
 		CopyBeforeWrite();
 		::OemToAnsi(m_pchData, m_pchData);
 	}
-  #endif
+#endif
 
-  #ifndef _ATL_NO_COM
+#ifndef _ATL_NO_COM
 	// OLE BSTR support (use for OLE automation)
 	BSTR AllocSysString() const
 	{
-	  #if defined(_UNICODE) || defined(OLE2ANSI)
+#if defined(_UNICODE) || defined(OLE2ANSI)
 		BSTR bstr = ::SysAllocStringLen(m_pchData, GetData()->nDataLength);
-	  #else
+#else
 		int nLen = MultiByteToWideChar(CP_ACP, 0, m_pchData,
 			GetData()->nDataLength, NULL, NULL);
 		BSTR bstr = ::SysAllocStringLen(NULL, nLen);
-		if (bstr != NULL)
+		if(bstr != NULL)
 			MultiByteToWideChar(CP_ACP, 0, m_pchData, GetData()->nDataLength, bstr, nLen);
-	  #endif
+#endif
 		return bstr;
 	}
 
 	BSTR SetSysString(BSTR* pbstr) const
 	{
-	  #if defined(_UNICODE) || defined(OLE2ANSI)
+#if defined(_UNICODE) || defined(OLE2ANSI)
 		::SysReAllocStringLen(pbstr, m_pchData, GetData()->nDataLength);
-	  #else
+#else
 		int nLen = MultiByteToWideChar(CP_ACP, 0, m_pchData,
 			GetData()->nDataLength, NULL, NULL);
-		if (::SysReAllocStringLen(pbstr, NULL, nLen))
+		if(::SysReAllocStringLen(pbstr, NULL, nLen))
 			MultiByteToWideChar(CP_ACP, 0, m_pchData, GetData()->nDataLength, *pbstr, nLen);
-	  #endif
+#endif
 		ATLASSERT(*pbstr != NULL);
 		return *pbstr;
 	}
-  #endif // !_ATL_NO_COM
+#endif // !_ATL_NO_COM
 
 	// Access to string implementation buffer as "C" character array
 	LPTSTR GetBuffer(int nMinBufLength)
@@ -2132,11 +2104,11 @@ public:
 		{
 			// we have to grow the buffer
 			CStringData* pOldData = GetData();
-			int 		 nOldLen  = GetData()->nDataLength;   // AllocBuffer will tromp it
+			int nOldLen = GetData()->nDataLength;   // AllocBuffer will tromp it
 			if (nMinBufLength < nOldLen)
 				nMinBufLength = nOldLen;
 
-			if (!AllocBuffer(nMinBufLength))
+			if(!AllocBuffer(nMinBufLength))
 				return NULL;
 
 			SecureHelper::memcpy_x(m_pchData, (nMinBufLength + 1) * sizeof(TCHAR), pOldData->data(), (nOldLen + 1) * sizeof(TCHAR));
@@ -2157,25 +2129,21 @@ public:
 		if (nNewLength == -1)
 			nNewLength = lstrlen(m_pchData);   // zero terminated
 
-		//+++ ATLASSERT(nNewLength <= GetData()->nAllocLength);
-		int 	nAllocLength = GetData()->nAllocLength;				//+++
-		ATLASSERT(nNewLength >= 0 && nNewLength <= nAllocLength);	//+++
-		if (nNewLength >= 0 && nNewLength <= nAllocLength) {		//+++
-			GetData()->nDataLength = nNewLength;
-			m_pchData[nNewLength] = _T('\0');
-		}															//+++
+		ATLASSERT(nNewLength <= GetData()->nAllocLength);
+		GetData()->nDataLength = nNewLength;
+		m_pchData[nNewLength] = _T('\0');
 	}
 
 	LPTSTR GetBufferSetLength(int nNewLength)
 	{
 		ATLASSERT(nNewLength >= 0);
 
-		if (GetBuffer(nNewLength) == NULL)
+		if(GetBuffer(nNewLength) == NULL)
 			return NULL;
 
 		GetData()->nDataLength = nNewLength;
-		m_pchData[nNewLength]  = _T('\0');
-		return 	m_pchData;
+		m_pchData[nNewLength] = _T('\0');
+		return m_pchData;
 	}
 
 	void FreeExtra()
@@ -2184,7 +2152,7 @@ public:
 		if (GetData()->nDataLength != GetData()->nAllocLength)
 		{
 			CStringData* pOldData = GetData();
-			if (AllocBuffer(GetData()->nDataLength))
+			if(AllocBuffer(GetData()->nDataLength))
 			{
 				SecureHelper::memcpy_x(m_pchData, (GetData()->nAllocLength + 1) * sizeof(TCHAR), pOldData->data(), pOldData->nDataLength * sizeof(TCHAR));
 				ATLASSERT(m_pchData[GetData()->nDataLength] == _T('\0'));
@@ -2198,7 +2166,7 @@ public:
 	LPTSTR LockBuffer()
 	{
 		LPTSTR lpsz = GetBuffer(0);
-		if (lpsz != NULL)
+		if(lpsz != NULL)
 			GetData()->nRefs = -1;
 		return lpsz;
 	}
@@ -2210,7 +2178,7 @@ public:
 			GetData()->nRefs = 1;
 	}
 
- // Implementation
+// Implementation
 public:
 	~CString()   //  free any attached data
 	{
@@ -2232,7 +2200,7 @@ public:
 	}
 
 protected:
-	LPTSTR 	m_pchData;   // pointer to ref counted string data
+	LPTSTR m_pchData;   // pointer to ref counted string data
 
 	// implementation helpers
 	CStringData* GetData() const
@@ -2253,16 +2221,16 @@ protected:
 		// Places results in uninitialized string 'dest'
 		// Will copy the part or all of original data to start of new string
 
-		BOOL 	bRet 	= FALSE;
-		int 	nNewLen = nCopyLen + nExtraLen;
+		BOOL bRet = FALSE;
+		int nNewLen = nCopyLen + nExtraLen;
 		if (nNewLen == 0)
 		{
 			dest.Init();
 			bRet = TRUE;
 		}
-		else if (nNewLen >= nCopyLen)
+		else if(nNewLen >= nCopyLen)
 		{
-			if (dest.AllocBuffer(nNewLen))
+			if(dest.AllocBuffer(nNewLen))
 			{
 				SecureHelper::memcpy_x(dest.m_pchData, (nNewLen + 1) * sizeof(TCHAR), m_pchData + nCopyIndex, nCopyLen * sizeof(TCHAR));
 				bRet = TRUE;
@@ -2285,16 +2253,16 @@ protected:
 		}
 		else
 		{
-			CStringData* 	pData = NULL;
-			ATLTRY( pData 		  = (CStringData*)new BYTE[ sizeof(CStringData) + (nLen + 1) * sizeof(TCHAR) ] );
-			if (pData == NULL)
+			CStringData* pData = NULL;
+			ATLTRY(pData = (CStringData*)new BYTE[sizeof(CStringData) + (nLen + 1) * sizeof(TCHAR)]);
+			if(pData == NULL)
 				return FALSE;
 
-			pData->nRefs 		= 1;
+			pData->nRefs = 1;
 			pData->data()[nLen] = _T('\0');
-			pData->nDataLength 	= nLen;
+			pData->nDataLength = nLen;
 			pData->nAllocLength = nLen;
-			m_pchData 			= pData->data();
+			m_pchData = pData->data();
 		}
 
 		return TRUE;
@@ -2311,7 +2279,7 @@ protected:
 	//
 	void AssignCopy(int nSrcLen, LPCTSTR lpszSrcData)
 	{
-		if (AllocBeforeWrite(nSrcLen))
+		if(AllocBeforeWrite(nSrcLen))
 		{
 			SecureHelper::memcpy_x(m_pchData, (nSrcLen + 1) * sizeof(TCHAR), lpszSrcData, nSrcLen * sizeof(TCHAR));
 			GetData()->nDataLength = nSrcLen;
@@ -2332,13 +2300,13 @@ protected:
 		// Concatenate two sources
 		// -- assume that 'this' is a new CString object
 
-		BOOL 	bRet 	= TRUE;
-		int 	nNewLen = nSrc1Len + nSrc2Len;
-		if (nNewLen < nSrc1Len || nNewLen < nSrc2Len)
+		BOOL bRet = TRUE;
+		int nNewLen = nSrc1Len + nSrc2Len;
+		if(nNewLen < nSrc1Len || nNewLen < nSrc2Len)
 		{
 			bRet = FALSE;
 		}
-		else if (nNewLen != 0)
+		else if(nNewLen != 0)
 		{
 			bRet = AllocBuffer(nNewLen);
 			if (bRet)
@@ -2386,7 +2354,7 @@ protected:
 		{
 			CStringData* pData = GetData();
 			Release();
-			if (AllocBuffer(pData->nDataLength))
+			if(AllocBuffer(pData->nDataLength))
 				SecureHelper::memcpy_x(m_pchData, (GetData()->nAllocLength + 1) * sizeof(TCHAR), pData->data(), (pData->nDataLength + 1) * sizeof(TCHAR));
 		}
 		ATLASSERT(GetData()->nRefs <= 1);
@@ -2432,7 +2400,7 @@ protected:
 
 	static int __stdcall _LoadString(UINT nID, LPTSTR lpszBuf, UINT nMaxBuf)
 	{
-	  #ifdef _DEBUG
+#ifdef _DEBUG
 		// LoadString without annoying warning from the Debug kernel if the
 		//  segment containing the string is not present
 		if (::FindResource(ModuleHelper::GetResourceInstance(), MAKEINTRESOURCE((nID >> 4) + 1), RT_STRING) == NULL)
@@ -2440,7 +2408,7 @@ protected:
 			lpszBuf[0] = _T('\0');
 			return 0;   // not found
 		}
-	  #endif // _DEBUG
+#endif // _DEBUG
 
 		int nLen = ::LoadString(ModuleHelper::GetResourceInstance(), nID, lpszBuf, nMaxBuf);
 		if (nLen == 0)
@@ -2454,7 +2422,7 @@ protected:
 		return *(CString*)&_atltmpPchNil;
 	}
 
- // CString conversion helpers
+// CString conversion helpers
 	static int __cdecl _wcstombsz(char* mbstr, const wchar_t* wcstr, size_t count)
 	{
 		if (count == 0 && mbstr != NULL)
@@ -2479,8 +2447,8 @@ protected:
 		return result;
 	}
 
- // Helpers to avoid CRT startup code
- #ifdef _ATL_MIN_CRT
+// Helpers to avoid CRT startup code
+#ifdef _ATL_MIN_CRT
 	static const TCHAR* _cstrchr(const TCHAR* p, TCHAR ch)
 	{
 		// strchr for '\0' should succeed
@@ -2513,13 +2481,13 @@ protected:
 
 		TCHAR* p = pStr;
 
-		while (*p != 0)
+		while (*p != 0) 
 		{
 			TCHAR* pNext = ::CharNext(p);
-			if (pNext > p + 1)
+			if(pNext > p + 1)
 			{
-				char 	p1 		= *(char*)p;
-				*(char*) p 		= *(char*)(p + 1);
+				char p1 = *(char*)p;
+				*(char*)p = *(char*)(p + 1);
 				*(char*)(p + 1) = p1;
 			}
 			p = pNext;
@@ -2545,11 +2513,11 @@ protected:
 		if (nLen == 0)
 			return (TCHAR*)pStr;
 
-		const TCHAR* 	pRet = NULL;
-		const TCHAR* 	pCur = pStr;
-		while ((pCur = _cstrchr(pCur, *pCharSet)) != NULL)
+		const TCHAR* pRet = NULL;
+		const TCHAR* pCur = pStr;
+		while((pCur = _cstrchr(pCur, *pCharSet)) != NULL)
 		{
-			if (memcmp(pCur, pCharSet, nLen * sizeof(TCHAR)) == 0)
+			if(memcmp(pCur, pCharSet, nLen * sizeof(TCHAR)) == 0)
 			{
 				pRet = pCur;
 				break;
@@ -2566,15 +2534,15 @@ protected:
 		while (*p != 0)
 		{
 			const TCHAR* pNext = ::CharNext(p);
-			if (pNext > p + 1)
+			if(pNext > p + 1)
 			{
-				if (_cstrchr_db(pCharSet, *p, *(p + 1)) == NULL)
+				if(_cstrchr_db(pCharSet, *p, *(p + 1)) == NULL)
 					break;
 				nRet += 2;
 			}
 			else
 			{
-				if (_cstrchr(pCharSet, *p) == NULL)
+				if(_cstrchr(pCharSet, *p) == NULL)
 					break;
 				nRet++;
 			}
@@ -2585,20 +2553,20 @@ protected:
 
 	static int _cstrcspn(const TCHAR* pStr, const TCHAR* pCharSet)
 	{
-		int 	nRet = 0;
-		TCHAR* 	p 	 = (TCHAR*)pStr;
+		int nRet = 0;
+		TCHAR* p = (TCHAR*)pStr;
 		while (*p != 0)
 		{
 			TCHAR* pNext = ::CharNext(p);
-			if (pNext > p + 1)
+			if(pNext > p + 1)
 			{
-				if (_cstrchr_db(pCharSet, *p, *(p + 1)) != NULL)
+				if(_cstrchr_db(pCharSet, *p, *(p + 1)) != NULL)
 					break;
 				nRet += 2;
 			}
 			else
 			{
-				if (_cstrchr(pCharSet, *p) != NULL)
+				if(_cstrchr(pCharSet, *p) != NULL)
 					break;
 				nRet++;
 			}
@@ -2653,9 +2621,9 @@ protected:
 
 	static int _cstrtoi(const TCHAR* nptr)
 	{
-		int 	c;       // current char
-		int 	total;   // current total
-		int 	sign;    // if '-', then negative, otherwise positive
+		int c;       // current char
+		int total;   // current total
+		int sign;    // if '-', then negative, otherwise positive
 
 		while (_cstrisspace(*nptr))
 			++nptr;
@@ -2678,7 +2646,7 @@ protected:
 		else
 			return total;   // return result, negated if necessary
 	}
- #else // !_ATL_MIN_CRT
+#else // !_ATL_MIN_CRT
 	static const TCHAR* _cstrchr(const TCHAR* p, TCHAR ch)
 	{
 		return _tcschr(p, ch);
@@ -2734,7 +2702,7 @@ protected:
 		return _tcsicmp(pstrOne, pstrOther);
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	static int _cstrcoll(const TCHAR* pstrOne, const TCHAR* pstrOther)
 	{
 		return _tcscoll(pstrOne, pstrOther);
@@ -2744,13 +2712,13 @@ protected:
 	{
 		return _tcsicoll(pstrOne, pstrOther);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	static int _cstrtoi(const TCHAR* nptr)
 	{
 		return _ttoi(nptr);
 	}
- #endif // !_ATL_MIN_CRT
+#endif // !_ATL_MIN_CRT
 
 	static const TCHAR* _cstrchr_db(const TCHAR* p, TCHAR ch1, TCHAR ch2)
 	{
@@ -2896,33 +2864,33 @@ template <class T, int t_cchItemLen = MAX_PATH, int t_nFirstID = ID_FILE_MRU_FIR
 class CRecentDocumentListBase
 {
 public:
- // Declarations
+// Declarations
 	struct _DocEntry
 	{
-		TCHAR 	szDocName[t_cchItemLen];
+		TCHAR szDocName[t_cchItemLen];
 		bool operator ==(const _DocEntry& de) const
 		{ return (lstrcmpi(szDocName, de.szDocName) == 0); }
 	};
 
 	enum
 	{
-		m_nMaxEntries_Min 	= 2,
-		m_nMaxEntries_Max 	= t_nLastID - t_nFirstID + 1,
+		m_nMaxEntries_Min = 2,
+		m_nMaxEntries_Max = t_nLastID - t_nFirstID + 1,
 		m_cchMaxItemLen_Min = 6,
 		m_cchMaxItemLen_Max = t_cchItemLen,
-		m_cchItemNameLen 	= 11
+		m_cchItemNameLen = 11
 	};
 
- // Data members
+// Data members
 	ATL::CSimpleArray<_DocEntry> m_arrDocs;
-	int 						 m_nMaxEntries;   // default is 4
-	HMENU						 m_hMenu;
+	int m_nMaxEntries;   // default is 4
+	HMENU m_hMenu;
 
-	TCHAR 						 m_szNoEntries[t_cchItemLen];
+	TCHAR m_szNoEntries[t_cchItemLen];
 
-	int 						 m_cchMaxItemLen;
+	int m_cchMaxItemLen;
 
- // Constructor
+// Constructor
 	CRecentDocumentListBase() : m_hMenu(NULL), m_nMaxEntries(4), m_cchMaxItemLen(-1)
 	{
 		// These ASSERTs verify values of the template arguments
@@ -2930,7 +2898,7 @@ public:
 		ATLASSERT(m_nMaxEntries_Max > m_nMaxEntries_Min);
 	}
 
- // Attributes
+// Attributes
 	HMENU GetMenuHandle() const
 	{
 		return m_hMenu;
@@ -2940,7 +2908,7 @@ public:
 	{
 		ATLASSERT(hMenu == NULL || ::IsMenu(hMenu));
 		m_hMenu = hMenu;
-		if (m_hMenu == NULL || (::GetMenuString(m_hMenu, t_nFirstID, m_szNoEntries, t_cchItemLen, MF_BYCOMMAND) == 0))
+		if(m_hMenu == NULL || (::GetMenuString(m_hMenu, t_nFirstID, m_szNoEntries, t_cchItemLen, MF_BYCOMMAND) == 0))
 		{
 			T* pT = static_cast<T*>(this);
 			pT;   // avoid level 4 warning
@@ -2956,9 +2924,9 @@ public:
 	void SetMaxEntries(int nMaxEntries)
 	{
 		ATLASSERT(nMaxEntries >= m_nMaxEntries_Min && nMaxEntries <= m_nMaxEntries_Max);
-		if (nMaxEntries < m_nMaxEntries_Min)
+		if(nMaxEntries < m_nMaxEntries_Min)
 			nMaxEntries = m_nMaxEntries_Min;
-		else if (nMaxEntries > m_nMaxEntries_Max)
+		else if(nMaxEntries > m_nMaxEntries_Max)
 			nMaxEntries = m_nMaxEntries_Max;
 		m_nMaxEntries = nMaxEntries;
 	}
@@ -2971,11 +2939,11 @@ public:
 	void SetMaxItemLength(int cchMaxLen)
 	{
 		ATLASSERT((cchMaxLen >= m_cchMaxItemLen_Min && cchMaxLen <= m_cchMaxItemLen_Max) || cchMaxLen == -1);
-		if (cchMaxLen != -1)
+		if(cchMaxLen != -1)
 		{
-			if (cchMaxLen < m_cchMaxItemLen_Min)
+			if(cchMaxLen < m_cchMaxItemLen_Min)
 				cchMaxLen = m_cchMaxItemLen_Min;
-			else if (cchMaxLen > m_cchMaxItemLen_Max)
+			else if(cchMaxLen > m_cchMaxItemLen_Max)
 				cchMaxLen = m_cchMaxItemLen_Max;
 		}
 		m_cchMaxItemLen = cchMaxLen;
@@ -2983,28 +2951,28 @@ public:
 		pT->UpdateMenu();
 	}
 
- // Operations
+// Operations
 	BOOL AddToList(LPCTSTR lpstrDocName)
 	{
 		_DocEntry de;
 		errno_t nRet = SecureHelper::strncpy_x(de.szDocName, _countof(de.szDocName), lpstrDocName, _TRUNCATE);
-		if (nRet != 0 && nRet != STRUNCATE)
+		if(nRet != 0 && nRet != STRUNCATE)
 			return FALSE;
 
-		for (int i = 0; i < m_arrDocs.GetSize(); i++)
+		for(int i = 0; i < m_arrDocs.GetSize(); i++)
 		{
-			if (lstrcmpi(m_arrDocs[i].szDocName, lpstrDocName) == 0)
+			if(lstrcmpi(m_arrDocs[i].szDocName, lpstrDocName) == 0)
 			{
 				m_arrDocs.RemoveAt(i);
 				break;
 			}
 		}
 
-		if (m_arrDocs.GetSize() == m_nMaxEntries)
+		if(m_arrDocs.GetSize() == m_nMaxEntries)
 			m_arrDocs.RemoveAt(0);
 
 		BOOL bRet = m_arrDocs.Add(de);
-		if (bRet)
+		if(bRet)
 		{
 			T* pT = static_cast<T*>(this);
 			bRet = pT->UpdateMenu();
@@ -3012,11 +2980,11 @@ public:
 		return bRet;
 	}
 
-	// This function is deprecated because it is not safe.
+	// This function is deprecated because it is not safe. 
 	// Use the version below that accepts the buffer length.
- #if (_MSC_VER >= 1300)
+#if (_MSC_VER >= 1300)
 	__declspec(deprecated)
- #endif
+#endif
 	BOOL GetFromList(int /*nItemID*/, LPTSTR /*lpstrDocName*/)
 	{
 		ATLASSERT(FALSE);
@@ -3026,31 +2994,31 @@ public:
 	BOOL GetFromList(int nItemID, LPTSTR lpstrDocName, int cchLength)
 	{
 		int nIndex = m_arrDocs.GetSize() - (nItemID - t_nFirstID) - 1;
-		if (nIndex < 0 || nIndex >= m_arrDocs.GetSize())
+		if(nIndex < 0 || nIndex >= m_arrDocs.GetSize())
 			return FALSE;
-		if (lstrlen(m_arrDocs[nIndex].szDocName) >= cchLength)
+		if(lstrlen(m_arrDocs[nIndex].szDocName) >= cchLength)
 			return FALSE;
 		SecureHelper::strcpy_x(lpstrDocName, cchLength, m_arrDocs[nIndex].szDocName);
 
 		return TRUE;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	BOOL GetFromList(int nItemID, _CSTRING_NS::CString& strDocName)
 	{
 		int nIndex = m_arrDocs.GetSize() - (nItemID - t_nFirstID) - 1;
-		if (nIndex < 0 || nIndex >= m_arrDocs.GetSize())
+		if(nIndex < 0 || nIndex >= m_arrDocs.GetSize())
 			return FALSE;
 		strDocName = m_arrDocs[nIndex].szDocName;
 		return TRUE;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	BOOL RemoveFromList(int nItemID)
 	{
 		int nIndex = m_arrDocs.GetSize() - (nItemID - t_nFirstID) - 1;
 		BOOL bRet = m_arrDocs.RemoveAt(nIndex);
-		if (bRet)
+		if(bRet)
 		{
 			T* pT = static_cast<T*>(this);
 			bRet = pT->UpdateMenu();
@@ -3061,13 +3029,13 @@ public:
 	BOOL MoveToTop(int nItemID)
 	{
 		int nIndex = m_arrDocs.GetSize() - (nItemID - t_nFirstID) - 1;
-		if (nIndex < 0 || nIndex >= m_arrDocs.GetSize())
+		if(nIndex < 0 || nIndex >= m_arrDocs.GetSize())
 			return FALSE;
 		_DocEntry de;
 		de = m_arrDocs[nIndex];
 		m_arrDocs.RemoveAt(nIndex);
 		BOOL bRet = m_arrDocs.Add(de);
-		if (bRet)
+		if(bRet)
 		{
 			T* pT = static_cast<T*>(this);
 			bRet = pT->UpdateMenu();
@@ -3078,23 +3046,19 @@ public:
 	BOOL ReadFromRegistry(LPCTSTR lpstrRegKey)
 	{
 		T* pT = static_cast<T*>(this);
-		ATL::CRegKey rkParent;
-		ATL::CRegKey rk;
+		CRegKeyEx rkParent;
+		CRegKeyEx rk;
 
 		LONG lRet = rkParent.Open(HKEY_CURRENT_USER, lpstrRegKey);
-		if (lRet != ERROR_SUCCESS)
+		if(lRet != ERROR_SUCCESS)
 			return FALSE;
 		lRet = rk.Open(rkParent, pT->GetRegKeyName());
-		if (lRet != ERROR_SUCCESS)
+		if(lRet != ERROR_SUCCESS)
 			return FALSE;
 
 		DWORD dwRet = 0;
-	  #if (_ATL_VER >= 0x0700)
 		lRet = rk.QueryDWORDValue(pT->GetRegCountName(), dwRet);
-	  #else
-		lRet = rk.QueryValue(dwRet, pT->GetRegCountName());
-	  #endif
-		if (lRet != ERROR_SUCCESS)
+		if(lRet != ERROR_SUCCESS)
 			return FALSE;
 		SetMaxEntries(dwRet);
 
@@ -3103,18 +3067,13 @@ public:
 		TCHAR szRetString[t_cchItemLen] = { 0 };
 		_DocEntry de;
 
-		for (int nItem = m_nMaxEntries; nItem > 0; nItem--)
+		for(int nItem = m_nMaxEntries; nItem > 0; nItem--)
 		{
 			TCHAR szBuff[m_cchItemNameLen] = { 0 };
 			SecureHelper::wsprintf_x(szBuff, m_cchItemNameLen, pT->GetRegItemName(), nItem);
-		  #if (_ATL_VER >= 0x0700)
 			ULONG ulCount = t_cchItemLen;
 			lRet = rk.QueryStringValue(szBuff, szRetString, &ulCount);
-		  #else
-			DWORD dwCount = t_cchItemLen * sizeof(TCHAR);
-			lRet = rk.QueryValue(szRetString, szBuff, &dwCount);
-		  #endif
-			if (lRet == ERROR_SUCCESS)
+			if(lRet == ERROR_SUCCESS)
 			{
 				SecureHelper::strcpy_x(de.szDocName, _countof(de.szDocName), szRetString);
 				m_arrDocs.Add(de);
@@ -3131,41 +3090,33 @@ public:
 	{
 		T* pT = static_cast<T*>(this);
 		pT;   // avoid level 4 warning
-		ATL::CRegKey rkParent;
-		ATL::CRegKey rk;
+		CRegKeyEx rkParent;
+		CRegKeyEx rk;
 
 		LONG lRet = rkParent.Create(HKEY_CURRENT_USER, lpstrRegKey);
-		if (lRet != ERROR_SUCCESS)
+		if(lRet != ERROR_SUCCESS)
 			return FALSE;
 		lRet = rk.Create(rkParent, pT->GetRegKeyName());
-		if (lRet != ERROR_SUCCESS)
+		if(lRet != ERROR_SUCCESS)
 			return FALSE;
 
-	  #if (_ATL_VER >= 0x0700)
 		lRet = rk.SetDWORDValue(pT->GetRegCountName(), m_nMaxEntries);
-	  #else
-		lRet = rk.SetValue(m_nMaxEntries, pT->GetRegCountName());
-	  #endif
 		ATLASSERT(lRet == ERROR_SUCCESS);
 
 		// set new values
 		int nItem;
-		for (nItem = m_arrDocs.GetSize(); nItem > 0; nItem--)
+		for(nItem = m_arrDocs.GetSize(); nItem > 0; nItem--)
 		{
 			TCHAR szBuff[m_cchItemNameLen] = { 0 };
 			SecureHelper::wsprintf_x(szBuff, m_cchItemNameLen, pT->GetRegItemName(), nItem);
 			TCHAR szDocName[t_cchItemLen] = { 0 };
 			GetFromList(t_nFirstID + nItem - 1, szDocName, t_cchItemLen);
-		  #if (_ATL_VER >= 0x0700)
 			lRet = rk.SetStringValue(szBuff, szDocName);
-		  #else
-			lRet = rk.SetValue(szDocName, szBuff);
-		  #endif
 			ATLASSERT(lRet == ERROR_SUCCESS);
 		}
 
 		// delete unused keys
-		for (nItem = m_arrDocs.GetSize() + 1; nItem < m_nMaxEntries_Max; nItem++)
+		for(nItem = m_arrDocs.GetSize() + 1; nItem < m_nMaxEntries_Max; nItem++)
 		{
 			TCHAR szBuff[m_cchItemNameLen] = { 0 };
 			SecureHelper::wsprintf_x(szBuff, m_cchItemNameLen, pT->GetRegItemName(), nItem);
@@ -3178,16 +3129,16 @@ public:
 		return TRUE;
 	}
 
- // Implementation
+// Implementation
 	BOOL UpdateMenu()
 	{
-		if (m_hMenu == NULL)
+		if(m_hMenu == NULL)
 			return FALSE;
 		ATLASSERT(::IsMenu(m_hMenu));
 
 		int nItems = ::GetMenuItemCount(m_hMenu);
 		int nInsertPoint;
-		for (nInsertPoint = 0; nInsertPoint < nItems; nInsertPoint++)
+		for(nInsertPoint = 0; nInsertPoint < nItems; nInsertPoint++)
 		{
 			CMenuItemInfo mi;
 			mi.fMask = MIIM_ID;
@@ -3198,7 +3149,7 @@ public:
 		ATLASSERT(nInsertPoint < nItems && "You need a menu item with an ID = t_nFirstID");
 
 		int nItem;
-		for (nItem = t_nFirstID; nItem < t_nFirstID + m_nMaxEntries; nItem++)
+		for(nItem = t_nFirstID; nItem < t_nFirstID + m_nMaxEntries; nItem++)
 		{
 			// keep the first one as an insertion point
 			if (nItem != t_nFirstID)
@@ -3208,20 +3159,20 @@ public:
 		TCHAR szItemText[t_cchItemLen + 6] = { 0 };   // add space for &, 2 digits, and a space
 		int nSize = m_arrDocs.GetSize();
 		nItem = 0;
-		if (nSize > 0)
+		if(nSize > 0)
 		{
-			for (nItem = 0; nItem < nSize; nItem++)
+			for(nItem = 0; nItem < nSize; nItem++)
 			{
-				if (m_cchMaxItemLen == -1)
+				if(m_cchMaxItemLen == -1)
 				{
 					SecureHelper::wsprintf_x(szItemText, t_cchItemLen + 6, _T("&%i %s"), nItem + 1, m_arrDocs[nSize - 1 - nItem].szDocName);
 				}
 				else
 				{
-					TCHAR 	szBuff[t_cchItemLen] = { 0 };
-					T* 		pT 		= static_cast<T*>(this);
-					pT;   	// avoid level 4 warning
-					bool 	bRet 	= pT->CompactDocumentName(szBuff, m_arrDocs[nSize - 1 - nItem].szDocName, m_cchMaxItemLen);
+					TCHAR szBuff[t_cchItemLen] = { 0 };
+					T* pT = static_cast<T*>(this);
+					pT;   // avoid level 4 warning
+					bool bRet = pT->CompactDocumentName(szBuff, m_arrDocs[nSize - 1 - nItem].szDocName, m_cchMaxItemLen);
 					bRet;   // avoid level 4 warning
 					ATLASSERT(bRet);
 					SecureHelper::wsprintf_x(szItemText, t_cchItemLen + 6, _T("&%i %s"), nItem + 1, szBuff);
@@ -3240,7 +3191,7 @@ public:
 		return TRUE;
 	}
 
- // Overrideables
+// Overrideables
 	// override to provide a different method of compacting document names
 	static bool CompactDocumentName(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen)
 	{
@@ -3260,7 +3211,7 @@ public:
 	static LPCTSTR GetRegItemName()
 	{
 		// Note: This string is a format string used with wsprintf().
-		// Resulting formatted string must be m_cchItemNameLen or less
+		// Resulting formatted string must be m_cchItemNameLen or less 
 		// characters long, including the terminating null character.
 		return _T("Document%i");
 	}
@@ -3286,14 +3237,14 @@ public:
 class CFindFile
 {
 public:
- // Data members
-	WIN32_FIND_DATA 	m_fd;
-	TCHAR 				m_lpszRoot[MAX_PATH];
-	TCHAR 				m_chDirSeparator;
-	HANDLE 				m_hFind;
-	BOOL 				m_bFound;
+// Data members
+	WIN32_FIND_DATA m_fd;
+	TCHAR m_lpszRoot[MAX_PATH];
+	TCHAR m_chDirSeparator;
+	HANDLE m_hFind;
+	BOOL m_bFound;
 
- // Constructor/destructor
+// Constructor/destructor
 	CFindFile() : m_hFind(NULL), m_chDirSeparator(_T('\\')), m_bFound(FALSE)
 	{ }
 
@@ -3302,14 +3253,14 @@ public:
 		Close();
 	}
 
- // Attributes
+// Attributes
 	ULONGLONG GetFileSize() const
 	{
 		ATLASSERT(m_hFind != NULL);
 
 		ULARGE_INTEGER nFileSize = { 0 };
 
-		if (m_bFound)
+		if(m_bFound)
 		{
 			nFileSize.LowPart = m_fd.nFileSizeLow;
 			nFileSize.HighPart = m_fd.nFileSizeHigh;
@@ -3325,10 +3276,10 @@ public:
 	BOOL GetFileName(LPTSTR lpstrFileName, int cchLength) const
 	{
 		ATLASSERT(m_hFind != NULL);
-		if (lstrlen(m_fd.cFileName) >= cchLength)
+		if(lstrlen(m_fd.cFileName) >= cchLength)
 			return FALSE;
 
-		if (m_bFound)
+		if(m_bFound)
 			SecureHelper::strcpy_x(lpstrFileName, cchLength, m_fd.cFileName);
 
 		return m_bFound;
@@ -3338,24 +3289,24 @@ public:
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		int 	nLen = lstrlen(m_lpszRoot);
-	  #ifndef _WIN32_WCE
+		int nLen = lstrlen(m_lpszRoot);
+#ifndef _WIN32_WCE
 		ATLASSERT(nLen > 0);
-		if (nLen == 0)
+		if(nLen == 0)
 			return FALSE;
 
-		bool 	bAddSep = (m_lpszRoot[nLen - 1] != _T('\\') && m_lpszRoot[nLen - 1] !=_T('/'));
-	  #else		// CE specific
+		bool bAddSep = (m_lpszRoot[nLen - 1] != _T('\\') && m_lpszRoot[nLen - 1] !=_T('/'));
+#else // CE specific
 		// allow diskless devices (nLen == 0)
-		bool 	bAddSep = ((nLen == 0) || (m_lpszRoot[nLen - 1] != _T('\\') && m_lpszRoot[nLen - 1] !=_T('/')));
-	  #endif	// _WIN32_WCE
+		bool bAddSep = ((nLen == 0) || (m_lpszRoot[nLen - 1] != _T('\\') && m_lpszRoot[nLen - 1] !=_T('/')));
+#endif // _WIN32_WCE
 
-		if ((lstrlen(m_lpszRoot) + (bAddSep ?  1 : 0)) >= cchLength)
+		if((lstrlen(m_lpszRoot) + (bAddSep ?  1 : 0)) >= cchLength)
 			return FALSE;
 
 		SecureHelper::strcpy_x(lpstrFilePath, cchLength, m_lpszRoot);
 
-		if (bAddSep)
+		if(bAddSep)
 		{
 			TCHAR szSeparator[2] = { m_chDirSeparator, 0 };
 			SecureHelper::strcat_x(lpstrFilePath, cchLength, szSeparator);
@@ -3366,38 +3317,38 @@ public:
 		return TRUE;
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL GetFileTitle(LPTSTR lpstrFileTitle, int cchLength) const
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		TCHAR 	szBuff[MAX_PATH] = { 0 };
-		if (!GetFileName(szBuff, MAX_PATH))
+		TCHAR szBuff[MAX_PATH] = { 0 };
+		if(!GetFileName(szBuff, MAX_PATH))
 			return FALSE;
 
-		if (lstrlen(szBuff) >= cchLength || cchLength < 1)
+		if(lstrlen(szBuff) >= cchLength || cchLength < 1)
 			return FALSE;
 
 		// find the last dot
 		LPTSTR pstrDot  = (LPTSTR)_cstrrchr(szBuff, _T('.'));
-		if (pstrDot != NULL)
+		if(pstrDot != NULL)
 			*pstrDot = 0;
 
 		SecureHelper::strcpy_x(lpstrFileTitle, cchLength, szBuff);
 
 		return TRUE;
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	BOOL GetFileURL(LPTSTR lpstrFileURL, int cchLength) const
 	{
 		ATLASSERT(m_hFind != NULL);
 
 		TCHAR szBuff[MAX_PATH] = { 0 };
-		if (!GetFilePath(szBuff, MAX_PATH))
+		if(!GetFilePath(szBuff, MAX_PATH))
 			return FALSE;
 		LPCTSTR lpstrFileURLPrefix = _T("file://");
-		if (lstrlen(szBuff) + lstrlen(lpstrFileURLPrefix) >= cchLength)
+		if(lstrlen(szBuff) + lstrlen(lpstrFileURLPrefix) >= cchLength)
 			return FALSE;
 		SecureHelper::strcpy_x(lpstrFileURL, cchLength, lpstrFileURLPrefix);
 		SecureHelper::strcat_x(lpstrFileURL, cchLength, szBuff);
@@ -3408,7 +3359,7 @@ public:
 	BOOL GetRoot(LPTSTR lpstrRoot, int cchLength) const
 	{
 		ATLASSERT(m_hFind != NULL);
-		if (lstrlen(m_lpszRoot) >= cchLength)
+		if(lstrlen(m_lpszRoot) >= cchLength)
 			return FALSE;
 
 		SecureHelper::strcpy_x(lpstrRoot, cchLength, m_lpszRoot);
@@ -3416,14 +3367,14 @@ public:
 		return TRUE;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	_CSTRING_NS::CString GetFileName() const
 	{
 		ATLASSERT(m_hFind != NULL);
 
 		_CSTRING_NS::CString ret;
 
-		if (m_bFound)
+		if(m_bFound)
 			ret = m_fd.cFileName;
 		return ret;
 	}
@@ -3434,22 +3385,22 @@ public:
 
 		_CSTRING_NS::CString strResult = m_lpszRoot;
 		int nLen = strResult.GetLength();
-	  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 		ATLASSERT(nLen > 0);
-		if (nLen == 0)
+		if(nLen == 0)
 			return strResult;
 
-		if ((strResult[nLen - 1] != _T('\\')) && (strResult[nLen - 1] != _T('/')))
-	  #else // CE specific
+		if((strResult[nLen - 1] != _T('\\')) && (strResult[nLen - 1] != _T('/')))
+#else // CE specific
 		// allow diskless devices (nLen == 0)
-		if ((nLen == 0) || ((strResult[nLen - 1] != _T('\\')) && (strResult[nLen - 1] != _T('/'))))
-	  #endif // _WIN32_WCE
+		if((nLen == 0) || ((strResult[nLen - 1] != _T('\\')) && (strResult[nLen - 1] != _T('/'))))
+#endif // _WIN32_WCE
 			strResult += m_chDirSeparator;
 		strResult += GetFileName();
 		return strResult;
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	_CSTRING_NS::CString GetFileTitle() const
 	{
 		ATLASSERT(m_hFind != NULL);
@@ -3460,7 +3411,7 @@ public:
 
 		return strResult;
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	_CSTRING_NS::CString GetFileURL() const
 	{
@@ -3478,14 +3429,14 @@ public:
 		_CSTRING_NS::CString str = m_lpszRoot;
 		return str;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	BOOL GetLastWriteTime(FILETIME* pTimeStamp) const
 	{
 		ATLASSERT(m_hFind != NULL);
 		ATLASSERT(pTimeStamp != NULL);
 
-		if (m_bFound && pTimeStamp != NULL)
+		if(m_bFound && pTimeStamp != NULL)
 		{
 			*pTimeStamp = m_fd.ftLastWriteTime;
 			return TRUE;
@@ -3499,7 +3450,7 @@ public:
 		ATLASSERT(m_hFind != NULL);
 		ATLASSERT(pTimeStamp != NULL);
 
-		if (m_bFound && pTimeStamp != NULL)
+		if(m_bFound && pTimeStamp != NULL)
 		{
 			*pTimeStamp = m_fd.ftLastAccessTime;
 			return TRUE;
@@ -3512,7 +3463,7 @@ public:
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		if (m_bFound && pTimeStamp != NULL)
+		if(m_bFound && pTimeStamp != NULL)
 		{
 			*pTimeStamp = m_fd.ftCreationTime;
 			return TRUE;
@@ -3525,7 +3476,7 @@ public:
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		if (m_bFound)
+		if(m_bFound)
 			return ((m_fd.dwFileAttributes & dwMask) != 0);
 
 		return FALSE;
@@ -3539,9 +3490,9 @@ public:
 		// the file is a directory
 
 		BOOL bResult = FALSE;
-		if (m_bFound && IsDirectory())
+		if(m_bFound && IsDirectory())
 		{
-			if (m_fd.cFileName[0] == _T('.') && (m_fd.cFileName[1] == _T('\0') || (m_fd.cFileName[1] == _T('.') && m_fd.cFileName[2] == _T('\0'))))
+			if(m_fd.cFileName[0] == _T('.') && (m_fd.cFileName[1] == _T('\0') || (m_fd.cFileName[1] == _T('.') && m_fd.cFileName[2] == _T('\0'))))
 				bResult = TRUE;
 		}
 
@@ -3588,16 +3539,16 @@ public:
 		return MatchesMask(FILE_ATTRIBUTE_ARCHIVE);
 	}
 
- // Operations
+// Operations
 	BOOL FindFile(LPCTSTR pstrName = NULL)
 	{
 		Close();
 
-		if (pstrName == NULL)
+		if(pstrName == NULL)
 		{
 			pstrName = _T("*.*");
 		}
-		else if (lstrlen(pstrName) >= MAX_PATH)
+		else if(lstrlen(pstrName) >= MAX_PATH)
 		{
 			ATLASSERT(FALSE);
 			return FALSE;
@@ -3607,19 +3558,19 @@ public:
 
 		m_hFind = ::FindFirstFile(pstrName, &m_fd);
 
-		if (m_hFind == INVALID_HANDLE_VALUE)
+		if(m_hFind == INVALID_HANDLE_VALUE)
 			return FALSE;
 
-	  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 		bool bFullPath = (::GetFullPathName(pstrName, MAX_PATH, m_lpszRoot, NULL) != 0);
-	  #else // CE specific
+#else // CE specific
 		errno_t nRet = SecureHelper::strncpy_x(m_lpszRoot, _countof(m_lpszRoot), pstrName, _TRUNCATE);
 		bool bFullPath = (nRet == 0 || nRet == STRUNCATE);
-	  #endif // _WIN32_WCE
+#endif // _WIN32_WCE
 
 		// passed name isn't a valid path but was found by the API
 		ATLASSERT(bFullPath);
-		if (!bFullPath)
+		if(!bFullPath)
 		{
 			Close();
 			::SetLastError(ERROR_INVALID_NAME);
@@ -3628,19 +3579,19 @@ public:
 		else
 		{
 			// find the last forward or backward whack
-			LPTSTR 	pstrBack  = (LPTSTR)_cstrrchr(m_lpszRoot, _T('\\'));
-			LPTSTR 	pstrFront = (LPTSTR)_cstrrchr(m_lpszRoot, _T('/'));
+			LPTSTR pstrBack  = (LPTSTR)_cstrrchr(m_lpszRoot, _T('\\'));
+			LPTSTR pstrFront = (LPTSTR)_cstrrchr(m_lpszRoot, _T('/'));
 
-			if (pstrFront != NULL || pstrBack != NULL)
+			if(pstrFront != NULL || pstrBack != NULL)
 			{
-				if (pstrFront == NULL)
+				if(pstrFront == NULL)
 					pstrFront = m_lpszRoot;
-				if (pstrBack == NULL)
+				if(pstrBack == NULL)
 					pstrBack = m_lpszRoot;
 
 				// from the start to the last whack is the root
 
-				if (pstrFront >= pstrBack)
+				if(pstrFront >= pstrBack)
 					*pstrFront = _T('\0');
 				else
 					*pstrBack = _T('\0');
@@ -3656,10 +3607,10 @@ public:
 	{
 		ATLASSERT(m_hFind != NULL);
 
-		if (m_hFind == NULL)
+		if(m_hFind == NULL)
 			return FALSE;
 
-		if (!m_bFound)
+		if(!m_bFound)
 			return FALSE;
 
 		m_bFound = ::FindNextFile(m_hFind, &m_fd);
@@ -3671,17 +3622,17 @@ public:
 	{
 		m_bFound = FALSE;
 
-		if (m_hFind != NULL && m_hFind != INVALID_HANDLE_VALUE)
+		if(m_hFind != NULL && m_hFind != INVALID_HANDLE_VALUE)
 		{
 			::FindClose(m_hFind);
 			m_hFind = NULL;
 		}
 	}
 
- // Helper
+// Helper
 	static const TCHAR* _cstrrchr(const TCHAR* p, TCHAR ch)
 	{
-	  #ifdef _ATL_MIN_CRT
+#ifdef _ATL_MIN_CRT
 		const TCHAR* lpsz = NULL;
 		while (*p != 0)
 		{
@@ -3690,178 +3641,11 @@ public:
 			p = ::CharNext(p);
 		}
 		return lpsz;
-	  #else // !_ATL_MIN_CRT
+#else // !_ATL_MIN_CRT
 		return _tcsrchr(p, ch);
-	  #endif // !_ATL_MIN_CRT
+#endif // !_ATL_MIN_CRT
 	}
 };
-
-
-///////////////////////////////////////////////////////////////////////////////
-// Global functions for loading resources
-
-inline HACCEL AtlLoadAccelerators(ATL::_U_STRINGorID table)
-{
-	return ::LoadAccelerators(ModuleHelper::GetResourceInstance(), table.m_lpstr);
-}
-
-inline HMENU AtlLoadMenu(ATL::_U_STRINGorID menu)
-{
-	return ::LoadMenu(ModuleHelper::GetResourceInstance(), menu.m_lpstr);
-}
-
-inline HBITMAP AtlLoadBitmap(ATL::_U_STRINGorID bitmap)
-{
-	return ::LoadBitmap(ModuleHelper::GetResourceInstance(), bitmap.m_lpstr);
-}
-
-#ifdef OEMRESOURCE
-inline HBITMAP AtlLoadSysBitmap(ATL::_U_STRINGorID bitmap)
-{
- #ifdef _DEBUG
-	WORD wID = (WORD)bitmap.m_lpstr;
-	ATLASSERT(wID >= 32734 && wID <= 32767);
- #endif // _DEBUG
-	return ::LoadBitmap(NULL, bitmap.m_lpstr);
-}
-#endif // OEMRESOURCE
-
-inline HCURSOR AtlLoadCursor(ATL::_U_STRINGorID cursor)
-{
-	return ::LoadCursor(ModuleHelper::GetResourceInstance(), cursor.m_lpstr);
-}
-
-inline HCURSOR AtlLoadSysCursor(LPCTSTR lpCursorName)
-{
- #if (WINVER >= 0x0500)
-	ATLASSERT(lpCursorName == IDC_ARROW || lpCursorName == IDC_IBEAM 		|| lpCursorName == IDC_WAIT 	||
-		lpCursorName == IDC_CROSS 		|| lpCursorName == IDC_UPARROW 		|| lpCursorName == IDC_SIZE 	||
-		lpCursorName == IDC_ICON 		|| lpCursorName == IDC_SIZENWSE 	|| lpCursorName == IDC_SIZENESW ||
-		lpCursorName == IDC_SIZEWE 		|| lpCursorName == IDC_SIZENS 		|| lpCursorName == IDC_SIZEALL 	||
-		lpCursorName == IDC_NO 			|| lpCursorName == IDC_APPSTARTING 	|| lpCursorName == IDC_HELP 	||
-		lpCursorName == IDC_HAND);
- #else // !(WINVER >= 0x0500)
-	ATLASSERT(lpCursorName == IDC_ARROW || lpCursorName == IDC_IBEAM 		|| lpCursorName == IDC_WAIT 	||
-		lpCursorName == IDC_CROSS 		|| lpCursorName == IDC_UPARROW 		|| lpCursorName == IDC_SIZE 	||
-		lpCursorName == IDC_ICON 		|| lpCursorName == IDC_SIZENWSE 	|| lpCursorName == IDC_SIZENESW ||
-		lpCursorName == IDC_SIZEWE 		|| lpCursorName == IDC_SIZENS 		|| lpCursorName == IDC_SIZEALL 	||
-		lpCursorName == IDC_NO 			|| lpCursorName == IDC_APPSTARTING 	|| lpCursorName == IDC_HELP		);
- #endif // !(WINVER >= 0x0500)
-	return ::LoadCursor(NULL, lpCursorName);
-}
-
-inline HICON AtlLoadIcon(ATL::_U_STRINGorID icon)
-{
-	return ::LoadIcon(ModuleHelper::GetResourceInstance(), icon.m_lpstr);
-}
-
-#ifndef _WIN32_WCE
-inline HICON AtlLoadSysIcon(LPCTSTR lpIconName)
-{
- #if (WINVER >= 0x0600)
-	ATLASSERT(lpIconName == IDI_APPLICATION || lpIconName == IDI_ASTERISK || lpIconName == IDI_EXCLAMATION 	||
-	          lpIconName == IDI_HAND 		|| lpIconName == IDI_QUESTION || lpIconName == IDI_WINLOGO 		||
-	          lpIconName == IDI_SHIELD);
- #else // !(WINVER >= 0x0600)
-	ATLASSERT(lpIconName == IDI_APPLICATION || lpIconName == IDI_ASTERISK || lpIconName == IDI_EXCLAMATION ||
-	          lpIconName == IDI_HAND 		|| lpIconName == IDI_QUESTION || lpIconName == IDI_WINLOGO);
- #endif // !(WINVER >= 0x0600)
-	return ::LoadIcon(NULL, lpIconName);
-}
-#endif // !_WIN32_WCE
-
-inline HBITMAP AtlLoadBitmapImage(ATL::_U_STRINGorID bitmap, UINT fuLoad = LR_DEFAULTCOLOR)
-{
-	return (HBITMAP)::LoadImage(ModuleHelper::GetResourceInstance(), bitmap.m_lpstr, IMAGE_BITMAP, 0, 0, fuLoad);
-}
-
-inline HCURSOR AtlLoadCursorImage(ATL::_U_STRINGorID cursor, UINT fuLoad = LR_DEFAULTCOLOR | LR_DEFAULTSIZE, int cxDesired = 0, int cyDesired = 0)
-{
-	return (HCURSOR)::LoadImage(ModuleHelper::GetResourceInstance(), cursor.m_lpstr, IMAGE_CURSOR, cxDesired, cyDesired, fuLoad);
-}
-
-inline HICON AtlLoadIconImage(ATL::_U_STRINGorID icon, UINT fuLoad = LR_DEFAULTCOLOR | LR_DEFAULTSIZE, int cxDesired = 0, int cyDesired = 0)
-{
-	return (HICON)::LoadImage(ModuleHelper::GetResourceInstance(), icon.m_lpstr, IMAGE_ICON, cxDesired, cyDesired, fuLoad);
-}
-
-#ifdef OEMRESOURCE
-inline HBITMAP AtlLoadSysBitmapImage(WORD wBitmapID, UINT fuLoad = LR_DEFAULTCOLOR)
-{
-	ATLASSERT(wBitmapID >= 32734 && wBitmapID <= 32767);
-	ATLASSERT((fuLoad & LR_LOADFROMFILE) == 0);   // this one doesn't load from a file
-	return (HBITMAP)::LoadImage(NULL, MAKEINTRESOURCE(wBitmapID), IMAGE_BITMAP, 0, 0, fuLoad);
-}
-#endif // OEMRESOURCE
-
-inline HCURSOR AtlLoadSysCursorImage(ATL::_U_STRINGorID cursor, UINT fuLoad = LR_DEFAULTCOLOR | LR_DEFAULTSIZE, int cxDesired = 0, int cyDesired = 0)
-{
- #ifdef _DEBUG
-	WORD wID = (WORD)cursor.m_lpstr;
-	ATLASSERT((wID >= 32512 && wID <= 32516) || (wID >= 32640 && wID <= 32648) || (wID == 32650) || (wID == 32651));
-	ATLASSERT((fuLoad & LR_LOADFROMFILE) == 0);   // this one doesn't load from a file
- #endif // _DEBUG
-	return (HCURSOR)::LoadImage(NULL, cursor.m_lpstr, IMAGE_CURSOR, cxDesired, cyDesired, fuLoad);
-}
-
-inline HICON AtlLoadSysIconImage(ATL::_U_STRINGorID icon, UINT fuLoad = LR_DEFAULTCOLOR | LR_DEFAULTSIZE, int cxDesired = 0, int cyDesired = 0)
-{
- #ifdef _DEBUG
-	WORD wID = (WORD)icon.m_lpstr;
-	ATLASSERT(wID >= 32512 && wID <= 32517);
-	ATLASSERT((fuLoad & LR_LOADFROMFILE) == 0);   // this one doesn't load from a file
- #endif // _DEBUG
-	return (HICON)::LoadImage(NULL, icon.m_lpstr, IMAGE_ICON, cxDesired, cyDesired, fuLoad);
-}
-
-#if (_ATL_VER < 0x0700)
-inline int AtlLoadString(UINT uID, LPTSTR lpBuffer, int nBufferMax)
-{
-	return ::LoadString(_Module.GetResourceInstance(), uID, lpBuffer, nBufferMax);
-}
-#endif // (_ATL_VER < 0x0700)
-
-#ifdef _WIN32_WCE // CE only direct access to the resource
-inline LPCTSTR AtlLoadString(UINT uID)
-{
-	LPCTSTR s = (LPCTSTR)::LoadString(ModuleHelper::GetResourceInstance(), uID, NULL, 0);
-  #ifdef DEBUG // Check for null-termination
-	if (s != NULL)
-		// Note: RC -n <file.rc> compiles null-terminated resource strings
-		ATLASSERT(s[*((WORD*)s -1) - 1] == L'\0');
-  #endif
-	return s;
-}
-#endif // _WIN32_WCE
-
-inline bool AtlLoadString(UINT uID, BSTR& bstrText)
-{
-	USES_CONVERSION;
-	ATLASSERT(bstrText == NULL);
-
-	LPTSTR 	lpstrText 	= NULL;
-	int 	nRes 		= 0;
-	for (int nLen = 256; ; nLen *= 2)
-	{
-		ATLTRY(lpstrText = new TCHAR[nLen]);
-		if (lpstrText == NULL)
-			break;
-		nRes = ::LoadString(ModuleHelper::GetResourceInstance(), uID, lpstrText, nLen);
-		if (nRes < nLen - 1)
-			break;
-		delete [] lpstrText;
-		lpstrText = NULL;
-	}
-
-	if (lpstrText != NULL)
-	{
-		if (nRes != 0)
-			bstrText = ::SysAllocString(T2OLE(lpstrText));
-		delete [] lpstrText;
-	}
-
-	return (bstrText != NULL) ? true : false;
-}
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -3869,31 +3653,31 @@ inline bool AtlLoadString(UINT uID, BSTR& bstrText)
 
 inline HPEN AtlGetStockPen(int nPen)
 {
-  #if (_WIN32_WINNT >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_WINNT >= 0x0500) && !defined(_WIN32_WCE)
 	ATLASSERT(nPen == WHITE_PEN || nPen == BLACK_PEN || nPen == NULL_PEN || nPen == DC_PEN);
-  #else
+#else
 	ATLASSERT(nPen == WHITE_PEN || nPen == BLACK_PEN || nPen == NULL_PEN);
-  #endif
+#endif
 	return (HPEN)::GetStockObject(nPen);
 }
 
 inline HBRUSH AtlGetStockBrush(int nBrush)
 {
-  #if (_WIN32_WINNT >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_WINNT >= 0x0500) && !defined(_WIN32_WCE)
 	ATLASSERT((nBrush >= WHITE_BRUSH && nBrush <= HOLLOW_BRUSH) || nBrush == DC_BRUSH);
-  #else
+#else
 	ATLASSERT(nBrush >= WHITE_BRUSH && nBrush <= HOLLOW_BRUSH);
-  #endif
+#endif
 	return (HBRUSH)::GetStockObject(nBrush);
 }
 
 inline HFONT AtlGetStockFont(int nFont)
 {
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	ATLASSERT((nFont >= OEM_FIXED_FONT && nFont <= SYSTEM_FIXED_FONT) || nFont == DEFAULT_GUI_FONT);
-  #else // CE specific
+#else // CE specific
 	ATLASSERT(nFont == SYSTEM_FONT);
-  #endif // _WIN32_WCE
+#endif // _WIN32_WCE
 	return (HFONT)::GetStockObject(nFont);
 }
 
@@ -3910,18 +3694,18 @@ inline HPALETTE AtlGetStockPalette(int nPalette)
 // helper for multi-byte character sets
 inline bool _IsDBCSTrailByte(LPCTSTR lpstr, int nChar)
 {
-  #ifndef _UNICODE
+#ifndef _UNICODE
 	int i = nChar;
-	for ( ; i > 0; i--)
+	for( ; i > 0; i--)
 	{
-		if (!::IsDBCSLeadByte(lpstr[i - 1]))
+		if(!::IsDBCSLeadByte(lpstr[i - 1]))
 			break;
 	}
 	return ((nChar > 0) && (((nChar - i) & 1) != 0));
-  #else // _UNICODE
+#else // _UNICODE
 	lpstr; nChar;
 	return false;
-  #endif // _UNICODE
+#endif // _UNICODE
 }
 
 inline bool AtlCompactPath(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen)
@@ -3934,7 +3718,7 @@ inline bool AtlCompactPath(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen)
 	const int cchEndEllipsis = 3;
 	const int cchMidEllipsis = 4;
 
-	if (lstrlen(lpstrIn) < cchLen)
+	if(lstrlen(lpstrIn) < cchLen)
 	{
 		SecureHelper::strcpy_x(lpstrOut, cchLen, lpstrIn);
 		return true;
@@ -3944,41 +3728,41 @@ inline bool AtlCompactPath(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen)
 
 	// check if the separator is a slash or a backslash
 	TCHAR chSlash = _T('\\');
-	for (LPTSTR lpstr = (LPTSTR)lpstrIn; *lpstr != 0; lpstr = ::CharNext(lpstr))
+	for(LPTSTR lpstr = (LPTSTR)lpstrIn; *lpstr != 0; lpstr = ::CharNext(lpstr))
 	{
-		if ((*lpstr == _T('/')) || (*lpstr == _T('\\')))
+		if((*lpstr == _T('/')) || (*lpstr == _T('\\')))
 			chSlash = *lpstr;
 	}
 
 	// find the filename portion of the path
 	LPCTSTR lpstrFileName = lpstrIn;
-	for (LPCTSTR pPath = lpstrIn; *pPath; pPath = ::CharNext(pPath))
+	for(LPCTSTR pPath = lpstrIn; *pPath; pPath = ::CharNext(pPath))
 	{
-		if ((pPath[0] == _T('\\') || pPath[0] == _T(':') || pPath[0] == _T('/'))
+		if((pPath[0] == _T('\\') || pPath[0] == _T(':') || pPath[0] == _T('/'))
 				&& pPath[1] && pPath[1] != _T('\\') && pPath[1] != _T('/'))
 			lpstrFileName = pPath + 1;
 	}
 	int cchFileName = lstrlen(lpstrFileName);
 
 	// handle just the filename without a path
-	if (lpstrFileName == lpstrIn && cchLen > cchEndEllipsis)
+	if(lpstrFileName == lpstrIn && cchLen > cchEndEllipsis)
 	{
 		bool bRet = (SecureHelper::strncpy_x(lpstrOut, cchLen, lpstrIn, cchLen - cchEndEllipsis - 1) == 0);
-		if (bRet)
+		if(bRet)
 		{
-		  #ifndef _UNICODE
-			if (_IsDBCSTrailByte(lpstrIn, cchLen - cchEndEllipsis))
+#ifndef _UNICODE
+			if(_IsDBCSTrailByte(lpstrIn, cchLen - cchEndEllipsis))
 				lpstrOut[cchLen - cchEndEllipsis - 1] = 0;
-		  #endif // _UNICODE
+#endif // _UNICODE
 			SecureHelper::strcat_x(lpstrOut, cchLen, szEllipsis);
 		}
 		return bRet;
 	}
 
 	// handle just ellipsis
-	if ((cchLen < (cchMidEllipsis + cchEndEllipsis)))
+	if((cchLen < (cchMidEllipsis + cchEndEllipsis)))
 	{
-		for (int i = 0; i < cchLen - 1; i++)
+		for(int i = 0; i < cchLen - 1; i++)
 			lpstrOut[i] = ((i + 1) == cchMidEllipsis) ? chSlash : _T('.');
 		lpstrOut[cchLen - 1] = 0;
 		return true;
@@ -3987,41 +3771,41 @@ inline bool AtlCompactPath(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen)
 	// calc how much we have to copy
 	int cchToCopy = cchLen - (cchMidEllipsis + cchFileName) - 1;
 
-	if (cchToCopy < 0)
+	if(cchToCopy < 0)
 		cchToCopy = 0;
 
-  #ifndef _UNICODE
-	if (cchToCopy > 0 && _IsDBCSTrailByte(lpstrIn, cchToCopy))
+#ifndef _UNICODE
+	if(cchToCopy > 0 && _IsDBCSTrailByte(lpstrIn, cchToCopy))
 		cchToCopy--;
-  #endif // _UNICODE
+#endif // _UNICODE
 
 	bool bRet = (SecureHelper::strncpy_x(lpstrOut, cchLen, lpstrIn, cchToCopy) == 0);
-	if (!bRet)
+	if(!bRet)
 		return false;
 
 	// add ellipsis
 	SecureHelper::strcat_x(lpstrOut, cchLen, szEllipsis);
-	if (!bRet)
+	if(!bRet)
 		return false;
 	TCHAR szSlash[2] = { chSlash, 0 };
 	SecureHelper::strcat_x(lpstrOut, cchLen, szSlash);
-	if (!bRet)
+	if(!bRet)
 		return false;
 
 	// add filename (and ellipsis, if needed)
-	if (cchLen > (cchMidEllipsis + cchFileName))
+	if(cchLen > (cchMidEllipsis + cchFileName))
 	{
 		SecureHelper::strcat_x(lpstrOut, cchLen, lpstrFileName);
 	}
 	else
 	{
 		cchToCopy = cchLen - cchMidEllipsis - cchEndEllipsis - 1;
-	  #ifndef _UNICODE
-		if (cchToCopy > 0 && _IsDBCSTrailByte(lpstrFileName, cchToCopy))
+#ifndef _UNICODE
+		if(cchToCopy > 0 && _IsDBCSTrailByte(lpstrFileName, cchToCopy))
 			cchToCopy--;
-	  #endif // _UNICODE
+#endif // _UNICODE
 		bRet = (SecureHelper::strncpy_x(&lpstrOut[cchMidEllipsis], cchLen - cchMidEllipsis, lpstrFileName, cchToCopy) == 0);
-		if (bRet)
+		if(bRet)
 			SecureHelper::strcat_x(lpstrOut, cchLen, szEllipsis);
 	}
 

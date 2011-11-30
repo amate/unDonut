@@ -136,6 +136,7 @@
 #define IDD_PROPPAGE_USERDEFINEDCSS     321
 #define IDD_PROPPAGE_USERDEFINEDCSS1    322
 #define IDD_PROPPAGE_USERDEFINEDJAVASCRIPT 322
+#define IDD_SCRIPTDETAIL                323
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -270,6 +271,8 @@
 #define IDC_CHECK_MAIN_CSTM_MENU        1119
 #define IDC_EDIT1                       1120
 #define IDC_CHECK_MAIN_DEL_CASH         1121
+#define IDC_EDIT3                       1121
+#define IDC_EDIT_EXCLUDE                1121
 #define IDC_RAND_CHK                    1122
 #define IDC_CHECK_MAIN_DEL_COOKIE       1123
 #define IDC_EDIT_RAND_MIN               1124
@@ -568,6 +571,13 @@
 #define IDC_COMBO_JS                    1427
 #define IDC_CHECK2                      1428
 #define IDC_CHECK_EXTERNALNEWTABACTIVE  1428
+#define IDC_STATIC_SCRIPTPOSITION       1429
+#define IDC_SYSLINK_HP                  1430
+#define IDC_STATIC_DISCRIPTION          1431
+#define IDC_STATIC_FILENAME             1432
+#define IDC_BUTTON_RELOAD               1433
+#define IDC_BUTTON_INSTALL              1434
+#define IDC_EDIT_INCLUDE                1435
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -921,9 +931,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        322
+#define _APS_NEXT_RESOURCE_VALUE        324
 #define _APS_NEXT_COMMAND_VALUE         33196
-#define _APS_NEXT_CONTROL_VALUE         1429
+#define _APS_NEXT_CONTROL_VALUE         1436
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

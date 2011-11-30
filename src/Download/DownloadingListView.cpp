@@ -40,6 +40,9 @@ public:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	{
 		GetDlgItem(IDC_EDIT).SetWindowText(m_strOldFileName);
+		WTL::CLogFont	lf;
+		lf.SetMenuFont();
+		GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
 		return 0;
 	}
 
@@ -414,7 +417,7 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 					::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf KB ダウンロード"), dKByte);
 					strDownloaded.ReleaseBuffer();
 				}
-				item.strText.Format(_T("残り ??? 時間 ― %s ― %s"), strDownloaded, item.strDomain);
+				item.strText.Format(_T("残り ??? 時間 ― %s%s ― %s"), strDownloaded, strTransferRate, item.strDomain);
 			} else {
 				if (dKbTransferRate > 0) {
 					int nTotalSecondTime = static_cast<int>((nRestByte / 1000) / dKbTransferRate);	// 残り時間(秒)

@@ -3,17 +3,16 @@
 //
 // This file is a part of the Windows Template Library.
 // The use and distribution terms for this software are covered by the
-// Microsoft Permissive License (Ms-PL) which can be found in the file
-// Ms-PL.txt at the root of this distribution.
+// Common Public License 1.0 (http://opensource.org/licenses/cpl1.0.php)
+// which can be found in the file CPL.TXT at the root of this distribution.
+// By using this software in any fashion, you are agreeing to be bound by
+// the terms of this license. You must not remove this notice, or
+// any other, from this software.
 
 #ifndef __ATLDLGS_H__
 #define __ATLDLGS_H__
 
 #pragma once
-
-#ifndef __cplusplus
-	#error ATL requires C++ compilation (use a .cpp suffix)
-#endif
 
 #ifndef __ATLAPP_H__
 	#error atldlgs.h requires atlapp.h to be included first
@@ -127,60 +126,60 @@ template <class T>
 class ATL_NO_VTABLE CFileDialogImpl : public ATL::CDialogImplBase
 {
 public:
- #if defined(__AYGSHELL_H__) && (_WIN32_WCE >= 0x0501)
-	OPENFILENAMEEX 	m_ofn;
- #else
-	OPENFILENAME 	m_ofn;
- #endif
-	BOOL 			m_bOpenFileDialog;            // TRUE for file open, FALSE for file save
-	TCHAR 			m_szFileTitle[_MAX_FNAME];   // contains file title after return
-	TCHAR 			m_szFileName[_MAX_PATH];     // contains full path name after return
+#if defined(__AYGSHELL_H__) && (_WIN32_WCE >= 0x0501)
+	OPENFILENAMEEX m_ofn;
+#else
+	OPENFILENAME m_ofn;
+#endif
+	BOOL m_bOpenFileDialog;            // TRUE for file open, FALSE for file save
+	TCHAR m_szFileTitle[_MAX_FNAME];   // contains file title after return
+	TCHAR m_szFileName[_MAX_PATH];     // contains full path name after return
 
 	CFileDialogImpl(BOOL bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
-			LPCTSTR		lpszDefExt	= NULL,
-			LPCTSTR		lpszFileName= NULL,
-			DWORD		dwFlags		= OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-			LPCTSTR		lpszFilter	= NULL,
-			HWND		hWndParent	= NULL)
+			LPCTSTR lpszDefExt = NULL,
+			LPCTSTR lpszFileName = NULL,
+			DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+			LPCTSTR lpszFilter = NULL,
+			HWND hWndParent = NULL)
 	{
 		memset(&m_ofn, 0, sizeof(m_ofn)); // initialize structure to 0/NULL
-		m_szFileName[0] 	= _T('\0');
-		m_szFileTitle[0] 	= _T('\0');
+		m_szFileName[0] = _T('\0');
+		m_szFileTitle[0] = _T('\0');
 
 		m_bOpenFileDialog = bOpenFileDialog;
 
 #if defined(__AYGSHELL_H__) && (_WIN32_WCE >= 0x0501)
-		m_ofn.lStructSize 	= bOpenFileDialog ? sizeof(m_ofn) : sizeof(OPENFILENAME);
-	  #else
-		m_ofn.lStructSize 	= sizeof(m_ofn);
-	  #endif
+		m_ofn.lStructSize = bOpenFileDialog ? sizeof(m_ofn) : sizeof(OPENFILENAME);
+#else
+		m_ofn.lStructSize = sizeof(m_ofn);
+#endif
 
-	  #if (_WIN32_WINNT >= 0x0500)
+#if (_WIN32_WINNT >= 0x0500)
 		// adjust struct size if running on older version of Windows
-		if (AtlIsOldWindows())
+		if(AtlIsOldWindows())
 		{
 			ATLASSERT(sizeof(m_ofn) > OPENFILENAME_SIZE_VERSION_400);   // must be
 			m_ofn.lStructSize = OPENFILENAME_SIZE_VERSION_400;
 		}
-	  #endif // (_WIN32_WINNT >= 0x0500)
-		m_ofn.lpstrFile 	 = m_szFileName;
-		m_ofn.nMaxFile 		 = _MAX_PATH;
-		m_ofn.lpstrDefExt 	 = lpszDefExt;
+#endif // (_WIN32_WINNT >= 0x0500)
+		m_ofn.lpstrFile = m_szFileName;
+		m_ofn.nMaxFile = _MAX_PATH;
+		m_ofn.lpstrDefExt = lpszDefExt;
 		m_ofn.lpstrFileTitle = (LPTSTR)m_szFileTitle;
-		m_ofn.nMaxFileTitle  = _MAX_FNAME;
-	  #ifndef _WIN32_WCE
-		m_ofn.Flags 		 = dwFlags | OFN_EXPLORER | OFN_ENABLEHOOK | OFN_ENABLESIZING;
-	  #else // CE specific
-		m_ofn.Flags 		 = dwFlags | OFN_EXPLORER | OFN_ENABLEHOOK;
-	  #endif // !_WIN32_WCE
-		m_ofn.lpstrFilter 	 = lpszFilter;
-		m_ofn.hInstance 	 = ModuleHelper::GetResourceInstance();
-		m_ofn.lpfnHook 		 = (LPOFNHOOKPROC)T::StartDialogProc;
-		m_ofn.hwndOwner 	 = hWndParent;
+		m_ofn.nMaxFileTitle = _MAX_FNAME;
+#ifndef _WIN32_WCE
+		m_ofn.Flags = dwFlags | OFN_EXPLORER | OFN_ENABLEHOOK | OFN_ENABLESIZING;
+#else // CE specific
+		m_ofn.Flags = dwFlags | OFN_EXPLORER | OFN_ENABLEHOOK;
+#endif // !_WIN32_WCE
+		m_ofn.lpstrFilter = lpszFilter;
+		m_ofn.hInstance = ModuleHelper::GetResourceInstance();
+		m_ofn.lpfnHook = (LPOFNHOOKPROC)T::StartDialogProc;
+		m_ofn.hwndOwner = hWndParent;
 
 		// setup initial file name
-		if (lpszFileName != NULL)
-			SecureHelper::strncpy_x(m_szFileName, _countof(m_szFileName), lpszFileName, _TRUNCATE);
+		if(lpszFileName != NULL)
+		SecureHelper::strncpy_x(m_szFileName, _countof(m_szFileName), lpszFileName, _TRUNCATE);
 	}
 
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
@@ -190,30 +189,30 @@ public:
 
 		ATLASSERT((m_ofn.Flags & OFN_EXPLORER) != 0);
 
-		if (m_ofn.hwndOwner == NULL)   // set only if not specified before
+		if(m_ofn.hwndOwner == NULL)   // set only if not specified before
 			m_ofn.hwndOwner = hWndParent;
 
 		ATLASSERT(m_hWnd == NULL);
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, (ATL::CDialogImplBase*)this);
 
-		BOOL 	bRet;
-		if (m_bOpenFileDialog)
-	  #if defined(__AYGSHELL_H__) && (_WIN32_WCE >= 0x0501)
+		BOOL bRet;
+		if(m_bOpenFileDialog)
+#if defined(__AYGSHELL_H__) && (_WIN32_WCE >= 0x0501)
 			bRet = ::GetOpenFileNameEx(&m_ofn);
 		else
 			bRet = ::GetSaveFileName((LPOPENFILENAME)&m_ofn);
-	  #else
+#else
 			bRet = ::GetOpenFileName(&m_ofn);
 		else
 			bRet = ::GetSaveFileName(&m_ofn);
-	  #endif
+#endif
 
-		m_hWnd 		= NULL;
+		m_hWnd = NULL;
 
 		return bRet ? IDOK : IDCANCEL;
 	}
 
- // Attributes
+// Attributes
 	ATL::CWindow GetFileDialogWindow() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -270,10 +269,10 @@ public:
 
 	BOOL GetReadOnlyPref() const	// return TRUE if readonly checked
 	{
-		return ((m_ofn.Flags & OFN_READONLY) != 0);	//+++ ? TRUE : FALSE;
+		return ((m_ofn.Flags & OFN_READONLY) != 0) ? TRUE : FALSE;
 	}
 
- // Operations
+// Operations
 	void HideControl(int nCtrlID)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -282,7 +281,7 @@ public:
 		GetFileDialogWindow().SendMessage(CDM_HIDECONTROL, nCtrlID);
 	}
 
- // Special override for common dialogs
+// Special override for common dialogs
 	BOOL EndDialog(INT_PTR /*nRetCode*/ = 0)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -290,31 +289,31 @@ public:
 		return TRUE;
 	}
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CFileDialogImpl)
-		NOTIFY_CODE_HANDLER(CDN_FILEOK			, _OnFileOK			)
-		NOTIFY_CODE_HANDLER(CDN_FOLDERCHANGE	, _OnFolderChange	)
-		NOTIFY_CODE_HANDLER(CDN_HELP			, _OnHelp			)
-		NOTIFY_CODE_HANDLER(CDN_INITDONE		, _OnInitDone		)
-		NOTIFY_CODE_HANDLER(CDN_SELCHANGE		, _OnSelChange		)
-		NOTIFY_CODE_HANDLER(CDN_SHAREVIOLATION	, _OnShareViolation	)
-		NOTIFY_CODE_HANDLER(CDN_TYPECHANGE		, _OnTypeChange		)
-	  #ifndef _WIN32_WCE
-		NOTIFY_CODE_HANDLER(CDN_INCLUDEITEM		, _OnIncludeItem	)
-	  #endif // !_WIN32_WCE
+		NOTIFY_CODE_HANDLER(CDN_FILEOK, _OnFileOK)
+		NOTIFY_CODE_HANDLER(CDN_FOLDERCHANGE, _OnFolderChange)
+		NOTIFY_CODE_HANDLER(CDN_HELP, _OnHelp)
+		NOTIFY_CODE_HANDLER(CDN_INITDONE, _OnInitDone)
+		NOTIFY_CODE_HANDLER(CDN_SELCHANGE, _OnSelChange)
+		NOTIFY_CODE_HANDLER(CDN_SHAREVIOLATION, _OnShareViolation)
+		NOTIFY_CODE_HANDLER(CDN_TYPECHANGE, _OnTypeChange)
+#ifndef _WIN32_WCE
+		NOTIFY_CODE_HANDLER(CDN_INCLUDEITEM, _OnIncludeItem)
+#endif // !_WIN32_WCE
 	END_MSG_MAP()
 
 	LRESULT _OnFileOK(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		return !pT->OnFileOK((LPOFNOTIFY)pnmh);
 	}
 
 	LRESULT _OnFolderChange(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->OnFolderChange((LPOFNOTIFY)pnmh);
 		return 0;
 	}
@@ -322,7 +321,7 @@ public:
 	LRESULT _OnHelp(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->OnHelp((LPOFNOTIFY)pnmh);
 		return 0;
 	}
@@ -330,7 +329,7 @@ public:
 	LRESULT _OnInitDone(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->OnInitDone((LPOFNOTIFY)pnmh);
 		return 0;
 	}
@@ -338,7 +337,7 @@ public:
 	LRESULT _OnSelChange(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->OnSelChange((LPOFNOTIFY)pnmh);
 		return 0;
 	}
@@ -346,28 +345,28 @@ public:
 	LRESULT _OnShareViolation(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		return pT->OnShareViolation((LPOFNOTIFY)pnmh);
 	}
 
 	LRESULT _OnTypeChange(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->OnTypeChange((LPOFNOTIFY)pnmh);
 		return 0;
 	}
 
-  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	LRESULT _OnIncludeItem(int /*idCtrl*/, LPNMHDR pnmh, BOOL& /*bHandled*/)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		return pT->OnIncludeItem((LPOFNOTIFYEX)pnmh);
 	}
-  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
- // Overrideables
+// Overrideables
 	BOOL OnFileOK(LPOFNOTIFY /*lpon*/)
 	{
 		return TRUE;
@@ -398,23 +397,23 @@ public:
 	{
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL OnIncludeItem(LPOFNOTIFYEX /*lponex*/)
 	{
 		return TRUE;   // include item
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 };
 
 class CFileDialog : public CFileDialogImpl<CFileDialog>
 {
 public:
-	CFileDialog(BOOL 		bOpenFileDialog, 			// TRUE for FileOpen, FALSE for FileSaveAs
-				LPCTSTR 	lpszDefExt 		= NULL,
-				LPCTSTR 	lpszFileName 	= NULL,
-				DWORD 		dwFlags 		= OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-				LPCTSTR 	lpszFilter 		= NULL,
-				HWND 		hWndParent 		= NULL)
+	CFileDialog(BOOL bOpenFileDialog, // TRUE for FileOpen, FALSE for FileSaveAs
+		LPCTSTR lpszDefExt = NULL,
+		LPCTSTR lpszFileName = NULL,
+		DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		LPCTSTR lpszFilter = NULL,
+		HWND hWndParent = NULL)
 		: CFileDialogImpl<CFileDialog>(bOpenFileDialog, lpszDefExt, lpszFileName, dwFlags, lpszFilter, hWndParent)
 	{ }
 
@@ -427,13 +426,13 @@ class CFileDialogEx : public CFileDialogImpl<CFileDialogEx>
 {
 public:
 	CFileDialogEx( // Supports only FileOpen
-		LPCTSTR 		lpszDefExt 		= NULL,
-		LPCTSTR 		lpszFileName 	= NULL,
-		DWORD 			dwFlags 		= OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-		OFN_EXFLAG 		ExFlags 		= OFN_EXFLAG_THUMBNAILVIEW,
-		OFN_SORTORDER 	dwSortOrder 	= OFN_SORTORDER_AUTO,
-		LPCTSTR 		lpszFilter 		= NULL,
-		HWND 			hWndParent 		= NULL)
+		LPCTSTR lpszDefExt = NULL,
+		LPCTSTR lpszFileName = NULL,
+		DWORD dwFlags = OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		OFN_EXFLAG ExFlags = OFN_EXFLAG_THUMBNAILVIEW,
+		OFN_SORTORDER dwSortOrder = OFN_SORTORDER_AUTO,		
+		LPCTSTR lpszFilter = NULL,
+		HWND hWndParent = NULL)
 		: CFileDialogImpl<CFileDialogEx>(TRUE, lpszDefExt, lpszFileName, dwFlags, lpszFilter, hWndParent)
 	{
 		m_ofn.ExFlags = ExFlags;
@@ -455,7 +454,7 @@ public:
 // (as described in Knowledge Base article 131462). It also expands selected
 // shortcut files to take into account the full path of the target file.
 // Note that this doesn't work on Win9x for the old style dialogs, as well as
-// on NT for non-Unicode builds.
+// on NT for non-Unicode builds. 
 
 #ifndef _WTL_FIXED_OFN_BUFFER_LENGTH
   #define _WTL_FIXED_OFN_BUFFER_LENGTH 0x10000
@@ -465,44 +464,44 @@ template <class T>
 class ATL_NO_VTABLE CMultiFileDialogImpl : public CFileDialogImpl< T >
 {
 public:
-	mutable LPCTSTR 	m_pNextFile;
-  #ifndef _UNICODE
-	bool 				m_bIsNT;
-  #endif
+	mutable LPCTSTR m_pNextFile; 
+#ifndef _UNICODE
+	bool m_bIsNT;
+#endif
 
 	CMultiFileDialogImpl(
-		LPCTSTR 	lpszDefExt 		= NULL,
-		LPCTSTR 	lpszFileName 	= NULL,
-		DWORD 		dwFlags 		= OFN_HIDEREADONLY,
-		LPCTSTR 	lpszFilter 		= NULL,
-		HWND 		hWndParent 		= NULL)
-		: CFileDialogImpl<T>(TRUE, lpszDefExt, lpszFileName, dwFlags, lpszFilter, hWndParent),
+		LPCTSTR lpszDefExt = NULL,
+		LPCTSTR lpszFileName = NULL,
+		DWORD dwFlags = OFN_HIDEREADONLY,
+		LPCTSTR lpszFilter = NULL,
+		HWND hWndParent = NULL)
+		: CFileDialogImpl<T>(TRUE, lpszDefExt, lpszFileName, dwFlags, lpszFilter, hWndParent), 
 		  m_pNextFile(NULL)
 	{
 		m_ofn.Flags |= OFN_ALLOWMULTISELECT;   // Force multiple selection mode
 
-	  #ifndef _UNICODE
-		OSVERSIONINFO 	ovi = { sizeof(ovi) };
+#ifndef _UNICODE
+		OSVERSIONINFO ovi = { sizeof(ovi) };
 		::GetVersionEx(&ovi);
-		m_bIsNT 			= (ovi.dwPlatformId == VER_PLATFORM_WIN32_NT);
+		m_bIsNT = (ovi.dwPlatformId == VER_PLATFORM_WIN32_NT);
 		if (m_bIsNT)
 		{
-			// On NT platforms, GetOpenFileNameA thunks to GetOpenFileNameW and there
+			// On NT platforms, GetOpenFileNameA thunks to GetOpenFileNameW and there 
 			// is absolutely nothing we can do except to start off with a large buffer.
 			ATLVERIFY(ResizeFilenameBuffer(_WTL_FIXED_OFN_BUFFER_LENGTH));
 		}
-	  #endif
+#endif
 	}
 
 	~CMultiFileDialogImpl()
 	{
 		if (m_ofn.lpstrFile != m_szFileName)   // Free the buffer if we allocated it
-			delete[] 	m_ofn.lpstrFile;
+			delete[] m_ofn.lpstrFile;
 	}
 
- // Operations
+// Operations
 	// Get the directory that the files were chosen from.
-	// The function returns the number of characters copied, not including the terminating zero.
+	// The function returns the number of characters copied, not including the terminating zero. 
 	// If the buffer is NULL, the function returns the required size, in characters, including the terminating zero.
 	// If the function fails, the return value is zero.
 	int GetDirectory(LPTSTR pBuffer, int nBufLen) const
@@ -510,17 +509,17 @@ public:
 		if (m_ofn.lpstrFile == NULL)
 			return 0;
 
-		LPCTSTR 	pStr 	= m_ofn.lpstrFile;
-		int 		nLength = lstrlen(pStr);
+		LPCTSTR pStr = m_ofn.lpstrFile;
+		int nLength = lstrlen(pStr);
 		if (pStr[nLength + 1] == 0)
 		{
 			// The OFN buffer contains a single item so extract its path.
-			LPCTSTR pSep 	= _strrchr(pStr, _T('\\'));
+			LPCTSTR pSep = _strrchr(pStr, _T('\\'));
 			if (pSep != NULL)
-				nLength 	= (int)(DWORD_PTR)(pSep - pStr);
+				nLength = (int)(DWORD_PTR)(pSep - pStr);
 		}
 
-		int 	nRet 		= 0;
+		int nRet = 0;
 		if (pBuffer == NULL)   // If the buffer is NULL, return the required length
 		{
 			nRet = nLength + 1;
@@ -534,7 +533,7 @@ public:
 		return nRet;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	bool GetDirectory(_CSTRING_NS::CString& strDir) const
 	{
 		bool bRet = false;
@@ -548,7 +547,7 @@ public:
 
 		return bRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	// Get the first filename as a pointer into the buffer.
 	LPCTSTR GetFirstFileName() const
@@ -556,10 +555,10 @@ public:
 		if (m_ofn.lpstrFile == NULL)
 			return NULL;
 
-		m_pNextFile 	= NULL;   // Reset internal buffer pointer
+		m_pNextFile = NULL;   // Reset internal buffer pointer
 
-		LPCTSTR pStr 	= m_ofn.lpstrFile;
-		int 	nLength = lstrlen(pStr);
+		LPCTSTR pStr = m_ofn.lpstrFile;
+		int nLength = lstrlen(pStr);
 		if (pStr[nLength + 1] != 0)
 		{
 			// Multiple items were selected. The first string is the directory,
@@ -588,7 +587,7 @@ public:
 			return NULL;
 
 		LPCTSTR pStr = m_pNextFile;
-		// Set "m_pNextFile" to point to the next file name, or null if we
+		// Set "m_pNextFile" to point to the next file name, or null if we 
 		// have reached the last file in the list.
 		int nLength = lstrlen(pStr);
 		m_pNextFile = (pStr[nLength + 1] != 0) ? &pStr[nLength + 1] : NULL;
@@ -597,26 +596,26 @@ public:
 	}
 
 	// Get the first filename as a full path.
-	// The function returns the number of characters copied, not including the terminating zero.
+	// The function returns the number of characters copied, not including the terminating zero. 
 	// If the buffer is NULL, the function returns the required size, in characters, including the terminating zero.
 	// If the function fails, the return value is zero.
 	int GetFirstPathName(LPTSTR pBuffer, int nBufLen) const
 	{
-		LPCTSTR pStr 		= GetFirstFileName();
-		int 	nLengthDir 	= GetDirectory(NULL, 0);
-		if ((pStr == NULL) || (nLengthDir == 0))
+		LPCTSTR pStr = GetFirstFileName();
+		int nLengthDir = GetDirectory(NULL, 0);
+		if((pStr == NULL) || (nLengthDir == 0))
 			return 0;
 
 		// Figure out the required length.
 		int nLengthTotal = nLengthDir + lstrlen(pStr);
 
 		int nRet = 0;
-		if (pBuffer == NULL) // If the buffer is NULL, return the required length
+		if(pBuffer == NULL) // If the buffer is NULL, return the required length
 		{
 			nRet = nLengthTotal + 1;
 		}
 		else if (nBufLen > nLengthTotal) // If the buffer is big enough, go ahead and construct the path
-		{
+		{		
 			GetDirectory(pBuffer, nBufLen);
 			SecureHelper::strcat_x(pBuffer, nBufLen, _T("\\"));
 			SecureHelper::strcat_x(pBuffer, nBufLen, pStr);
@@ -626,7 +625,7 @@ public:
 		return nRet;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	bool GetFirstPathName(_CSTRING_NS::CString& strPath) const
 	{
 		bool bRet = false;
@@ -640,10 +639,10 @@ public:
 
 		return bRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
 	// Get the next filename as a full path.
-	// The function returns the number of characters copied, not including the terminating zero.
+	// The function returns the number of characters copied, not including the terminating zero. 
 	// If the buffer is NULL, the function returns the required size, in characters, including the terminating zero.
 	// If the function fails, the return value is zero.
 	// The internal position marker is moved forward only if the function succeeds and the buffer was large enough.
@@ -679,7 +678,7 @@ public:
 				// Calculate the required space.
 				int nLengthTotal = nLengthDir + lstrlen(pStr);
 
-				if (pBuffer == NULL) // If the buffer is NULL, return the required length
+				if(pBuffer == NULL) // If the buffer is NULL, return the required length
 				{
 					nRet = nLengthTotal + 1;
 				}
@@ -696,7 +695,7 @@ public:
 		return nRet;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	bool GetNextPathName(_CSTRING_NS::CString& strPath) const
 	{
 		bool bRet = false;
@@ -710,9 +709,9 @@ public:
 
 		return bRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
- // Implementation
+// Implementation
 	bool ResizeFilenameBuffer(DWORD dwLength)
 	{
 		if (dwLength > m_ofn.nMaxFile)
@@ -720,9 +719,9 @@ public:
 			// Free the old buffer.
 			if (m_ofn.lpstrFile != m_szFileName)
 			{
-				delete[] 	m_ofn.lpstrFile;
-				m_ofn.lpstrFile 	= NULL;
-				m_ofn.nMaxFile 		= 0;
+				delete[] m_ofn.lpstrFile;
+				m_ofn.lpstrFile = NULL;
+				m_ofn.nMaxFile = 0;
 			}
 
 			// Allocate the new buffer.
@@ -730,9 +729,9 @@ public:
 			ATLTRY(lpstrBuff = new TCHAR[dwLength]);
 			if (lpstrBuff != NULL)
 			{
-				m_ofn.lpstrFile 	= lpstrBuff;
-				m_ofn.lpstrFile[0] 	= 0;
-				m_ofn.nMaxFile 		= dwLength;
+				m_ofn.lpstrFile = lpstrBuff;
+				m_ofn.lpstrFile[0] = 0;
+				m_ofn.nMaxFile = dwLength;
 			}
 		}
 
@@ -741,17 +740,17 @@ public:
 
 	void OnSelChange(LPOFNOTIFY /*lpon*/)
 	{
-	  #ifndef _UNICODE
+#ifndef _UNICODE
 		// There is no point resizing the buffer in ANSI builds running on NT.
 		if (m_bIsNT)
 			return;
-	  #endif
+#endif
 
 		// Get the buffer length required to hold the spec.
 		int nLength = GetSpec(NULL, 0);
 		if (nLength <= 1)
 			return; // no files are selected, presumably
-
+		
 		// Add room for the directory, and an extra terminating zero.
 		nLength += GetFolderPath(NULL, 0) + 1;
 
@@ -768,7 +767,7 @@ public:
 		// Get the file spec, which is the text in the edit control.
 		if (GetSpec(m_ofn.lpstrFile, m_ofn.nMaxFile) <= 0)
 			return;
-
+		
 		// Get the ID-list of the current folder.
 		int nBytes = GetFolderIDList(NULL, 0);
 		CTempBuffer<ITEMIDLIST> idlist;
@@ -783,12 +782,12 @@ public:
 		if (FAILED(pDesktop->BindToObject(idlist, NULL, IID_IShellFolder, (void**)&pFolder)))
 			return;
 
-		// Work through the file spec, looking for quoted filenames. If we find a shortcut file, then
+		// Work through the file spec, looking for quoted filenames. If we find a shortcut file, then 
 		// we need to add enough extra buffer space to hold its target path.
-		DWORD 	nExtraChars 	= 0;
-		bool 	bInsideQuotes 	= false;
-		LPCTSTR pAnchor 		= m_ofn.lpstrFile;
-		LPCTSTR pChar 			= m_ofn.lpstrFile;
+		DWORD nExtraChars = 0;
+		bool bInsideQuotes = false;
+		LPCTSTR pAnchor = m_ofn.lpstrFile;
+		LPCTSTR pChar = m_ofn.lpstrFile;
 		for ( ; *pChar; ++pChar)
 		{
 			// Look for quotation marks.
@@ -811,11 +810,11 @@ public:
 
 					// Get the ID-list and attributes of the file.
 					USES_CONVERSION;
-					int 	nFileNameLength  = (int)(DWORD_PTR)(pChar - pAnchor);
-					TCHAR 	szFileName[MAX_PATH];
+					int nFileNameLength = (int)(DWORD_PTR)(pChar - pAnchor);
+					TCHAR szFileName[MAX_PATH];
 					SecureHelper::strncpy_x(szFileName, MAX_PATH, pAnchor, nFileNameLength);
-					LPITEMIDLIST 	pidl 	 = NULL;
-					DWORD 			dwAttrib = SFGAO_LINK;
+					LPITEMIDLIST pidl = NULL;
+					DWORD dwAttrib = SFGAO_LINK;
 					if (SUCCEEDED(pFolder->ParseDisplayName(NULL, NULL, T2W(szFileName), NULL, &pidl, &dwAttrib)))
 					{
 						// Is it a shortcut file?
@@ -829,7 +828,7 @@ public:
 								TCHAR szPath[MAX_PATH];
 								if (SUCCEEDED(pLink->GetPath(szPath, MAX_PATH, NULL, 0)))
 								{
-									// If the target path is longer than the shortcut name, then add on the number
+									// If the target path is longer than the shortcut name, then add on the number 
 									// of extra characters that are required.
 									int nNewLength = lstrlen(szPath);
 									if (nNewLength > nFileNameLength)
@@ -850,12 +849,12 @@ public:
 			ATLVERIFY(ResizeFilenameBuffer(m_ofn.nMaxFile + nExtraChars));
 	}
 
-	// Helper for _ATM_MIN_CRT
+	// Helper for _ATL_MIN_CRT
 	static const TCHAR* _strrchr(const TCHAR* p, TCHAR ch)
 	{
-	  #ifndef _ATL_MIN_CRT
+#ifndef _ATL_MIN_CRT
 		return _tcsrchr(p, ch);
-	  #else // _ATL_MIN_CRT
+#else // _ATL_MIN_CRT
 		const TCHAR* lpsz = NULL;
 		while (*p != 0)
 		{
@@ -864,7 +863,7 @@ public:
 			p = ::CharNext(p);
 		}
 		return lpsz;
-	  #endif // _ATL_MIN_CRT
+#endif // _ATL_MIN_CRT
 	}
 };
 
@@ -872,11 +871,11 @@ class CMultiFileDialog : public CMultiFileDialogImpl<CMultiFileDialog>
 {
 public:
 	CMultiFileDialog(
-		LPCTSTR 	lpszDefExt 		= NULL,
-		LPCTSTR 	lpszFileName 	= NULL,
-		DWORD 		dwFlags 		= OFN_HIDEREADONLY,
-		LPCTSTR 	lpszFilter 		= NULL,
-		HWND 		hWndParent 		= NULL)
+		LPCTSTR lpszDefExt = NULL,
+		LPCTSTR lpszFileName = NULL,
+		DWORD dwFlags = OFN_HIDEREADONLY,
+		LPCTSTR lpszFilter = NULL,
+		HWND hWndParent = NULL)
 		: CMultiFileDialogImpl<CMultiFileDialog>(lpszDefExt, lpszFileName, dwFlags, lpszFilter, hWndParent)
 	{ }
 
@@ -908,22 +907,22 @@ public:
 // Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
-		INT_PTR 	nRet = -1;
+		INT_PTR nRet = -1;
 
-		T* 	pT = static_cast<T*>(this);
-		if (pT->m_spFileDlg == NULL)
+		T* pT = static_cast<T*>(this);
+		if(pT->m_spFileDlg == NULL)
 		{
 			ATLASSERT(FALSE);
 			return nRet;
 		}
 
-		DWORD 	dwCookie = 0;
+		DWORD dwCookie = 0;
 		pT->_Advise(dwCookie);
 
 		HRESULT hRet = pT->m_spFileDlg->Show(hWndParent);
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			nRet = IDOK;
-		else if (hRet == HRESULT_FROM_WIN32(ERROR_CANCELLED))
+		else if(hRet == HRESULT_FROM_WIN32(ERROR_CANCELLED))
 			nRet = IDCANCEL;
 		else
 			ATLASSERT(FALSE);   // error
@@ -935,20 +934,20 @@ public:
 
 	bool IsNull() const
 	{
-		const T* 	pT = static_cast<const T*>(this);
+		const T* pT = static_cast<const T*>(this);
 		return (pT->m_spFileDlg == NULL);
 	}
 
- // Operations - get file path after dialog returns
+// Operations - get file path after dialog returns
 	HRESULT GetFilePath(LPWSTR lpstrFilePath, int cchLength)
 	{
-		T* 			pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 
-		ATL::CComPtr<IShellItem> 	spItem;
-		HRESULT		hRet= pT->m_spFileDlg->GetResult(&spItem);
+		ATL::CComPtr<IShellItem> spItem;
+		HRESULT hRet = pT->m_spFileDlg->GetResult(&spItem);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			hRet = GetFileNameFromShellItem(spItem, SIGDN_FILESYSPATH, lpstrFilePath, cchLength);
 
 		return hRet;
@@ -956,28 +955,28 @@ public:
 
 	HRESULT GetFileTitle(LPWSTR lpstrFileTitle, int cchLength)
 	{
-		T* 		  pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 
-		ATL::CComPtr<IShellItem> 	spItem;
-		HRESULT   hRet 	= pT->m_spFileDlg->GetResult(&spItem);
+		ATL::CComPtr<IShellItem> spItem;
+		HRESULT hRet = pT->m_spFileDlg->GetResult(&spItem);
 
-		if (SUCCEEDED(hRet))
-			hRet 	= GetFileNameFromShellItem(spItem, SIGDN_NORMALDISPLAY, lpstrFileTitle, cchLength);
+		if(SUCCEEDED(hRet))
+			hRet = GetFileNameFromShellItem(spItem, SIGDN_NORMALDISPLAY, lpstrFileTitle, cchLength);
 
 		return hRet;
 	}
 
-  #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	HRESULT GetFilePath(_CSTRING_NS::CString& strFilePath)
 	{
-		T* 	pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 
 		ATL::CComPtr<IShellItem> spItem;
-		HRESULT 	hRet = pT->m_spFileDlg->GetResult(&spItem);
+		HRESULT hRet = pT->m_spFileDlg->GetResult(&spItem);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			hRet = GetFileNameFromShellItem(spItem, SIGDN_FILESYSPATH, strFilePath);
 
 		return hRet;
@@ -985,30 +984,30 @@ public:
 
 	HRESULT GetFileTitle(_CSTRING_NS::CString& strFileTitle)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 
 		ATL::CComPtr<IShellItem> spItem;
-		HRESULT 	hRet = pT->m_spFileDlg->GetResult(&spItem);
+		HRESULT hRet = pT->m_spFileDlg->GetResult(&spItem);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			hRet = GetFileNameFromShellItem(spItem, SIGDN_NORMALDISPLAY, strFileTitle);
 
 		return hRet;
 	}
-  #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
- // Helpers for IShellItem
+// Helpers for IShellItem
 	static HRESULT GetFileNameFromShellItem(IShellItem* pShellItem, SIGDN type, LPWSTR lpstr, int cchLength)
 	{
 		ATLASSERT(pShellItem != NULL);
 
-		LPWSTR 		lpstrName 	= NULL;
-		HRESULT 	hRet 		= pShellItem->GetDisplayName(type, &lpstrName);
+		LPWSTR lpstrName = NULL;
+		HRESULT hRet = pShellItem->GetDisplayName(type, &lpstrName);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 		{
-			if (lstrlenW(lpstrName) < cchLength)
+			if(lstrlenW(lpstrName) < cchLength)
 			{
 				SecureHelper::strcpyW_x(lpstr, cchLength, lpstrName);
 			}
@@ -1024,15 +1023,15 @@ public:
 		return hRet;
 	}
 
- #if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#if defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 	static HRESULT GetFileNameFromShellItem(IShellItem* pShellItem, SIGDN type, _CSTRING_NS::CString& str)
 	{
 		ATLASSERT(pShellItem != NULL);
 
-		LPWSTR 		lpstrName 	= NULL;
-		HRESULT 	hRet 		= pShellItem->GetDisplayName(type, &lpstrName);
+		LPWSTR lpstrName = NULL;
+		HRESULT hRet = pShellItem->GetDisplayName(type, &lpstrName);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 		{
 			str = lpstrName;
 			::CoTaskMemFree(lpstrName);
@@ -1040,20 +1039,20 @@ public:
 
 		return hRet;
 	}
- #endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
+#endif // defined(_WTL_USE_CSTRING) || defined(__ATLSTR_H__)
 
- // Implementation
+// Implementation
 	void _Advise(DWORD& dwCookie)
 	{
-		T* 		  pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
-		HRESULT   hRet 	= pT->m_spFileDlg->Advise((IFileDialogEvents*)this, &dwCookie);
+		HRESULT hRet = pT->m_spFileDlg->Advise((IFileDialogEvents*)this, &dwCookie);
 		ATLVERIFY(SUCCEEDED(hRet));
 	}
 
 	void _Unadvise(DWORD dwCookie)
 	{
-		T* 		pT 	 = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 		HRESULT hRet = pT->m_spFileDlg->Unadvise(dwCookie);
 		ATLVERIFY(SUCCEEDED(hRet));
@@ -1061,41 +1060,41 @@ public:
 
 	void _Init(LPCWSTR lpszFileName, DWORD dwOptions, LPCWSTR lpszDefExt, const COMDLG_FILTERSPEC* arrFilterSpec, UINT uFilterSpecCount)
 	{
-		T* 		pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg != NULL);
 
 		HRESULT hRet = E_FAIL;
 
-		if (lpszFileName != NULL)
+		if(lpszFileName != NULL)
 		{
 			hRet = pT->m_spFileDlg->SetFileName(lpszFileName);
 			ATLASSERT(SUCCEEDED(hRet));
 		}
 
-		hRet 	= pT->m_spFileDlg->SetOptions(dwOptions);
+		hRet = pT->m_spFileDlg->SetOptions(dwOptions);
 		ATLASSERT(SUCCEEDED(hRet));
 
-		if (lpszDefExt != NULL)
+		if(lpszDefExt != NULL)
 		{
 			hRet = pT->m_spFileDlg->SetDefaultExtension(lpszDefExt);
 			ATLASSERT(SUCCEEDED(hRet));
 		}
 
-		if (arrFilterSpec != NULL && uFilterSpecCount != 0U)
+		if(arrFilterSpec != NULL && uFilterSpecCount != 0U)
 		{
 			hRet = pT->m_spFileDlg->SetFileTypes(uFilterSpecCount, arrFilterSpec);
 			ATLASSERT(SUCCEEDED(hRet));
 		}
 	}
 
- // Implementation - IUnknown interface
+// Implementation - IUnknown interface
 	STDMETHOD(QueryInterface)(REFIID riid, void** ppvObject)
 	{
-		if (ppvObject == NULL)
+		if(ppvObject == NULL)
 			return E_POINTER;
 
-		T* 	pT = static_cast<T*>(this);
-		if (IsEqualGUID(riid, IID_IUnknown) || IsEqualGUID(riid, IID_IFileDialogEvents))
+		T* pT = static_cast<T*>(this);
+		if(IsEqualGUID(riid, IID_IUnknown) || IsEqualGUID(riid, IID_IFileDialogEvents))
 		{
 			*ppvObject = (IFileDialogEvents*)pT;
 			// AddRef() not needed
@@ -1115,10 +1114,10 @@ public:
 		return 1;
 	}
 
- // Implementation - IFileDialogEvents interface
+// Implementation - IFileDialogEvents interface
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnFileOk(IFileDialog* pfd)
 	{
-		T* 	pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnFileOk();
@@ -1126,7 +1125,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnFolderChanging(IFileDialog* pfd, IShellItem* psiFolder)
 	{
-		T* 	pT 	= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnFolderChanging(psiFolder);
@@ -1134,7 +1133,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnFolderChange(IFileDialog* pfd)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnFolderChange();
@@ -1142,7 +1141,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnSelectionChange(IFileDialog* pfd)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnSelectionChange();
@@ -1150,7 +1149,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnShareViolation(IFileDialog* pfd, IShellItem* psi, FDE_SHAREVIOLATION_RESPONSE* pResponse)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnShareViolation(psi, pResponse);
@@ -1158,7 +1157,7 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnTypeChange(IFileDialog* pfd)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnTypeChange();
@@ -1166,13 +1165,13 @@ public:
 
 	virtual HRESULT STDMETHODCALLTYPE IFileDialogEvents::OnOverwrite(IFileDialog* pfd, IShellItem* psi, FDE_OVERWRITE_RESPONSE* pResponse)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_spFileDlg.IsEqualObject(pfd));
 		pfd;   // avoid level 4 warning
 		return pT->OnOverwrite(psi, pResponse);
 	}
 
- // Overrideables - Event handlers
+// Overrideables - Event handlers
 	HRESULT OnFileOk()
 	{
 		return E_NOTIMPL;
@@ -1217,17 +1216,17 @@ template <class T>
 class ATL_NO_VTABLE CShellFileOpenDialogImpl : public CShellFileDialogImpl< T >
 {
 public:
-	ATL::CComPtr<IFileOpenDialog> 	m_spFileDlg;
+	ATL::CComPtr<IFileOpenDialog> m_spFileDlg;
 
-	CShellFileOpenDialogImpl(LPCWSTR 				  lpszFileName 	   = NULL,
-	                         DWORD 					  dwOptions 	   = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST,
-	                         LPCWSTR 				  lpszDefExt 	   = NULL,
-	                         const COMDLG_FILTERSPEC* arrFilterSpec    = NULL,
-	                         UINT 					  uFilterSpecCount = 0U)
+	CShellFileOpenDialogImpl(LPCWSTR lpszFileName = NULL, 
+	                         DWORD dwOptions = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST, 
+	                         LPCWSTR lpszDefExt = NULL, 
+	                         const COMDLG_FILTERSPEC* arrFilterSpec = NULL, 
+	                         UINT uFilterSpecCount = 0U)
 	{
 		HRESULT hRet = m_spFileDlg.CoCreateInstance(CLSID_FileOpenDialog);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			_Init(lpszFileName, dwOptions, lpszDefExt, arrFilterSpec, uFilterSpecCount);
 	}
 
@@ -1244,14 +1243,14 @@ public:
 class CShellFileOpenDialog : public CShellFileOpenDialogImpl<CShellFileOpenDialog>
 {
 public:
-	CShellFileOpenDialog(LPCWSTR lpszFileName = NULL,
-	                     DWORD dwOptions = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST,
-	                     LPCWSTR lpszDefExt = NULL,
-	                     const COMDLG_FILTERSPEC* arrFilterSpec = NULL,
+	CShellFileOpenDialog(LPCWSTR lpszFileName = NULL, 
+	                     DWORD dwOptions = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_FILEMUSTEXIST, 
+	                     LPCWSTR lpszDefExt = NULL, 
+	                     const COMDLG_FILTERSPEC* arrFilterSpec = NULL, 
 	                     UINT uFilterSpecCount = 0U) : CShellFileOpenDialogImpl<CShellFileOpenDialog>(lpszFileName, dwOptions, lpszDefExt, arrFilterSpec, uFilterSpecCount)
 	{ }
 
- // Implementation (remove _Advise/_Unadvise code using template magic)
+// Implementation (remove _Advise/_Unadvise code using template magic)
 	void _Advise(DWORD& /*dwCookie*/)
 	{ }
 
@@ -1269,15 +1268,15 @@ class ATL_NO_VTABLE CShellFileSaveDialogImpl : public CShellFileDialogImpl< T >
 public:
 	ATL::CComPtr<IFileSaveDialog> m_spFileDlg;
 
-	CShellFileSaveDialogImpl(LPCWSTR 	lpszFileName 				= NULL,
-	                         DWORD 		dwOptions 					= FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT,
-	                         LPCWSTR 	lpszDefExt 					= NULL,
-	                         const COMDLG_FILTERSPEC* arrFilterSpec = NULL,
-	                         UINT 		uFilterSpecCount 			= 0U)
+	CShellFileSaveDialogImpl(LPCWSTR lpszFileName = NULL, 
+	                         DWORD dwOptions = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT, 
+	                         LPCWSTR lpszDefExt = NULL, 
+	                         const COMDLG_FILTERSPEC* arrFilterSpec = NULL, 
+	                         UINT uFilterSpecCount = 0U)
 	{
 		HRESULT hRet = m_spFileDlg.CoCreateInstance(CLSID_FileSaveDialog);
 
-		if (SUCCEEDED(hRet))
+		if(SUCCEEDED(hRet))
 			_Init(lpszFileName, dwOptions, lpszDefExt, arrFilterSpec, uFilterSpecCount);
 	}
 
@@ -1294,14 +1293,14 @@ public:
 class CShellFileSaveDialog : public CShellFileSaveDialogImpl<CShellFileSaveDialog>
 {
 public:
-	CShellFileSaveDialog(LPCWSTR 	lpszFileName 				= NULL,
-	                     DWORD 		dwOptions 					= FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT,
-	                     LPCWSTR 	lpszDefExt 					= NULL,
-	                     const COMDLG_FILTERSPEC* arrFilterSpec = NULL,
-	                     UINT 		uFilterSpecCount 			= 0U) : CShellFileSaveDialogImpl<CShellFileSaveDialog>(lpszFileName, dwOptions, lpszDefExt, arrFilterSpec, uFilterSpecCount)
+	CShellFileSaveDialog(LPCWSTR lpszFileName = NULL, 
+	                     DWORD dwOptions = FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT, 
+	                     LPCWSTR lpszDefExt = NULL, 
+	                     const COMDLG_FILTERSPEC* arrFilterSpec = NULL, 
+	                     UINT uFilterSpecCount = 0U) : CShellFileSaveDialogImpl<CShellFileSaveDialog>(lpszFileName, dwOptions, lpszDefExt, arrFilterSpec, uFilterSpecCount)
 	{ }
 
- // Implementation (remove _Advise/_Unadvise code using template magic)
+// Implementation (remove _Advise/_Unadvise code using template magic)
 	void _Advise(DWORD& /*dwCookie*/)
 	{ }
 
@@ -1321,30 +1320,30 @@ template <class T>
 class ATL_NO_VTABLE CFolderDialogImpl
 {
 public:
-	BROWSEINFO 		m_bi;
-	LPCTSTR 		m_lpstrInitialFolder;
-	LPCITEMIDLIST 	m_pidlInitialSelection;
-	bool 			m_bExpandInitialSelection;
-	TCHAR 			m_szFolderDisplayName[MAX_PATH];
-	TCHAR 			m_szFolderPath[MAX_PATH];
-	LPITEMIDLIST 	m_pidlSelected;
-	HWND 			m_hWnd;   // used only in the callback function
+	BROWSEINFO m_bi;
+	LPCTSTR m_lpstrInitialFolder;
+	LPCITEMIDLIST m_pidlInitialSelection;
+	bool m_bExpandInitialSelection;
+	TCHAR m_szFolderDisplayName[MAX_PATH];
+	TCHAR m_szFolderPath[MAX_PATH];
+	LPITEMIDLIST m_pidlSelected;
+	HWND m_hWnd;   // used only in the callback function
 
- // Constructor
-	CFolderDialogImpl(HWND hWndParent = NULL, LPCTSTR lpstrTitle = NULL, UINT uFlags = BIF_RETURNONLYFSDIRS) :
+// Constructor
+	CFolderDialogImpl(HWND hWndParent = NULL, LPCTSTR lpstrTitle = NULL, UINT uFlags = BIF_RETURNONLYFSDIRS) : 
 			m_lpstrInitialFolder(NULL), m_pidlInitialSelection(NULL), m_bExpandInitialSelection(false), m_pidlSelected(NULL), m_hWnd(NULL)
 	{
 		memset(&m_bi, 0, sizeof(m_bi)); // initialize structure to 0/NULL
 
-		m_bi.hwndOwner 		= hWndParent;
-		m_bi.pidlRoot 		= NULL;
+		m_bi.hwndOwner = hWndParent;
+		m_bi.pidlRoot = NULL;
 		m_bi.pszDisplayName = m_szFolderDisplayName;
-		m_bi.lpszTitle 		= lpstrTitle;
-		m_bi.ulFlags 		= uFlags;
-		m_bi.lpfn 			= BrowseCallbackProc;
-		m_bi.lParam 		= (LPARAM)static_cast<T*>(this);
+		m_bi.lpszTitle = lpstrTitle;
+		m_bi.ulFlags = uFlags;
+		m_bi.lpfn = BrowseCallbackProc;
+		m_bi.lParam = (LPARAM)static_cast<T*>(this);
 
-		m_szFolderPath[0] 		 = 0;
+		m_szFolderPath[0] = 0;
 		m_szFolderDisplayName[0] = 0;
 	}
 
@@ -1353,29 +1352,29 @@ public:
 		::CoTaskMemFree(m_pidlSelected);
 	}
 
- // Operations
+// Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
-		if (m_bi.hwndOwner == NULL)   // set only if not specified before
+		if(m_bi.hwndOwner == NULL)   // set only if not specified before
 			m_bi.hwndOwner = hWndParent;
 
 		// Clear out any previous results
-		m_szFolderPath[0] 			= 0;
-		m_szFolderDisplayName[0] 	= 0;
+		m_szFolderPath[0] = 0;
+		m_szFolderDisplayName[0] = 0;
 		::CoTaskMemFree(m_pidlSelected);
 
-		INT_PTR nRet 	= IDCANCEL;
-		m_pidlSelected 	= ::SHBrowseForFolder(&m_bi);
+		INT_PTR nRet = IDCANCEL;
+		m_pidlSelected = ::SHBrowseForFolder(&m_bi);
 
-		if (m_pidlSelected != NULL)
+		if(m_pidlSelected != NULL)
 		{
 			nRet = IDOK;
 
 			// If BIF_RETURNONLYFSDIRS is set, we try to get the filesystem path.
 			// Otherwise, the caller must handle the ID-list directly.
-			if ((m_bi.ulFlags & BIF_RETURNONLYFSDIRS) != 0)
+			if((m_bi.ulFlags & BIF_RETURNONLYFSDIRS) != 0)
 			{
-				if (::SHGetPathFromIDList(m_pidlSelected, m_szFolderPath) == FALSE)
+				if(::SHGetPathFromIDList(m_pidlSelected, m_szFolderPath) == FALSE)
 					nRet = IDCANCEL;
 			}
 		}
@@ -1387,21 +1386,21 @@ public:
 	void SetInitialFolder(LPCTSTR lpstrInitialFolder, bool bExpand = true)
 	{
 		// lpstrInitialFolder may be a file if BIF_BROWSEINCLUDEFILES is specified
-		m_lpstrInitialFolder 		= lpstrInitialFolder;
-		m_bExpandInitialSelection 	= bExpand;
+		m_lpstrInitialFolder = lpstrInitialFolder;
+		m_bExpandInitialSelection = bExpand;
 	}
 
 	void SetInitialSelection(LPCITEMIDLIST pidl, bool bExpand = true)
 	{
-		m_pidlInitialSelection 		= pidl;
-		m_bExpandInitialSelection 	= bExpand;
+		m_pidlInitialSelection = pidl;
+		m_bExpandInitialSelection = bExpand;
 	}
 
 	// Methods to call after DoModal
 	LPITEMIDLIST GetSelectedItem(bool bDetach = false)
 	{
-		LPITEMIDLIST 	pidl 		= m_pidlSelected;
-		if (bDetach)
+		LPITEMIDLIST pidl = m_pidlSelected;
+		if(bDetach)
 			m_pidlSelected = NULL;
 
 		return pidl;
@@ -1409,12 +1408,12 @@ public:
 
 	LPCTSTR GetFolderPath() const
 	{
-		return 	m_szFolderPath;
+		return m_szFolderPath;
 	}
 
 	LPCTSTR GetFolderDisplayName() const
 	{
-		return 	m_szFolderDisplayName;
+		return m_szFolderDisplayName;
 	}
 
 	int GetFolderImageIndex() const
@@ -1422,52 +1421,52 @@ public:
 		return m_bi.iImage;
 	}
 
- // Callback function and overrideables
+// Callback function and overrideables
 	static int CALLBACK BrowseCallbackProc(HWND hWnd, UINT uMsg, LPARAM lParam, LPARAM lpData)
 	{
-	 #ifndef BFFM_VALIDATEFAILED
-  	  #ifdef UNICODE
-		const int 	BFFM_VALIDATEFAILED = 4;
-	  #else
-		const int 	BFFM_VALIDATEFAILED = 3;
-	  #endif
-	 #endif // !BFFM_VALIDATEFAILED
-	 #ifndef BFFM_IUNKNOWN
-		const int 	BFFM_IUNKNOWN 		= 5;
-	 #endif // !BFFM_IUNKNOWN
-	 #ifndef BIF_NEWDIALOGSTYLE
-		const UINT 	BIF_NEWDIALOGSTYLE 	= 0x0040;
-	 #endif // !BIF_NEWDIALOGSTYLE
+#ifndef BFFM_VALIDATEFAILED
+  #ifdef UNICODE
+		const int BFFM_VALIDATEFAILED = 4;
+  #else
+		const int BFFM_VALIDATEFAILED = 3;
+  #endif
+#endif // !BFFM_VALIDATEFAILED
+#ifndef BFFM_IUNKNOWN
+		const int BFFM_IUNKNOWN = 5;
+#endif // !BFFM_IUNKNOWN
+#ifndef BIF_NEWDIALOGSTYLE
+		const UINT BIF_NEWDIALOGSTYLE = 0x0040;
+#endif // !BIF_NEWDIALOGSTYLE
 
-		int 	nRet 	= 0;
-		T* 		pT 		= (T*)lpData;
-		bool 	bClear 	= false;
-		if (pT->m_hWnd == NULL)
+		int nRet = 0;
+		T* pT = (T*)lpData;
+		bool bClear = false;
+		if(pT->m_hWnd == NULL)
 		{
-			pT->m_hWnd 	= hWnd;
-			bClear 		= true;
+			pT->m_hWnd = hWnd;
+			bClear = true;
 		}
 		else
 		{
 			ATLASSERT(pT->m_hWnd == hWnd);
 		}
 
-		switch (uMsg)
+		switch(uMsg)
 		{
 		case BFFM_INITIALIZED:
 			// Set initial selection
 			// Note that m_pidlInitialSelection, if set, takes precedence over m_lpstrInitialFolder
-			if (pT->m_pidlInitialSelection != NULL)
+			if(pT->m_pidlInitialSelection != NULL)
 				pT->SetSelection(pT->m_pidlInitialSelection);
-			else if (pT->m_lpstrInitialFolder != NULL)
+			else if(pT->m_lpstrInitialFolder != NULL)
 				pT->SetSelection(pT->m_lpstrInitialFolder);
 
 			// Expand initial selection if appropriate
-			if (pT->m_bExpandInitialSelection && ((pT->m_bi.ulFlags & BIF_NEWDIALOGSTYLE) != 0))
+			if(pT->m_bExpandInitialSelection && ((pT->m_bi.ulFlags & BIF_NEWDIALOGSTYLE) != 0))
 			{
-				if (pT->m_pidlInitialSelection != NULL)
+				if(pT->m_pidlInitialSelection != NULL)
 					pT->SetExpanded(pT->m_pidlInitialSelection);
-				else if (pT->m_lpstrInitialFolder != NULL)
+				else if(pT->m_lpstrInitialFolder != NULL)
 					pT->SetExpanded(pT->m_lpstrInitialFolder);
 			}
 			pT->OnInitialized();
@@ -1486,7 +1485,7 @@ public:
 			break;
 		}
 
-		if (bClear)
+		if(bClear)
 			pT->m_hWnd = NULL;
 		return nRet;
 	}
@@ -1535,29 +1534,29 @@ public:
 
 	void SetOKText(LPCTSTR lpstrOKText)
 	{
-	  #ifndef BFFM_SETOKTEXT
+#ifndef BFFM_SETOKTEXT
 		const UINT BFFM_SETOKTEXT = WM_USER + 105;
-	  #endif
+#endif
 		ATLASSERT(m_hWnd != NULL);
 		USES_CONVERSION;
-		LPCWSTR 	lpstr = T2CW(lpstrOKText);
+		LPCWSTR lpstr = T2CW(lpstrOKText);
 		::SendMessage(m_hWnd, BFFM_SETOKTEXT, 0, (LPARAM)lpstr);
 	}
 
 	void SetExpanded(LPCITEMIDLIST pItemIDList)
 	{
-	  #ifndef BFFM_SETEXPANDED
+#ifndef BFFM_SETEXPANDED
 		const UINT BFFM_SETEXPANDED = WM_USER + 106;
-	  #endif
+#endif
 		ATLASSERT(m_hWnd != NULL);
 		::SendMessage(m_hWnd, BFFM_SETEXPANDED, FALSE, (LPARAM)pItemIDList);
 	}
 
 	void SetExpanded(LPCTSTR lpstrFolderPath)
 	{
-	  #ifndef BFFM_SETEXPANDED
+#ifndef BFFM_SETEXPANDED
 		const UINT BFFM_SETEXPANDED = WM_USER + 106;
-	  #endif
+#endif
 		ATLASSERT(m_hWnd != NULL);
 		USES_CONVERSION;
 		LPCWSTR lpstr = T2CW(lpstrFolderPath);
@@ -1584,26 +1583,26 @@ class ATL_NO_VTABLE CCommonDialogImplBase : public ATL::CWindowImplBase
 public:
 	static UINT_PTR APIENTRY HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		if (uMsg != WM_INITDIALOG)
+		if(uMsg != WM_INITDIALOG)
 			return 0;
 		CCommonDialogImplBase* pT = (CCommonDialogImplBase*)ModuleHelper::ExtractCreateWndData();
 		ATLASSERT(pT != NULL);
 		ATLASSERT(pT->m_hWnd == NULL);
 		ATLASSERT(::IsWindow(hWnd));
 		// subclass dialog's window
-		if (!pT->SubclassWindow(hWnd))
+		if(!pT->SubclassWindow(hWnd))
 		{
 			ATLTRACE2(atlTraceUI, 0, _T("Subclassing a common dialog failed\n"));
 			return 0;
 		}
 		// check message map for WM_INITDIALOG handler
 		LRESULT lRes = 0;
-		if (pT->ProcessWindowMessage(pT->m_hWnd, uMsg, wParam, lParam, lRes, 0) == FALSE)
+		if(pT->ProcessWindowMessage(pT->m_hWnd, uMsg, wParam, lParam, lRes, 0) == FALSE)
 			return 0;
 		return lRes;
 	}
 
- // Special override for common dialogs
+// Special override for common dialogs
 	BOOL EndDialog(INT_PTR /*nRetCode*/ = 0)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -1611,7 +1610,7 @@ public:
 		return TRUE;
 	}
 
- // Implementation - try to override these, to prevent errors
+// Implementation - try to override these, to prevent errors
 	HWND Create(HWND, ATL::_U_RECT, LPCTSTR, DWORD, DWORD, ATL::_U_MENUorID, ATOM, LPVOID)
 	{
 		ATLASSERT(FALSE);   // should not be called
@@ -1641,58 +1640,58 @@ public:
 	TCHAR m_szStyleName[_cchStyleName];  // contains style name after return
 	LOGFONT m_lf;                        // default LOGFONT to store the info
 
- // Constructors
-	CFontDialogImpl(LPLOGFONT 	lplfInitial = NULL,
-					DWORD 		dwFlags 	= CF_EFFECTS | CF_SCREENFONTS,
-					HDC			hDCPrinter 	= NULL,
-					HWND 		hWndParent 	= NULL)
+// Constructors
+	CFontDialogImpl(LPLOGFONT lplfInitial = NULL,
+			DWORD dwFlags = CF_EFFECTS | CF_SCREENFONTS,
+			HDC hDCPrinter = NULL,
+			HWND hWndParent = NULL)
 	{
 		memset(&m_cf, 0, sizeof(m_cf));
 		memset(&m_lf, 0, sizeof(m_lf));
 		memset(&m_szStyleName, 0, sizeof(m_szStyleName));
 
-		m_cf.lStructSize 	= sizeof(m_cf);
-		m_cf.hwndOwner 		= hWndParent;
-		m_cf.rgbColors 		= RGB(0, 0, 0);
-		m_cf.lpszStyle 		= (LPTSTR)&m_szStyleName;
-		m_cf.Flags 			= dwFlags | CF_ENABLEHOOK;
-		m_cf.lpfnHook 		= (LPCFHOOKPROC)T::HookProc;
+		m_cf.lStructSize = sizeof(m_cf);
+		m_cf.hwndOwner = hWndParent;
+		m_cf.rgbColors = RGB(0, 0, 0);
+		m_cf.lpszStyle = (LPTSTR)&m_szStyleName;
+		m_cf.Flags = dwFlags | CF_ENABLEHOOK;
+		m_cf.lpfnHook = (LPCFHOOKPROC)T::HookProc;
 
-		if (lplfInitial != NULL)
+		if(lplfInitial != NULL)
 		{
-			m_cf.lpLogFont 	 = lplfInitial;
-			m_cf.Flags 		|= CF_INITTOLOGFONTSTRUCT;
-			m_lf 			 = *lplfInitial;
+			m_cf.lpLogFont = lplfInitial;
+			m_cf.Flags |= CF_INITTOLOGFONTSTRUCT;
+			m_lf = *lplfInitial;
 		}
 		else
 		{
 			m_cf.lpLogFont = &m_lf;
 		}
 
-		if (hDCPrinter != NULL)
+		if(hDCPrinter != NULL)
 		{
-			m_cf.hDC 	= hDCPrinter;
+			m_cf.hDC = hDCPrinter;
 			m_cf.Flags |= CF_PRINTERFONTS;
 		}
 	}
 
- // Operations
+// Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
 		ATLASSERT((m_cf.Flags & CF_ENABLEHOOK) != 0);
 		ATLASSERT(m_cf.lpfnHook != NULL);   // can still be a user hook
 
-		if (m_cf.hwndOwner == NULL)          // set only if not specified before
+		if(m_cf.hwndOwner == NULL)          // set only if not specified before
 			m_cf.hwndOwner = hWndParent;
 
 		ATLASSERT(m_hWnd == NULL);
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, (CCommonDialogImplBase*)this);
 
-		BOOL 	bRet = ::ChooseFont(&m_cf);
+		BOOL bRet = ::ChooseFont(&m_cf);
 
-		m_hWnd 		 = NULL;
+		m_hWnd = NULL;
 
-		if (bRet)   // copy logical font from user's initialization buffer (if needed)
+		if(bRet)   // copy logical font from user's initialization buffer (if needed)
 			SecureHelper::memcpy_x(&m_lf, sizeof(m_lf), m_cf.lpLogFont, sizeof(m_lf));
 
 		return bRet ? IDOK : IDCANCEL;
@@ -1703,21 +1702,21 @@ public:
 	{
 		ATLASSERT(lplf != NULL);
 
-		if (m_hWnd != NULL)
+		if(m_hWnd != NULL)
 			::SendMessage(m_hWnd, WM_CHOOSEFONT_GETLOGFONT, 0, (LPARAM)lplf);
 		else
 			*lplf = m_lf;
 	}
 
 	// works only when the dialog is dislayed or before
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	void SetLogFont(LPLOGFONT lplf)
 	{
 		ATLASSERT(lplf != NULL);
-	  #ifndef WM_CHOOSEFONT_SETLOGFONT
-		const UINT 	WM_CHOOSEFONT_SETLOGFONT = (WM_USER + 101);
-	  #endif
-		if (m_hWnd != NULL)
+#ifndef WM_CHOOSEFONT_SETLOGFONT
+		const UINT WM_CHOOSEFONT_SETLOGFONT = (WM_USER + 101);
+#endif
+		if(m_hWnd != NULL)
 		{
 			::SendMessage(m_hWnd, WM_CHOOSEFONT_SETLOGFONT, 0, (LPARAM)lplf);
 		}
@@ -1730,13 +1729,13 @@ public:
 
 	void SetFlags(DWORD dwFlags)
 	{
-	  #ifndef WM_CHOOSEFONT_SETFLAGS
-		const UINT 	WM_CHOOSEFONT_SETFLAGS = (WM_USER + 102);
-	  #endif
-		if (m_hWnd != NULL)
+#ifndef WM_CHOOSEFONT_SETFLAGS
+		const UINT WM_CHOOSEFONT_SETFLAGS = (WM_USER + 102);
+#endif
+		if(m_hWnd != NULL)
 		{
 			CHOOSEFONT cf = { sizeof(CHOOSEFONT) };
-			cf.Flags 	  = dwFlags;
+			cf.Flags = dwFlags;
 			::SendMessage(m_hWnd, WM_CHOOSEFONT_SETFLAGS, 0, (LPARAM)&cf);
 		}
 		else
@@ -1744,7 +1743,7 @@ public:
 			m_cf.Flags = dwFlags;
 		}
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	// Helpers for parsing information after successful return
 	LPCTSTR GetFaceName() const   // return the face name of the font
@@ -1796,10 +1795,10 @@ public:
 class CFontDialog : public CFontDialogImpl<CFontDialog>
 {
 public:
-	CFontDialog(LPLOGFONT 	lplfInitial = NULL,
-				DWORD 		dwFlags 	= CF_EFFECTS | CF_SCREENFONTS,
-				HDC 		hDCPrinter 	= NULL,
-				HWND 		hWndParent 	= NULL)
+	CFontDialog(LPLOGFONT lplfInitial = NULL,
+		DWORD dwFlags = CF_EFFECTS | CF_SCREENFONTS,
+		HDC hDCPrinter = NULL,
+		HWND hWndParent = NULL)
 		: CFontDialogImpl<CFontDialog>(lplfInitial, dwFlags, hDCPrinter, hWndParent)
 	{ }
 
@@ -1819,56 +1818,56 @@ class ATL_NO_VTABLE CRichEditFontDialogImpl : public CFontDialogImpl< T >
 {
 public:
 	CRichEditFontDialogImpl(const CHARFORMAT& charformat,
-							DWORD 	dwFlags 	= CF_SCREENFONTS,
-							HDC 	hDCPrinter 	= NULL,
-							HWND 	hWndParent 	= NULL)
+			DWORD dwFlags = CF_SCREENFONTS,
+			HDC hDCPrinter = NULL,
+			HWND hWndParent = NULL)
 			: CFontDialogImpl< T >(NULL, dwFlags, hDCPrinter, hWndParent)
 	{
-		m_cf.Flags 		|= CF_INITTOLOGFONTSTRUCT;
-		m_cf.Flags 		|= FillInLogFont(charformat);
-		m_cf.lpLogFont 	 = &m_lf;
+		m_cf.Flags |= CF_INITTOLOGFONTSTRUCT;
+		m_cf.Flags |= FillInLogFont(charformat);
+		m_cf.lpLogFont = &m_lf;
 
-		if ((charformat.dwMask & CFM_COLOR) != 0)
+		if((charformat.dwMask & CFM_COLOR) != 0)
 			m_cf.rgbColors = charformat.crTextColor;
 	}
 
 	void GetCharFormat(CHARFORMAT& cf) const
 	{
 		USES_CONVERSION;
-		cf.dwEffects 	= 0;
-		cf.dwMask 		= 0;
-		if ((m_cf.Flags & CF_NOSTYLESEL) == 0)
+		cf.dwEffects = 0;
+		cf.dwMask = 0;
+		if((m_cf.Flags & CF_NOSTYLESEL) == 0)
 		{
-			cf.dwMask 	 |= CFM_BOLD | CFM_ITALIC;
+			cf.dwMask |= CFM_BOLD | CFM_ITALIC;
 			cf.dwEffects |= IsBold() ? CFE_BOLD : 0;
 			cf.dwEffects |= IsItalic() ? CFE_ITALIC : 0;
 		}
-		if ((m_cf.Flags & CF_NOSIZESEL) == 0)
+		if((m_cf.Flags & CF_NOSIZESEL) == 0)
 		{
 			cf.dwMask |= CFM_SIZE;
 			// GetSize() returns in tenths of points so mulitply by 2 to get twips
 			cf.yHeight = GetSize() * 2;
 		}
 
-		if ((m_cf.Flags & CF_NOFACESEL) == 0)
+		if((m_cf.Flags & CF_NOFACESEL) == 0)
 		{
 			cf.dwMask |= CFM_FACE;
 			cf.bPitchAndFamily = m_cf.lpLogFont->lfPitchAndFamily;
-		 #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 			SecureHelper::strcpy_x(cf.szFaceName, _countof(cf.szFaceName), GetFaceName());
-		 #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 			SecureHelper::strcpyA_x(cf.szFaceName, _countof(cf.szFaceName), T2A((LPTSTR)(LPCTSTR)GetFaceName()));
-		 #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 		}
 
-		if ((m_cf.Flags & CF_EFFECTS) != 0)
+		if((m_cf.Flags & CF_EFFECTS) != 0)
 		{
-			cf.dwMask    |= CFM_UNDERLINE | CFM_STRIKEOUT | CFM_COLOR;
+			cf.dwMask |= CFM_UNDERLINE | CFM_STRIKEOUT | CFM_COLOR;
 			cf.dwEffects |= IsUnderline() ? CFE_UNDERLINE : 0;
 			cf.dwEffects |= IsStrikeOut() ? CFE_STRIKEOUT : 0;
 			cf.crTextColor = GetColor();
 		}
-		if ((m_cf.Flags & CF_NOSCRIPTSEL) == 0)
+		if((m_cf.Flags & CF_NOSCRIPTSEL) == 0)
 		{
 			cf.bCharSet = m_cf.lpLogFont->lfCharSet;
 			cf.dwMask |= CFM_CHARSET;
@@ -1880,34 +1879,34 @@ public:
 	{
 		USES_CONVERSION;
 		DWORD dwFlags = 0;
-		if ((cf.dwMask & CFM_SIZE) != 0)
+		if((cf.dwMask & CFM_SIZE) != 0)
 		{
-			HDC 	hDC 	 = ::CreateDC(_T("DISPLAY"), NULL, NULL, NULL);
-			LONG 	yPerInch = ::GetDeviceCaps(hDC, LOGPIXELSY);
+			HDC hDC = ::CreateDC(_T("DISPLAY"), NULL, NULL, NULL);
+			LONG yPerInch = ::GetDeviceCaps(hDC, LOGPIXELSY);
 			m_lf.lfHeight = -(int)((cf.yHeight * yPerInch) / 1440);
 		}
 		else
 			m_lf.lfHeight = 0;
 
-		m_lf.lfWidth 		= 0;
-		m_lf.lfEscapement 	= 0;
-		m_lf.lfOrientation 	= 0;
+		m_lf.lfWidth = 0;
+		m_lf.lfEscapement = 0;
+		m_lf.lfOrientation = 0;
 
-		if ((cf.dwMask & (CFM_ITALIC | CFM_BOLD)) == (CFM_ITALIC | CFM_BOLD))
+		if((cf.dwMask & (CFM_ITALIC | CFM_BOLD)) == (CFM_ITALIC | CFM_BOLD))
 		{
-			m_lf.lfWeight 	= ((cf.dwEffects & CFE_BOLD) != 0) ? FW_BOLD : FW_NORMAL;
-			m_lf.lfItalic 	= (BYTE)(((cf.dwEffects & CFE_ITALIC) != 0) ? TRUE : FALSE);
+			m_lf.lfWeight = ((cf.dwEffects & CFE_BOLD) != 0) ? FW_BOLD : FW_NORMAL;
+			m_lf.lfItalic = (BYTE)(((cf.dwEffects & CFE_ITALIC) != 0) ? TRUE : FALSE);
 		}
 		else
 		{
-			dwFlags 		|= CF_NOSTYLESEL;
-			m_lf.lfWeight 	 = FW_DONTCARE;
-			m_lf.lfItalic 	 = FALSE;
+			dwFlags |= CF_NOSTYLESEL;
+			m_lf.lfWeight = FW_DONTCARE;
+			m_lf.lfItalic = FALSE;
 		}
 
-		if ((cf.dwMask & (CFM_UNDERLINE | CFM_STRIKEOUT | CFM_COLOR)) == (CFM_UNDERLINE|CFM_STRIKEOUT|CFM_COLOR))
+		if((cf.dwMask & (CFM_UNDERLINE | CFM_STRIKEOUT | CFM_COLOR)) == (CFM_UNDERLINE|CFM_STRIKEOUT|CFM_COLOR))
 		{
-			dwFlags 		|= CF_EFFECTS;
+			dwFlags |= CF_EFFECTS;
 			m_lf.lfUnderline = (BYTE)(((cf.dwEffects & CFE_UNDERLINE) != 0) ? TRUE : FALSE);
 			m_lf.lfStrikeOut = (BYTE)(((cf.dwEffects & CFE_STRIKEOUT) != 0) ? TRUE : FALSE);
 		}
@@ -1917,26 +1916,26 @@ public:
 			m_lf.lfStrikeOut = (BYTE)FALSE;
 		}
 
-		if ((cf.dwMask & CFM_CHARSET) != 0)
-			m_lf.lfCharSet 	= cf.bCharSet;
+		if((cf.dwMask & CFM_CHARSET) != 0)
+			m_lf.lfCharSet = cf.bCharSet;
 		else
-			dwFlags 		|= CF_NOSCRIPTSEL;
-		m_lf.lfOutPrecision  = OUT_DEFAULT_PRECIS;
+			dwFlags |= CF_NOSCRIPTSEL;
+		m_lf.lfOutPrecision = OUT_DEFAULT_PRECIS;
 		m_lf.lfClipPrecision = CLIP_DEFAULT_PRECIS;
-		m_lf.lfQuality 		 = DEFAULT_QUALITY;
-		if ((cf.dwMask & CFM_FACE) != 0)
+		m_lf.lfQuality = DEFAULT_QUALITY;
+		if((cf.dwMask & CFM_FACE) != 0)
 		{
 			m_lf.lfPitchAndFamily = cf.bPitchAndFamily;
-		  #if (_RICHEDIT_VER >= 0x0200)
+#if (_RICHEDIT_VER >= 0x0200)
 			SecureHelper::strcpy_x(m_lf.lfFaceName, _countof(m_lf.lfFaceName), cf.szFaceName);
-		  #else // !(_RICHEDIT_VER >= 0x0200)
+#else // !(_RICHEDIT_VER >= 0x0200)
 			SecureHelper::strcpy_x(m_lf.lfFaceName, _countof(m_lf.lfFaceName), A2T((LPSTR)cf.szFaceName));
-		  #endif // !(_RICHEDIT_VER >= 0x0200)
+#endif // !(_RICHEDIT_VER >= 0x0200)
 		}
 		else
 		{
-			m_lf.lfPitchAndFamily 	= DEFAULT_PITCH|FF_DONTCARE;
-			m_lf.lfFaceName[0] 		= (TCHAR)0;
+			m_lf.lfPitchAndFamily = DEFAULT_PITCH|FF_DONTCARE;
+			m_lf.lfFaceName[0] = (TCHAR)0;
 		}
 		return dwFlags;
 	}
@@ -1946,9 +1945,9 @@ class CRichEditFontDialog : public CRichEditFontDialogImpl<CRichEditFontDialog>
 {
 public:
 	CRichEditFontDialog(const CHARFORMAT& charformat,
-		DWORD 	dwFlags 	= CF_SCREENFONTS,
-		HDC 	hDCPrinter 	= NULL,
-		HWND 	hWndParent 	= NULL)
+		DWORD dwFlags = CF_SCREENFONTS,
+		HDC hDCPrinter = NULL,
+		HWND hWndParent = NULL)
 		: CRichEditFontDialogImpl<CRichEditFontDialog>(charformat, dwFlags, hDCPrinter, hWndParent)
 	{ }
 
@@ -1981,31 +1980,31 @@ class ATL_NO_VTABLE CColorDialogImpl : public CCommonDialogImplBase
 public:
 	CHOOSECOLOR m_cc;
 
- // Constructor
+// Constructor
 	CColorDialogImpl(COLORREF clrInit = 0, DWORD dwFlags = 0, HWND hWndParent = NULL)
 	{
 		memset(&m_cc, 0, sizeof(m_cc));
 
-		m_cc.lStructSize 	= sizeof(m_cc);
-		m_cc.lpCustColors 	= GetCustomColors();
-		m_cc.hwndOwner 		= hWndParent;
-		m_cc.Flags 			= dwFlags | CC_ENABLEHOOK;
-		m_cc.lpfnHook 		= (LPCCHOOKPROC)T::HookProc;
+		m_cc.lStructSize = sizeof(m_cc);
+		m_cc.lpCustColors = GetCustomColors();
+		m_cc.hwndOwner = hWndParent;
+		m_cc.Flags = dwFlags | CC_ENABLEHOOK;
+		m_cc.lpfnHook = (LPCCHOOKPROC)T::HookProc;
 
-		if (clrInit != 0)
+		if(clrInit != 0)
 		{
-			m_cc.rgbResult	 = clrInit;
-			m_cc.Flags 		|= CC_RGBINIT;
+			m_cc.rgbResult = clrInit;
+			m_cc.Flags |= CC_RGBINIT;
 		}
 	}
 
- // Operations
+// Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
 		ATLASSERT((m_cc.Flags & CC_ENABLEHOOK) != 0);
 		ATLASSERT(m_cc.lpfnHook != NULL);   // can still be a user hook
 
-		if (m_cc.hwndOwner == NULL)          // set only if not specified before
+		if(m_cc.hwndOwner == NULL)          // set only if not specified before
 			m_cc.hwndOwner = hWndParent;
 
 		ATLASSERT(m_hWnd == NULL);
@@ -2031,16 +2030,16 @@ public:
 		return m_cc.rgbResult;
 	}
 
- // Special override for the color dialog
+// Special override for the color dialog
 	static UINT_PTR APIENTRY HookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		if (uMsg != WM_INITDIALOG && uMsg != _GetColorOKMessage())
+		if(uMsg != WM_INITDIALOG && uMsg != _GetColorOKMessage())
 			return 0;
 
 		LPCHOOSECOLOR lpCC = (LPCHOOSECOLOR)lParam;
 		CCommonDialogImplBase* pT = NULL;
 
-		if (uMsg == WM_INITDIALOG)
+		if(uMsg == WM_INITDIALOG)
 		{
 			pT = (CCommonDialogImplBase*)ModuleHelper::ExtractCreateWndData();
 			lpCC->lCustData = (LPARAM)pT;
@@ -2048,13 +2047,13 @@ public:
 			ATLASSERT(pT->m_hWnd == NULL);
 			ATLASSERT(::IsWindow(hWnd));
 			// subclass dialog's window
-			if (!pT->SubclassWindow(hWnd))
+			if(!pT->SubclassWindow(hWnd))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("Subclassing a Color common dialog failed\n"));
 				return 0;
 			}
 		}
-		else if (uMsg == _GetColorOKMessage())
+		else if(uMsg == _GetColorOKMessage())
 		{
 			pT = (CCommonDialogImplBase*)lpCC->lCustData;
 			ATLASSERT(pT != NULL);
@@ -2063,43 +2062,43 @@ public:
 
 		// pass to the message map
 		LRESULT lRes;
-		if (pT->ProcessWindowMessage(pT->m_hWnd, uMsg, wParam, lParam, lRes, 0) == FALSE)
+		if(pT->ProcessWindowMessage(pT->m_hWnd, uMsg, wParam, lParam, lRes, 0) == FALSE)
 			return 0;
 		return lRes;
 	}
 
- // Helpers
+// Helpers
 	static COLORREF* GetCustomColors()
 	{
 		static COLORREF rgbCustomColors[16] =
 		{
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
-			RGB(255, 255, 255), RGB(255, 255, 255),
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
+			RGB(255, 255, 255), RGB(255, 255, 255), 
 		};
 
 		return rgbCustomColors;
 	}
 
-	static UINT 	_GetSetRGBMessage()
+	static UINT _GetSetRGBMessage()
 	{
 		static UINT uSetRGBMessage = 0;
-		if (uSetRGBMessage == 0)
+		if(uSetRGBMessage == 0)
 		{
 			CStaticDataInitCriticalSectionLock lock;
-			if (FAILED(lock.Lock()))
+			if(FAILED(lock.Lock()))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ERROR : Unable to lock critical section in CColorDialogImpl::_GetSetRGBMessage.\n"));
 				ATLASSERT(FALSE);
 				return 0;
 			}
 
-			if (uSetRGBMessage == 0)
+			if(uSetRGBMessage == 0)
 				uSetRGBMessage = ::RegisterWindowMessage(SETRGBSTRING);
 
 			lock.Unlock();
@@ -2111,17 +2110,17 @@ public:
 	static UINT _GetColorOKMessage()
 	{
 		static UINT uColorOKMessage = 0;
-		if (uColorOKMessage == 0)
+		if(uColorOKMessage == 0)
 		{
 			CStaticDataInitCriticalSectionLock lock;
-			if (FAILED(lock.Lock()))
+			if(FAILED(lock.Lock()))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ERROR : Unable to lock critical section in CColorDialogImpl::_GetColorOKMessage.\n"));
 				ATLASSERT(FALSE);
 				return 0;
 			}
 
-			if (uColorOKMessage == 0)
+			if(uColorOKMessage == 0)
 				uColorOKMessage = ::RegisterWindowMessage(COLOROKSTRING);
 
 			lock.Unlock();
@@ -2130,18 +2129,18 @@ public:
 		return uColorOKMessage;
 	}
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CColorDialogImpl)
 		MESSAGE_HANDLER(_GetColorOKMessage(), _OnColorOK)
 	END_MSG_MAP()
 
 	LRESULT _OnColorOK(UINT, WPARAM, LPARAM, BOOL&)
 	{
-		T* 		pT = static_cast<T*>(this);
-		return 	pT->OnColorOK();
+		T* pT = static_cast<T*>(this);
+		return pT->OnColorOK();
 	}
 
- // Overrideable
+// Overrideable
 	BOOL OnColorOK()        // validate color
 	{
 		return FALSE;
@@ -2170,13 +2169,13 @@ public:
 // global helper
 static HDC _AtlCreateDC(HGLOBAL hDevNames, HGLOBAL hDevMode)
 {
-	if (hDevNames == NULL)
+	if(hDevNames == NULL)
 		return NULL;
 
 	LPDEVNAMES lpDevNames = (LPDEVNAMES)::GlobalLock(hDevNames);
-	LPDEVMODE  lpDevMode  = (hDevMode != NULL) ? (LPDEVMODE)::GlobalLock(hDevMode) : NULL;
+	LPDEVMODE  lpDevMode = (hDevMode != NULL) ? (LPDEVMODE)::GlobalLock(hDevMode) : NULL;
 
-	if (lpDevNames == NULL)
+	if(lpDevNames == NULL)
 		return NULL;
 
 	HDC hDC = ::CreateDC((LPCTSTR)lpDevNames + lpDevNames->wDriverOffset,
@@ -2185,7 +2184,7 @@ static HDC _AtlCreateDC(HGLOBAL hDevNames, HGLOBAL hDevMode)
 					  lpDevMode);
 
 	::GlobalUnlock(hDevNames);
-	if (hDevMode != NULL)
+	if(hDevMode != NULL)
 		::GlobalUnlock(hDevMode);
 	return hDC;
 }
@@ -2195,23 +2194,23 @@ class ATL_NO_VTABLE CPrintDialogImpl : public CCommonDialogImplBase
 {
 public:
 	// print dialog parameter block (note this is a reference)
-	PRINTDLG& 		m_pd;
+	PRINTDLG& m_pd;
 
- // Constructors
+// Constructors
 	CPrintDialogImpl(BOOL bPrintSetupOnly = FALSE,	// TRUE for Print Setup, FALSE for Print Dialog
-			DWORD 	dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION,
+			DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION,
 			HWND hWndParent = NULL)
 			: m_pd(m_pdActual)
 	{
 		memset(&m_pdActual, 0, sizeof(m_pdActual));
 
-		m_pd.lStructSize 	= sizeof(m_pdActual);
-		m_pd.hwndOwner 		= hWndParent;
-		m_pd.Flags 			= (dwFlags | PD_ENABLEPRINTHOOK | PD_ENABLESETUPHOOK);
-		m_pd.lpfnPrintHook 	= (LPPRINTHOOKPROC)T::HookProc;
-		m_pd.lpfnSetupHook 	= (LPSETUPHOOKPROC)T::HookProc;
+		m_pd.lStructSize = sizeof(m_pdActual);
+		m_pd.hwndOwner = hWndParent;
+		m_pd.Flags = (dwFlags | PD_ENABLEPRINTHOOK | PD_ENABLESETUPHOOK);
+		m_pd.lpfnPrintHook = (LPPRINTHOOKPROC)T::HookProc;
+		m_pd.lpfnSetupHook = (LPSETUPHOOKPROC)T::HookProc;
 
-		if (bPrintSetupOnly)
+		if(bPrintSetupOnly)
 			m_pd.Flags |= PD_PRINTSETUP;
 		else
 			m_pd.Flags |= PD_RETURNDC;
@@ -2219,7 +2218,7 @@ public:
 		m_pd.Flags &= ~PD_RETURNIC; // do not support information context
 	}
 
- // Operations
+// Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
 		ATLASSERT((m_pd.Flags & PD_ENABLEPRINTHOOK) != 0);
@@ -2228,15 +2227,15 @@ public:
 		ATLASSERT(m_pd.lpfnSetupHook != NULL);   // can still be a user hook
 		ATLASSERT((m_pd.Flags & PD_RETURNDEFAULT) == 0);   // use GetDefaults for this
 
-		if (m_pd.hwndOwner == NULL)   // set only if not specified before
+		if(m_pd.hwndOwner == NULL)   // set only if not specified before
 			m_pd.hwndOwner = hWndParent;
 
 		ATLASSERT(m_hWnd == NULL);
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, (CCommonDialogImplBase*)this);
 
-		BOOL 	bRet = ::PrintDlg(&m_pd);
+		BOOL bRet = ::PrintDlg(&m_pd);
 
-		m_hWnd 		 = NULL;
+		m_hWnd = NULL;
 
 		return bRet ? IDOK : IDCANCEL;
 	}
@@ -2245,8 +2244,8 @@ public:
 	BOOL GetDefaults()
 	{
 		m_pd.Flags |= PD_RETURNDEFAULT;
-		ATLASSERT(m_pd.hDevMode  == NULL);	// must be NULL
-		ATLASSERT(m_pd.hDevNames == NULL);	// must be NULL
+		ATLASSERT(m_pd.hDevMode == NULL);    // must be NULL
+		ATLASSERT(m_pd.hDevNames == NULL);   // must be NULL
 
 		return ::PrintDlg(&m_pd);
 	}
@@ -2254,9 +2253,9 @@ public:
 	// Helpers for parsing information after successful return num. copies requested
 	int GetCopies() const
 	{
-		if ((m_pd.Flags & PD_USEDEVMODECOPIES) != 0)
+		if((m_pd.Flags & PD_USEDEVMODECOPIES) != 0)
 		{
-			LPDEVMODE	lpDevMode = GetDevMode();
+			LPDEVMODE lpDevMode = GetDevMode();
 			return (lpDevMode != NULL) ? lpDevMode->dmCopies : -1;
 		}
 
@@ -2265,27 +2264,27 @@ public:
 
 	BOOL PrintCollate() const       // TRUE if collate checked
 	{
-		return ((m_pd.Flags & PD_COLLATE) != 0);			//+++ ? TRUE : FALSE;
+		return ((m_pd.Flags & PD_COLLATE) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintSelection() const     // TRUE if printing selection
 	{
-		return ((m_pd.Flags & PD_SELECTION) != 0);			//+++ ? TRUE : FALSE;
+		return ((m_pd.Flags & PD_SELECTION) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintAll() const           // TRUE if printing all pages
 	{
-		return (!PrintRange() && !PrintSelection());	//+++ ? TRUE : FALSE;
+		return (!PrintRange() && !PrintSelection()) ? TRUE : FALSE;
 	}
 
 	BOOL PrintRange() const         // TRUE if printing page range
 	{
-		return ((m_pd.Flags & PD_PAGENUMS) != 0);			//+++ ? TRUE : FALSE;
+		return ((m_pd.Flags & PD_PAGENUMS) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintToFile() const        // TRUE if printing to a file
 	{
-		return ((m_pd.Flags & PD_PRINTTOFILE) != 0);		//+++ ? TRUE : FALSE;
+		return ((m_pd.Flags & PD_PRINTTOFILE) != 0) ? TRUE : FALSE;
 	}
 
 	int GetFromPage() const         // starting page if valid
@@ -2300,7 +2299,7 @@ public:
 
 	LPDEVMODE GetDevMode() const    // return DEVMODE
 	{
-		if (m_pd.hDevMode == NULL)
+		if(m_pd.hDevMode == NULL)
 			return NULL;
 
 		return (LPDEVMODE)::GlobalLock(m_pd.hDevMode);
@@ -2308,11 +2307,11 @@ public:
 
 	LPCTSTR GetDriverName() const   // return driver name
 	{
-		if (m_pd.hDevNames == NULL)
+		if(m_pd.hDevNames == NULL)
 			return NULL;
 
-		LPDEVNAMES 	lpDev = (LPDEVNAMES)::GlobalLock(m_pd.hDevNames);
-		if (lpDev == NULL)
+		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pd.hDevNames);
+		if(lpDev == NULL)
 			return NULL;
 
 		return (LPCTSTR)lpDev + lpDev->wDriverOffset;
@@ -2320,11 +2319,11 @@ public:
 
 	LPCTSTR GetDeviceName() const   // return device name
 	{
-		if (m_pd.hDevNames == NULL)
+		if(m_pd.hDevNames == NULL)
 			return NULL;
 
-		LPDEVNAMES 	lpDev = (LPDEVNAMES)::GlobalLock(m_pd.hDevNames);
-		if (lpDev == NULL)
+		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pd.hDevNames);
+		if(lpDev == NULL)
 			return NULL;
 
 		return (LPCTSTR)lpDev + lpDev->wDeviceOffset;
@@ -2332,11 +2331,11 @@ public:
 
 	LPCTSTR GetPortName() const     // return output port name
 	{
-		if (m_pd.hDevNames == NULL)
+		if(m_pd.hDevNames == NULL)
 			return NULL;
 
 		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pd.hDevNames);
-		if (lpDev == NULL)
+		if(lpDev == NULL)
 			return NULL;
 
 		return (LPCTSTR)lpDev + lpDev->wOutputOffset;
@@ -2359,19 +2358,19 @@ public:
 		return m_pd.hDC;
 	}
 
- // Implementation
-	PRINTDLG 		m_pdActual; // the Print/Print Setup need to share this
+// Implementation
+	PRINTDLG m_pdActual; // the Print/Print Setup need to share this
 
 	// The following handle the case of print setup... from the print dialog
 	CPrintDialogImpl(PRINTDLG& pdInit) : m_pd(pdInit)
 	{ }
 
-	BEGIN_MSG_MAP( CPrintDialogImpl )
-	  #ifdef psh1
-		COMMAND_ID_HANDLER( psh1  , OnPrintSetup )	// print setup button when print is displayed
-	  #else // !psh1
-		COMMAND_ID_HANDLER( 0x0400, OnPrintSetup )	// value from dlgs.h
-	  #endif // !psh1
+	BEGIN_MSG_MAP(CPrintDialogImpl)
+#ifdef psh1
+		COMMAND_ID_HANDLER(psh1, OnPrintSetup) // print setup button when print is displayed
+#else // !psh1
+		COMMAND_ID_HANDLER(0x0400, OnPrintSetup) // value from dlgs.h
+#endif // !psh1
 	END_MSG_MAP()
 
 	LRESULT OnPrintSetup(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& /*bHandled*/)
@@ -2385,9 +2384,9 @@ public:
 class CPrintDialog : public CPrintDialogImpl<CPrintDialog>
 {
 public:
-	CPrintDialog(BOOL 	bPrintSetupOnly = FALSE,
-				DWORD 	dwFlags 		= PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION,
-				HWND 	hWndParent 		= NULL)
+	CPrintDialog(BOOL bPrintSetupOnly = FALSE,
+		DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION,
+		HWND hWndParent = NULL)
 		: CPrintDialogImpl<CPrintDialog>(bPrintSetupOnly, dwFlags, hWndParent)
 	{ }
 
@@ -2414,45 +2413,45 @@ namespace WTL
 {
 
 template <class T>
-class ATL_NO_VTABLE 	CPrintDialogExImpl :
+class ATL_NO_VTABLE CPrintDialogExImpl : 
 				public ATL::CWindow,
 				public ATL::CMessageMap,
 				public IPrintDialogCallback,
 				public ATL::IObjectWithSiteImpl< T >
 {
 public:
-	PRINTDLGEX 	m_pdex;
+	PRINTDLGEX m_pdex;
 
- // Constructor
+// Constructor
 	CPrintDialogExImpl(DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION | PD_NOCURRENTPAGE,
 				HWND hWndParent = NULL)
 	{
 		memset(&m_pdex, 0, sizeof(m_pdex));
 
-		m_pdex.lStructSize 	= sizeof(PRINTDLGEX);
-		m_pdex.hwndOwner 	= hWndParent;
-		m_pdex.Flags 		= dwFlags;
-		m_pdex.nStartPage 	= START_PAGE_GENERAL;
+		m_pdex.lStructSize = sizeof(PRINTDLGEX);
+		m_pdex.hwndOwner = hWndParent;
+		m_pdex.Flags = dwFlags;
+		m_pdex.nStartPage = START_PAGE_GENERAL;
 		// callback object will be set in DoModal
 
-		m_pdex.Flags 		&= ~PD_RETURNIC; // do not support information context
+		m_pdex.Flags &= ~PD_RETURNIC; // do not support information context
 	}
 
- // Operations
+// Operations
 	HRESULT DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
 		ATLASSERT(m_hWnd == NULL);
 		ATLASSERT((m_pdex.Flags & PD_RETURNDEFAULT) == 0);   // use GetDefaults for this
 
-		if (m_pdex.hwndOwner == NULL)   // set only if not specified before
+		if(m_pdex.hwndOwner == NULL)   // set only if not specified before
 			m_pdex.hwndOwner = hWndParent;
 
-		T* 		pT 			= static_cast<T*>(this);
-		m_pdex.lpCallback	= (IUnknown*)(IPrintDialogCallback*)pT;
+		T* pT = static_cast<T*>(this);
+		m_pdex.lpCallback = (IUnknown*)(IPrintDialogCallback*)pT;
 
-		HRESULT hResult 	= ::PrintDlgEx(&m_pdex);
+		HRESULT hResult = ::PrintDlgEx(&m_pdex);
 
-		m_hWnd 				= NULL;
+		m_hWnd = NULL;
 
 		return hResult;
 	}
@@ -2468,8 +2467,8 @@ public:
 	HRESULT GetDefaults()
 	{
 		m_pdex.Flags |= PD_RETURNDEFAULT;
-		ATLASSERT(m_pdex.hDevMode  == NULL);	// must be NULL
-		ATLASSERT(m_pdex.hDevNames == NULL);	// must be NULL
+		ATLASSERT(m_pdex.hDevMode == NULL);    // must be NULL
+		ATLASSERT(m_pdex.hDevNames == NULL);   // must be NULL
 
 		return ::PrintDlgEx(&m_pdex);
 	}
@@ -2477,9 +2476,9 @@ public:
 	// Helpers for parsing information after successful return num. copies requested
 	int GetCopies() const
 	{
-		if ((m_pdex.Flags & PD_USEDEVMODECOPIES) != 0)
+		if((m_pdex.Flags & PD_USEDEVMODECOPIES) != 0)
 		{
-			LPDEVMODE 	lpDevMode = GetDevMode();
+			LPDEVMODE lpDevMode = GetDevMode();
 			return (lpDevMode != NULL) ? lpDevMode->dmCopies : -1;
 		}
 
@@ -2488,32 +2487,32 @@ public:
 
 	BOOL PrintCollate() const       // TRUE if collate checked
 	{
-		return ((m_pdex.Flags & PD_COLLATE) != 0);			//+++ ? TRUE : FALSE;
+		return ((m_pdex.Flags & PD_COLLATE) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintSelection() const     // TRUE if printing selection
 	{
-		return ((m_pdex.Flags & PD_SELECTION) != 0);		//+++ ? TRUE : FALSE;
+		return ((m_pdex.Flags & PD_SELECTION) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintAll() const           // TRUE if printing all pages
 	{
-		return (!PrintRange() && !PrintSelection());		//+++ ? TRUE : FALSE;
+		return (!PrintRange() && !PrintSelection()) ? TRUE : FALSE;
 	}
 
 	BOOL PrintRange() const         // TRUE if printing page range
 	{
-		return ((m_pdex.Flags & PD_PAGENUMS) != 0);			//+++ ? TRUE : FALSE;
+		return ((m_pdex.Flags & PD_PAGENUMS) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL PrintToFile() const        // TRUE if printing to a file
 	{
-		return ((m_pdex.Flags & PD_PRINTTOFILE) != 0);		//+++ ? TRUE : FALSE;
+		return ((m_pdex.Flags & PD_PRINTTOFILE) != 0) ? TRUE : FALSE;
 	}
 
 	LPDEVMODE GetDevMode() const    // return DEVMODE
 	{
-		if (m_pdex.hDevMode == NULL)
+		if(m_pdex.hDevMode == NULL)
 			return NULL;
 
 		return (LPDEVMODE)::GlobalLock(m_pdex.hDevMode);
@@ -2521,11 +2520,11 @@ public:
 
 	LPCTSTR GetDriverName() const   // return driver name
 	{
-		if (m_pdex.hDevNames == NULL)
+		if(m_pdex.hDevNames == NULL)
 			return NULL;
 
 		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pdex.hDevNames);
-		if (lpDev == NULL)
+		if(lpDev == NULL)
 			return NULL;
 
 		return (LPCTSTR)lpDev + lpDev->wDriverOffset;
@@ -2533,11 +2532,11 @@ public:
 
 	LPCTSTR GetDeviceName() const   // return device name
 	{
-		if (m_pdex.hDevNames == NULL)
+		if(m_pdex.hDevNames == NULL)
 			return NULL;
 
 		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pdex.hDevNames);
-		if (lpDev == NULL)
+		if(lpDev == NULL)
 			return NULL;
 
 		return (LPCTSTR)lpDev + lpDev->wDeviceOffset;
@@ -2545,14 +2544,14 @@ public:
 
 	LPCTSTR GetPortName() const     // return output port name
 	{
-		if (m_pdex.hDevNames == NULL)
+		if(m_pdex.hDevNames == NULL)
 			return NULL;
 
 		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_pdex.hDevNames);
-		if (lpDev == NULL)
+		if(lpDev == NULL)
 			return NULL;
 
-		return 	(LPCTSTR)lpDev + lpDev->wOutputOffset;
+		return (LPCTSTR)lpDev + lpDev->wOutputOffset;
 	}
 
 	HDC GetPrinterDC() const        // return HDC (caller must delete)
@@ -2569,25 +2568,25 @@ public:
 	HDC CreatePrinterDC()
 	{
 		m_pdex.hDC = _AtlCreateDC(m_pdex.hDevNames, m_pdex.hDevMode);
-		return 	m_pdex.hDC;
+		return m_pdex.hDC;
 	}
 
- // Implementation - interfaces
+// Implementation - interfaces
 
- // IUnknown
+// IUnknown
 	STDMETHOD(QueryInterface)(REFIID riid, void** ppvObject)
 	{
-		if (ppvObject == NULL)
+		if(ppvObject == NULL)
 			return E_POINTER;
 
-		T* 	pT = static_cast<T*>(this);
-		if (IsEqualGUID(riid, IID_IUnknown) || IsEqualGUID(riid, IID_IPrintDialogCallback))
+		T* pT = static_cast<T*>(this);
+		if(IsEqualGUID(riid, IID_IUnknown) || IsEqualGUID(riid, IID_IPrintDialogCallback))
 		{
 			*ppvObject = (IPrintDialogCallback*)pT;
 			// AddRef() not needed
 			return S_OK;
 		}
-		else if (IsEqualGUID(riid, IID_IObjectWithSite))
+		else if(IsEqualGUID(riid, IID_IObjectWithSite))
 		{
 			*ppvObject = (IObjectWithSite*)pT;
 			// AddRef() not needed
@@ -2607,7 +2606,7 @@ public:
 		return 1;
 	}
 
- // IPrintDialogCallback
+// IPrintDialogCallback
 	STDMETHOD(InitDone)()
 	{
 		return S_FALSE;
@@ -2621,15 +2620,15 @@ public:
 	STDMETHOD(HandleMessage)(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT* plResult)
 	{
 		// set up m_hWnd the first time
-		if (m_hWnd == NULL)
+		if(m_hWnd == NULL)
 			Attach(hWnd);
 
 		// call message map
 		HRESULT hRet = ProcessWindowMessage(hWnd, uMsg, wParam, lParam, *plResult, 0) ? S_OK : S_FALSE;
-		if (hRet == S_OK && uMsg == WM_NOTIFY)   // return in DWLP_MSGRESULT
+		if(hRet == S_OK && uMsg == WM_NOTIFY)   // return in DWLP_MSGRESULT
 			::SetWindowLongPtr(GetParent(), DWLP_MSGRESULT, (LONG_PTR)*plResult);
 
-		if (uMsg == WM_INITDIALOG && hRet == S_OK && (BOOL)*plResult != FALSE)
+		if(uMsg == WM_INITDIALOG && hRet == S_OK && (BOOL)*plResult != FALSE)
 			hRet = S_FALSE;
 
 		return hRet;
@@ -2640,8 +2639,8 @@ class CPrintDialogEx : public CPrintDialogExImpl<CPrintDialogEx>
 {
 public:
 	CPrintDialogEx(
-			DWORD dwFlags    = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION | PD_NOCURRENTPAGE,
-			HWND  hWndParent = NULL)
+		DWORD dwFlags = PD_ALLPAGES | PD_USEDEVMODECOPIES | PD_NOPAGENUMS | PD_NOSELECTION | PD_NOCURRENTPAGE,
+		HWND hWndParent = NULL)
 		: CPrintDialogExImpl<CPrintDialogEx>(dwFlags, hWndParent)
 	{ }
 
@@ -2660,32 +2659,32 @@ template <class T>
 class ATL_NO_VTABLE CPageSetupDialogImpl : public CCommonDialogImplBase
 {
 public:
-	PAGESETUPDLG 		m_psd;
-	ATL::CWndProcThunk 	m_thunkPaint;
+	PAGESETUPDLG m_psd;
+	ATL::CWndProcThunk m_thunkPaint;
 
- // Constructors
+// Constructors
 	CPageSetupDialogImpl(DWORD dwFlags = PSD_MARGINS | PSD_INWININIINTLMEASURE, HWND hWndParent = NULL)
 	{
 		memset(&m_psd, 0, sizeof(m_psd));
 
-		m_psd.lStructSize 		= sizeof(m_psd);
-		m_psd.hwndOwner 		= hWndParent;
-		m_psd.Flags 			= (dwFlags | PSD_ENABLEPAGESETUPHOOK | PSD_ENABLEPAGEPAINTHOOK);
+		m_psd.lStructSize = sizeof(m_psd);
+		m_psd.hwndOwner = hWndParent;
+		m_psd.Flags = (dwFlags | PSD_ENABLEPAGESETUPHOOK | PSD_ENABLEPAGEPAINTHOOK);
 		m_psd.lpfnPageSetupHook = (LPPAGESETUPHOOK)T::HookProc;
 		m_thunkPaint.Init((WNDPROC)T::PaintHookProc, this);
-	  #if (_ATL_VER >= 0x0700)
+#if (_ATL_VER >= 0x0700)
 		m_psd.lpfnPagePaintHook = (LPPAGEPAINTHOOK)m_thunkPaint.GetWNDPROC();
-	  #else
+#else
 		m_psd.lpfnPagePaintHook = (LPPAGEPAINTHOOK)&(m_thunkPaint.thunk);
-	  #endif
+#endif
 	}
 
 	DECLARE_EMPTY_MSG_MAP()
 
- // Attributes
+// Attributes
 	LPDEVMODE GetDevMode() const    // return DEVMODE
 	{
-		if (m_psd.hDevMode == NULL)
+		if(m_psd.hDevMode == NULL)
 			return NULL;
 
 		return (LPDEVMODE)::GlobalLock(m_psd.hDevMode);
@@ -2693,28 +2692,28 @@ public:
 
 	LPCTSTR GetDriverName() const   // return driver name
 	{
-		if (m_psd.hDevNames == NULL)
+		if(m_psd.hDevNames == NULL)
 			return NULL;
 
-		LPDEVNAMES 	lpDev     = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
+		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
 		return (LPCTSTR)lpDev + lpDev->wDriverOffset;
 	}
 
 	LPCTSTR GetDeviceName() const   // return device name
 	{
-		if (m_psd.hDevNames == NULL)
+		if(m_psd.hDevNames == NULL)
 			return NULL;
 
-		LPDEVNAMES 	lpDev 	  = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
+		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
 		return (LPCTSTR)lpDev + lpDev->wDeviceOffset;
 	}
 
 	LPCTSTR GetPortName() const     // return output port name
 	{
-		if (m_psd.hDevNames == NULL)
+		if(m_psd.hDevNames == NULL)
 			return NULL;
 
-		LPDEVNAMES 	lpDev 	  = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
+		LPDEVNAMES lpDev = (LPDEVNAMES)::GlobalLock(m_psd.hDevNames);
 		return (LPCTSTR)lpDev + lpDev->wOutputOffset;
 	}
 
@@ -2726,20 +2725,20 @@ public:
 	SIZE GetPaperSize() const
 	{
 		SIZE size;
-		size.cx 	= m_psd.ptPaperSize.x;
-		size.cy 	= m_psd.ptPaperSize.y;
+		size.cx = m_psd.ptPaperSize.x;
+		size.cy = m_psd.ptPaperSize.y;
 		return size;
 	}
 
 	void GetMargins(LPRECT lpRectMargins, LPRECT lpRectMinMargins) const
 	{
-		if (lpRectMargins != NULL)
-			*lpRectMargins		= m_psd.rtMargin;
-		if (lpRectMinMargins != NULL)
-			*lpRectMinMargins	= m_psd.rtMinMargin;
+		if(lpRectMargins != NULL)
+			*lpRectMargins = m_psd.rtMargin;
+		if(lpRectMinMargins != NULL)
+			*lpRectMinMargins = m_psd.rtMinMargin;
 	}
 
- // Operations
+// Operations
 	INT_PTR DoModal(HWND hWndParent = ::GetActiveWindow())
 	{
 		ATLASSERT((m_psd.Flags & PSD_ENABLEPAGESETUPHOOK) != 0);
@@ -2747,25 +2746,25 @@ public:
 		ATLASSERT(m_psd.lpfnPageSetupHook != NULL);   // can still be a user hook
 		ATLASSERT(m_psd.lpfnPagePaintHook != NULL);   // can still be a user hook
 
-		if (m_psd.hwndOwner == NULL)   // set only if not specified before
+		if(m_psd.hwndOwner == NULL)   // set only if not specified before
 			m_psd.hwndOwner = hWndParent;
 
 		ATLASSERT(m_hWnd == NULL);
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, (CCommonDialogImplBase*)this);
 
-		BOOL bRet 	= ::PageSetupDlg(&m_psd);
+		BOOL bRet = ::PageSetupDlg(&m_psd);
 
-		m_hWnd 		= NULL;
+		m_hWnd = NULL;
 
 		return bRet ? IDOK : IDCANCEL;
 	}
 
- // Implementation
+// Implementation
 	static UINT_PTR CALLBACK PaintHookProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
-		T* 			pT 	 = (T*)hWnd;
-		UINT_PTR 	uRet = 0;
-		switch (uMsg)
+		T* pT = (T*)hWnd;
+		UINT_PTR uRet = 0;
+		switch(uMsg)
 		{
 		case WM_PSD_PAGESETUPDLG:
 			uRet = pT->PreDrawPage(LOWORD(wParam), HIWORD(wParam), (LPPAGESETUPDLG)lParam);
@@ -2785,20 +2784,20 @@ public:
 		return uRet;
 	}
 
- // Overridables
-	UINT_PTR 	PreDrawPage(WORD /*wPaper*/, WORD /*wFlags*/, LPPAGESETUPDLG /*pPSD*/)
+// Overridables
+	UINT_PTR PreDrawPage(WORD /*wPaper*/, WORD /*wFlags*/, LPPAGESETUPDLG /*pPSD*/)
 	{
 		// return 1 to prevent any more drawing
 		return 0;
 	}
 
-	UINT_PTR 	OnDrawPage(UINT /*uMsg*/, HDC /*hDC*/, LPRECT /*lpRect*/)
+	UINT_PTR OnDrawPage(UINT /*uMsg*/, HDC /*hDC*/, LPRECT /*lpRect*/)
 	{
 		return 0; // do the default
 	}
 };
 
-class 	CPageSetupDialog : public CPageSetupDialogImpl<CPageSetupDialog>
+class CPageSetupDialog : public CPageSetupDialogImpl<CPageSetupDialog>
 {
 public:
 	CPageSetupDialog(DWORD dwFlags = PSD_MARGINS | PSD_INWININIINTLMEASURE, HWND hWndParent = NULL)
@@ -2827,23 +2826,23 @@ public:
 	enum { _cchFindReplaceBuffer = 128 };
 
 	FINDREPLACE m_fr;
-	TCHAR 		m_szFindWhat[_cchFindReplaceBuffer];
-	TCHAR 		m_szReplaceWith[_cchFindReplaceBuffer];
+	TCHAR m_szFindWhat[_cchFindReplaceBuffer];
+	TCHAR m_szReplaceWith[_cchFindReplaceBuffer];
 
-  // Constructors
+// Constructors
 	CFindReplaceDialogImpl()
 	{
 		memset(&m_fr, 0, sizeof(m_fr));
-		m_szFindWhat[0] 		= _T('\0');
-		m_szReplaceWith[0] 		= _T('\0');
+		m_szFindWhat[0] = _T('\0');
+		m_szReplaceWith[0] = _T('\0');
 
-		m_fr.lStructSize 		= sizeof(m_fr);
-		m_fr.Flags 				= FR_ENABLEHOOK;
-		m_fr.lpfnHook 			= (LPFRHOOKPROC)T::HookProc;
-		m_fr.lpstrFindWhat 		= (LPTSTR)m_szFindWhat;
-		m_fr.wFindWhatLen 		= _cchFindReplaceBuffer;
-		m_fr.lpstrReplaceWith 	= (LPTSTR)m_szReplaceWith;
-		m_fr.wReplaceWithLen 	= _cchFindReplaceBuffer;
+		m_fr.lStructSize = sizeof(m_fr);
+		m_fr.Flags = FR_ENABLEHOOK;
+		m_fr.lpfnHook = (LPFRHOOKPROC)T::HookProc;
+		m_fr.lpstrFindWhat = (LPTSTR)m_szFindWhat;
+		m_fr.wFindWhatLen = _cchFindReplaceBuffer;
+		m_fr.lpstrReplaceWith = (LPTSTR)m_szReplaceWith;
+		m_fr.wReplaceWithLen = _cchFindReplaceBuffer;
 	}
 
 	// Note: You must allocate the object on the heap.
@@ -2853,34 +2852,34 @@ public:
 		delete this;
 	}
 
-	HWND Create(BOOL 	bFindDialogOnly, 		// TRUE for Find, FALSE for FindReplace
-				LPCTSTR lpszFindWhat,
-				LPCTSTR lpszReplaceWith = NULL,
-				DWORD 	dwFlags 		= FR_DOWN,
-				HWND 	hWndParent 		= NULL)
+	HWND Create(BOOL bFindDialogOnly, // TRUE for Find, FALSE for FindReplace
+			LPCTSTR lpszFindWhat,
+			LPCTSTR lpszReplaceWith = NULL,
+			DWORD dwFlags = FR_DOWN,
+			HWND hWndParent = NULL)
 	{
 		ATLASSERT((m_fr.Flags & FR_ENABLEHOOK) != 0);
 		ATLASSERT(m_fr.lpfnHook != NULL);
 
 		m_fr.Flags |= dwFlags;
 
-		if (hWndParent == NULL)
+		if(hWndParent == NULL)
 			m_fr.hwndOwner = ::GetActiveWindow();
 		else
 			m_fr.hwndOwner = hWndParent;
 		ATLASSERT(m_fr.hwndOwner != NULL); // must have an owner for modeless dialog
 
-		if (lpszFindWhat != NULL)
+		if(lpszFindWhat != NULL)
 			SecureHelper::strncpy_x(m_szFindWhat, _countof(m_szFindWhat), lpszFindWhat, _TRUNCATE);
 
-		if (lpszReplaceWith != NULL)
+		if(lpszReplaceWith != NULL)
 			SecureHelper::strncpy_x(m_szReplaceWith, _countof(m_szReplaceWith), lpszReplaceWith, _TRUNCATE);
 
 		ATLASSERT(m_hWnd == NULL);
-		ModuleHelper::AddCreateWndData(&m_thunk.cd , (CCommonDialogImplBase*)this);
+		ModuleHelper::AddCreateWndData(&m_thunk.cd, (CCommonDialogImplBase*)this);
 
 		HWND hWnd = NULL;
-		if (bFindDialogOnly)
+		if(bFindDialogOnly)
 			hWnd = ::FindText(&m_fr);
 		else
 			hWnd = ::ReplaceText(&m_fr);
@@ -2891,19 +2890,19 @@ public:
 
 	static const UINT GetFindReplaceMsg()
 	{
-		static const UINT 	nMsgFindReplace = ::RegisterWindowMessage(FINDMSGSTRING);
-		return 	nMsgFindReplace;
+		static const UINT nMsgFindReplace = ::RegisterWindowMessage(FINDMSGSTRING);
+		return nMsgFindReplace;
 	}
 	// call while handling FINDMSGSTRING registered message
 	// to retreive the object
-	static T* PASCAL 	GetNotifier(LPARAM lParam)
+	static T* PASCAL GetNotifier(LPARAM lParam)
 	{
 		ATLASSERT(lParam != NULL);
 		T* pDlg = (T*)(lParam - offsetof(T, m_fr));
 		return pDlg;
 	}
 
- // Operations
+// Operations
 	// Helpers for parsing information after successful return
 	LPCTSTR GetFindString() const    // get find string
 	{
@@ -2917,37 +2916,37 @@ public:
 
 	BOOL SearchDown() const          // TRUE if search down, FALSE is up
 	{
-		return ((m_fr.Flags & FR_DOWN) != 0);			//+++    ? TRUE : FALSE;
+		return ((m_fr.Flags & FR_DOWN) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL FindNext() const            // TRUE if command is find next
 	{
-		return ((m_fr.Flags & FR_FINDNEXT) != 0);		//+++    ? TRUE : FALSE;
+		return ((m_fr.Flags & FR_FINDNEXT) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL MatchCase() const           // TRUE if matching case
 	{
-		return ((m_fr.Flags & FR_MATCHCASE) != 0);		//+++    ? TRUE : FALSE;
+		return ((m_fr.Flags & FR_MATCHCASE) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL MatchWholeWord() const      // TRUE if matching whole words only
 	{
-		return ((m_fr.Flags & FR_WHOLEWORD) != 0);		//+++    ? TRUE : FALSE;
+		return ((m_fr.Flags & FR_WHOLEWORD) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL ReplaceCurrent() const      // TRUE if replacing current string
 	{
-		return ((m_fr. Flags & FR_REPLACE) != 0);		//+++    ? TRUE : FALSE;
+		return ((m_fr. Flags & FR_REPLACE) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL ReplaceAll() const          // TRUE if replacing all occurrences
 	{
-		return ((m_fr.Flags & FR_REPLACEALL) != 0);		//+++    ? TRUE : FALSE;
+		return ((m_fr.Flags & FR_REPLACEALL) != 0) ? TRUE : FALSE;
 	}
 
 	BOOL IsTerminating() const       // TRUE if terminating dialog
 	{
-		return ((m_fr.Flags & FR_DIALOGTERM) != 0);		//+++    ? TRUE : FALSE ;
+		return ((m_fr.Flags & FR_DIALOGTERM) != 0) ? TRUE : FALSE ;
 	}
 };
 
@@ -2967,50 +2966,50 @@ public:
 class CDialogBaseUnits
 {
 public:
-	SIZE 	m_sizeUnits;
+	SIZE m_sizeUnits;
 
- // Constructors
+// Constructors
 	CDialogBaseUnits()
 	{
 		// The base units of the out-dated System Font
-		LONG 	nDlgBaseUnits 	= ::GetDialogBaseUnits();
-		m_sizeUnits.cx 			= LOWORD(nDlgBaseUnits);
-		m_sizeUnits.cy 			= HIWORD(nDlgBaseUnits);
+		LONG nDlgBaseUnits = ::GetDialogBaseUnits();
+		m_sizeUnits.cx = LOWORD(nDlgBaseUnits);
+		m_sizeUnits.cy = HIWORD(nDlgBaseUnits);
 	}
 
 	CDialogBaseUnits(HWND hWnd)
 	{
-		if (!InitDialogBaseUnits(hWnd)) {
-			LONG 	nDlgBaseUnits 	= ::GetDialogBaseUnits();
-			m_sizeUnits.cx 			= LOWORD(nDlgBaseUnits);
-			m_sizeUnits.cy 			= HIWORD(nDlgBaseUnits);
+		if(!InitDialogBaseUnits(hWnd)) {
+			LONG nDlgBaseUnits = ::GetDialogBaseUnits();
+			m_sizeUnits.cx = LOWORD(nDlgBaseUnits);
+			m_sizeUnits.cy = HIWORD(nDlgBaseUnits);
 		}
 	}
 
 	CDialogBaseUnits(HFONT hFont, HWND hWnd = NULL)
 	{
-		if (!InitDialogBaseUnits(hFont, hWnd)) {
-			LONG 	nDlgBaseUnits 	= ::GetDialogBaseUnits();
-			m_sizeUnits.cx 			= LOWORD(nDlgBaseUnits);
-			m_sizeUnits.cy 			= HIWORD(nDlgBaseUnits);
+		if(!InitDialogBaseUnits(hFont, hWnd)) {
+			LONG nDlgBaseUnits = ::GetDialogBaseUnits();
+			m_sizeUnits.cx = LOWORD(nDlgBaseUnits);
+			m_sizeUnits.cy = HIWORD(nDlgBaseUnits);
 		}
 	}
 
 	CDialogBaseUnits(LOGFONT lf, HWND hWnd = NULL)
 	{
-		if (!InitDialogBaseUnits(lf, hWnd)) {
-			LONG 	nDlgBaseUnits 	= ::GetDialogBaseUnits();
-			m_sizeUnits.cx 			= LOWORD(nDlgBaseUnits);
-			m_sizeUnits.cy 			= HIWORD(nDlgBaseUnits);
+		if(!InitDialogBaseUnits(lf, hWnd)) {
+			LONG nDlgBaseUnits = ::GetDialogBaseUnits();
+			m_sizeUnits.cx = LOWORD(nDlgBaseUnits);
+			m_sizeUnits.cy = HIWORD(nDlgBaseUnits);
 		}
 	}
 
- // Operations
+// Operations
 	BOOL InitDialogBaseUnits(HWND hWnd)
 	{
 		ATLASSERT(::IsWindow(hWnd));
 		RECT rc = { 0, 0, 4, 8 };
-		if (!::MapDialogRect(hWnd, &rc)) return FALSE;
+		if(!::MapDialogRect(hWnd, &rc)) return FALSE;
 		m_sizeUnits.cx = rc.right;
 		m_sizeUnits.cy = rc.bottom;
 		return TRUE;
@@ -3020,21 +3019,21 @@ public:
 	{
 		CFont font;
 		font.CreateFontIndirect(&lf);
-		if (font.IsNull()) return FALSE;
+		if(font.IsNull()) return FALSE;
 		return InitDialogBaseUnits(font, hWnd);
 	}
 
 	BOOL InitDialogBaseUnits(HFONT hFont, HWND hWnd = NULL)
 	{
 		ATLASSERT(hFont != NULL);
-		CWindowDC 	dc 			= hWnd;
-		TEXTMETRIC 	tmText 		= { 0 };
-		SIZE 		sizeText	= { 0 };
-		HFONT 		hFontOld 	= dc.SelectFont(hFont);
+		CWindowDC dc = hWnd;
+		TEXTMETRIC tmText = { 0 };
+		SIZE sizeText = { 0 };
+		HFONT hFontOld = dc.SelectFont(hFont);
 		dc.GetTextMetrics(&tmText);
-		m_sizeUnits.cy 			= tmText.tmHeight + tmText.tmExternalLeading;
+		m_sizeUnits.cy = tmText.tmHeight + tmText.tmExternalLeading;
 		dc.GetTextExtent(_T("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"), 52, &sizeText);
-		m_sizeUnits.cx 			= (sizeText.cx + 26) / 52;
+		m_sizeUnits.cx = (sizeText.cx + 26) / 52;
 		dc.SelectFont(hFontOld);
 		return TRUE;
 	}
@@ -3056,19 +3055,19 @@ public:
 
 	POINT MapDialogPixels(POINT pt) const
 	{
-		POINT  out = { MapDialogPixelsX(pt.x), MapDialogPixelsY(pt.y) };
+		POINT out = { MapDialogPixelsX(pt.x), MapDialogPixelsY(pt.y) };
 		return out;
 	}
 
 	SIZE MapDialogPixels(SIZE input) const
 	{
-		SIZE   out = { MapDialogPixelsX(input.cx), MapDialogPixelsY(input.cy) };
+		SIZE out = { MapDialogPixelsX(input.cx), MapDialogPixelsY(input.cy) };
 		return out;
 	}
 
 	RECT MapDialogPixels(RECT input) const
 	{
-		RECT   out = { MapDialogPixelsX(input.left), MapDialogPixelsY(input.top), MapDialogPixelsX(input.right), MapDialogPixelsY(input.bottom) };
+		RECT out = { MapDialogPixelsX(input.left), MapDialogPixelsY(input.top), MapDialogPixelsX(input.right), MapDialogPixelsY(input.bottom) };
 		return out;
 	}
 
@@ -3084,19 +3083,19 @@ public:
 
 	POINT MapDialogUnits(POINT pt) const
 	{
-		POINT  out = { MapDialogUnitsX(pt.x), MapDialogUnitsY(pt.y) };
+		POINT out = { MapDialogUnitsX(pt.x), MapDialogUnitsY(pt.y) };
 		return out;
 	}
 
 	SIZE MapDialogUnits(SIZE input) const
 	{
-		SIZE   out = { MapDialogUnitsX(input.cx), MapDialogUnitsY(input.cy) };
+		SIZE out = { MapDialogUnitsX(input.cx), MapDialogUnitsY(input.cy) };
 		return out;
 	}
 
 	RECT MapDialogUnits(RECT input) const
 	{
-		RECT   out = { MapDialogUnitsX(input.left), MapDialogUnitsY(input.top), MapDialogUnitsX(input.right), MapDialogUnitsY(input.bottom) };
+		RECT out = { MapDialogUnitsX(input.left), MapDialogUnitsY(input.top), MapDialogUnitsX(input.right), MapDialogUnitsY(input.bottom) };
 		return out;
 	}
 };
@@ -3106,23 +3105,23 @@ public:
 // CMemDlgTemplate - in-memory dialog template - DLGTEMPLATE or DLGTEMPLATEEX
 
 #if (_ATL_VER >= 0x800)
-typedef ATL::_DialogSplitHelper::DLGTEMPLATEEX DLGTEMPLATEEX;
-typedef ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX DLGITEMTEMPLATEEX;
+  typedef ATL::_DialogSplitHelper::DLGTEMPLATEEX DLGTEMPLATEEX;
+  typedef ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX DLGITEMTEMPLATEEX;
 #else // (_ATL_VER >= 0x800)
-typedef ATL::_DialogSizeHelper::_ATL_DLGTEMPLATEEX DLGTEMPLATEEX;
-#pragma pack(push, 4)
-struct DLGITEMTEMPLATEEX
-{
-	DWORD 	helpID;
-	DWORD 	exStyle;
-	DWORD 	style;
-	short 	x;
-	short 	y;
-	short 	cx;
-	short 	cy;
-	DWORD 	id;
-};
-#pragma pack(pop)
+  typedef ATL::_DialogSizeHelper::_ATL_DLGTEMPLATEEX DLGTEMPLATEEX;
+  #pragma pack(push, 4)
+  struct DLGITEMTEMPLATEEX
+  {
+	DWORD helpID;
+	DWORD exStyle;
+	DWORD style;
+	short x;
+	short y;
+	short cx;
+	short cy;
+	DWORD id;
+  };
+  #pragma pack(pop)
 #endif // (_ATL_VER >= 0x800)
 
 
@@ -3170,15 +3169,15 @@ public:
 	void Reset()
 	{
 		if (IsValid()) {
-		  #ifndef UNDER_CE
+#ifndef UNDER_CE
 			::GlobalUnlock(m_pData);
-		  #endif
+#endif
 			ATLVERIFY(::GlobalFree(m_hData) == NULL);
 		}
 
-		m_hData 	 = NULL;
-		m_pData 	 = NULL;
-		m_pPtr  	 = NULL;
+		m_hData = NULL;
+		m_pData = NULL;
+		m_pPtr = NULL;
 		m_cAllocated = 0;
 	}
 
@@ -3191,8 +3190,8 @@ public:
 	}
 
 	void Create(bool bDlgEx, LPCTSTR lpszCaption, short nX, short nY, short nWidth, short nHeight, DWORD dwStyle = 0, DWORD dwExStyle = 0,
-	            LPCTSTR lpstrFontName = NULL, WORD wFontSize = 0, WORD wWeight = 0, BYTE bItalic = 0, BYTE bCharset = 0, DWORD dwHelpID = 0,
-				ATL::_U_STRINGorID ClassName = 0U, ATL::_U_STRINGorID Menu = 0U)
+		LPCTSTR lpstrFontName = NULL, WORD wFontSize = 0, WORD wWeight = 0, BYTE bItalic = 0, BYTE bCharset = 0, DWORD dwHelpID = 0,
+		ATL::_U_STRINGorID ClassName = 0U, ATL::_U_STRINGorID Menu = 0U)
 	{
 		// Should have DS_SETFONT style to set the dialog font name and size
 		if (lpstrFontName != NULL)
@@ -3215,7 +3214,7 @@ public:
 			AddData(&dlg, sizeof(dlg));
 		}
 
-	  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 		if (Menu.m_lpstr == NULL)
 		{
 			WORD menuData = 0;
@@ -3230,13 +3229,13 @@ public:
 		{
 			AddString(Menu.m_lpstr);
 		}
-	  #else // _WIN32_WCE
+#else // _WIN32_WCE
 		// Windows CE doesn't support the addition of menus to a dialog box
 		ATLASSERT(Menu.m_lpstr == NULL);
 		Menu.m_lpstr;   // avoid level 4 warning
-		WORD 	menuData = 0;
+		WORD menuData = 0;
 		AddData(&menuData, sizeof(WORD));
-	  #endif // _WIN32_WCE
+#endif // _WIN32_WCE
 
 		if (ClassName.m_lpstr == NULL)
 		{
@@ -3258,12 +3257,12 @@ public:
 
 		if (lpstrFontName != NULL)
 		{
-			AddData(&wFontSize   , sizeof(wFontSize));
+			AddData(&wFontSize, sizeof(wFontSize));
 
 			if (bDlgEx)
 			{
-				AddData(&wWeight , sizeof(wWeight));
-				AddData(&bItalic , sizeof(bItalic));
+				AddData(&wWeight, sizeof(wWeight));
+				AddData(&bItalic, sizeof(bItalic));
 				AddData(&bCharset, sizeof(bCharset));
 			}
 
@@ -3284,22 +3283,22 @@ public:
 		ATLASSERT(IsValid());
 
 		// DWORD align data
-		m_pPtr 	= (LPBYTE)(DWORD_PTR)((DWORD)(DWORD_PTR)(m_pPtr + 3) & (~3));
+		m_pPtr = (LPBYTE)(DWORD_PTR)((DWORD)(DWORD_PTR)(m_pPtr + 3) & (~3));
 
 		if (IsTemplateEx())
 		{
-			DLGTEMPLATEEX* 		dlg 	= (DLGTEMPLATEEX*)m_pData;
+			DLGTEMPLATEEX* dlg = (DLGTEMPLATEEX*)m_pData;
 			dlg->cDlgItems++;
 
-			DLGITEMTEMPLATEEX 	item 	= {dwHelpID, ATL::CControlWinTraits::GetWndExStyle(0) | dwExStyle, ATL::CControlWinTraits::GetWndStyle(0) | dwStyle, nX, nY, nWidth, nHeight, wId};
+			DLGITEMTEMPLATEEX item = {dwHelpID, ATL::CControlWinTraits::GetWndExStyle(0) | dwExStyle, ATL::CControlWinTraits::GetWndStyle(0) | dwStyle, nX, nY, nWidth, nHeight, wId};
 			AddData(&item, sizeof(item));
 		}
 		else
 		{
-			LPDLGTEMPLATE 		dlg 	= (LPDLGTEMPLATE)m_pData;
+			LPDLGTEMPLATE dlg = (LPDLGTEMPLATE)m_pData;
 			dlg->cdit++;
 
-			DLGITEMTEMPLATE 	item 	= {ATL::CControlWinTraits::GetWndStyle(0) | dwStyle, ATL::CControlWinTraits::GetWndExStyle(0) | dwExStyle, nX, nY, nWidth, nHeight, wId};
+			DLGITEMTEMPLATE item = {ATL::CControlWinTraits::GetWndStyle(0) | dwStyle, ATL::CControlWinTraits::GetWndExStyle(0) | dwExStyle, nX, nY, nWidth, nHeight, wId};
 			AddData(&item, sizeof(item));
 		}
 
@@ -3316,12 +3315,12 @@ public:
 
 		if (Text.m_lpstr == NULL)
 		{
-			WORD 	classData 	= 0;
+			WORD classData = 0;
 			AddData(&classData, sizeof(WORD));
 		}
 		else if (IS_INTRESOURCE(Text.m_lpstr))
 		{
-			WORD 	wData[] 	= {0xFFFF, (WORD)Text.m_lpstr};
+			WORD wData[] = {0xFFFF, (WORD)Text.m_lpstr};
 			AddData(wData, sizeof(wData));
 		}
 		else
@@ -3355,27 +3354,27 @@ public:
 			m_cAllocated = ((nData / ALLOCATION_INCREMENT) + 1) * ALLOCATION_INCREMENT;
 			m_hData = ::GlobalAlloc(GMEM_MOVEABLE | GMEM_ZEROINIT, m_cAllocated);
 			ATLASSERT(m_hData != NULL);
-		  #ifndef UNDER_CE
+#ifndef UNDER_CE
 			m_pPtr = m_pData = static_cast<LPBYTE>(::GlobalLock(m_hData));
-		  #else
+#else
 			m_pPtr = m_pData = static_cast<LPBYTE>(m_hData);
-		  #endif
+#endif
 			ATLASSERT(m_pData != NULL);
 		}
 		else if (((m_pPtr - m_pData) + nData) > m_cAllocated)
 		{
 			SIZE_T ptrPos = (m_pPtr - m_pData);
 			m_cAllocated += ((nData / ALLOCATION_INCREMENT) + 1) * ALLOCATION_INCREMENT;
-		  #ifndef UNDER_CE
+#ifndef UNDER_CE
 			::GlobalUnlock(m_pData);
-		  #endif
-			m_hData 	= ::GlobalReAlloc(m_hData, m_cAllocated, GMEM_MOVEABLE | GMEM_ZEROINIT);
+#endif
+			m_hData = ::GlobalReAlloc(m_hData, m_cAllocated, GMEM_MOVEABLE | GMEM_ZEROINIT);
 			ATLASSERT(m_hData != NULL);
-		  #ifndef UNDER_CE
-			m_pData 	= static_cast<LPBYTE>(::GlobalLock(m_hData));
-		  #else
-			m_pData 	= static_cast<LPBYTE>(m_hData);
-		  #endif
+#ifndef UNDER_CE
+			m_pData = static_cast<LPBYTE>(::GlobalLock(m_hData));
+#else
+			m_pData = static_cast<LPBYTE>(m_hData);
+#endif
 			ATLASSERT(m_pData != NULL);
 			m_pPtr = m_pData + ptrPos;
 		}
@@ -3389,22 +3388,22 @@ public:
 	{
 		if (lpszStr == NULL)
 		{
-			WCHAR 	szEmpty = 0;
+			WCHAR szEmpty = 0;
 			AddData(&szEmpty, sizeof(szEmpty));
 		}
 		else
 		{
 			USES_CONVERSION;
-			LPCWSTR 	lpstr = T2CW(lpszStr);
-			int 		nSize = lstrlenW(lpstr) + 1;
+			LPCWSTR lpstr = T2CW(lpszStr);
+			int nSize = lstrlenW(lpstr) + 1;
 			AddData(lpstr, nSize * sizeof(WCHAR));
 		}
 	}
 
-	HANDLE 		m_hData;
-	LPBYTE 		m_pData;
-	LPBYTE 		m_pPtr;
-	SIZE_T 		m_cAllocated;
+	HANDLE m_hData;
+	LPBYTE m_pData;
+	LPBYTE m_pPtr;
+	SIZE_T m_cAllocated;
 };
 
 
@@ -3412,111 +3411,111 @@ public:
 // Dialog and control macros for indirect dialogs
 
 // for DLGTEMPLATE
-#define BEGIN_DIALOG(x, y, width, height) 							\
-	void DoInitTemplate() 											\
-	{ 																\
-		bool 	bExTemplate = false; 								\
-		short 	nX = x, nY = y, nWidth = width, nHeight = height; 	\
-		LPCTSTR szCaption 	= NULL; 								\
-		DWORD 	dwStyle 	= WS_POPUP | WS_BORDER | WS_SYSMENU; 	\
-		DWORD 	dwExStyle 	= 0; 									\
-		LPCTSTR szFontName 	= NULL; 								\
-		WORD 	wFontSize 	= 0; 									\
-		WORD 	wWeight 	= 0; 									\
-		BYTE 	bItalic 	= 0; 									\
-		BYTE 	bCharset 	= 0; 									\
-		DWORD 	dwHelpID 	= 0; 									\
-		ATL::_U_STRINGorID	Menu 	  = 0U; 						\
-		ATL::_U_STRINGorID	ClassName = 0U;
+#define BEGIN_DIALOG(x, y, width, height) \
+	void DoInitTemplate() \
+	{ \
+		bool bExTemplate = false; \
+		short nX = x, nY = y, nWidth = width, nHeight = height; \
+		LPCTSTR szCaption = NULL; \
+		DWORD dwStyle = WS_POPUP | WS_BORDER | WS_SYSMENU; \
+		DWORD dwExStyle = 0; \
+		LPCTSTR szFontName = NULL; \
+		WORD wFontSize = 0; \
+		WORD wWeight = 0; \
+		BYTE bItalic = 0; \
+		BYTE bCharset = 0; \
+		DWORD dwHelpID = 0; \
+		ATL::_U_STRINGorID Menu = 0U; \
+		ATL::_U_STRINGorID ClassName = 0U;
 
 // for DLGTEMPLATEEX
-#define BEGIN_DIALOG_EX(x, y, width, height, helpID) 				\
-	void DoInitTemplate() 											\
-	{ 																\
-		bool 	bExTemplate = true; 								\
-		short 	nX = x, nY = y, nWidth = width, nHeight = height; 	\
-		LPCTSTR szCaption 		= NULL; 							\
-		DWORD 	dwStyle 		= WS_POPUP | WS_BORDER | WS_SYSMENU; \
-		DWORD 	dwExStyle 		= 0; 								\
-		LPCTSTR szFontName 		= NULL; 							\
-		WORD 	wFontSize 		= 0; 								\
-		WORD 	wWeight 		= 0; 								\
-		BYTE 	bItalic 		= 0; 								\
-		BYTE 	bCharset 		= 0; 								\
-		DWORD 	dwHelpID 		= helpID; 							\
-		ATL::_U_STRINGorID 	Menu 		= 0U; 						\
-		ATL::_U_STRINGorID 	ClassName	= 0U;
+#define BEGIN_DIALOG_EX(x, y, width, height, helpID) \
+	void DoInitTemplate() \
+	{ \
+		bool bExTemplate = true; \
+		short nX = x, nY = y, nWidth = width, nHeight = height; \
+		LPCTSTR szCaption = NULL; \
+		DWORD dwStyle = WS_POPUP | WS_BORDER | WS_SYSMENU; \
+		DWORD dwExStyle = 0; \
+		LPCTSTR szFontName = NULL; \
+		WORD wFontSize = 0; \
+		WORD wWeight = 0; \
+		BYTE bItalic = 0; \
+		BYTE bCharset = 0; \
+		DWORD dwHelpID = helpID; \
+		ATL::_U_STRINGorID Menu = 0U; \
+		ATL::_U_STRINGorID ClassName = 0U;
 
-#define END_DIALOG() 			\
+#define END_DIALOG() \
 		m_Template.Create(bExTemplate, szCaption, nX, nY, nWidth, nHeight, dwStyle, dwExStyle, szFontName, wFontSize, wWeight, bItalic, bCharset, dwHelpID, ClassName, Menu); \
 	};
 
 #define DIALOG_CAPTION(caption) \
-		szCaption 	= caption;
-#define DIALOG_STYLE(style) 	\
-		dwStyle 	= style;
+		szCaption = caption;
+#define DIALOG_STYLE(style) \
+		dwStyle = style;
 #define DIALOG_EXSTYLE(exStyle) \
-		dwExStyle 	= exStyle;
-#define DIALOG_FONT(pointSize, typeFace) 	\
-		wFontSize 	= pointSize; 			\
-		szFontName 	= typeFace;
+		dwExStyle = exStyle;
+#define DIALOG_FONT(pointSize, typeFace) \
+		wFontSize = pointSize; \
+		szFontName = typeFace;
 #define DIALOG_FONT_EX(pointsize, typeface, weight, italic, charset) \
-		ATLASSERT(bExTemplate); 	\
-		wFontSize 	= pointsize; 	\
-		szFontName 	= typeface; 	\
-		wWeight 	= weight; 		\
-		bItalic 	= italic; 		\
-		bCharset 	= charset;
-#define DIALOG_MENU(menuName) 		\
-		Menu 		= menuName;
-#define DIALOG_CLASS(className) 	\
-		ClassName 	= className;
+		ATLASSERT(bExTemplate); \
+		wFontSize = pointsize; \
+		szFontName = typeface; \
+		wWeight = weight; \
+		bItalic = italic; \
+		bCharset = charset;
+#define DIALOG_MENU(menuName) \
+		Menu = menuName;
+#define DIALOG_CLASS(className) \
+		ClassName = className;
 
-#define BEGIN_CONTROLS_MAP() 		\
-	void DoInitControls() 			\
+#define BEGIN_CONTROLS_MAP() \
+	void DoInitControls() \
 	{
 
-#define END_CONTROLS_MAP() 			\
+#define END_CONTROLS_MAP() \
 	};
 
 
-#define CONTROL_LTEXT(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_LTEXT(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_STATIC, (WORD)id, x, y, width, height, style | SS_LEFT | WS_GROUP, exStyle, text, NULL, 0);
-#define CONTROL_CTEXT(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_CTEXT(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_STATIC, (WORD)id, x, y, width, height, style | SS_CENTER | WS_GROUP, exStyle, text, NULL, 0);
-#define CONTROL_RTEXT(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_RTEXT(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_STATIC, (WORD)id, x, y, width, height, style | SS_RIGHT | WS_GROUP, exStyle, text, NULL, 0);
-#define CONTROL_PUSHBUTTON(text, id, x, y, width, height, style, exStyle) 	\
+#define CONTROL_PUSHBUTTON(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_PUSHBUTTON | WS_TABSTOP, exStyle, text, NULL, 0);
 #define CONTROL_DEFPUSHBUTTON(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_DEFPUSHBUTTON | WS_TABSTOP, exStyle, text, NULL, 0);
 #ifndef _WIN32_WCE
-#define CONTROL_PUSHBOX(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_PUSHBOX(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_PUSHBOX | WS_TABSTOP, exStyle, text, NULL, 0);
 #endif // !_WIN32_WCE
-#define CONTROL_STATE3(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_STATE3(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_3STATE | WS_TABSTOP, exStyle, text, NULL, 0);
-#define CONTROL_AUTO3STATE(text, id, x, y, width, height, style, exStyle) 	\
+#define CONTROL_AUTO3STATE(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_AUTO3STATE | WS_TABSTOP, exStyle, text, NULL, 0);
-#define CONTROL_CHECKBOX(text, id, x, y, width, height, style, exStyle) 	\
+#define CONTROL_CHECKBOX(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_CHECKBOX | WS_TABSTOP, exStyle, text, NULL, 0);
 #define CONTROL_AUTOCHECKBOX(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_AUTOCHECKBOX | WS_TABSTOP, exStyle, text, NULL, 0);
-#define CONTROL_RADIOBUTTON(text, id, x, y, width, height, style, exStyle) 	\
+#define CONTROL_RADIOBUTTON(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_RADIOBUTTON | WS_TABSTOP, exStyle, text, NULL, 0);
 #define CONTROL_AUTORADIOBUTTON(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_AUTORADIOBUTTON | WS_TABSTOP, exStyle, text, NULL, 0);
-#define CONTROL_COMBOBOX(id, x, y, width, height, style, exStyle) 			\
+#define CONTROL_COMBOBOX(id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_COMBOBOX, (WORD)id, x, y, width, height, style | CBS_DROPDOWN | WS_TABSTOP, exStyle, (LPCTSTR)NULL, NULL, 0);
-#define CONTROL_EDITTEXT(id, x, y, width, height, style, exStyle) 			\
+#define CONTROL_EDITTEXT(id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_EDIT, (WORD)id, x, y, width, height, style | ES_LEFT | WS_BORDER | WS_TABSTOP, exStyle, (LPCTSTR)NULL, NULL, 0);
-#define CONTROL_GROUPBOX(text, id, x, y, width, height, style, exStyle) 	\
+#define CONTROL_GROUPBOX(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_BUTTON, (WORD)id, x, y, width, height, style | BS_GROUPBOX, exStyle, text, NULL, 0);
-#define CONTROL_LISTBOX(id, x, y, width, height, style, exStyle) 			\
+#define CONTROL_LISTBOX(id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_LISTBOX, (WORD)id, x, y, width, height, style | LBS_NOTIFY | WS_BORDER, exStyle, (LPCTSTR)NULL, NULL, 0);
-#define CONTROL_SCROLLBAR(id, x, y, width, height, style, exStyle) 			\
+#define CONTROL_SCROLLBAR(id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_SCROLLBAR, (WORD)id, x, y, width, height, style | SBS_HORZ, exStyle, (LPCTSTR)NULL, NULL, 0);
-#define CONTROL_ICON(text, id, x, y, width, height, style, exStyle) 		\
+#define CONTROL_ICON(text, id, x, y, width, height, style, exStyle) \
 	m_Template.AddStdControl(WTL::CMemDlgTemplate::CTRL_STATIC, (WORD)id, x, y, width, height, style | SS_ICON, exStyle, text, NULL, 0);
 #define CONTROL_CONTROL(text, id, className, style, x, y, width, height, exStyle) \
 	m_Template.AddControl(className, (WORD)id, x, y, width, height, style, exStyle, text, NULL, 0);
@@ -3531,7 +3530,7 @@ class ATL_NO_VTABLE CIndirectDialogImpl : public TBase
 public:
 	enum { IDD = 0 };   // no dialog template resource
 
-	TDlgTemplate 	m_Template;
+	TDlgTemplate m_Template;
 
 	void CreateTemplate()
 	{
@@ -3548,7 +3547,7 @@ public:
 		if (!m_Template.IsValid())
 			CreateTemplate();
 
-	  #if (_ATL_VER >= 0x0800)
+#if (_ATL_VER >= 0x0800)
 		// Allocate the thunk structure here, where we can fail gracefully.
 		BOOL result = m_thunk.Init(NULL, NULL);
 		if (result == FALSE)
@@ -3556,40 +3555,40 @@ public:
 			SetLastError(ERROR_OUTOFMEMORY);
 			return -1;
 		}
-	  #endif // (_ATL_VER >= 0x0800)
+#endif // (_ATL_VER >= 0x0800)
 
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, pT);
 
-	  #ifdef _DEBUG
+#ifdef _DEBUG
 		m_bModal = true;
-	  #endif // _DEBUG
+#endif // _DEBUG
 
 		return ::DialogBoxIndirectParam(ModuleHelper::GetResourceInstance(), m_Template.GetTemplatePtr(), hWndParent, (DLGPROC)T::StartDialogProc, dwInitParam);
 	}
 
 	HWND Create(HWND hWndParent, LPARAM dwInitParam = NULL)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ATLASSERT(pT->m_hWnd == NULL);
 
 		if (!m_Template.IsValid())
 			CreateTemplate();
 
-	  #if (_ATL_VER >= 0x0800)
+#if (_ATL_VER >= 0x0800)
 		// Allocate the thunk structure here, where we can fail gracefully.
 		BOOL result = m_thunk.Init(NULL, NULL);
-		if (result == FALSE)
+		if (result == FALSE) 
 		{
 			SetLastError(ERROR_OUTOFMEMORY);
 			return NULL;
 		}
-	  #endif // (_ATL_VER >= 0x0800)
+#endif // (_ATL_VER >= 0x0800)
 
 		ModuleHelper::AddCreateWndData(&m_thunk.cd, pT);
 
-	  #ifdef _DEBUG
+#ifdef _DEBUG
 		m_bModal = false;
-	  #endif // _DEBUG
+#endif // _DEBUG
 
 		HWND hWnd = ::CreateDialogIndirectParam(ModuleHelper::GetResourceInstance(), (LPCDLGTEMPLATE)m_Template.GetTemplatePtr(), hWndParent, (DLGPROC)T::StartDialogProc, dwInitParam);
 		ATLASSERT(m_hWnd == hWnd);
@@ -3603,12 +3602,12 @@ public:
 		return Create(hWndParent, dwInitParam);
 	}
 
-	void DoInitTemplate()
+	void DoInitTemplate() 
 	{
 		ATLASSERT(FALSE);   // MUST be defined in derived class
 	}
 
-	void DoInitControls()
+	void DoInitControls() 
 	{
 		ATLASSERT(FALSE);   // MUST be defined in derived class
 	}
@@ -3620,7 +3619,7 @@ public:
 class CPropertySheetWindow : public ATL::CWindow
 {
 public:
- // Constructors
+// Constructors
 	CPropertySheetWindow(HWND hWnd = NULL) : ATL::CWindow(hWnd)
 	{ }
 
@@ -3630,11 +3629,11 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	int GetPageCount() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		HWND 	hWndTabCtrl = GetTabControl();
+		HWND hWndTabCtrl = GetTabControl();
 		ATLASSERT(hWndTabCtrl != NULL);
 		return (int)::SendMessage(hWndTabCtrl, TCM_GETITEMCOUNT, 0, 0L);
 	}
@@ -3648,7 +3647,7 @@ public:
 	int GetActiveIndex() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
-		HWND 	hWndTabCtrl = GetTabControl();
+		HWND hWndTabCtrl = GetTabControl();
 		ATLASSERT(hWndTabCtrl != NULL);
 		return (int)::SendMessage(hWndTabCtrl, TCM_GETCURSEL, 0, 0L);
 	}
@@ -3698,7 +3697,7 @@ public:
 		::PostMessage(m_hWnd, PSM_SETWIZBUTTONS, 0, dwFlags);
 	}
 
- // Operations
+// Operations
 	BOOL AddPage(HPROPSHEETPAGE hPage)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3711,12 +3710,12 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(pPage != NULL);
 		HPROPSHEETPAGE hPage = ::CreatePropertySheetPage(pPage);
-		if (hPage == NULL)
+		if(hPage == NULL)
 			return FALSE;
 		return (BOOL)::SendMessage(m_hWnd, PSM_ADDPAGE, 0, (LPARAM)hPage);
 	}
 
- #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 	BOOL InsertPage(int nNewPageIndex, HPROPSHEETPAGE hPage)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3729,7 +3728,7 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(pPage != NULL);
 		HPROPSHEETPAGE hPage = ::CreatePropertySheetPage(pPage);
-		if (hPage == NULL)
+		if(hPage == NULL)
 			return FALSE;
 		return (BOOL)::SendMessage(m_hWnd, PSM_INSERTPAGE, nNewPageIndex, (LPARAM)hPage);
 	}
@@ -3746,11 +3745,11 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		ATLASSERT(pPage != NULL);
 		HPROPSHEETPAGE hPage = ::CreatePropertySheetPage(pPage);
-		if (hPage == NULL)
+		if(hPage == NULL)
 			return FALSE;
 		return (BOOL)::SendMessage(m_hWnd, PSM_INSERTPAGE, (WPARAM)hPageInsertAfter, (LPARAM)hPage);
 	}
- #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 
 	void RemovePage(int nPageIndex)
 	{
@@ -3815,7 +3814,7 @@ public:
 		return (BOOL)::SendMessage(m_hWnd, PSM_ISDIALOGMESSAGE, 0, (LPARAM)lpMsg);
 	}
 
-  #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	int HwndToIndex(HWND hWnd) const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -3875,9 +3874,9 @@ public:
 		ATLASSERT(::IsWindow(m_hWnd));
 		::SendMessage(m_hWnd, PSM_SETHEADERSUBTITLE, nIndex, (LPARAM)lpstrHeaderSubTitle);
 	}
-  #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- // Implementation - override to prevent usage
+// Implementation - override to prevent usage
 	HWND Create(LPCTSTR, HWND, ATL::_U_RECT = NULL, LPCTSTR = NULL, DWORD = 0, DWORD = 0, ATL::_U_MENUorID = 0U, LPVOID = NULL)
 	{
 		ATLASSERT(FALSE);
@@ -3892,87 +3891,87 @@ template <class T, class TBase = CPropertySheetWindow>
 class ATL_NO_VTABLE CPropertySheetImpl : public ATL::CWindowImplBaseT< TBase >
 {
 public:
-	PROPSHEETHEADER 					m_psh;
-	ATL::CSimpleArray<HPROPSHEETPAGE> 	m_arrPages;
+	PROPSHEETHEADER m_psh;
+	ATL::CSimpleArray<HPROPSHEETPAGE> m_arrPages;
 
- #if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
+#if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
   #ifndef PROPSHEET_LINK_SIZE
-	#define PROPSHEET_LINK_SIZE 		128
+	#define PROPSHEET_LINK_SIZE 128
   #endif // PROPSHEET_LINK_SIZE
-	TCHAR 			m_szLink[PROPSHEET_LINK_SIZE];
-	static LPCTSTR 	m_pszTitle;
-	static LPCTSTR 	m_pszLink;
- #endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
+	TCHAR m_szLink[PROPSHEET_LINK_SIZE];
+	static LPCTSTR m_pszTitle;
+	static LPCTSTR m_pszLink;
+#endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) 
 
- // Construction/Destruction
+// Construction/Destruction
 	CPropertySheetImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL, UINT uStartPage = 0, HWND hWndParent = NULL)
 	{
 		memset(&m_psh, 0, sizeof(PROPSHEETHEADER));
-		m_psh.dwSize 		= sizeof(PROPSHEETHEADER);
-		m_psh.dwFlags 		= PSH_USECALLBACK;
-		m_psh.hInstance 	= ModuleHelper::GetResourceInstance();
-		m_psh.phpage 		= NULL;   		// will be set later
-		m_psh.nPages 		= 0;      		// will be set later
-		m_psh.pszCaption 	= title.m_lpstr;
-		m_psh.nStartPage 	= uStartPage;
-		m_psh.hwndParent 	= hWndParent;   // if NULL, will be set in DoModal/Create
-		m_psh.pfnCallback 	= T::PropSheetCallback;
+		m_psh.dwSize = sizeof(PROPSHEETHEADER);
+		m_psh.dwFlags = PSH_USECALLBACK;
+		m_psh.hInstance = ModuleHelper::GetResourceInstance();
+		m_psh.phpage = NULL;   // will be set later
+		m_psh.nPages = 0;      // will be set later
+		m_psh.pszCaption = title.m_lpstr;
+		m_psh.nStartPage = uStartPage;
+		m_psh.hwndParent = hWndParent;   // if NULL, will be set in DoModal/Create
+		m_psh.pfnCallback = T::PropSheetCallback;
 
-	  #if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
-		m_psh.dwFlags 		|= PSH_MAXIMIZE;
-		m_szLink[0] 		=  0;
-	  #endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
+#if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific 
+		m_psh.dwFlags |= PSH_MAXIMIZE;
+		m_szLink[0] = 0;
+#endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
 	}
 
 	~CPropertySheetImpl()
 	{
-		if (m_arrPages.GetSize() > 0)   // sheet never created, destroy all pages
+		if(m_arrPages.GetSize() > 0)   // sheet never created, destroy all pages
 		{
-			for (int i = 0; i < m_arrPages.GetSize(); i++)
+			for(int i = 0; i < m_arrPages.GetSize(); i++)
 				::DestroyPropertySheetPage((HPROPSHEETPAGE)m_arrPages[i]);
 		}
 	}
 
- // Callback function and overrideables
+// Callback function and overrideables
 	static int CALLBACK PropSheetCallback(HWND hWnd, UINT uMsg, LPARAM lParam)
 	{
 		lParam;   // avoid level 4 warning
-		int 	nRet = 0;
+		int nRet = 0;
 
-		if (uMsg == PSCB_INITIALIZED)
+		if(uMsg == PSCB_INITIALIZED)
 		{
 			ATLASSERT(hWnd != NULL);
-			T* 	pT 	 = (T*)ModuleHelper::ExtractCreateWndData();
+			T* pT = (T*)ModuleHelper::ExtractCreateWndData();
 			// subclass the sheet window
 			pT->SubclassWindow(hWnd);
 			// remove page handles array
 			pT->_CleanUpPages();
 
-		  #if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
+#if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
 			m_pszTitle = pT->m_psh.pszCaption;
-			if (*pT->m_szLink != 0)
+			if(*pT->m_szLink != 0)
 				m_pszLink = pT->m_szLink;
-		  #endif  // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
+#endif  // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific
 
 			pT->OnSheetInitialized();
 		}
-	  #if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific uMsg
+#if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific uMsg
 		else
 		{
-			switch (uMsg)
+			switch(uMsg)
 			{
 			case PSCB_GETVERSION :
 				nRet = COMCTL32_VERSION;
 				break;
 			case PSCB_GETTITLE :
-				if (m_pszTitle != NULL)
+				if(m_pszTitle != NULL)
 				{
 					lstrcpy((LPTSTR)lParam, m_pszTitle);
 					m_pszTitle = NULL;
 				}
 				break;
 			case PSCB_GETLINKTEXT:
-				if (m_pszLink != NULL)
+				if(m_pszLink != NULL)
 				{
 					lstrcpy((LPTSTR)lParam, m_pszLink);
 					m_pszLink = NULL;
@@ -3982,7 +3981,7 @@ public:
 				break;
 			}
 		}
-	  #endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
+#endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) 
 
 		return nRet;
 	}
@@ -3991,18 +3990,18 @@ public:
 	{
 	}
 
- // Create method
+// Create method
 	HWND Create(HWND hWndParent = NULL)
 	{
 		ATLASSERT(m_hWnd == NULL);
 
-		m_psh.dwFlags  |= PSH_MODELESS;
-		if (m_psh.hwndParent == NULL)
+		m_psh.dwFlags |= PSH_MODELESS;
+		if(m_psh.hwndParent == NULL)
 			m_psh.hwndParent = hWndParent;
-		m_psh.phpage 	= (HPROPSHEETPAGE*)m_arrPages.GetData();
-		m_psh.nPages 	= m_arrPages.GetSize();
+		m_psh.phpage = (HPROPSHEETPAGE*)m_arrPages.GetData();
+		m_psh.nPages = m_arrPages.GetSize();
 
-		T* 		pT 		= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ModuleHelper::AddCreateWndData(&pT->m_thunk.cd, pT);
 
 		HWND hWnd = (HWND)::PropertySheet(&m_psh);
@@ -4017,16 +4016,16 @@ public:
 	{
 		ATLASSERT(m_hWnd == NULL);
 
-		m_psh.dwFlags  &= ~PSH_MODELESS;
-		if (m_psh.hwndParent == NULL)
+		m_psh.dwFlags &= ~PSH_MODELESS;
+		if(m_psh.hwndParent == NULL)
 			m_psh.hwndParent = hWndParent;
-		m_psh.phpage 	= (HPROPSHEETPAGE*)m_arrPages.GetData();
-		m_psh.nPages 	= m_arrPages.GetSize();
+		m_psh.phpage = (HPROPSHEETPAGE*)m_arrPages.GetData();
+		m_psh.nPages = m_arrPages.GetSize();
 
-		T* 		pT 		= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		ModuleHelper::AddCreateWndData(&pT->m_thunk.cd, pT);
 
-		INT_PTR	nRet	= ::PropertySheet(&m_psh);
+		INT_PTR nRet = ::PropertySheet(&m_psh);
 		_CleanUpPages();   // ensure clean-up, required if call failed
 
 		return nRet;
@@ -4035,24 +4034,24 @@ public:
 	// implementation helper - clean up pages array
 	void _CleanUpPages()
 	{
-		m_psh.nPages 	= 0;
-		m_psh.phpage 	= NULL;
+		m_psh.nPages = 0;
+		m_psh.phpage = NULL;
 		m_arrPages.RemoveAll();
 	}
 
- // Attributes (extended overrides of client class methods)
- // These now can be called before the sheet is created
- // Note: Calling these after the sheet is created gives unpredictable results
+// Attributes (extended overrides of client class methods)
+// These now can be called before the sheet is created
+// Note: Calling these after the sheet is created gives unpredictable results
 	int GetPageCount() const
 	{
-		if (m_hWnd == NULL)   // not created yet
+		if(m_hWnd == NULL)   // not created yet
 			return m_arrPages.GetSize();
 		return TBase::GetPageCount();
 	}
 
 	int GetActiveIndex() const
 	{
-		if (m_hWnd == NULL)   // not created yet
+		if(m_hWnd == NULL)   // not created yet
 			return m_psh.nStartPage;
 		return TBase::GetActiveIndex();
 	}
@@ -4071,7 +4070,7 @@ public:
 
 	BOOL SetActivePage(int nPageIndex)
 	{
-		if (m_hWnd == NULL)   // not created yet
+		if(m_hWnd == NULL)   // not created yet
 		{
 			ATLASSERT(nPageIndex >= 0 && nPageIndex < m_arrPages.GetSize());
 			m_psh.nStartPage = nPageIndex;
@@ -4086,7 +4085,7 @@ public:
 		if (m_hWnd == NULL)   // not created yet
 		{
 			int nPageIndex = GetPageIndex(hPage);
-			if (nPageIndex == -1)
+			if(nPageIndex == -1)
 				return FALSE;
 
 			return SetActivePage(nPageIndex);
@@ -4100,12 +4099,12 @@ public:
 		ATLASSERT((nStyle & ~PSH_PROPTITLE) == 0);   // only PSH_PROPTITLE is valid
 		ATLASSERT(lpszText != NULL);
 
-		if (m_hWnd == NULL)
+		if(m_hWnd == NULL)
 		{
 			// set internal state
-			m_psh.pszCaption 	=  lpszText;   // must exist until sheet is created
-			m_psh.dwFlags 		&= ~PSH_PROPTITLE;
-			m_psh.dwFlags 		|= nStyle;
+			m_psh.pszCaption = lpszText;   // must exist until sheet is created
+			m_psh.dwFlags &= ~PSH_PROPTITLE;
+			m_psh.dwFlags |= nStyle;
 		}
 		else
 		{
@@ -4114,14 +4113,14 @@ public:
 		}
 	}
 
-  #if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific Link field
+#if defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) // PPC specific Link field	
 	void SetLinkText(LPCTSTR lpszText)
 	{
 		ATLASSERT(lpszText != NULL);
 		ATLASSERT(lstrlen(lpszText) < PROPSHEET_LINK_SIZE);
 		lstrcpy(m_szLink, lpszText);
 	}
-  #endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
+#endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__) 
 
 	void SetWizardMode()
 	{
@@ -4133,12 +4132,12 @@ public:
 		m_psh.dwFlags |= PSH_HASHELP;
 	}
 
- // Operations
+// Operations
 	BOOL AddPage(HPROPSHEETPAGE hPage)
 	{
 		ATLASSERT(hPage != NULL);
 		BOOL bRet = FALSE;
-		if (m_hWnd != NULL)
+		if(m_hWnd != NULL)
 			bRet = TBase::AddPage(hPage);
 		else	// sheet not created yet, use internal data
 			bRet = m_arrPages.Add((HPROPSHEETPAGE&)hPage);
@@ -4149,10 +4148,10 @@ public:
 	{
 		ATLASSERT(pPage != NULL);
 		HPROPSHEETPAGE hPage = ::CreatePropertySheetPage(pPage);
-		if (hPage == NULL)
+		if(hPage == NULL)
 			return FALSE;
 		BOOL bRet = AddPage(hPage);
-		if (!bRet)
+		if(!bRet)
 			::DestroyPropertySheetPage(hPage);
 		return bRet;
 	}
@@ -4163,7 +4162,7 @@ public:
 		if (m_hWnd == NULL)   // not created yet
 		{
 			int nPage = GetPageIndex(hPage);
-			if (nPage == -1)
+			if(nPage == -1)
 				return FALSE;
 			return RemovePage(nPage);
 		}
@@ -4175,20 +4174,20 @@ public:
 	BOOL RemovePage(int nPageIndex)
 	{
 		BOOL bRet = TRUE;
-		if (m_hWnd != NULL)
+		if(m_hWnd != NULL)
 			TBase::RemovePage(nPageIndex);
 		else	// sheet not created yet, use internal data
 			bRet = m_arrPages.RemoveAt(nPageIndex);
 		return bRet;
 	}
 
-  #if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 	void SetHeader(LPCTSTR szbmHeader)
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
 
-		m_psh.dwFlags    &= ~PSH_WIZARD;
-		m_psh.dwFlags    |= (PSH_HEADER | PSH_WIZARD97);
+		m_psh.dwFlags &= ~PSH_WIZARD;
+		m_psh.dwFlags |= (PSH_HEADER | PSH_WIZARD97);
 		m_psh.pszbmHeader = szbmHeader;
 	}
 
@@ -4196,22 +4195,22 @@ public:
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
 
-		m_psh.dwFlags 	&= ~PSH_WIZARD;
-		m_psh.dwFlags 	|= (PSH_HEADER | PSH_USEHBMHEADER | PSH_WIZARD97);
-		m_psh.hbmHeader  = hbmHeader;
+		m_psh.dwFlags &= ~PSH_WIZARD;
+		m_psh.dwFlags |= (PSH_HEADER | PSH_USEHBMHEADER | PSH_WIZARD97);
+		m_psh.hbmHeader = hbmHeader;
 	}
 
 	void SetWatermark(LPCTSTR szbmWatermark, HPALETTE hplWatermark = NULL)
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
 
-		m_psh.dwFlags 		&= ~PSH_WIZARD;
-		m_psh.dwFlags 		|= PSH_WATERMARK | PSH_WIZARD97;
+		m_psh.dwFlags &= ~PSH_WIZARD;
+		m_psh.dwFlags |= PSH_WATERMARK | PSH_WIZARD97;
 		m_psh.pszbmWatermark = szbmWatermark;
 
 		if (hplWatermark != NULL)
 		{
-			m_psh.dwFlags     |= PSH_USEHPLWATERMARK;
+			m_psh.dwFlags |= PSH_USEHPLWATERMARK;
 			m_psh.hplWatermark = hplWatermark;
 		}
 	}
@@ -4220,13 +4219,13 @@ public:
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
 
-		m_psh.dwFlags 	  &= ~PSH_WIZARD;
-		m_psh.dwFlags 	  |= (PSH_WATERMARK | PSH_USEHBMWATERMARK | PSH_WIZARD97);
+		m_psh.dwFlags &= ~PSH_WIZARD;
+		m_psh.dwFlags |= (PSH_WATERMARK | PSH_USEHBMWATERMARK | PSH_WIZARD97);
 		m_psh.hbmWatermark = hbmWatermark;
 
 		if (hplWatermark != NULL)
 		{
-			m_psh.dwFlags     |= PSH_USEHPLWATERMARK;
+			m_psh.dwFlags |= PSH_USEHPLWATERMARK;
 			m_psh.hplWatermark = hplWatermark;
 		}
 	}
@@ -4239,18 +4238,18 @@ public:
 		else
 			m_psh.dwFlags &= ~PSH_STRETCHWATERMARK;
 	}
- #endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0400) && !defined(_WIN32_WCE)
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CPropertySheetImpl)
-		MESSAGE_HANDLER( WM_COMMAND   , OnCommand    )
-		MESSAGE_HANDLER( WM_SYSCOMMAND, OnSysCommand )
+		MESSAGE_HANDLER(WM_COMMAND, OnCommand)
+		MESSAGE_HANDLER(WM_SYSCOMMAND, OnSysCommand)
 	END_MSG_MAP()
 
 	LRESULT OnCommand(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL& /*bHandled*/)
 	{
-		LRESULT 	lRet = DefWindowProc(uMsg, wParam, lParam);
-		if (HIWORD(wParam) == BN_CLICKED && (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) &&
+		LRESULT lRet = DefWindowProc(uMsg, wParam, lParam);
+		if(HIWORD(wParam) == BN_CLICKED && (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) &&
 		   ((m_psh.dwFlags & PSH_MODELESS) != 0) && (GetActivePage() == NULL))
 			DestroyWindow();
 		return lRet;
@@ -4258,7 +4257,7 @@ public:
 
 	LRESULT OnSysCommand(UINT /*uMsg*/, WPARAM wParam, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		if (((m_psh.dwFlags & PSH_MODELESS) == PSH_MODELESS) && ((wParam & 0xFFF0) == SC_CLOSE))
+		if(((m_psh.dwFlags & PSH_MODELESS) == PSH_MODELESS) && ((wParam & 0xFFF0) == SC_CLOSE))
 			SendMessage(WM_CLOSE);
 		else
 			bHandled = FALSE;
@@ -4270,7 +4269,7 @@ public:
 template < class T, class TBase >
 LPCWSTR CPropertySheetImpl<T,TBase>::m_pszTitle = NULL;
 template < class T, class TBase>
-LPCWSTR CPropertySheetImpl<T,TBase>::m_pszLink 	= NULL;
+LPCWSTR CPropertySheetImpl<T,TBase>::m_pszLink = NULL;
 #endif // defined(_AYGSHELL_H_) || defined(__AYGSHELL_H__)
 
 // for non-customized sheets
@@ -4289,7 +4288,7 @@ public:
 class CPropertyPageWindow : public ATL::CWindow
 {
 public:
- // Constructors
+// Constructors
 	CPropertyPageWindow(HWND hWnd = NULL) : ATL::CWindow(hWnd)
 	{ }
 
@@ -4299,14 +4298,14 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	CPropertySheetWindow GetPropertySheet() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CPropertySheetWindow(GetParent());
 	}
 
- // Operations
+// Operations
 	BOOL Apply()
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -4356,7 +4355,7 @@ public:
 		GetPropertySheet().SetWizardButtons(dwFlags);
 	}
 
- // Implementation - overrides to prevent usage
+// Implementation - overrides to prevent usage
 	HWND Create(LPCTSTR, HWND, ATL::_U_RECT = NULL, LPCTSTR = NULL, DWORD = 0, DWORD = 0, ATL::_U_MENUorID = 0U, LPVOID = NULL)
 	{
 		ATLASSERT(FALSE);
@@ -4375,46 +4374,46 @@ public:
 
 	operator PROPSHEETPAGE*() { return &m_psp; }
 
- // Construction
+// Construction
 	CPropertyPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL)
 	{
 		// initialize PROPSHEETPAGE struct
 		memset(&m_psp, 0, sizeof(PROPSHEETPAGE));
-		m_psp.dwSize 		= sizeof(PROPSHEETPAGE);
-		m_psp.dwFlags 		= PSP_USECALLBACK;
-		m_psp.hInstance 	= ModuleHelper::GetResourceInstance();
-		T* 		pT 			= static_cast<T*>(this);
-		m_psp.pszTemplate 	= MAKEINTRESOURCE(pT->IDD);
-		m_psp.pfnDlgProc 	= (DLGPROC)T::StartDialogProc;
-		m_psp.pfnCallback 	= T::PropPageCallback;
-		m_psp.lParam 		= (LPARAM)pT;
+		m_psp.dwSize = sizeof(PROPSHEETPAGE);
+		m_psp.dwFlags = PSP_USECALLBACK;
+		m_psp.hInstance = ModuleHelper::GetResourceInstance();
+		T* pT = static_cast<T*>(this);
+		m_psp.pszTemplate = MAKEINTRESOURCE(pT->IDD);
+		m_psp.pfnDlgProc = (DLGPROC)T::StartDialogProc;
+		m_psp.pfnCallback = T::PropPageCallback;
+		m_psp.lParam = (LPARAM)pT;
 
-		if (title.m_lpstr != NULL)
+		if(title.m_lpstr != NULL)
 			SetTitle(title);
 	}
 
-  // Callback function and overrideables
+// Callback function and overrideables
 	static UINT CALLBACK PropPageCallback(HWND hWnd, UINT uMsg, LPPROPSHEETPAGE ppsp)
 	{
-		hWnd;   		// avoid level 4 warning
+		hWnd;   // avoid level 4 warning
 		ATLASSERT(hWnd == NULL);
-		T* 		pT 		= (T*)ppsp->lParam;
-		UINT	uRet 	= 0;
+		T* pT = (T*)ppsp->lParam;
+		UINT uRet = 0;
 
-		switch (uMsg)
+		switch(uMsg)
 		{
 		case PSPCB_CREATE:
 			{
 				ATL::CDialogImplBaseT< TBase >* pPage = (ATL::CDialogImplBaseT< TBase >*)pT;
 				ModuleHelper::AddCreateWndData(&pPage->m_thunk.cd, pPage);
-				uRet = pT->OnPageCreate() != 0; //+++ ? 1 : 0;
+				uRet = pT->OnPageCreate() ? 1 : 0;
 			}
 			break;
-	  #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 		case PSPCB_ADDREF:
 			pT->OnPageAddRef();
 			break;
-	  #endif // (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0500)
 		case PSPCB_RELEASE:
 			pT->OnPageRelease();
 			break;
@@ -4430,52 +4429,52 @@ public:
 		return true;   // true - allow page to be created, false - prevent creation
 	}
 
-  #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	void OnPageAddRef()
 	{
 	}
-  #endif // (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0500)
 
 	void OnPageRelease()
 	{
 	}
 
- // Create method
+// Create method
 	HPROPSHEETPAGE Create()
 	{
 		return ::CreatePropertySheetPage(&m_psp);
 	}
 
- // Attributes
+// Attributes
 	void SetTitle(ATL::_U_STRINGorID title)
 	{
 		m_psp.pszTitle = title.m_lpstr;
 		m_psp.dwFlags |= PSP_USETITLE;
 	}
 
- #if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#if (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 	void SetHeaderTitle(LPCTSTR lpstrHeaderTitle)
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
-		m_psp.dwFlags 		|= PSP_USEHEADERTITLE;
+		m_psp.dwFlags |= PSP_USEHEADERTITLE;
 		m_psp.pszHeaderTitle = lpstrHeaderTitle;
 	}
 
 	void SetHeaderSubTitle(LPCTSTR lpstrHeaderSubTitle)
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
-		m_psp.dwFlags 			|= PSP_USEHEADERSUBTITLE;
-		m_psp.pszHeaderSubTitle  = lpstrHeaderSubTitle;
+		m_psp.dwFlags |= PSP_USEHEADERSUBTITLE;
+		m_psp.pszHeaderSubTitle = lpstrHeaderSubTitle;
 	}
- #endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
+#endif // (_WIN32_IE >= 0x0500) && !defined(_WIN32_WCE)
 
- // Operations
+// Operations
 	void EnableHelp()
 	{
 		m_psp.dwFlags |= PSP_HASHELP;
 	}
 
- // Message map and handlers
+// Message map and handlers
 	BEGIN_MSG_MAP(CPropertyPageImpl)
 		MESSAGE_HANDLER(WM_NOTIFY, OnNotify)
 	END_MSG_MAP()
@@ -4484,27 +4483,27 @@ public:
 	// handlers that return direct values without any restrictions
 	LRESULT OnNotify(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL& bHandled)
 	{
-	  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 		// This notification is sometimes received on Windows CE after the window is already destroyed
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #endif
-		NMHDR* 	pNMHDR = (NMHDR*)lParam;
+#endif
+		NMHDR* pNMHDR = (NMHDR*)lParam;
 
 		// don't handle messages not from the page/sheet itself
-		if (pNMHDR->hwndFrom != m_hWnd && pNMHDR->hwndFrom != ::GetParent(m_hWnd))
+		if(pNMHDR->hwndFrom != m_hWnd && pNMHDR->hwndFrom != ::GetParent(m_hWnd))
 		{
 			bHandled = FALSE;
 			return 1;
 		}
-	  #ifdef _WIN32_WCE
+#ifdef _WIN32_WCE
 		ATLASSERT(::IsWindow(m_hWnd));
-	  #endif
+#endif
 
-		T* 		pT 		= static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		LRESULT lResult = 0;
-		switch (pNMHDR->code)
+		switch(pNMHDR->code)
 		{
-	 #ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
+#ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
 		case PSN_SETACTIVE:
 			lResult = pT->OnSetActive();
 			break;
@@ -4532,14 +4531,14 @@ public:
 		case PSN_HELP:
 			pT->OnHelp();
 			break;
-	  #ifndef _WIN32_WCE
-	   #if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
 		case PSN_GETOBJECT:
-			if (!pT->OnGetObject((LPNMOBJECTNOTIFY)lParam))
+			if(!pT->OnGetObject((LPNMOBJECTNOTIFY)lParam))
 				bHandled = FALSE;
 			break;
-	   #endif // (_WIN32_IE >= 0x0400)
-	   #if (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0500)
 		case PSN_TRANSLATEACCELERATOR:
 			{
 				LPPSHNOTIFY lpPSHNotify = (LPPSHNOTIFY)lParam;
@@ -4552,10 +4551,10 @@ public:
 				lResult = (LRESULT)pT->OnQueryInitialFocus((HWND)lpPSHNotify->lParam);
 			}
 			break;
-	   #endif // (_WIN32_IE >= 0x0500)
-	  #endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0500)
+#endif // !_WIN32_WCE
 
-	 #else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
 		case PSN_SETACTIVE:
 			lResult = pT->OnSetActive() ? 0 : -1;
 			break;
@@ -4583,14 +4582,14 @@ public:
 		case PSN_HELP:
 			pT->OnHelp();
 			break;
-	  #ifndef _WIN32_WCE
-	   #if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
 		case PSN_GETOBJECT:
-			if (!pT->OnGetObject((LPNMOBJECTNOTIFY)lParam))
+			if(!pT->OnGetObject((LPNMOBJECTNOTIFY)lParam))
 				bHandled = FALSE;
 			break;
-	   #endif // (_WIN32_IE >= 0x0400)
-	   #if (_WIN32_IE >= 0x0500)
+#endif // (_WIN32_IE >= 0x0400)
+#if (_WIN32_IE >= 0x0500)
 		case PSN_TRANSLATEACCELERATOR:
 			{
 				LPPSHNOTIFY lpPSHNotify = (LPPSHNOTIFY)lParam;
@@ -4603,10 +4602,10 @@ public:
 				lResult = (LRESULT)pT->OnQueryInitialFocus((HWND)lpPSHNotify->lParam);
 			}
 			break;
-	   #endif // (_WIN32_IE >= 0x0500)
-	  #endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0500)
+#endif // !_WIN32_WCE
 
-	 #endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
 		default:
 			bHandled = FALSE;   // not handled
 		}
@@ -4614,10 +4613,10 @@ public:
 		return lResult;
 	}
 
- // Overridables
+// Overridables
 	// NOTE: Define _WTL_NEW_PAGE_NOTIFY_HANDLERS to use new notification
 	// handlers that return direct values without any restrictions
- #ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
+#ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
 	int OnSetActive()
 	{
 		// 0 = allow activate
@@ -4680,15 +4679,15 @@ public:
 	{
 	}
 
-  #ifndef _WIN32_WCE
-   #if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
 	BOOL OnGetObject(LPNMOBJECTNOTIFY /*lpObjectNotify*/)
 	{
 		return FALSE;   // not processed
 	}
-   #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
-   #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	int OnTranslateAccelerator(LPMSG /*lpMsg*/)
 	{
 		// PSNRET_NOERROR - message not handled
@@ -4702,10 +4701,10 @@ public:
 		// HWND = set focus to HWND
 		return NULL;
 	}
-   #endif // (_WIN32_IE >= 0x0500)
-  #endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0500)
+#endif // !_WIN32_WCE
 
- #else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
 	BOOL OnSetActive()
 	{
 		return TRUE;
@@ -4755,15 +4754,15 @@ public:
 	{
 	}
 
-  #ifndef _WIN32_WCE
-   #if (_WIN32_IE >= 0x0400)
+#ifndef _WIN32_WCE
+#if (_WIN32_IE >= 0x0400)
 	BOOL OnGetObject(LPNMOBJECTNOTIFY /*lpObjectNotify*/)
 	{
 		return FALSE;   // not processed
 	}
-   #endif // (_WIN32_IE >= 0x0400)
+#endif // (_WIN32_IE >= 0x0400)
 
-   #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	BOOL OnTranslateAccelerator(LPMSG /*lpMsg*/)
 	{
 		return FALSE;   // not translated
@@ -4773,10 +4772,10 @@ public:
 	{
 		return NULL;   // default
 	}
-   #endif // (_WIN32_IE >= 0x0500)
-  #endif // !_WIN32_WCE
+#endif // (_WIN32_IE >= 0x0500)
+#endif // !_WIN32_WCE
 
- #endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
 };
 
 // for non-customized pages
@@ -4803,46 +4802,46 @@ template <class T, class TBase = CPropertyPageWindow>
 class ATL_NO_VTABLE CAxPropertyPageImpl : public CPropertyPageImpl< T, TBase >
 {
 public:
- // Data members
-	HGLOBAL 	m_hInitData;
-	HGLOBAL 	m_hDlgRes;
-	HGLOBAL 	m_hDlgResSplit;
+// Data members
+	HGLOBAL m_hInitData;
+	HGLOBAL m_hDlgRes;
+	HGLOBAL m_hDlgResSplit;
 
- // Constructor/destructor
-	CAxPropertyPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) :
+// Constructor/destructor
+	CAxPropertyPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : 
 			CPropertyPageImpl< T, TBase >(title),
 			m_hInitData(NULL), m_hDlgRes(NULL), m_hDlgResSplit(NULL)
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT;   // avoid level 4 warning
 
 		// initialize ActiveX hosting and modify dialog template
 		ATL::AtlAxWinInit();
 
-		HINSTANCE 	hInstance 		= ModuleHelper::GetResourceInstance();
-		LPCTSTR 	lpTemplateName 	= MAKEINTRESOURCE(pT->IDD);
-		HRSRC 		hDlg 			= ::FindResource(hInstance, lpTemplateName, (LPTSTR)RT_DIALOG);
-		if (hDlg != NULL)
+		HINSTANCE hInstance = ModuleHelper::GetResourceInstance();
+		LPCTSTR lpTemplateName = MAKEINTRESOURCE(pT->IDD);
+		HRSRC hDlg = ::FindResource(hInstance, lpTemplateName, (LPTSTR)RT_DIALOG);
+		if(hDlg != NULL)
 		{
-			HRSRC 	hDlgInit  = ::FindResource(hInstance, lpTemplateName, (LPTSTR)_ATL_RT_DLGINIT);
+			HRSRC hDlgInit = ::FindResource(hInstance, lpTemplateName, (LPTSTR)_ATL_RT_DLGINIT);
 
-			BYTE* 	pInitData = NULL;
-			if (hDlgInit != NULL)
+			BYTE* pInitData = NULL;
+			if(hDlgInit != NULL)
 			{
 				m_hInitData = ::LoadResource(hInstance, hDlgInit);
-				pInitData 	= (BYTE*)::LockResource(m_hInitData);
+				pInitData = (BYTE*)::LockResource(m_hInitData);
 			}
 
-			m_hDlgRes 		   = ::LoadResource(hInstance, hDlg);
-			DLGTEMPLATE*  pDlg = (DLGTEMPLATE*)::LockResource(m_hDlgRes);
+			m_hDlgRes = ::LoadResource(hInstance, hDlg);
+			DLGTEMPLATE* pDlg = (DLGTEMPLATE*)::LockResource(m_hDlgRes);
 			LPCDLGTEMPLATE lpDialogTemplate = ATL::_DialogSplitHelper::SplitDialogTemplate(pDlg, pInitData);
-			if (lpDialogTemplate != pDlg)
+			if(lpDialogTemplate != pDlg)
 				m_hDlgResSplit = GlobalHandle(lpDialogTemplate);
 
 			// set up property page to use in-memory dialog template
-			if (lpDialogTemplate != NULL)
+			if(lpDialogTemplate != NULL)
 			{
-				m_psp.dwFlags  |= PSP_DLGINDIRECT;
+				m_psp.dwFlags |= PSP_DLGINDIRECT;
 				m_psp.pResource = lpDialogTemplate;
 			}
 			else
@@ -4858,28 +4857,28 @@ public:
 
 	~CAxPropertyPageImpl()
 	{
-		if (m_hInitData != NULL)
+		if(m_hInitData != NULL)
 		{
 			UnlockResource(m_hInitData);
 			FreeResource(m_hInitData);
 		}
-		if (m_hDlgRes != NULL)
+		if(m_hDlgRes != NULL)
 		{
 			UnlockResource(m_hDlgRes);
 			FreeResource(m_hDlgRes);
 		}
-		if (m_hDlgResSplit != NULL)
+		if(m_hDlgResSplit != NULL)
 		{
 			::GlobalFree(m_hDlgResSplit);
 		}
 	}
 
- // Methods
+// Methods
 	// call this one to handle keyboard message for ActiveX controls
 	BOOL PreTranslateMessage(LPMSG pMsg)
 	{
-		if ((pMsg->message < WM_KEYFIRST   || pMsg->message > WM_KEYLAST  ) &&
-		    (pMsg->message < WM_MOUSEFIRST || pMsg->message > WM_MOUSELAST))
+		if ((pMsg->message < WM_KEYFIRST || pMsg->message > WM_KEYLAST) &&
+		   (pMsg->message < WM_MOUSEFIRST || pMsg->message > WM_MOUSELAST))
 			return FALSE;
 		// find a direct child of the dialog from the window that has focus
 		HWND hWndCtl = ::GetFocus();
@@ -4896,25 +4895,25 @@ public:
 	}
 
 // Overridables
- #if (_WIN32_IE >= 0x0500)
+#if (_WIN32_IE >= 0x0500)
 	// new default implementation for ActiveX hosting pages
-  #ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
+#ifdef _WTL_NEW_PAGE_NOTIFY_HANDLERS
 	int OnTranslateAccelerator(LPMSG lpMsg)
 	{
 		T* pT = static_cast<T*>(this);
 		return (pT->PreTranslateMessage(lpMsg) != FALSE) ? PSNRET_MESSAGEHANDLED : PSNRET_NOERROR;
 	}
-  #else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#else // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
 	BOOL OnTranslateAccelerator(LPMSG lpMsg)
 	{
 		T* pT = static_cast<T*>(this);
 		return pT->PreTranslateMessage(lpMsg);
 	}
-  #endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
- #endif // (_WIN32_IE >= 0x0500)
+#endif // !_WTL_NEW_PAGE_NOTIFY_HANDLERS
+#endif // (_WIN32_IE >= 0x0500)
 
- // Support for new stuff in ATL7
- #if (_ATL_VER >= 0x0700)
+// Support for new stuff in ATL7
+#if (_ATL_VER >= 0x0700)
 	int GetIDD()
 	{
 		return( static_cast<T*>(this)->IDD );
@@ -4940,38 +4939,38 @@ public:
 		return CPropertyPageImpl< T, TBase >::DialogProc(hWnd, uMsg, wParam, lParam);
 	}
 
- // ActiveX controls creation
+// ActiveX controls creation
 	virtual HRESULT CreateActiveXControls(UINT nID)
 	{
 		// Load dialog template and InitData
-		HRSRC 	hDlgInit 	= ::FindResource(ATL::_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(nID), (LPTSTR)_ATL_RT_DLGINIT);
-		BYTE* 	pInitData 	= NULL;
-		HGLOBAL hData 		= NULL;
-		HRESULT hr 			= S_OK;
+		HRSRC hDlgInit = ::FindResource(ATL::_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(nID), (LPTSTR)_ATL_RT_DLGINIT);
+		BYTE* pInitData = NULL;
+		HGLOBAL hData = NULL;
+		HRESULT hr = S_OK;
 		if (hDlgInit != NULL)
 		{
-			hData 	= ::LoadResource(ATL::_AtlBaseModule.GetResourceInstance(), hDlgInit);
+			hData = ::LoadResource(ATL::_AtlBaseModule.GetResourceInstance(), hDlgInit);
 			if (hData != NULL)
 				pInitData = (BYTE*) ::LockResource(hData);
 		}
 
-		HRSRC 	hDlg = ::FindResource(ATL::_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(nID), (LPTSTR)RT_DIALOG);
+		HRSRC hDlg = ::FindResource(ATL::_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(nID), (LPTSTR)RT_DIALOG);
 		if (hDlg != NULL)
 		{
-			HGLOBAL 	 hResource 	= ::LoadResource(ATL::_AtlBaseModule.GetResourceInstance(), hDlg);
-			DLGTEMPLATE* pDlg 		= NULL;
+			HGLOBAL hResource = ::LoadResource(ATL::_AtlBaseModule.GetResourceInstance(), hDlg);
+			DLGTEMPLATE* pDlg = NULL;
 			if (hResource != NULL)
 			{
-				pDlg 	= (DLGTEMPLATE*) ::LockResource(hResource);
+				pDlg = (DLGTEMPLATE*) ::LockResource(hResource);
 				if (pDlg != NULL)
 				{
 					// Get first control on the template
-					BOOL bDialogEx 	= ATL::_DialogSplitHelper::IsDialogEx(pDlg);
-					WORD nItems 	= ATL::_DialogSplitHelper::DlgTemplateItemCount(pDlg);
+					BOOL bDialogEx = ATL::_DialogSplitHelper::IsDialogEx(pDlg);
+					WORD nItems = ATL::_DialogSplitHelper::DlgTemplateItemCount(pDlg);
 
 					// Get first control on the dialog
-					DLGITEMTEMPLATE* 	pItem 	 = ATL::_DialogSplitHelper::FindFirstDlgItem(pDlg);
-					HWND 				hWndPrev = GetWindow(GW_CHILD);
+					DLGITEMTEMPLATE* pItem = ATL::_DialogSplitHelper::FindFirstDlgItem(pDlg);
+					HWND hWndPrev = GetWindow(GW_CHILD);
 
 					// Create all ActiveX cotnrols in the dialog template and place them in the correct tab order (z-order)
 					for (WORD nItem = 0; nItem < nItems; nItem++)
@@ -4979,16 +4978,16 @@ public:
 						DWORD wID = bDialogEx ? ((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->id : pItem->id;
 						if (ATL::_DialogSplitHelper::IsActiveXControl(pItem, bDialogEx))
 						{
-							BYTE* 	pData = NULL;
-							DWORD 	dwLen = ATL::_DialogSplitHelper::FindCreateData(wID, pInitData, &pData);
+							BYTE* pData = NULL;
+							DWORD dwLen = ATL::_DialogSplitHelper::FindCreateData(wID, pInitData, &pData);
 							ATL::CComPtr<IStream> spStream;
 							if (dwLen != 0)
 							{
-								HGLOBAL 	h = GlobalAlloc(GHND, dwLen);
+								HGLOBAL h = GlobalAlloc(GHND, dwLen);
 								if (h != NULL)
 								{
-									BYTE* 	pBytes  = (BYTE*) GlobalLock(h);
-									BYTE* 	pSource = pData;
+									BYTE* pBytes = (BYTE*) GlobalLock(h);
+									BYTE* pSource = pData; 
 									SecureHelper::memcpy_x(pBytes, dwLen, pSource, dwLen);
 									GlobalUnlock(h);
 									CreateStreamOnHGlobal(h, TRUE, &spStream);
@@ -5004,56 +5003,56 @@ public:
 							hr = ATL::_DialogSplitHelper::ParseInitData(spStream, &bstrLicKey.m_str);
 							if (SUCCEEDED(hr))
 							{
-								ATL::CAxWindow2 	wnd;
+								ATL::CAxWindow2 wnd;
 								// Get control caption.
-								LPWSTR pszClassName =
-									bDialogEx ?
+								LPWSTR pszClassName = 
+									bDialogEx ? 
 										(LPWSTR)(((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem) + 1) :
 										(LPWSTR)(pItem + 1);
 								// Get control rect.
 								RECT rect;
-								rect.left =
-									bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->x :
+								rect.left = 
+									bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->x : 
 										pItem->x;
-								rect.top =
-									bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->y :
+								rect.top = 
+									bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->y : 
 										pItem->y;
-								rect.right = rect.left +
-									(bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->cx :
+								rect.right = rect.left + 
+									(bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->cx : 
 										pItem->cx);
-								rect.bottom = rect.top +
-									(bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->cy :
+								rect.bottom = rect.top + 
+									(bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->cy : 
 										pItem->cy);
 
 								// Convert from dialog units to screen units
 								MapDialogRect(&rect);
 
 								// Create AxWindow with a NULL caption.
-								wnd.Create(m_hWnd,
-									&rect,
-									NULL,
-									(bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->style :
-										pItem->style) | WS_TABSTOP,
-									bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->exStyle :
+								wnd.Create(m_hWnd, 
+									&rect, 
+									NULL, 
+									(bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->style : 
+										pItem->style) | WS_TABSTOP, 
+									bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->exStyle : 
 										0,
-									bDialogEx ?
-										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->id :
+									bDialogEx ? 
+										((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->id : 
 										pItem->id,
 									NULL);
 
 								if (wnd != NULL)
 								{
-								  #ifndef _WIN32_WCE
+#ifndef _WIN32_WCE
 									// Set the Help ID
 									if (bDialogEx && ((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->helpID != 0)
 										wnd.SetWindowContextHelpId(((ATL::_DialogSplitHelper::DLGITEMTEMPLATEEX*)pItem)->helpID);
-								  #endif // !_WIN32_WCE
+#endif // !_WIN32_WCE
 									// Try to create the ActiveX control.
 									hr = wnd.CreateControlLic(pszClassName, spStream, NULL, bstrLicKey);
 									if (FAILED(hr))
@@ -5087,48 +5086,48 @@ public:
 		return hr;
 	}
 
- // Event handling support
+// Event handling support
 	HRESULT AdviseSinkMap(bool bAdvise)
 	{
-		if (!bAdvise && m_hWnd == NULL)
+		if(!bAdvise && m_hWnd == NULL)
 		{
 			// window is gone, controls are already unadvised
 			ATLTRACE2(atlTraceUI, 0, _T("CAxPropertyPageImpl::AdviseSinkMap called after the window was destroyed\n"));
 			return S_OK;
 		}
-		HRESULT 	hRet = E_NOTIMPL;
+		HRESULT hRet = E_NOTIMPL;
 		__if_exists(T::_GetSinkMapFinder)
 		{
-			T*  	pT  = static_cast<T*>(this);
-			hRet   		= AtlAdviseSinkMap(pT, bAdvise);
+			T* pT = static_cast<T*>(this);
+			hRet = AtlAdviseSinkMap(pT, bAdvise);
 		}
 		return hRet;
 	}
 
- // Message map and handlers
+// Message map and handlers
 	typedef CPropertyPageImpl< T, TBase>   _baseClass;
 	BEGIN_MSG_MAP(CAxPropertyPageImpl)
-		MESSAGE_HANDLER( WM_INITDIALOG, OnInitDialog )
-		MESSAGE_HANDLER( WM_DESTROY   , OnDestroy    )
+		MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+		MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
 		CHAIN_MSG_MAP(_baseClass)
 	END_MSG_MAP()
 
 	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
 		// initialize controls in dialog with DLGINIT resource section
-		ExecuteDlgInit( static_cast<T*>(this)->IDD );
-		AdviseSinkMap( true );
+		ExecuteDlgInit(static_cast<T*>(this)->IDD);
+		AdviseSinkMap(true);
 		bHandled = FALSE;
 		return 1;
 	}
 
 	LRESULT OnDestroy(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		AdviseSinkMap( false );
+		AdviseSinkMap(false);
 		bHandled = FALSE;
 		return 1;
 	}
- #endif // (_ATL_VER >= 0x0700)
+#endif // (_ATL_VER >= 0x0700)
 };
 
 // for non-customized pages
@@ -5141,14 +5140,14 @@ public:
 	CAxPropertyPage(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : CAxPropertyPageImpl<CAxPropertyPage>(title)
 	{ }
 
- #if (_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700)
+#if (_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700)
 	// not empty so we handle accelerators/create controls
 	BEGIN_MSG_MAP(CAxPropertyPage)
 		CHAIN_MSG_MAP(CAxPropertyPageImpl<CAxPropertyPage<t_wDlgTemplateID> >)
 	END_MSG_MAP()
- #else // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
+#else // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
 	DECLARE_EMPTY_MSG_MAP()
- #endif // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
+#endif // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
 };
 
 #endif // _ATL_NO_HOSTING
@@ -5184,11 +5183,11 @@ public:
 //    LTEXT           "List Item 2. Keep 7 dlus between paragraphs",IDC_STATIC,
 //                    127,78,33,8
 //    CONTROL         "&Do not show this Welcome page again",
-//                    IDC_WIZ97_WELCOME_NOTAGAIN,"Button",BS_AUTOCHECKBOX |
+//                    IDC_WIZ97_WELCOME_NOTAGAIN,"Button",BS_AUTOCHECKBOX | 
 //                    WS_TABSTOP,115,169,138,10
 // END
 //
-// GUIDELINES DESIGNINFO
+// GUIDELINES DESIGNINFO 
 // BEGIN
 //    IDD_WIZ97_INTERIOR_BLANK, DIALOG
 //    BEGIN
@@ -5223,8 +5222,8 @@ public:
 
 class CWizard97SheetWindow : public CPropertySheetWindow
 {
- public:
- // Constructors
+public:
+// Constructors
 	CWizard97SheetWindow(HWND hWnd = NULL) : CPropertySheetWindow(hWnd)
 	{ }
 
@@ -5234,7 +5233,7 @@ class CWizard97SheetWindow : public CPropertySheetWindow
 		return *this;
 	}
 
- // Operations
+// Operations
 	HFONT GetExteriorPageTitleFont(void)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5247,21 +5246,21 @@ class CWizard97SheetWindow : public CPropertySheetWindow
 		return (HFONT)::SendMessage(m_hWnd, GetMessage_GetBulletFont(), 0, 0L);
 	}
 
- // Helpers
+// Helpers
 	static UINT GetMessage_GetExteriorPageTitleFont()
 	{
 		static UINT uGetExteriorPageTitleFont = 0;
-		if (uGetExteriorPageTitleFont == 0)
+		if(uGetExteriorPageTitleFont == 0)
 		{
 			CStaticDataInitCriticalSectionLock lock;
-			if (FAILED(lock.Lock()))
+			if(FAILED(lock.Lock()))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ERROR : Unable to lock critical section in CWizard97SheetWindow::GetMessage_GetExteriorPageTitleFont().\n"));
 				ATLASSERT(FALSE);
 				return 0;
 			}
 
-			if (uGetExteriorPageTitleFont == 0)
+			if(uGetExteriorPageTitleFont == 0)
 				uGetExteriorPageTitleFont = ::RegisterWindowMessage(_T("GetExteriorPageTitleFont_531AF056-B8BE-4c4c-B786-AC608DF0DF12"));
 
 			lock.Unlock();
@@ -5273,17 +5272,17 @@ class CWizard97SheetWindow : public CPropertySheetWindow
 	static UINT GetMessage_GetBulletFont()
 	{
 		static UINT uGetBulletFont = 0;
-		if (uGetBulletFont == 0)
+		if(uGetBulletFont == 0)
 		{
 			CStaticDataInitCriticalSectionLock lock;
-			if (FAILED(lock.Lock()))
+			if(FAILED(lock.Lock()))
 			{
 				ATLTRACE2(atlTraceUI, 0, _T("ERROR : Unable to lock critical section in CWizard97SheetWindow::GetMessage_GetBulletFont().\n"));
 				ATLASSERT(FALSE);
 				return 0;
 			}
 
-			if (uGetBulletFont == 0)
+			if(uGetBulletFont == 0)
 				uGetBulletFont = ::RegisterWindowMessage(_T("GetBulletFont_AD347D08-8F65-45ef-982E-6352E8218AD5"));
 
 			lock.Unlock();
@@ -5292,7 +5291,7 @@ class CWizard97SheetWindow : public CPropertySheetWindow
 		return uGetBulletFont;
 	}
 
- // Implementation - override to prevent usage
+// Implementation - override to prevent usage
 	HWND Create(LPCTSTR, HWND, ATL::_U_RECT = NULL, LPCTSTR = NULL, DWORD = 0, DWORD = 0, ATL::_U_MENUorID = 0U, LPVOID = NULL)
 	{
 		ATLASSERT(FALSE);
@@ -5308,14 +5307,14 @@ template <class T, class TBase = CWizard97SheetWindow>
 class ATL_NO_VTABLE CWizard97SheetImpl : public CPropertySheetImpl< T, TBase >
 {
 protected:
- // Typedefs
+// Typedefs
 	typedef CWizard97SheetImpl< T, TBase > thisClass;
 	typedef CPropertySheetImpl< T, TBase > baseClass;
 
- // Member variables
-	CFont 	m_fontExteriorPageTitle;   // Welcome and Completion page title font
-	CFont	m_fontBullet;              // Bullet font (used on static text 'h' to produce a small bullet)
-	bool 	m_bReceivedFirstSizeMessage;
+// Member variables
+	CFont m_fontExteriorPageTitle;   // Welcome and Completion page title font
+	CFont m_fontBullet;              // Bullet font (used on static text 'h' to produce a small bullet)
+	bool m_bReceivedFirstSizeMessage;   
 
 public:
 	CWizard97SheetImpl(ATL::_U_STRINGorID title, ATL::_U_STRINGorID headerBitmap, ATL::_U_STRINGorID watermarkBitmap, UINT uStartPage = 0, HWND hWndParent = NULL) :
@@ -5332,55 +5331,55 @@ public:
 		baseClass::SetWatermark(watermarkBitmap.m_lpstr);
 	}
 
- // Overrides from base class
+// Overrides from base class
 	void OnSheetInitialized()
 	{
-		T* 	pT = static_cast<T*>(this);
+		T* pT = static_cast<T*>(this);
 		pT->_InitializeFonts();
 
 		// We'd like to center the wizard here, but its too early.
 		// Instead, we'll do CenterWindow upon our first WM_SIZE message
 	}
 
- // Initialization
+// Initialization
 	void _InitializeFonts()
 	{
 		// Setup the Title and Bullet Font
 		// (Property pages can send the "get external page title font" and "get bullet font" messages)
 		// The derived class needs to do the actual SetFont for the dialog items)
 
-		CFontHandle fontThisDialog 	= this->GetFont();
-		CClientDC 	dcScreen(NULL);
+		CFontHandle fontThisDialog = this->GetFont();
+		CClientDC dcScreen(NULL);
 
-		LOGFONT 	titleLogFont 	= {0};
-		LOGFONT 	bulletLogFont 	= {0};
+		LOGFONT titleLogFont = {0};
+		LOGFONT bulletLogFont = {0};
 		fontThisDialog.GetLogFont(&titleLogFont);
 		fontThisDialog.GetLogFont(&bulletLogFont);
 
 		// The Wizard 97 Spec recommends to do the Title Font
 		// as Verdana Bold, 12pt.
-		titleLogFont.lfCharSet 		= DEFAULT_CHARSET;
-		titleLogFont.lfWeight 		= FW_BOLD;
+		titleLogFont.lfCharSet = DEFAULT_CHARSET;
+		titleLogFont.lfWeight = FW_BOLD;
 		SecureHelper::strcpy_x(titleLogFont.lfFaceName, _countof(titleLogFont.lfFaceName), _T("Verdana Bold"));
-		INT titleFontPointSize 		= 12;
-		titleLogFont.lfHeight 		= -::MulDiv(titleFontPointSize, dcScreen.GetDeviceCaps(LOGPIXELSY), 72);
+		INT titleFontPointSize = 12;
+		titleLogFont.lfHeight = -::MulDiv(titleFontPointSize, dcScreen.GetDeviceCaps(LOGPIXELSY), 72);
 		m_fontExteriorPageTitle.CreateFontIndirect(&titleLogFont);
 
 		// The Wizard 97 Spec recommends to do Bullets by having
 		// static text of "h" in the Marlett font.
-		bulletLogFont.lfCharSet 	= DEFAULT_CHARSET;
-		bulletLogFont.lfWeight 		= FW_NORMAL;
+		bulletLogFont.lfCharSet = DEFAULT_CHARSET;
+		bulletLogFont.lfWeight = FW_NORMAL;
 		SecureHelper::strcpy_x(bulletLogFont.lfFaceName, _countof(bulletLogFont.lfFaceName), _T("Marlett"));
-		INT bulletFontSize 			= 8;
-		bulletLogFont.lfHeight 		= -::MulDiv(bulletFontSize, dcScreen.GetDeviceCaps(LOGPIXELSY), 72);
+		INT bulletFontSize = 8;
+		bulletLogFont.lfHeight = -::MulDiv(bulletFontSize, dcScreen.GetDeviceCaps(LOGPIXELSY), 72);
 		m_fontBullet.CreateFontIndirect(&bulletLogFont);
 	}
 
- // Message Handling
+// Message Handling
 	BEGIN_MSG_MAP(thisClass)
-		MESSAGE_HANDLER( CWizard97SheetWindow::GetMessage_GetExteriorPageTitleFont(), OnGetExteriorPageTitleFont)
-		MESSAGE_HANDLER( CWizard97SheetWindow::GetMessage_GetBulletFont()			, OnGetBulletFont			)
-		MESSAGE_HANDLER( WM_SIZE													, OnSize					)
+		MESSAGE_HANDLER(CWizard97SheetWindow::GetMessage_GetExteriorPageTitleFont(), OnGetExteriorPageTitleFont)
+		MESSAGE_HANDLER(CWizard97SheetWindow::GetMessage_GetBulletFont(), OnGetBulletFont)
+		MESSAGE_HANDLER(WM_SIZE, OnSize)
 		CHAIN_MSG_MAP(baseClass)
 	END_MSG_MAP()
 
@@ -5396,7 +5395,7 @@ public:
 
 	LRESULT OnSize(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL& bHandled)
 	{
-		if (!m_bReceivedFirstSizeMessage)
+		if(!m_bReceivedFirstSizeMessage)
 		{
 			m_bReceivedFirstSizeMessage = true;
 			this->CenterWindow();
@@ -5412,16 +5411,16 @@ class CWizard97Sheet : public CWizard97SheetImpl<CWizard97Sheet>
 {
 protected:
 // Typedefs
-	typedef CWizard97Sheet 						thisClass;
-	typedef CWizard97SheetImpl<CWizard97Sheet> 	baseClass;
+	typedef CWizard97Sheet thisClass;
+	typedef CWizard97SheetImpl<CWizard97Sheet> baseClass;
 
 public:
 	CWizard97Sheet(ATL::_U_STRINGorID title, ATL::_U_STRINGorID headerBitmap, ATL::_U_STRINGorID watermarkBitmap, UINT uStartPage = 0, HWND hWndParent = NULL) :
 		baseClass(title, headerBitmap, watermarkBitmap, uStartPage, hWndParent)
 	{ }
 
-	BEGIN_MSG_MAP( thisClass )
-		CHAIN_MSG_MAP( baseClass )
+	BEGIN_MSG_MAP(thisClass)
+		CHAIN_MSG_MAP(baseClass)
 	END_MSG_MAP()
 };
 
@@ -5429,16 +5428,16 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 // CWizard97PageWindow - client side for a Wizard 97 style wizard page
 
-#define WIZARD97_EXTERIOR_CXDLG 	317
-#define WIZARD97_EXTERIOR_CYDLG 	193
+#define WIZARD97_EXTERIOR_CXDLG 317
+#define WIZARD97_EXTERIOR_CYDLG 193
 
-#define WIZARD97_INTERIOR_CXDLG 	317
-#define WIZARD97_INTERIOR_CYDLG 	143
+#define WIZARD97_INTERIOR_CXDLG 317
+#define WIZARD97_INTERIOR_CYDLG 143
 
 class CWizard97PageWindow : public CPropertyPageWindow
 {
 public:
- // Constructors
+// Constructors
 	CWizard97PageWindow(HWND hWnd = NULL) : CPropertyPageWindow(hWnd)
 	{ }
 
@@ -5448,14 +5447,14 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	CWizard97SheetWindow GetPropertySheet() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
 		return CWizard97SheetWindow(GetParent());
 	}
 
- // Operations
+// Operations
 	HFONT GetExteriorPageTitleFont(void)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5468,7 +5467,7 @@ public:
 		return GetPropertySheet().GetBulletFont();
 	}
 
- // Implementation - overrides to prevent usage
+// Implementation - overrides to prevent usage
 	HWND Create(LPCTSTR, HWND, ATL::_U_RECT = NULL, LPCTSTR = NULL, DWORD = 0, DWORD = 0, ATL::_U_MENUorID = 0U, LPVOID = NULL)
 	{
 		ATLASSERT(FALSE);
@@ -5485,7 +5484,7 @@ template <class T, class TBase = CWizard97PageWindow>
 class ATL_NO_VTABLE CWizard97PageImpl : public CPropertyPageImpl< T, TBase >
 {
 protected:
- // Typedefs
+// Typedefs
 	typedef CWizard97PageImpl< T, TBase > thisClass;
 	typedef CPropertyPageImpl< T, TBase > baseClass;
 
@@ -5493,7 +5492,7 @@ public:
 	CWizard97PageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : baseClass(title)
 	{ }
 
- // Message Handling
+// Message Handling
 	BEGIN_MSG_MAP(thisClass)
 		CHAIN_MSG_MAP(baseClass)
 	END_MSG_MAP()
@@ -5507,19 +5506,19 @@ template <class T, class TBase = CWizard97PageWindow>
 class ATL_NO_VTABLE CWizard97ExteriorPageImpl : public CPropertyPageImpl< T, TBase >
 {
 protected:
- // Typedefs
-	typedef CWizard97ExteriorPageImpl< T, TBase > 	thisClass;
-	typedef CPropertyPageImpl< T, TBase > 			baseClass;
+// Typedefs
+	typedef CWizard97ExteriorPageImpl< T, TBase > thisClass;
+	typedef CPropertyPageImpl< T, TBase > baseClass;
 
 public:
- // Constructors
+// Constructors
 	CWizard97ExteriorPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : baseClass(title)
 	{
 		m_psp.dwFlags |= PSP_HASHELP;
 		m_psp.dwFlags |= PSP_HIDEHEADER;
 	}
 
- // Message Handling
+// Message Handling
 	BEGIN_MSG_MAP(thisClass)
 		CHAIN_MSG_MAP(baseClass)
 	END_MSG_MAP()
@@ -5533,13 +5532,13 @@ template <class T, class TBase = CWizard97PageWindow>
 class ATL_NO_VTABLE CWizard97InteriorPageImpl : public CPropertyPageImpl< T, TBase >
 {
 protected:
- // Typedefs
-	typedef CWizard97InteriorPageImpl< T, TBase > 	thisClass;
-	typedef CPropertyPageImpl< T, TBase > 			baseClass;
+// Typedefs
+	typedef CWizard97InteriorPageImpl< T, TBase > thisClass;
+	typedef CPropertyPageImpl< T, TBase > baseClass;
 
 public:
- // Constructors
-	CWizard97InteriorPageImpl(ATL::_U_STRINGorID 	title = (LPCTSTR)NULL) : baseClass(title)
+// Constructors
+	CWizard97InteriorPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : baseClass(title)
 	{
 		m_psp.dwFlags |= PSP_HASHELP;
 		m_psp.dwFlags &= ~PSP_HIDEHEADER;
@@ -5571,8 +5570,8 @@ public:
 class CAeroWizardFrameWindow : public CPropertySheetWindow
 {
 public:
- // Constructors
-	CAeroWizardFrameWindow(HWND  hWnd = NULL) : CPropertySheetWindow(hWnd)
+// Constructors
+	CAeroWizardFrameWindow(HWND hWnd = NULL) : CPropertySheetWindow(hWnd)
 	{ }
 
 	CAeroWizardFrameWindow& operator =(HWND hWnd)
@@ -5581,7 +5580,7 @@ public:
 		return *this;
 	}
 
- // Operations - new, Aero Wizard only
+// Operations - new, Aero Wizard only
 	void SetNextText(LPCWSTR lpszText)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5614,15 +5613,15 @@ public:
 template <class T, class TBase = CAeroWizardFrameWindow>
 class ATL_NO_VTABLE CAeroWizardFrameImpl : public CPropertySheetImpl<T, TBase >
 {
- public:
- // Constructor
+public:
+// Constructor
 	CAeroWizardFrameImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL, UINT uStartPage = 0, HWND hWndParent = NULL) :
 		CPropertySheetImpl<T, TBase >(title, uStartPage, hWndParent)
 	{
 		m_psh.dwFlags |= PSH_WIZARD | PSH_AEROWIZARD;
 	}
 
- // Operations
+// Operations
 	void EnableResizing()
 	{
 		ATLASSERT(m_hWnd == NULL);   // can't do this after it's created
@@ -5641,7 +5640,7 @@ class ATL_NO_VTABLE CAeroWizardFrameImpl : public CPropertySheetImpl<T, TBase >
 		m_psh.dwFlags |= PSH_NOMARGIN;
 	}
 
- // Override to prevent use
+// Override to prevent use
 	HWND Create(HWND /*hWndParent*/ = NULL)
 	{
 		ATLASSERT(FALSE);   // not supported for Aero Wizard
@@ -5660,8 +5659,8 @@ public:
 		: CAeroWizardFrameImpl<CAeroWizardFrame>(title, uStartPage, hWndParent)
 	{ }
 
-	BEGIN_MSG_MAP( CAeroWizardFrame )
-		MESSAGE_HANDLER( WM_COMMAND, CAeroWizardFrameImpl<CAeroWizardFrame>::OnCommand )
+	BEGIN_MSG_MAP(CAeroWizardFrame)
+		MESSAGE_HANDLER(WM_COMMAND, CAeroWizardFrameImpl<CAeroWizardFrame>::OnCommand)
 	END_MSG_MAP()
 };
 
@@ -5672,7 +5671,7 @@ public:
 class CAeroWizardPageWindow : public CPropertyPageWindow
 {
 public:
- // Constructors
+// Constructors
 	CAeroWizardPageWindow(HWND hWnd = NULL) : CPropertyPageWindow(hWnd)
 	{ }
 
@@ -5682,7 +5681,7 @@ public:
 		return *this;
 	}
 
- // Attributes
+// Attributes
 	CAeroWizardFrameWindow GetAeroWizardFrame() const
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5690,7 +5689,7 @@ public:
 		return CAeroWizardFrameWindow(GetParent());
 	}
 
- // Operations - new, Aero Wizard only
+// Operations - new, Aero Wizard only
 	void SetNextText(LPCWSTR lpszText)
 	{
 		ATLASSERT(::IsWindow(m_hWnd));
@@ -5727,7 +5726,7 @@ public:
 template <class T, class TBase = CAeroWizardPageWindow>
 class ATL_NO_VTABLE CAeroWizardPageImpl : public CPropertyPageImpl<T, TBase >
 {
- public:
+public:
 	CAeroWizardPageImpl(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : CPropertyPageImpl<T, TBase >(title)
 	{ }
 };
@@ -5739,7 +5738,7 @@ class ATL_NO_VTABLE CAeroWizardPageImpl : public CPropertyPageImpl<T, TBase >
 template <WORD t_wDlgTemplateID>
 class CAeroWizardPage : public CAeroWizardPageImpl<CAeroWizardPage<t_wDlgTemplateID> >
 {
- public:
+public:
 	enum { IDD = t_wDlgTemplateID };
 
 	CAeroWizardPage(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : CAeroWizardPageImpl<CAeroWizardPage>(title)
@@ -5777,14 +5776,14 @@ public:
 	CAeroWizardAxPage(ATL::_U_STRINGorID title = (LPCTSTR)NULL) : CAeroWizardAxPageImpl<CAeroWizardAxPage>(title)
 	{ }
 
-  #if (_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700)
+#if (_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700)
 	// not empty so we handle accelerators/create controls
-	BEGIN_MSG_MAP( CAeroWizardAxPage )
-		CHAIN_MSG_MAP( CAeroWizardAxPageImpl<CAeroWizardAxPage<t_wDlgTemplateID> > )
+	BEGIN_MSG_MAP(CAeroWizardAxPage)
+		CHAIN_MSG_MAP(CAeroWizardAxPageImpl<CAeroWizardAxPage<t_wDlgTemplateID> >)
 	END_MSG_MAP()
-  #else // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
+#else // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
 	DECLARE_EMPTY_MSG_MAP()
-  #endif // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
+#endif // !((_WIN32_IE >= 0x0500) || (_ATL_VER >= 0x0700))
 };
 
 #endif // _ATL_NO_HOSTING
@@ -5800,38 +5799,38 @@ public:
 ///////////////////////////////////////////////////////////////////////////////
 // AtlTaskDialog - support for TaskDialog() function
 
-inline int AtlTaskDialog(HWND hWndParent,
-                         ATL::_U_STRINGorID WindowTitle, ATL::_U_STRINGorID MainInstructionText, ATL::_U_STRINGorID ContentText,
+inline int AtlTaskDialog(HWND hWndParent, 
+                         ATL::_U_STRINGorID WindowTitle, ATL::_U_STRINGorID MainInstructionText, ATL::_U_STRINGorID ContentText, 
                          TASKDIALOG_COMMON_BUTTON_FLAGS dwCommonButtons = 0U, ATL::_U_STRINGorID Icon = (LPCTSTR)NULL)
 {
 	int nRet = -1;
 
- #ifdef _WTL_TASKDIALOG_DIRECT
+#ifdef _WTL_TASKDIALOG_DIRECT
 	USES_CONVERSION;
-	HRESULT hRet = ::TaskDialog(hWndParent, ModuleHelper::GetResourceInstance(),
-		IS_INTRESOURCE(WindowTitle.m_lpstr) ? (LPCWSTR) WindowTitle.m_lpstr : T2CW(WindowTitle.m_lpstr),
-		IS_INTRESOURCE(MainInstructionText.m_lpstr) ? (LPCWSTR) MainInstructionText.m_lpstr : T2CW(MainInstructionText.m_lpstr),
-		IS_INTRESOURCE(ContentText.m_lpstr) ?  (LPCWSTR) ContentText.m_lpstr : T2CW(ContentText.m_lpstr),
-		dwCommonButtons,
+	HRESULT hRet = ::TaskDialog(hWndParent, ModuleHelper::GetResourceInstance(), 
+		IS_INTRESOURCE(WindowTitle.m_lpstr) ? (LPCWSTR) WindowTitle.m_lpstr : T2CW(WindowTitle.m_lpstr), 
+		IS_INTRESOURCE(MainInstructionText.m_lpstr) ? (LPCWSTR) MainInstructionText.m_lpstr : T2CW(MainInstructionText.m_lpstr), 
+		IS_INTRESOURCE(ContentText.m_lpstr) ?  (LPCWSTR) ContentText.m_lpstr : T2CW(ContentText.m_lpstr), 
+		dwCommonButtons, 
 		IS_INTRESOURCE(Icon.m_lpstr) ? (LPCWSTR) Icon.m_lpstr : T2CW(Icon.m_lpstr),
 		&nRet);
 	ATLVERIFY(SUCCEEDED(hRet));
- #else
+#else
 	// This allows apps to run on older versions of Windows
 	typedef HRESULT (STDAPICALLTYPE *PFN_TaskDialog)(HWND hwndParent, HINSTANCE hInstance, PCWSTR pszWindowTitle, PCWSTR pszMainInstruction, PCWSTR pszContent, TASKDIALOG_COMMON_BUTTON_FLAGS dwCommonButtons, PCWSTR pszIcon, int* pnButton);
 
 	HMODULE m_hCommCtrlDLL = ::LoadLibrary(_T("comctl32.dll"));
-	if (m_hCommCtrlDLL != NULL)
+	if(m_hCommCtrlDLL != NULL)
 	{
 		PFN_TaskDialog pfnTaskDialog = (PFN_TaskDialog)::GetProcAddress(m_hCommCtrlDLL, "TaskDialog");
-		if (pfnTaskDialog != NULL)
+		if(pfnTaskDialog != NULL)
 		{
 			USES_CONVERSION;
-			HRESULT hRet = pfnTaskDialog(hWndParent, ModuleHelper::GetResourceInstance(),
-				IS_INTRESOURCE(WindowTitle.m_lpstr) ? (LPCWSTR) WindowTitle.m_lpstr : T2CW(WindowTitle.m_lpstr),
-				IS_INTRESOURCE(MainInstructionText.m_lpstr) ? (LPCWSTR) MainInstructionText.m_lpstr : T2CW(MainInstructionText.m_lpstr),
-				IS_INTRESOURCE(ContentText.m_lpstr) ?  (LPCWSTR) ContentText.m_lpstr : T2CW(ContentText.m_lpstr),
-				dwCommonButtons,
+			HRESULT hRet = pfnTaskDialog(hWndParent, ModuleHelper::GetResourceInstance(), 
+				IS_INTRESOURCE(WindowTitle.m_lpstr) ? (LPCWSTR) WindowTitle.m_lpstr : T2CW(WindowTitle.m_lpstr), 
+				IS_INTRESOURCE(MainInstructionText.m_lpstr) ? (LPCWSTR) MainInstructionText.m_lpstr : T2CW(MainInstructionText.m_lpstr), 
+				IS_INTRESOURCE(ContentText.m_lpstr) ?  (LPCWSTR) ContentText.m_lpstr : T2CW(ContentText.m_lpstr), 
+				dwCommonButtons, 
 				IS_INTRESOURCE(Icon.m_lpstr) ? (LPCWSTR) Icon.m_lpstr : T2CW(Icon.m_lpstr),
 				&nRet);
 			ATLVERIFY(SUCCEEDED(hRet));
@@ -5839,7 +5838,7 @@ inline int AtlTaskDialog(HWND hWndParent,
 
 		::FreeLibrary(m_hCommCtrlDLL);
 	}
- #endif
+#endif
 
 	return nRet;
 }
@@ -5851,7 +5850,7 @@ inline int AtlTaskDialog(HWND hWndParent,
 class CTaskDialogConfig : public TASKDIALOGCONFIG
 {
 public:
- // Constructor
+// Constructor
 	CTaskDialogConfig()
 	{
 		Init();
@@ -5864,7 +5863,7 @@ public:
 		this->hInstance = ModuleHelper::GetResourceInstance();
 	}
 
- // Operations - setting values
+// Operations - setting values
 	// common buttons
 	void SetCommonButtons(TASKDIALOG_COMMON_BUTTON_FLAGS dwCommonButtons)
 	{
@@ -5928,7 +5927,7 @@ public:
 	{
 		this->pButtons = pButtons;
 		this->cButtons = cButtons;
-		if (nDefaultButton != 0)
+		if(nDefaultButton != 0)
 			this->nDefaultButton = nDefaultButton;
 	}
 
@@ -5942,7 +5941,7 @@ public:
 	{
 		this->pRadioButtons = pRadioButtons;
 		this->cRadioButtons = cRadioButtons;
-		if (nDefaultRadioButton != 0)
+		if(nDefaultRadioButton != 0)
 			this->nDefaultRadioButton = nDefaultRadioButton;
 	}
 
@@ -6043,49 +6042,49 @@ public:
 // CTaskDialogImpl - implements a Task Dialog
 
 template <class T>
-class ATL_NO_VTABLE 	CTaskDialogImpl
+class ATL_NO_VTABLE CTaskDialogImpl
 {
 public:
-	CTaskDialogConfig 	m_tdc;
-	HWND 				m_hWnd;   // used only in callback functions
+	CTaskDialogConfig m_tdc;
+	HWND m_hWnd;   // used only in callback functions
 
- // Constructor
+// Constructor
 	CTaskDialogImpl(HWND hWndParent = NULL) : m_hWnd(NULL)
 	{
-		m_tdc.hwndParent 	 = hWndParent;
-		m_tdc.pfCallback 	 = T::TaskDialogCallback;
+		m_tdc.hwndParent = hWndParent;
+		m_tdc.pfCallback = T::TaskDialogCallback;
 		m_tdc.lpCallbackData = (LONG_PTR)static_cast<T*>(this);
 	}
 
- // Operations
+// Operations
 	HRESULT DoModal(HWND hWndParent = ::GetActiveWindow(), int* pnButton = NULL, int* pnRadioButton = NULL, BOOL* pfVerificationFlagChecked = NULL)
 	{
-		if (m_tdc.hwndParent == NULL)
+		if(m_tdc.hwndParent == NULL)
 			m_tdc.hwndParent = hWndParent;
 
-	  #ifdef _WTL_TASKDIALOG_DIRECT
+#ifdef _WTL_TASKDIALOG_DIRECT
 		return ::TaskDialogIndirect(&m_tdc, pnButton, pnRadioButton, pfVerificationFlagChecked);
-	  #else
+#else
 
 		// This allows apps to run on older versions of Windows
 		typedef HRESULT (STDAPICALLTYPE *PFN_TaskDialogIndirect)(const TASKDIALOGCONFIG* pTaskConfig, int* pnButton, int* pnRadioButton, BOOL* pfVerificationFlagChecked);
 
 		HRESULT hRet = E_UNEXPECTED;
 		HMODULE m_hCommCtrlDLL = ::LoadLibrary(_T("comctl32.dll"));
-		if (m_hCommCtrlDLL != NULL)
+		if(m_hCommCtrlDLL != NULL)
 		{
 			PFN_TaskDialogIndirect pfnTaskDialogIndirect = (PFN_TaskDialogIndirect)::GetProcAddress(m_hCommCtrlDLL, "TaskDialogIndirect");
-			if (pfnTaskDialogIndirect != NULL)
+			if(pfnTaskDialogIndirect != NULL)
 				hRet = pfnTaskDialogIndirect(&m_tdc, pnButton, pnRadioButton, pfVerificationFlagChecked);
 
 			::FreeLibrary(m_hCommCtrlDLL);
 		}
 
 		return hRet;
-	  #endif
+#endif
 	}
 
- // Operations - setting values of TASKDIALOGCONFIG
+// Operations - setting values of TASKDIALOGCONFIG
 	// common buttons
 	void SetCommonButtons(TASKDIALOG_COMMON_BUTTON_FLAGS dwCommonButtons)
 	{	m_tdc.SetCommonButtons(dwCommonButtons); }
@@ -6160,17 +6159,17 @@ public:
 	void ModifyFlags(DWORD dwRemove, DWORD dwAdd)
 	{	m_tdc.ModifyFlags(dwRemove, dwAdd); }
 
- // Implementation
+// Implementation
 	static HRESULT CALLBACK TaskDialogCallback(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LONG_PTR lpRefData)
 	{
-		T* 		pT 		= (T*)lpRefData;
+		T* pT = (T*)lpRefData;
 		ATLASSERT(pT->m_hWnd == NULL || pT->m_hWnd == hWnd);
 
-		BOOL 	bRet 	= FALSE;
-		switch (uMsg)
+		BOOL bRet = FALSE;
+		switch(uMsg)
 		{
 		case TDN_DIALOG_CONSTRUCTED:
-			pT->m_hWnd 	= hWnd;
+			pT->m_hWnd = hWnd;
 			pT->OnDialogConstructed();
 			break;
 		case TDN_CREATED:
@@ -6212,7 +6211,7 @@ public:
 		return (HRESULT)bRet;
 	}
 
- // Overrideables - notification handlers
+// Overrideables - notification handlers
 	void OnDialogConstructed()
 	{
 	}
@@ -6259,16 +6258,16 @@ public:
 	{
 	}
 
- // Commands - valid to call only from handlers
+// Commands - valid to call only from handlers
 	void NavigatePage(TASKDIALOGCONFIG& tdc)
 	{
 		ATLASSERT(m_hWnd != NULL);
 
 		tdc.cbSize = sizeof(TASKDIALOGCONFIG);
-		if (tdc.hwndParent == NULL)
-			tdc.hwndParent 		= m_tdc.hwndParent;
-		tdc.pfCallback 			= m_tdc.pfCallback;
-		tdc.lpCallbackData 		= m_tdc.lpCallbackData;
+		if(tdc.hwndParent == NULL)
+			tdc.hwndParent = m_tdc.hwndParent;
+		tdc.pfCallback = m_tdc.pfCallback;
+		tdc.lpCallbackData = m_tdc.lpCallbackData;
 		(TASKDIALOGCONFIG)m_tdc = tdc;
 
 		::SendMessage(m_hWnd, TDM_NAVIGATE_PAGE, 0, (LPARAM)&tdc);
@@ -6362,24 +6361,24 @@ public:
 	void UpdateIcon(TASKDIALOG_ICON_ELEMENTS element, HICON hIcon)
 	{
 		ATLASSERT(m_hWnd != NULL);
-	  #ifdef _DEBUG
-		if (element == TDIE_ICON_MAIN)
+#ifdef _DEBUG
+		if(element == TDIE_ICON_MAIN)
 			ATLASSERT((m_tdc.dwFlags & TDF_USE_HICON_MAIN) != 0);
-		else if (element == TDIE_ICON_FOOTER)
+		else if(element == TDIE_ICON_FOOTER)
 			ATLASSERT((m_tdc.dwFlags & TDF_USE_HICON_FOOTER) != 0);
-	  #endif // _DEBUG
+#endif // _DEBUG
 		::SendMessage(m_hWnd, TDM_UPDATE_ICON, element, (LPARAM)hIcon);
 	}
 
 	void UpdateIcon(TASKDIALOG_ICON_ELEMENTS element, LPCWSTR lpstrIcon)
 	{
 		ATLASSERT(m_hWnd != NULL);
-	  #ifdef _DEBUG
-		if (element == TDIE_ICON_MAIN)
+#ifdef _DEBUG
+		if(element == TDIE_ICON_MAIN)
 			ATLASSERT((m_tdc.dwFlags & TDF_USE_HICON_MAIN) == 0);
-		else if (element == TDIE_ICON_FOOTER)
+		else if(element == TDIE_ICON_FOOTER)
 			ATLASSERT((m_tdc.dwFlags & TDF_USE_HICON_FOOTER) == 0);
-	  #endif // _DEBUG
+#endif // _DEBUG
 		::SendMessage(m_hWnd, TDM_UPDATE_ICON, element, (LPARAM)lpstrIcon);
 	}
 };
