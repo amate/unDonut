@@ -7,7 +7,7 @@
 #include "FavoriteOrder.h"
 //#include "DonutExplorerBar.h"		//+++ お気に入りメニューで移動が発生したとき、お気に入りバー側にも反映
 #include "Donut.h"
-
+#include "ParseInternetShortcutFile.h"
 
 template <class T>
 class ATL_NO_VTABLE 	CMenuDropTargetWindowImpl

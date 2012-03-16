@@ -5,7 +5,7 @@
 #pragma once
 
 #include <unordered_map>
-using std::unordered_map;
+#include <atlsync.h>
 
 
 
@@ -31,12 +31,16 @@ public:
 	static void		SetFavicon(HWND hWndChild, LPCTSTR strFaviconURL);
 	static HICON	GetFavicon(LPCTSTR strFaviconURL);
 
+	static HICON	GetFaviconFromURL(LPCTSTR url);
+
 private:
-	static void _DLIconAndRegister(CString strFaviconURL, HWND hWnd);
+	static void		_DLIconAndRegister(CString strFaviconURL, HWND hWnd);
+	static HICON	_DownloadFavicon(LPCTSTR FaviconURL);
 
 	// Data members
 	static HWND	s_hWndTabBar;
-	static unordered_map<std::wstring, CIcon>	s_mapIcon;	// key:favicon‚ÌURL ’l:icon
+	static std::unordered_map<std::wstring, CIcon>	s_mapIcon;	// key:favicon‚ÌURL ’l:icon
+	static CCriticalSection	s_cs;
 };
 
 

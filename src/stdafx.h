@@ -98,7 +98,103 @@ using std::unique_ptr;
 
 
 // ATL/WTL
+
 #include <atlbase.h>
+#if _MSC_VER >= 1700	// VC2011betaではなぜか定義されていないので
+namespace ATL {
+/////////////////////////////////////////////////////////////////////////////
+// General DLL Version Helpers
+
+#pragma warning(push)
+#pragma warning(disable : 4191)	// 'type cast' : unsafe conversion from 'FARPROC' to 'DLLGETVERSIONPROC'
+
+inline HRESULT AtlGetDllVersion(
+	_In_ HINSTANCE hInstDLL,
+	_Out_ DLLVERSIONINFO* pDllVersionInfo)
+{
+	ATLENSURE(pDllVersionInfo != NULL);
+
+	// We must get this function explicitly because some DLLs don't implement it.
+	DLLGETVERSIONPROC pfnDllGetVersion = (DLLGETVERSIONPROC)::GetProcAddress(hInstDLL, "DllGetVersion");
+
+	if(pfnDllGetVersion == NULL)
+	{
+		return E_NOTIMPL;
+	}
+
+	return (*pfnDllGetVersion)(pDllVersionInfo);
+}
+
+#pragma warning(pop)
+
+inline HRESULT AtlGetDllVersion(
+	_In_z_ LPCTSTR lpstrDllName,
+	_Out_ DLLVERSIONINFO* pDllVersionInfo)
+{
+	HINSTANCE hInstDLL = ::LoadLibrary(lpstrDllName);
+	if(hInstDLL == NULL)
+	{
+		return AtlHresultFromLastError();
+	}
+	HRESULT hRet = AtlGetDllVersion(hInstDLL, pDllVersionInfo);
+	::FreeLibrary(hInstDLL);
+	return hRet;
+}
+
+// Common Control Versions:
+//   WinNT 4.0          maj=4 min=00
+//   IE 3.x             maj=4 min=70
+//   IE 4.0             maj=4 min=71
+//   IE 5.0             maj=5 min=80
+//   Win2000            maj=5 min=81
+inline HRESULT AtlGetCommCtrlVersion(
+	_Out_ LPDWORD pdwMajor,
+	_Out_ LPDWORD pdwMinor)
+{
+	ATLENSURE(( pdwMajor != NULL ) && ( pdwMinor != NULL ));
+
+	DLLVERSIONINFO dvi;
+	memset(&dvi, 0, sizeof(dvi));
+	dvi.cbSize = sizeof(dvi);
+
+	HRESULT hRet = AtlGetDllVersion(_T("comctl32.dll"), &dvi);
+
+	if(SUCCEEDED(hRet))
+	{
+		*pdwMajor = dvi.dwMajorVersion;
+		*pdwMinor = dvi.dwMinorVersion;
+	}
+
+	return hRet;
+}
+
+// Shell Versions:
+//   WinNT 4.0                                      maj=4 min=00
+//   IE 3.x, IE 4.0 without Web Integrated Desktop  maj=4 min=00
+//   IE 4.0 with Web Integrated Desktop             maj=4 min=71
+//   IE 4.01 with Web Integrated Desktop            maj=4 min=72
+//   Win2000                                        maj=5 min=00
+inline HRESULT AtlGetShellVersion(
+	_Out_ LPDWORD pdwMajor,
+	_Out_ LPDWORD pdwMinor)
+{
+	ATLENSURE(( pdwMajor != NULL) && ( pdwMinor != NULL ));
+
+	DLLVERSIONINFO dvi;
+	memset(&dvi, 0, sizeof(dvi));
+	dvi.cbSize = sizeof(dvi);
+	HRESULT hRet = AtlGetDllVersion(_T("shell32.dll"), &dvi);
+
+	if(SUCCEEDED(hRet))
+	{
+		*pdwMajor = dvi.dwMajorVersion;
+		*pdwMinor = dvi.dwMinorVersion;
+	}
+
+	return hRet;
+}
+}	// namespace ATL
+#endif
 #include <atlapp.h>
 
 extern CServerAppModule _Module;						//アプリケーションインスタンス

@@ -33,11 +33,11 @@
     <Filter Include="Source Files\Window">
       <UniqueIdentifier>{83aa46d4-df3b-4981-b947-1b794b3cdf4d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Download">
-      <UniqueIdentifier>{c62d03f5-8075-47c5-b214-1818866b90e8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\plugin">
       <UniqueIdentifier>{c4c05264-3d85-49a5-b3d0-c6bd865e17d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DownloadManager">
+      <UniqueIdentifier>{c62d03f5-8075-47c5-b214-1818866b90e8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -213,19 +213,19 @@
       <Filter>Source Files\Base</Filter>
     </ClCompile>
     <ClCompile Include="Download\DownloadedListView.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="Download\DownloadingListView.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="Download\DownloadFrame.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="Download\DownloadManager.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="Download\CustomBindStatusCallBack.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="DocHostUIHandlerDispatch.cpp">
       <Filter>Source Files</Filter>
@@ -267,7 +267,7 @@
       <Filter>Source Files\Window</Filter>
     </ClCompile>
     <ClCompile Include="Download\DLListWindow.cpp">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClCompile>
     <ClCompile Include="MultiThreadManager.cpp">
       <Filter>Source Files</Filter>
@@ -285,6 +285,15 @@
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\UserDefinedJavascriptOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutLinkBarCtrl.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="LinkPopupMenu.cpp">
+      <Filter>Source Files\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="option\LinkBarPropertyPage.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
   </ItemGroup>
@@ -607,9 +616,6 @@
     <ClInclude Include="DonutAddressBar.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="DonutLinksBarCtrl.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="DonutRebarCtrl.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
@@ -668,22 +674,22 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="Download\DownloadedListView.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="Download\DownloadingListView.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="Download\DownloadManager.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="Download\DownloadFrame.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="Download\CustomBindStatusCallBack.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="Download\DownloadOptionDialog.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="option\UrlSecurityExPropDialog.h">
       <Filter>Source Files\option</Filter>
@@ -734,7 +740,7 @@
       <Filter>Source Files\Window</Filter>
     </ClInclude>
     <ClInclude Include="Download\DLListWindow.h">
-      <Filter>Source Files\Download</Filter>
+      <Filter>Source Files\DownloadManager</Filter>
     </ClInclude>
     <ClInclude Include="MultiThreadManager.h">
       <Filter>Source Files</Filter>
@@ -756,6 +762,15 @@
     </ClInclude>
     <ClInclude Include="option\UserDefinedJavascriptOption.h">
       <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutLinkBarCtrl.h">
+      <Filter>Source Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkPopupMenu.h">
+      <Filter>Source Files\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="ShellFileDialog.h">
+      <Filter>Source Files\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -852,6 +867,15 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="res\DLToolBar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="DonutLinkBarCtrl.inl">
+      <Filter>Source Files\Window</Filter>
+    </None>
+    <None Include="res\icon1.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\folder.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

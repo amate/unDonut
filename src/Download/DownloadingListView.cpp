@@ -40,9 +40,9 @@ public:
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	{
 		GetDlgItem(IDC_EDIT).SetWindowText(m_strOldFileName);
-		WTL::CLogFont	lf;
-		lf.SetMenuFont();
-		GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
+		//WTL::CLogFont	lf;
+		//lf.SetMenuFont();
+		//GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
 		return 0;
 	}
 

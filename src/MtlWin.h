@@ -153,7 +153,7 @@ inline CString MtlGetWindowText(HWND hWnd)
 		name[nLen]		= _T('\0');	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
 		return CString(name);
 	} else {
-		TCHAR*	pName	= new TCHAR[ nLen + 1 + 1] = _T("\0");
+		TCHAR*	pName	= new TCHAR[ nLen + 1 + 1];
 		name[nLen]		= _T('\0');	//+++1.48c: いつぞやのバグ報告の反映. +1は不味い...
 		int 	nRetLen = ::GetWindowText(hWnd, pName, nLen + 1);
 		CString str( pName );
@@ -348,7 +348,7 @@ private:
 		tme.dwFlags 	   = TME_LEAVE;
 		tme.hwndTrack	   = pT->m_hWnd;
 		m_bTrackMouseLeave = true;
-		return ::_TrackMouseEvent(&tme);
+		return ::TrackMouseEvent(&tme);
 	}
 
 
@@ -356,6 +356,79 @@ private:
 	{
 		m_bTrackMouseLeave = false;
 	}
+};
+
+//////////////////////////////////////////////////////////////////
+// CTrackMouseHover : マウスがウィンドウ上で停止したときOnTrackMouseHoverを呼び出します
+
+template <class T>
+class CTrackMouseHover 
+{
+public:
+	CTrackMouseHover() : m_bTrackMouseHover(false), m_dwHoverTime(500) {}
+
+	void	SetHoverTime(DWORD dwTime) { m_dwHoverTime = dwTime; }
+
+private:
+	// Overridables
+	void OnTrackMouseHover(UINT nFlags, CPoint pt) { }
+
+
+public:
+	// Message map and handlers
+	BEGIN_MSG_MAP(CTrackMouseHover<T>)
+		MESSAGE_HANDLER(WM_MOUSEMOVE , OnMouseMove )
+		MESSAGE_HANDLER(WM_MOUSEHOVER, OnMouseHover)
+	END_MSG_MAP()
+
+
+private:
+	LRESULT OnMouseMove(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+	{
+		bHandled = FALSE;
+
+		_StartTrackMouseHover();
+		return 1;
+	}
+
+public:
+	LRESULT OnMouseHover(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+	{
+		bHandled = FALSE;
+
+		_LastTrackMouseHover();
+		T *pT = static_cast<T *>(this);
+		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
+		pT->OnTrackMouseHover((UINT)wParam, pt);
+		return 0;
+	}
+
+
+private:
+	BOOL _StartTrackMouseHover()
+	{
+		//if (m_bTrackMouseHover)
+		//	return FALSE;
+
+		T* pT = static_cast<T *>(this);
+
+		TRACKMOUSEEVENT tme = { sizeof (tme) };
+		tme.dwFlags 	   = TME_HOVER;
+		tme.hwndTrack	   = pT->m_hWnd;
+		tme.dwHoverTime	   = m_dwHoverTime;
+		m_bTrackMouseHover = true;
+		return ::TrackMouseEvent(&tme);
+	}
+
+
+	void _LastTrackMouseHover()
+	{
+		m_bTrackMouseHover = false;
+	}
+
+	// Data members
+	bool	m_bTrackMouseHover;
+	DWORD	m_dwHoverTime;
 };
 
 

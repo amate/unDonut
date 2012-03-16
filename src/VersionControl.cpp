@@ -24,6 +24,7 @@ void	CVersionControl::Run()
 		case 1: _1to2();
 		case 2: _2to3();
 		case 3: _3to4();
+		case 4: _4to5();
 			break;
 		}
 	}
@@ -110,7 +111,11 @@ void	CVersionControl::_3to4()
 	pr.SetValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
 }
 
-
+void	CVersionControl::_4to5()
+{
+	CIniFileIO	pr(g_szIniFileName, _T("LinkBar"));
+	pr.DeleteValue(_T("ExtendedStyle"));
+}
 
 
 

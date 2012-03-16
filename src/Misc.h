@@ -245,6 +245,10 @@ public:
 bool setHeapAllocLowFlagmentationMode();
 bool mallocHeapCompact();
 
+//------------------------------------------------------
+CRect	GetMonitorWorkArea(HWND hWnd);
+
+
 }	// namespace Misc
 
 

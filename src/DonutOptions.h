@@ -26,6 +26,7 @@
 #include "option/FavoriteMenuDialog.h"
 #include "option/ExecutableDialog.h"
 #include "option/MDITabDialog.h"
+#include "option/LinkBarPropertyPage.h"
 #include "option/UserDefinedCSSOption.h"
 #include "option/UserDefinedJavascriptOption.h"
 

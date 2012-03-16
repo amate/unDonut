@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by Donut.rc
 //
+#define ID_GETFAVICONFROMFILE           3
 #define IDD_ABOUTBOX                    100
 #define IDD_FORM_TOOLBAR                101
 #define ID_DONUTVIEW                    102
@@ -131,12 +132,15 @@
 #define IDB_FIND                        316
 #define IDB_DLTOOLBAR                   317
 #define IDM_DOWNLOADINGLISTVIEW         318
-#define IDD_RENAMEDIALOG                319
+#define IDD_LINKEDITDIALOG              319
 #define IDD_DLLIST                      320
 #define IDD_PROPPAGE_USERDEFINEDCSS     321
 #define IDD_PROPPAGE_USERDEFINEDCSS1    322
 #define IDD_PROPPAGE_USERDEFINEDJAVASCRIPT 322
 #define IDD_SCRIPTDETAIL                323
+#define IDI_FOLDER                      324
+#define IDD_RENAMEDIALOG                325
+#define IDM_LINKBAR                     326
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -518,6 +522,7 @@
 #define IDC_CHECK1                      1373
 #define IDC_CHECK_DRAW_FAVICON          1373
 #define IDC_CHECK_EXTERNALNEWTAB        1373
+#define IDC_CHECK_SHOWICONONLY          1373
 #define IDC_EDIT_DOWNLOADFOLDER         1374
 #define IDC_BUTTON_FOLDERSELECT         1375
 #define IDC_CHECK_OPENDIALOG_BEFOREDL   1376
@@ -571,6 +576,7 @@
 #define IDC_COMBO_JS                    1427
 #define IDC_CHECK2                      1428
 #define IDC_CHECK_EXTERNALNEWTABACTIVE  1428
+#define IDC_CHECK_NOSHOWDRAGIMAGE       1428
 #define IDC_STATIC_SCRIPTPOSITION       1429
 #define IDC_SYSLINK_HP                  1430
 #define IDC_STATIC_DISCRIPTION          1431
@@ -578,6 +584,11 @@
 #define IDC_BUTTON_RELOAD               1433
 #define IDC_BUTTON_INSTALL              1434
 #define IDC_EDIT_INCLUDE                1435
+#define IDC_EDIT_NAME                   1436
+#define IDC_SPIN_MAXTEXTWIDTH           1437
+#define IDC_BTN_LINKIMPORTFROMFOLDER    1438
+#define IDC_BTN_LINKEXPORTTOFOLDER      1439
+#define IDC_EDIT_MAXTEXTWIDTH           1440
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -888,6 +899,36 @@
 #define ID_RENAME_DLITEM                33193
 #define ID_OPEN_SAVEFOLDER              33194
 #define ID_OPEN_REFERER                 33195
+#define ID_DUMMY_33196                  33196
+#define ID_DUMMY_33197                  33197
+#define ID_DUMMY_33198                  33198
+#define ID_DUMMY_33199                  33199
+#define ID_DUMMY_33200                  33200
+#define ID_DUMMY_33201                  33201
+#define ID_33202                        33202
+#define ID_33203                        33203
+#define ID_33204                        33204
+#define ID_33205                        33205
+#define ID_33206                        33206
+#define ID_OPENLINK                     33207
+#define ID_OPENNEWTABLINK               33208
+#define ID_OPENLINKONNEWTAB             33209
+#define ID_EDITLINK                     33210
+#define ID_EDITLINKITEM                 33211
+#define ID_DELETELINKITEM               33212
+#define ID_ADDLINK                      33213
+#define ID_ADDFOLDER                    33214
+#define ID_ALLOPENLINKONFOLDER          33215
+#define ID_ALLOPENLINKINFOLDER          33216
+#define ID_OPENALLLINKINFOLDER          33217
+#define ID_EDITFOLDERNAME               33218
+#define ID_DELETE                       33219
+#define ID_33220                        33220
+#define ID_EDITEXPROPERTY               33221
+#define ID_Menu                         33222
+#define ID_ITEMNONE_33223               33223
+#define ID_SORTBYNAME                   33224
+#define ID_ID_SORTBYNAME                33225
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -931,9 +972,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        324
-#define _APS_NEXT_COMMAND_VALUE         33196
-#define _APS_NEXT_CONTROL_VALUE         1436
+#define _APS_NEXT_RESOURCE_VALUE        327
+#define _APS_NEXT_COMMAND_VALUE         33226
+#define _APS_NEXT_CONTROL_VALUE         1441
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

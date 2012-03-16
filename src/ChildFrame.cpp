@@ -609,3 +609,14 @@ CString	CChildFrame::GetLocationURL()
 	return CString();
 }
 
+CString CChildFrame::GetTitle()
+{
+	CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
+	if (spBrowser == nullptr)
+		return CString();
+	CComBSTR	strtemp;
+	spBrowser->get_LocationName(&strtemp);
+	if (strtemp)
+		return CString(strtemp);
+	return CString();
+}

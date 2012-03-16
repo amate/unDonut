@@ -10,6 +10,7 @@
 #include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include <boost\scope_exit.hpp>
 #include "XmlFile.h"
 #include "DialogKiller.h"
 #include "dialog/DebugWindow.h"
@@ -204,7 +205,6 @@ void	CMainFrame::OnDebugCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 CMainFrame::CMainFrame()
 	: m_FavoriteMenu(this, ID_INSERTPOINT_FAVORITEMENU)
 	, m_FavGroupMenu(this, ID_INSERTPOINT_GROUPMENU)
-	, m_LinkBar(this, ID_INSERTPOINT_FAVORITEMENU)
 	, m_nBackUpTimerID(0)
 	, CDDEMessageHandler<CMainFrame>( _T("Donut") )
 	, m_hWndFocus(NULL)
@@ -221,6 +221,7 @@ CMainFrame::CMainFrame()
 	, m_TranslateMenu(this)
 	, m_styleSheetMenu(m_hWnd)
 	, m_bWM_TIMER(false)
+	, m_bNowSaveAllTab(false)
 {
 	g_pMainWnd = this;			//+++ CreateEx()中にプラグイン初期化とかで参照されるので、呼び元でなく CMainFreameで設定するように変更.
 }
@@ -436,12 +437,12 @@ HWND	CMainFrame::init_tabCtrl()
 /// create link bar
 HWND	CMainFrame::init_linkBar()
 {
-	CIniFileI prLnk( g_szIniFileName, _T("LinkBar") );
-	DWORD		dwStyle   = prLnk.GetValue( _T("ExtendedStyle") );
-	prLnk.Close();
+	//CIniFileI prLnk( g_szIniFileName, _T("LinkBar") );
+	//DWORD		dwStyle   = prLnk.GetValue( _T("ExtendedStyle") );
+	//prLnk.Close();
 
-	m_LinkBar.SetOptionalStyle(dwStyle);
-	HWND	hWndLinkBar   = m_LinkBar.Create(m_hWnd, rcDefault, NULL, ATL_SIMPLE_TOOLBAR_PANE_STYLE, 0, IDC_LINKBAR);
+	//m_LinkBar.SetOptionalStyle(dwStyle);
+	HWND	hWndLinkBar   = m_LinkBar.Create(m_hWnd/*, rcDefault, NULL, ATL_SIMPLE_TOOLBAR_PANE_STYLE, 0, IDC_LINKBAR*/);
 	ATLASSERT( ::IsWindow(hWndLinkBar) );
 
 	return 	hWndLinkBar;
@@ -1226,7 +1227,7 @@ void CMainFrame::InitSkin()
 	m_ToolBar.ReloadSkin(); 									//ツールバー
 	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
 	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
-	m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
+	//m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
 	m_ExplorerBar.ReloadSkin(); 								//エクスプローラバー
 	m_ExplorerBar.m_PanelBar.ReloadSkin();						//パネルバー
 	m_ExplorerBar.m_PluginBar.ReloadSkin(); 					//プラグインバー
@@ -1496,10 +1497,14 @@ HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
 
 //+++ url別拡張プロパティ対応で、本来のOnUserOpenFileをUserOpenFileに変名. 引数を末に追加.
 /// @param openFlag		DonutOpenFileFlags
-HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetStdOpenFlag()*/, int dlCtrlFlag /*= -1*/, int extededStyleFlags /*= -1*/)
+HWND CMainFrame::UserOpenFile(CString strFileOrURL, 
+							  DWORD openFlag /*= DonutGetStdOpenFlag()*/, 
+							  int dlCtrlFlag /*= -1*/, 
+							  int extededStyleFlags /*= -1*/,
+							  int AutoRefresh /*= 0*/)
 {
 	MtlRemoveStringHeaderAndFooter(strFileOrURL);
-
+#pragma region ~.url open
 	//+++ メモ:urlのときの処理. 拡張プロパティの取得とかあるので、専用のopen処理へ...
 	if ( MtlIsExt( strFileOrURL, _T(".url") ) ) {	
 		// OpenInternetShortcut
@@ -1550,6 +1555,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 		}
 		return NULL;
 	}
+#pragma endregion
 
 	if (  !MtlIsProtocol( strFileOrURL, _T("http") )
 	   && !MtlIsProtocol( strFileOrURL, _T("https") ) )
@@ -1610,6 +1616,12 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
 			::PostMessage(pChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
 		} else {
+			if (dlCtrlFlag != -1)
+				pChild->SetDLCtrl(dlCtrlFlag);
+			if (extededStyleFlags != -1)
+				pChild->SetExStyle(extededStyleFlags);
+			if (AutoRefresh != 0)
+				pChild->SetAutoRefreshStyle(AutoRefresh);
 			pChild->Navigate2(strFileOrURL);
 		}
 
@@ -1626,6 +1638,7 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL, DWORD openFlag /*= DonutGetS
 	data.strURL		= strFileOrURL;
 	data.dwDLCtrl	= dlCtrlFlag;
 	data.dwExStyle	= extededStyleFlags;
+	data.dwAutoRefresh	= AutoRefresh;
 	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
 		|| m_ChildFrameClient.GetActiveChildFrameWindow() == NULL;
 	CChildFrame::AsyncCreate(data);
@@ -2221,6 +2234,8 @@ struct _Function_Enum_ChildInfomation {
 
 void	CMainFrame::SaveAllTab()
 {
+	m_bNowSaveAllTab = true;
+
 	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
 	int	nCount = 0;
 	int nActiveIndex = -1;
@@ -2234,12 +2249,6 @@ void	CMainFrame::SaveAllTab()
 		++nCount;
 	};
 	m_MDITab.ForEachWindow(CollectChildFrameData);
-
-	CString	TabList = Misc::GetExeDirectory() + _T("TabList.xml");
-	if (::PathFileExists(TabList)) {
-		CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.xml");
-		::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
-	}
 
 	try {
 		using boost::property_tree::wptree;
@@ -2267,15 +2276,24 @@ void	CMainFrame::SaveAllTab()
 		}
 		using namespace boost::property_tree::xml_parser;
 
-		std::wofstream filestream(TabList);
+		CString strTempTabList = Misc::GetExeDirectory() + _T("TabList.temp.xml");
+		std::wofstream filestream(strTempTabList);
 		if (!filestream)
 			throw "error";
 		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
+		CString	TabList = Misc::GetExeDirectory() + _T("TabList.xml");
+		if (::PathFileExists(TabList)) {
+			CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.xml");
+			::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
+		}
+		filestream.close();
+		::MoveFileEx(strTempTabList, TabList, MOVEFILE_REPLACE_EXISTING);
 
 	} catch (...) {
 		MessageBox(_T("SaveAllTabでエラー発生!"));
 	}
+	m_bNowSaveAllTab = false;
 }
 
 
@@ -2601,7 +2619,12 @@ void CMainFrame::OnTimer(UINT_PTR nIDEvent, TIMERPROC dmy /*= 0*/)
 		//+++ 自動セーブが設定されていた場合、default.dfgをオートバックアップ.
 		if (m_nBackUpTimerID == nIDEvent && m_nBackUpTimerID) {
 			//_SaveGroupOption( CStartUpOption::GetDefaultDFGFilePath(), true );
-			SaveAllTab();
+			if (m_bNowSaveAllTab) {
+				MessageBox(_T("TabList.xmlの自動セーブの時間がかかりすぎています。"));
+			} else {
+				boost::thread thrd(boost::bind(&CMainFrame::SaveAllTab, this));
+			}
+			//SaveAllTab();
 		} else {
 			SetMsgHandled(FALSE);
 			return;

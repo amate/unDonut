@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <boost\optional.hpp>
 #include "DonutView.h"
 #include "option\DLControlOption.h"
 
@@ -224,7 +225,7 @@ public:
 	}
 
 
-	static BOOL CheckExPropertyFlag(DWORD &dwFlags, DWORD& dwFlags2, CString &strIniFile, CString strSection = DONUT_SECTION)
+	static BOOL CheckExPropertyFlag(DWORD &dwFlags, DWORD& dwFlags2, const CString& strIniFile, CString strSection = DONUT_SECTION)
 	{
 		CIniFileI	pr(strIniFile, strSection);
 		DWORD	dwEnabled = pr.GetValue(EXPROP_KEY_ENABLED, 0);
@@ -251,23 +252,36 @@ public:
 	enum { IDD = IDD_DLG/*IDD_DIALOG_EXPROPERTY*/ };
 
 	/// コンストラクタ
-	CExPropertyDialogT(const CString &strUrlFile, const CString strSection = DONUT_SECTION, int urlMode = 1)
+	CExPropertyDialogT(const CString& strUrlFile, 
+					   const CString& strSection = DONUT_SECTION, 
+					   bool urlMode = true)
 		: m_strUrlFile(strUrlFile)
 		, m_strSection(strSection)
-		, m_urlMode(urlMode)			//+++ 追加
+		, m_bURLMode(urlMode)			//+++ 追加
 		, m_urlEditBtnSw(0)				//+++ 追加
+		, m_bEnabled(FALSE)
 	{
-		DWORD			dwExProp    = 0xAAAAAA;	//+++ 初期値がデフォルト設定になるように.
-		DWORD			dwExPropOpt = 0x8;		//+++
-		DWORD			dwEnabled   = 0;
+		// strUrlFile の strSection から設定読み込み
+		CIniFileI	pr(strUrlFile, strSection);
+		DWORD	dwExProp    = pr.GetValue(EXPROP_KEY   , 0xAAAAAA/*初期値がデフォルト設定になるように.*/);
+		DWORD	dwExPropOpt = pr.GetValue(EXPROP_OPTION, 0x8);		
+		m_bEnabled	= pr.GetValue(EXPROP_KEY_ENABLED, FALSE) != 0;
 
-		CIniFileI		pr(strUrlFile, strSection);
-		pr.QueryValue(dwExProp   , EXPROP_KEY);
-		pr.QueryValue(dwExPropOpt, EXPROP_OPTION);			//+++
-		pr.QueryValue(dwEnabled  , EXPROP_KEY_ENABLED);
+		pr.ChangeSectionName(_T("InternetShortcut"));
+		m_strUrlBase = pr.GetString(_T("URL"));
 
-		m_bEnabled			= dwEnabled != 0;
+		Init(dwExProp, dwExPropOpt);
+	}
 
+	CExPropertyDialogT(const CString& url, bool bEnabled, DWORD dwExProp = 0xAAAAAA, DWORD dwExPropOpt = 0x8)
+		: m_strUrlBase(url), m_bURLMode(true), m_urlEditBtnSw(0), m_bEnabled(bEnabled)
+	{
+		Init(dwExProp, dwExPropOpt);
+	}
+
+	void	Init(DWORD dwExProp, DWORD dwExPropOpt)
+	{
+		// ダウンロードコントロール
 		m_nImage			= exProp2btn(dwExProp, EXPROP_DLIMAGE	);
 		m_nVideo			= exProp2btn(dwExProp, EXPROP_VIDEO		);
 		m_nSound			= exProp2btn(dwExProp, EXPROP_SOUND		);
@@ -276,6 +290,7 @@ public:
 		m_nScript			= exProp2btn(dwExProp, EXPROP_SCRIPT 	);
 		m_nJava 			= exProp2btn(dwExProp, EXPROP_JAVA		);
 
+		// 操作オプション
 		m_nNaviLock 		= exProp2btn(dwExProp, EXPROP_NAVI		);
 		m_nFilter			= exProp2btn(dwExProp, EXPROP_FILTER 	);
 		m_nGesture			= exProp2btn(dwExProp, EXPROP_GETSTURE	);
@@ -285,30 +300,51 @@ public:
 
 		//+++ m_nNoCloseNaviLock =	拡張プロパティでは設定できないとする.
 
+		// 自動更新
 		int   nFlag 		= dwExProp / EXPROP_REFRESH_NONE;
 		m_nReload			= 0;
-
 		while ( (nFlag >>= 1) > 0 )
 			m_nReload++;
 
 	  #if 1 //+++ 検索関係追加
 		if (IDD == IDD_DIALOG_EXPROPERTY) {
-			//DWORD	dwExPropOpt= pr.GetValue(EXPROP_OPTION);
-			m_exs_adrBar	   = dwExPropOpt & EXPROPOPT_ADDRESSBAR;
-			//x m_exs_adrBar   = pr.GetValue(  _T("AddressBar") 	);
-			m_exs_frontURL	   = pr.GetString( _T("FrontURL")		);
-			m_exs_backURL	   = pr.GetString( _T("BackURL")		);
-			m_exs_frontKeyword = pr.GetString( _T("FrontKeyWord")	);
-			m_exs_backKeyword  = pr.GetString( _T("BackKeyWord")	);
-			m_exs_encode	   = pr.GetValue ( _T("Encode") 		);
-			m_exs_bUsePost	   = pr.GetValue ( _T("UsePost")		) != 0;
-			m_exs_ShortcutCode = pr.GetString( _T("ShortcutCode")   );
+			m_exs_bUsePost = false;
+			if (m_strUrlFile.GetLength() > 0) {
+				CIniFileI	pr(m_strUrlFile, m_strSection);
+				//DWORD	dwExPropOpt= pr.GetValue(EXPROP_OPTION);
+				m_exs_adrBar	   = dwExPropOpt & EXPROPOPT_ADDRESSBAR;
+				//x m_exs_adrBar   = pr.GetValue(  _T("AddressBar") 	);
+				m_exs_frontURL	   = pr.GetString( _T("FrontURL")		);
+				m_exs_backURL	   = pr.GetString( _T("BackURL")		);
+				m_exs_frontKeyword = pr.GetString( _T("FrontKeyWord")	);
+				m_exs_backKeyword  = pr.GetString( _T("BackKeyWord")	);
+				m_exs_encode	   = pr.GetValue ( _T("Encode") 		);
+				m_exs_bUsePost	   = pr.GetValue ( _T("UsePost")		) != 0;
+				m_exs_ShortcutCode = pr.GetString( _T("ShortcutCode")   );
+			}
 		}
 	  #endif
 	}
 
 	/// ダイログに表示するタイトルを設定
 	void SetTitle(CString strTitle) { m_strTitle = strTitle; }
+
+	// attributes
+	CString GetURL() const { return m_strUrlBase; }
+	boost::optional<DWORD>	GetExProp() const 
+	{ 
+		if (m_bEnabled)
+			return m_dwExProp;
+		else
+			return boost::none; 
+	}
+	boost::optional<DWORD>	GetExPropOpt() const 
+	{
+		if (m_bEnabled)
+			return m_dwExPropOpt;
+		else
+			return boost::none;
+	}
 
 
 	BEGIN_DDX_MAP(CExPropertyDialogT<IDD_DLG> )
@@ -354,15 +390,9 @@ public:
 private:
 	LRESULT OnInitDialog(HWND hWnd, LPARAM lParam)
 	{
-		CIniFileI	pr( m_strUrlFile, _T("InternetShortcut") );
-		CString 	strUrl	 = pr.GetString( _T("URL")/*, NULL, 1024*/ );
-		DWORD		dwEnable = pr.GetValue( _T("Enable"), 0 );
-		pr.Close();
-
 	  #if 1	//+++ URL を編集可能に変更. URLを表示させない場合は、URLボタンもなしに.
-		m_strUrlBase = strUrl;
-		if (m_urlMode > 0) {
-			CEdit( GetDlgItem(IDC_EDIT_EXPROP_URL) ).SetWindowText(strUrl);
+		if (m_bURLMode) {
+			CEdit( GetDlgItem(IDC_EDIT_EXPROP_URL) ).SetWindowText(m_strUrlBase);
 			CEdit( GetDlgItem(IDC_EDIT_EXPROP_URL) ).SetReadOnly(1);
 			m_urlEditBtnSw = 0;
 			CEdit( GetDlgItem(IDC_EDIT_EXPROP_URL) ).EnableWindow(1);
@@ -412,10 +442,7 @@ private:
 	{
 		DoDataExchange(DDX_SAVE);
 
-		// TODO: この位置にその他の検証用のコードを追加してください
 		DWORD		dwExProp  = 0;
-		DWORD		dwEnabled = (m_bEnabled != 0);	//+++	? 1 : 0;
-
 		dwExProp  |= btn2ExProp( m_nImage		, EXPROP_DLIMAGE	);
 		dwExProp  |= btn2ExProp( m_nVideo		, EXPROP_VIDEO 	 	);
 		dwExProp  |= btn2ExProp( m_nSound		, EXPROP_SOUND 	 	);
@@ -429,9 +456,9 @@ private:
 		dwExProp  |= btn2ExProp( m_nGesture 	, EXPROP_GETSTURE	);
 		dwExProp  |= btn2ExProp( m_nBlockMailTo	, EXPROP_MAILTO		);
 
-		if (dwExProp || dwEnabled || m_nReload > 0) {
+		if (dwExProp || m_bEnabled || m_nReload > 0) {
 			if (m_nReload != -1)
-				dwExProp |= (EXPROP_REFRESH_NONE << m_nReload);
+				dwExProp |= (EXPROP_REFRESH_NONE << m_nReload);	// 自動更新フラグ追加
 		}
 
 		m_dwExProp = dwExProp;
@@ -443,45 +470,51 @@ private:
 		m_dwExPropOpt = dwExPropOpt;
 
 		// セーブ
-		CIniFileIO	pr(m_strUrlFile, m_strSection);
-		if (dwEnabled || dwExProp || pr.GetValue(EXPROP_KEY_ENABLED, 0       ))	pr.SetValue(dwEnabled	, EXPROP_KEY_ENABLED);
-		if (dwEnabled || dwExProp || pr.GetValue(EXPROP_KEY 	   , 0xAAAAAA))	pr.SetValue(dwExProp	, EXPROP_KEY); 	//+++ 初期値がデフォルト設定になるように.
+		if (m_strUrlFile.GetLength() > 0) {
+			CIniFileIO	pr(m_strUrlFile, m_strSection);
+			if (m_bEnabled || dwExProp || pr.GetValue(EXPROP_KEY_ENABLED, FALSE))	
+				pr.SetValue(m_bEnabled	, EXPROP_KEY_ENABLED);
+			if (m_bEnabled || dwExProp || pr.GetValue(EXPROP_KEY, 0xAAAAAA/*初期値がデフォルト設定になるように.*/))
+				pr.SetValue(dwExProp	, EXPROP_KEY); 
 
-		//+++ 検索関係追加
-		if (IDD == IDD_DIALOG_EXPROPERTY) {
-			if (dwExPropOpt 	  || pr.GetValue(EXPROP_OPTION	   , 8))	pr.SetValue(dwExPropOpt , EXPROP_OPTION);
+			//+++ 検索関係追加
+			if (IDD == IDD_DIALOG_EXPROPERTY) {
+				if (dwExPropOpt || pr.GetValue(EXPROP_OPTION, 8))
+					pr.SetValue(dwExPropOpt , EXPROP_OPTION);
 
-			if ( m_exs_frontURL.IsEmpty() == 0 || pr.GetString(_T("FrontURL")).IsEmpty() == 0
-			  || m_exs_backURL.IsEmpty()  == 0 || pr.GetString(_T("BackURL")).IsEmpty()  == 0 )
-			{
-				pr.SetString(m_exs_frontURL		, _T("FrontURL")	);
-				pr.SetString(m_exs_backURL		, _T("BackURL") 	);
+				if ( m_exs_frontURL.IsEmpty() == 0 || pr.GetString(_T("FrontURL")).IsEmpty() == 0
+				  || m_exs_backURL.IsEmpty()  == 0 || pr.GetString(_T("BackURL")).IsEmpty()  == 0 )
+				{
+					pr.SetString(m_exs_frontURL		, _T("FrontURL")	);
+					pr.SetString(m_exs_backURL		, _T("BackURL") 	);
+				}
+
+				if ( m_exs_frontKeyword.IsEmpty() == 0 || pr.GetString(_T("FrontKeyword")).IsEmpty() == 0
+				  || m_exs_backKeyword.IsEmpty()  == 0 || pr.GetString(_T("BackKeyword")).IsEmpty()  == 0)
+				{
+					pr.SetString(m_exs_frontKeyword	, _T("FrontKeyword"));
+					pr.SetString(m_exs_backKeyword	, _T("BackKeyword") );
+				}
+
+				if (m_exs_encode || pr.GetValue(_T("Encode"), 0) != 0)
+					pr.SetValue(m_exs_encode	, _T("Encode")		);
+
+				pr.SetValue(m_exs_bUsePost, _T("UsePost"));
+				pr.SetString(m_exs_ShortcutCode, _T("ShortCutCode"));
 			}
-
-			if ( m_exs_frontKeyword.IsEmpty() == 0 || pr.GetString(_T("FrontKeyword")).IsEmpty() == 0
-			  || m_exs_backKeyword.IsEmpty()  == 0 || pr.GetString(_T("BackKeyword")).IsEmpty()  == 0)
-			{
-				pr.SetString(m_exs_frontKeyword	, _T("FrontKeyword"));
-				pr.SetString(m_exs_backKeyword	, _T("BackKeyword") );
-			}
-
-			if (m_exs_encode || pr.GetValue(_T("Encode"), 0) != 0)
-				pr.SetValue(m_exs_encode	, _T("Encode")		);
-
-			pr.SetValue(m_exs_bUsePost, _T("UsePost"));
-			pr.SetString(m_exs_ShortcutCode, _T("ShortCutCode"));
 		}
 
 		//+++ URL の編集を行った場合
-		if (m_urlMode > 0) {
+		if (m_bURLMode) {
 			CString 	strUrl = MtlGetWindowText( GetDlgItem(IDC_EDIT_EXPROP_URL) );
 			if (m_strUrlBase != strUrl) {
-				pr.ChangeSectionName( _T("InternetShortcut") );
-				pr.SetString( strUrl, _T("URL") );
+				m_strUrlBase = strUrl;
+				if (m_strUrlFile.GetLength() > 0) {
+					CIniFileIO	pr( m_strUrlFile, _T("InternetShortcut") );
+					pr.SetString( strUrl, _T("URL") );
+				}
 			}
 		}
-
-		pr.Close();
 
 		EndDialog(nID);
 	}
@@ -506,14 +539,16 @@ private:
 		m_nBlockMailTo	= 0;
 		m_nReload		= 0;
 
-		if (m_strSection == DONUT_SECTION) {
-			//x MtlIniDeleteSection(m_strUrlFile, m_strSection);	//+++ メンバーに置き換え.
-			CIniFileO 	pr(m_strUrlFile, m_strSection);
-			pr.DeleteSection();
-		} else {
-			CIniFileO 	pr(m_strUrlFile, m_strSection);
-			pr.DeleteValue(EXPROP_KEY);
-			pr.DeleteValue(EXPROP_KEY_ENABLED);
+		if (m_strUrlFile.GetLength() > 0) {
+			if (m_strSection == DONUT_SECTION) {
+				//x MtlIniDeleteSection(m_strUrlFile, m_strSection);	//+++ メンバーに置き換え.
+				CIniFileO 	pr(m_strUrlFile, m_strSection);
+				pr.DeleteSection();
+			} else {
+				CIniFileO 	pr(m_strUrlFile, m_strSection);
+				pr.DeleteValue(EXPROP_KEY);
+				pr.DeleteValue(EXPROP_KEY_ENABLED);
+			}
 		}
 
 		m_bEnabled	= FALSE;
@@ -623,7 +658,7 @@ private:
 	CString		m_exs_ShortcutCode;
   #endif
   #if 1	//+++ url編集
-	int			m_urlMode;				//+++ 0:url無  1:url有.
+	bool		m_bURLMode;				//+++ 0:url無  1:url有.
 	int			m_urlEditBtnSw;			//+++ url編集のon,off
 	CString		m_strUrlBase;			//+++ エディットチェック用
   #endif

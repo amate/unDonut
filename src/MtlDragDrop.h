@@ -142,6 +142,8 @@ private:
 	bool	m_bDragStarted; 	// has drag really started yet?
 	DWORD	m_dwButtonCancel;	// which button will cancel (going down)
 	DWORD	m_dwButtonDrop; 	// which button will confirm (going up)
+protected:
+	CComPtr<IDragSourceHelper>	m_spDragSourceHelper;
 
 public:
 	// Ctor/dtor
@@ -150,6 +152,8 @@ public:
 		, m_dwButtonCancel(0)
 		, m_dwButtonDrop(0)
 	{
+		m_spDragSourceHelper.CoCreateInstance(CLSID_DragDropHelper);
+		ATLASSERT(m_spDragSourceHelper);
 	}
 
 
@@ -517,7 +521,8 @@ private:
 		DTTRACE( _T(" cache lpDataObject step2\n") );
 		m_spDataObject = pDataObject;
 
-		T * 	   pT		  = static_cast<T *>(this);
+		T* pT = static_cast<T *>(this);
+		m_spDropTargetHelper->DragEnter(pT->m_hWnd, pDataObject, (POINT*)&pt, *pdwEffect);
 		CPoint	   point( (int) pt.x, (int) pt.y );
 		pT->ScreenToClient(&point);
 
@@ -545,6 +550,7 @@ private:
 
 		CPoint	point( (int) pt.x, (int) pt.y );
 		T* pT = static_cast<T *>(this);
+		m_spDropTargetHelper->DragOver((POINT*)&pt, *pdwEffect);
 		pT->ScreenToClient(&point);
 
 		// check first for entering scroll area
@@ -569,6 +575,7 @@ public:
 		m_nTimerID = MAKEWORD(-1, -1);
 
 		T *pT = static_cast<T *>(this);
+		m_spDropTargetHelper->DragLeave();
 		pT->OnDragLeave();
 
 		// release cached data object
@@ -592,6 +599,7 @@ private:
 		
 		CPoint	   point( (int) pt.x, (int) pt.y );
 		T* pT = static_cast<T *>(this);
+		m_spDropTargetHelper->Drop(pDataObject, (POINT*)&pt, *pdwEffect);
 		pT->ScreenToClient(&point);
 
 		// verify that drop is legal
@@ -615,7 +623,7 @@ private:
 	UINT				 m_nTimerID;		// != MAKEWORD(-1, -1) when in scroll area
 	DWORD				 m_dwLastTick;		// only valid when m_nTimerID valid
 	UINT				 m_nScrollDelay;	// time to next scroll
-
+	CComPtr<IDropTargetHelper>	m_spDropTargetHelper;
 
 public:
 	// Ctor/dtor
@@ -626,6 +634,8 @@ public:
 		, m_nScrollDelay(0)
 	  #endif
 	{
+		m_spDropTargetHelper.CoCreateInstance(CLSID_DragDropHelper);
+		ATLASSERT(m_spDropTargetHelper);
 	}
 
 
@@ -663,6 +673,9 @@ public:
 		// disconnect from OLE
 		::RevokeDragDrop(pT->m_hWnd);
 		::CoLockObjectExternal( (IUnknown *) this, false, true );
+
+		if (m_spDataObject)
+			m_spDataObject.Release();
 	}
 
 

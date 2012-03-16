@@ -246,6 +246,7 @@ static bool _PrivateInit()
 	CAddressBarOption::GetProfile();	// アドレスバー
 	CSearchBarOption::GetProfile();		// 検索バー
 	CMenuOption::GetProfile();			// メニュー
+	CLinkBarOption::GetProfile();		// リンクバー
 	CCustomContextMenuOption::GetProfile();
 	CDLControlOption::GetProfile();
 	CIgnoredURLsOption::GetProfile();

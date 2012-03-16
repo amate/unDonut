@@ -18,7 +18,7 @@
 #include "DonutRebarCtrl.h"
 #include "PluginBar.h"
 #include "DonutExplorerBar.h"
-#include "DonutLinksBarCtrl.h"
+#include "DonutLinkBarCtrl.h"
 #include "DonutToolBar.h"
 #include "DonutStatusBarCtrl.h"
 #include "DonutAddressBar.h"
@@ -632,7 +632,11 @@ public:
 	LRESULT OnGetSearchBar() { return (LRESULT) &m_SearchBar; }
 	//------------------
 	// open
-	HWND 	UserOpenFile(CString strFileOrURL, DWORD openFlag = DonutGetStdOpenFlag(), int dlCtrlFlag = -1, int extendedStyleFlags = -1);
+	HWND 	UserOpenFile(CString strFileOrURL, 
+						 DWORD openFlag = DonutGetStdOpenFlag(), 
+						 int dlCtrlFlag = -1, 
+						 int extendedStyleFlags = -1,
+						 int AutoRefresh = 0);
 	LRESULT OnOpenWithExProp(_EXPROP_ARGS *pArgs);
 #if 0
 	HWND 	OpenUrlWithExProp(CString strUrl, DWORD dwOpenFlag, DWORD dwExProp, DWORD dwExProp2);
@@ -884,7 +888,7 @@ private:
 	CDonutTabBar 						m_MDITab;
 	CCommandBarCtrl2					m_CmdBar;
 	CDonutToolBar						m_ToolBar;
-	CDonutLinksBarCtrl<CMainFrame>		m_LinkBar;
+	CDonutLinkBarCtrl					m_LinkBar;
 	CDonutAddressBar					m_AddressBar;
 	CDonutSearchBar 					m_SearchBar;
 	CDonutReBarCtrl 					m_ReBar;
@@ -942,6 +946,7 @@ private:
 	bool					m_bCancelRButtonUp;
 	bool					m_bWM_TIMER;
 	bool					m_bCommandFromChildFrame;
+	bool					m_bNowSaveAllTab;
 
 	CString		m_strCommandLine;
 

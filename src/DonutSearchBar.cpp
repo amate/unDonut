@@ -2098,7 +2098,7 @@ void CDonutSearchBar::Impl::_AddToSearchBoxUnique(const CString& str)
 
 	m_cmbKeyword.InsertString(0, str);
 
-	boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
+	//boost::thread(boost::bind(&CDonutSearchBar::Impl::_SaveHistory, this));
 	//_SaveHistory();	// ’Ç‰Á‚Ì‚½‚Ñ‚É•Û‘¶‚µ‚Ä‚Ý‚é
 }
 

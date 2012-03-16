@@ -6,6 +6,7 @@
 #pragma once
 
 #include "FileNotification.h"
+#include "ItemIDList.h"
 
 
 //optional styles

@@ -133,17 +133,15 @@ bool MtlGetFavoriteLinksFolder(CString &rString)
 	MtlMakeSureTrailingBackSlash(rString);
 
 	Misc::CRegKey 	rk;
-	LONG			lRet = rk.Open( HKEY_CURRENT_USER, _T("Software\\Microsoft\\Internet Explorer\\Toolbar") );
+	LONG	lRet = rk.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Internet Explorer\\Toolbar"));
 	if (lRet == ERROR_SUCCESS) {
-		TCHAR szName[MAX_PATH+1];
-		szName[0] 	  = 0;			//+++
+		TCHAR szName[MAX_PATH+1] = _T("\0");
 		DWORD dwCount = MAX_PATH;	//+++ * sizeof (TCHAR);
 
 		lRet = rk.QueryStringValue( _T("LinksFolderName"), szName, &dwCount);
 		if (lRet == ERROR_SUCCESS && Misc::IsExistFile(szName))
 		{
-			TCHAR szName2[MAX_PATH+1];
-			szName2[0]	= 0;	//+++
+			TCHAR szName2[MAX_PATH+1] = _T("\0");
 			::ExpandEnvironmentStrings(szName, szName2, MAX_PATH);
 			rString += szName2;
 			MtlMakeSureTrailingBackSlash(rString);
@@ -156,6 +154,8 @@ bool MtlGetFavoriteLinksFolder(CString &rString)
 	} else {
 		rString += _T("ƒŠƒ“ƒN\\");
 	}
+	if (::PathIsDirectory(rString))
+		return true;
 
 	return false;
 }

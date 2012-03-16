@@ -62,6 +62,7 @@
     <ProjectName>Donut</ProjectName>
     <ProjectGuid>{00E880FB-42A1-414A-9903-9AC14F495544}</ProjectGuid>
     <RootNamespace>Donut</RootNamespace>
+    <VCTargetsPath Condition="'$(VCTargetsPath11)' != '' and '$(VSVersion)' == '' and $(VisualStudioVersion) == ''">$(VCTargetsPath11)</VCTargetsPath>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release-DIET|Win32'" Label="Configuration">
@@ -271,9 +272,6 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MinSpace</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <OmitFramePointers>false</OmitFramePointers>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
@@ -291,6 +289,7 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -321,9 +320,6 @@
     </Midl>
     <ClCompile>
       <AdditionalOptions>/Zm300 %(AdditionalOptions)</AdditionalOptions>
-      <Optimization>MinSpace</Optimization>
-      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Size</FavorSizeOrSpeed>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -340,6 +336,7 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <Optimization>MinSpace</Optimization>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;WIN64;USE_INNER_MANIFEST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -905,6 +902,7 @@
     </ClCompile>
     <ClCompile Include="DonutAddressBar.cpp" />
     <ClCompile Include="DonutClipboardBar.cpp" />
+    <ClCompile Include="DonutLinkBarCtrl.cpp" />
     <ClCompile Include="DonutOption.cpp" />
     <ClCompile Include="DonutPFunc.cpp" />
     <ClCompile Include="DonutSearchBar.cpp" />
@@ -925,6 +923,7 @@
     <ClCompile Include="GdiplusUtil.cpp" />
     <ClCompile Include="IniFile.cpp" />
     <ClCompile Include="ItemIDList.cpp" />
+    <ClCompile Include="LinkPopupMenu.cpp" />
     <ClCompile Include="MainFrame.cpp" />
     <ClCompile Include="DonutTabBar.cpp" />
     <ClCompile Include="MenuEncode.cpp" />
@@ -932,6 +931,7 @@
     <ClCompile Include="MultiThreadManager.cpp" />
     <ClCompile Include="newdelete.cpp" />
     <ClCompile Include="option\AddressBarPropertyPage.cpp" />
+    <ClCompile Include="option\LinkBarPropertyPage.cpp" />
     <ClCompile Include="option\MDITabDialog.cpp" />
     <ClCompile Include="option\RightClickMenuDialog.cpp" />
     <ClCompile Include="option\UrlSecurityExPropDialog.cpp" />
@@ -1087,7 +1087,7 @@
     <ClInclude Include="DonutDefine.h" />
     <ClInclude Include="DonutExplorerBar.h" />
     <ClInclude Include="DonutFavoritesMenu.h" />
-    <ClInclude Include="DonutLinksBarCtrl.h" />
+    <ClInclude Include="DonutLinkBarCtrl.h" />
     <ClInclude Include="DonutOptions.h" />
     <ClInclude Include="DonutPanelBar.h" />
     <ClInclude Include="DonutPCP.h" />
@@ -1125,6 +1125,7 @@
     <ClInclude Include="ie_feature_control.h" />
     <ClInclude Include="IniFile.h" />
     <ClInclude Include="ItemIDList.h" />
+    <ClInclude Include="LinkPopupMenu.h" />
     <ClInclude Include="MainFrame.h" />
     <ClInclude Include="MainFrameFileDropTarget.h" />
     <ClInclude Include="MDIChildUserMessenger.h" />
@@ -1149,6 +1150,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
     <ClInclude Include="SearchHistoryDialog.h" />
+    <ClInclude Include="ShellFileDialog.h" />
     <ClInclude Include="SimpleTree.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="StyleSheetOption.h" />
@@ -1230,6 +1232,7 @@
     <ClCompile Include="FaviconManager.cpp">
       <FileType>Document</FileType>
     </ClCompile>
+    <None Include="DonutLinkBarCtrl.inl" />
     <None Include="res\API.rgs" />
     <None Include="res\DLError.bmp" />
     <None Include="res\DLHelp.bmp" />
@@ -1244,9 +1247,11 @@
     <None Include="res\FavBar.bmp" />
     <None Include="res\FavBarHot.bmp" />
     <None Include="res\Find.bmp" />
+    <None Include="res\folder.ico" />
     <None Include="res\Generic_Document.ico" />
     <None Include="res\Go.bmp" />
     <None Include="res\GoHot.bmp" />
+    <None Include="res\icon1.ico" />
     <None Include="res\Icon_100.ico" />
     <None Include="res\Icon_64.ico" />
     <None Include="res\NavigateLock.ico" />

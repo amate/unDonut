@@ -1508,6 +1508,14 @@ bool mallocHeapCompact()
 	return false;
 }
 
+//------------------------------------------------------
+CRect	GetMonitorWorkArea(HWND hWnd)
+{
+	HMONITOR hMoni = MonitorFromWindow(hWnd, MONITOR_DEFAULTTONEAREST);
+	MONITORINFO	moniInfo = { sizeof(MONITORINFO) };
+	GetMonitorInfo(hMoni, &moniInfo);
+	return moniInfo.rcWork;
+}
 
 
 }	// namespace Misc
