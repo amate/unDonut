@@ -7,7 +7,7 @@
 
 namespace app {
 
-#define VERSTR			_T("2.00b6")
+#define VERSTR			_T("2.00b7_mp")
 
 #ifdef UNICODE
 #define MBVER

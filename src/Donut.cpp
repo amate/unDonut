@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "Donut.h"
+#include <regex>
 #include <strsafe.h>
 #include <dbghelp.h>
 #include <shellapi.h>
@@ -16,16 +17,14 @@
 #include "DonutP.h"
 #include "DonutP_i.c"
 
+#include "DonutOptions.h"
 #include "ie_feature_control.h"
+#include "ExMenu.h"
 #include "MainFrame.h"								//+++ "MainFrm.h"
 #include "API.h"
 #include "appconst.h"
 #include "MultiThreadManager.h"
-
-#ifdef USE_ATL3_BASE_HOSTEX /*_ATL_VER < 0x700*/	//+++
-#include "for_ATL3/AtlifaceEx_i.c"
-#endif
-
+#include "DonutSimpleEventManager.h"
 #include "VersionControl.h"
 
 
@@ -70,7 +69,7 @@ CAPI*				g_pAPI					  = NULL;
 
 
 BEGIN_OBJECT_MAP(ObjectMap)
-	OBJECT_ENTRY(CLSID_API, CAPI)
+//	OBJECT_ENTRY(CLSID_API, CAPI)
 END_OBJECT_MAP()
 
 
@@ -328,7 +327,7 @@ void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
 			&& strCmdLine.Mid(1,4).CompareNoCase(_T("tray")) == 0)	//+++ -trayオプションをスキップ
 			return;
 
-		wndMain.SetCommandLine(lpstrCmdLine);
+	//	wndMain.SetCommandLine(lpstrCmdLine);
 	}
 }
 
@@ -505,6 +504,9 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	// 設定ファイルのフルパスを取得する
 	MtlIniFileNameInit(g_szIniFileName, MAX_PATH);
 
+	if (MultiThreadManager::RunChildProcessMessageLoop(hInstance)) 
+		return 0;
+
 	// 複数起動の確認
 	if (CheckOneInstance(lpstrCmdLine)) 
 		return 0;
@@ -653,7 +655,7 @@ void	DonutOpenFile(const CString &strFileOrURL, DWORD dwOpenFlag)
 	g_pMainWnd->UserOpenFile(strFileOrURL, dwOpenFlag);
 }
 
-
+#if 0
 /////////////////////////////////////////////////////////////////////////////
 // CAPI
 HRESULT STDMETHODCALLTYPE CAPI::Advise(IUnknown *pUnk, DWORD *pdwCookie)
@@ -671,8 +673,6 @@ HRESULT STDMETHODCALLTYPE CAPI::Advise(IUnknown *pUnk, DWORD *pdwCookie)
 	return hr;
 }
 
-
-
 HRESULT STDMETHODCALLTYPE CAPI::Unadvise(DWORD dwCookie)
 {
 	HRESULT hr = CProxyIDonutPEvents<CAPI>::Unadvise(dwCookie);
@@ -685,7 +685,7 @@ HRESULT STDMETHODCALLTYPE CAPI::Unadvise(DWORD dwCookie)
 	//::MessageBox(NULL,_T("unadvise"),_T("check"),MB_OK);
 	return hr;
 }
-
+#endif
 
 
 
@@ -712,6 +712,6 @@ CString Donut_GetActiveStatusStr()
 ///+++
 void  Donut_ExplorerBar_RefreshFavoriteBar()
 {
-	CDonutExplorerBar::GetInstance()->RefreshExpBar(0);
+	//CDonutExplorerBar::GetInstance()->RefreshExpBar(0);
 }
 

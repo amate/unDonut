@@ -4,7 +4,10 @@
 #include "DocHostUIHandlerDispatch.h"
 #include "DonutView.h"
 #include "MainFrame.h"
-#include "option/MainOption.h"
+#include "option\MainOption.h"
+#include "option\RightClickMenuDialog.h"
+#include "option\MenuDialog.h"
+#include "Download\DownloadManager.h"
 
 
 // Constructor
@@ -169,7 +172,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 
 
 	CSimpleArray<HMENU> arrDestroyMenu;
-	CCustomContextMenuOption::AddSubMenu(menu, hWndTopLevel, arrDestroyMenu);
+	//CCustomContextMenuOption::AddSubMenu(menu, hWndTopLevel, arrDestroyMenu);
 	{
 		// 初期化前メッセージを送る
 	//	for (int ii = 0; ii < mapCmd.GetSize(); ii++) {
@@ -183,12 +186,12 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		if (CMenuOption::s_bR_Equal_L) 
 			dwMenuStyle |= TPM_RIGHTBUTTON;
 
-		{	// メニューの右にショートカットキーを表示しないようにする(メインフレームで設定されるのを防ぐ)
-			MENUITEMINFO menuInfo = { sizeof (MENUITEMINFO) };
-			menuInfo.fMask	= MIIM_TYPE;
-			menuInfo.fType	= MF_SEPARATOR;
-			menu.InsertMenuItem(0, MF_BYPOSITION, &menuInfo);
-		}
+		//{	// メニューの右にショートカットキーを表示しないようにする(メインフレームで設定されるのを防ぐ)
+		//	MENUITEMINFO menuInfo = { sizeof (MENUITEMINFO) };
+		//	menuInfo.fMask	= MIIM_TYPE;
+		//	menuInfo.fType	= MF_SEPARATOR;
+		//	menu.InsertMenuItem(0, MF_BYPOSITION, &menuInfo);
+		//}
 
 		/* メニューを表示 */
 		int iSelection = menu.TrackPopupMenu(dwMenuStyle, pptPosition->x, pptPosition->y, m_pView->m_hWnd);//hWndTarget);//hWndTopLevel);
@@ -198,7 +201,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 			&& iSelection == ID_SAVEDIALOG 
 			&& CDownloadManager::UseDownloadManager()) 
 		{	// DLManagerに送る
-			CDownloadManager::GetInstance()->SetReferer(g_pMainWnd->GetActiveChildFrame()->GetLocationURL());
+			CDownloadManager::GetInstance()->SetReferer(g_pMainWnd->GetActiveLocationURL());
 			CDownloadManager::GetInstance()->DownloadStart(m_strUrl, NULL, NULL, DLO_SHOWWINDOW);
 		} else {
 			// Send selected shortcut menu item command to shell
@@ -251,7 +254,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		}
 	}
 	// ここでお片づけ
-	CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
+	//CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
 
 
 //	for (int ii = 0; ii < mapCmd.GetSize(); ii++) {

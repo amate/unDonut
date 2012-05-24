@@ -6,6 +6,8 @@
 #include "stdafx.h"
 #include "LinkPopupMenu.h"
 #include "MtlMisc.h"
+#include <regex>
+#include <boost/thread.hpp>
 #include <atldlgs.h>
 #include "GdiplusUtil.h"
 #include "Donut.h"
@@ -89,11 +91,28 @@ std::pair<CString, CString> CLinkItemDataObject::GetNameAndURL(IDataObject* pDat
 		FILEGROUPDESCRIPTOR* pFgdis = (FILEGROUPDESCRIPTOR*)::GlobalLock(stgMedium.hGlobal);
 		name = Misc::GetFileBaseNoExt(pFgdis->fgd[0].cFileName);
 		MtlGetHGlobalText(pDataObject, url, CF_SHELLURLW);
+		::GlobalUnlock(stgMedium.hGlobal);
+		::ReleaseStgMedium(&stgMedium);
 		return std::make_pair(name, url);
 	}
 
 	// Chromiumのリンクをドロップ
-
+	formatetc.cfFormat	= ::RegisterClipboardFormat(_T("text/html"));
+	formatetc.lindex	= -1;
+	hr = pDataObject->GetData(&formatetc, &stgMedium);
+	if (SUCCEEDED(hr) && stgMedium.hGlobal) {
+		LPCSTR str = (LPCSTR)::GlobalLock(stgMedium.hGlobal);
+		CString text = Misc::utf8_to_CString(str);
+		
+		std::wregex	rx(L"<a href=\"([^\"]+)\">([^<]+)</a>");
+		std::wcmatch	result;
+		if (std::regex_search((LPCWSTR)text, result, rx)) {
+			url  = result[1].str().c_str();
+			name = result[2].str().c_str();
+		}
+		::GlobalUnlock(stgMedium.hGlobal);
+		::ReleaseStgMedium(&stgMedium);
+	}
 
 	return std::make_pair(name, url);
 }
@@ -723,23 +742,23 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 
 	case ID_ADDLINK:
 		{
-			unique_ptr<LinkItem>	pItem(new LinkItem);
-			CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-			if (pChild) {
-				pItem->strName= pChild->GetTitle();
-				pItem->strUrl = pChild->GetLocationURL();
-			}
-			CLinkEditDialog	dlg(*pItem, pFolder, hwnd);
-			if (dlg.DoModal(hwnd) == IDOK) {
-				if (pLinkItem && pLinkItem->pFolder)
-					pFolder = pLinkItem->pFolder;
-				if (pFolder->size() > 0 && pFolder->back()->strName == _T("ChevronFolder")) {
-					pFolder->insert(pFolder->begin() + (pFolder->size() - 1), std::move(pItem));
-				} else {
-					pFolder->push_back(std::move(pItem));
-				}
-				SaveLinkBookmark();
-			}
+			//unique_ptr<LinkItem>	pItem(new LinkItem);
+			//CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
+			//if (pChild) {
+			//	pItem->strName= pChild->GetTitle();
+			//	pItem->strUrl = pChild->GetLocationURL();
+			//}
+			//CLinkEditDialog	dlg(*pItem, pFolder, hwnd);
+			//if (dlg.DoModal(hwnd) == IDOK) {
+			//	if (pLinkItem && pLinkItem->pFolder)
+			//		pFolder = pLinkItem->pFolder;
+			//	if (pFolder->size() > 0 && pFolder->back()->strName == _T("ChevronFolder")) {
+			//		pFolder->insert(pFolder->begin() + (pFolder->size() - 1), std::move(pItem));
+			//	} else {
+			//		pFolder->push_back(std::move(pItem));
+			//	}
+			//	SaveLinkBookmark();
+			//}
 		}
 		break;
 
@@ -765,7 +784,7 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 
 	case ID_SORTBYNAME:
 		if (pLinkItem == nullptr) {
-			int nChevronIndex = pFolder->size() - 1;
+			int nChevronIndex = (int)pFolder->size() - 1;
 			LinkFolderPtr pChevronFolder = pFolder->back()->pFolder;
 			for (auto it = pChevronFolder->begin(); it != pChevronFolder->end(); ++it) {
 				pFolder->push_back(std::move(*it));
@@ -850,6 +869,7 @@ void	CLinkPopupMenu::GetFaviconToLinkItem(const CString& url, LinkFolderPtr pFol
 			}
 		}
 	});
+	td.detach();
 }
 
 void CLinkPopupMenu::DoPaint(CDCHandle dc)

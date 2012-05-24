@@ -5,7 +5,7 @@
 #pragma once
 
 #include <atlctrls.h>
-
+#include "option\SkinOption.h"
 
 //////////////////////////////////////////////////////////////////
 // CReBarCtrlImpl

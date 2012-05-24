@@ -41,32 +41,32 @@ void CMenuEncode::OnInitMenuPopup(HMENU hmenuPopup, UINT uPos, BOOL fSystemMenu)
 {
 	SetMsgHandled(FALSE);
 
-	CChildFrame* pChild = m_pMainFrame->GetActiveChildFrame();// DonutGetActiveWindow(m_hWnd);
+	//CChildFrame* pChild = m_pMainFrame->GetActiveChildFrame();// DonutGetActiveWindow(m_hWnd);
 
-	if (hmenuPopup == m_Menu.m_hMenu) {
-		_ReleaseMenu();
+	//if (hmenuPopup == m_Menu.m_hMenu) {
+	//	_ReleaseMenu();
 
-		if (pChild)
-			CreateMenu();
+	//	if (pChild)
+	//		CreateMenu();
 
-		MENUITEMINFO mii = { sizeof (MENUITEMINFO) };
-		mii.fMask = MIIM_TYPE;
-		m_Menu.GetMenuItemInfo(m_insertPoint, TRUE, &mii);
-		if (mii.fType & MFT_SEPARATOR) {
-			mii.fMask	   = MIIM_SUBMENU | MIIM_TYPE;
-			mii.dwTypeData = _T("エンコード(&M)");
-			mii.cch 	   = 15;
-			mii.fType	   = MFT_STRING;
-			mii.hSubMenu   = m_EncodeMenu.m_hMenu;
-			m_Menu.InsertMenuItem(m_insertPoint, TRUE, &mii);	// エンコード メニューを挿入する
-		}
-	}
+	//	MENUITEMINFO mii = { sizeof (MENUITEMINFO) };
+	//	mii.fMask = MIIM_TYPE;
+	//	m_Menu.GetMenuItemInfo(m_insertPoint, TRUE, &mii);
+	//	if (mii.fType & MFT_SEPARATOR) {
+	//		mii.fMask	   = MIIM_SUBMENU | MIIM_TYPE;
+	//		mii.dwTypeData = _T("エンコード(&M)");
+	//		mii.cch 	   = 15;
+	//		mii.fType	   = MFT_STRING;
+	//		mii.hSubMenu   = m_EncodeMenu.m_hMenu;
+	//		m_Menu.InsertMenuItem(m_insertPoint, TRUE, &mii);	// エンコード メニューを挿入する
+	//	}
+	//}
 
-	if (pChild) {
-		EnableMenuItem(m_Menu.m_hMenu, m_insertPoint, MF_BYPOSITION | MF_ENABLED);
-	} else {
-		EnableMenuItem(m_Menu.m_hMenu, m_insertPoint, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
-	}
+	//if (pChild) {
+	//	EnableMenuItem(m_Menu.m_hMenu, m_insertPoint, MF_BYPOSITION | MF_ENABLED);
+	//} else {
+	//	EnableMenuItem(m_Menu.m_hMenu, m_insertPoint, MF_BYPOSITION | MF_DISABLED | MF_GRAYED);
+	//}
 }
 
 
@@ -124,72 +124,72 @@ BOOL CMenuEncode::CreateMenu()
 {
 	HRESULT	hr = S_OK;
 
-	CChildFrame* pChild = m_pMainFrame->GetActiveChildFrame();
-	if (pChild == nullptr) 
-		return FALSE;
+	//CChildFrame* pChild = m_pMainFrame->GetActiveChildFrame();
+	//if (pChild == nullptr) 
+	//	return FALSE;
 
-	CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
-	if (spBrowser == nullptr)
-		return FALSE;
+	//CComPtr<IWebBrowser2>	spBrowser = pChild->GetMarshalIWebBrowser();
+	//if (spBrowser == nullptr)
+	//	return FALSE;
 
-	CComPtr<IDispatch>	spDisp;
-	spBrowser->get_Document(&spDisp);
-	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
-	if (spDoc == nullptr)
-		return FALSE;
+	//CComPtr<IDispatch>	spDisp;
+	//spBrowser->get_Document(&spDisp);
+	//CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
+	//if (spDoc == nullptr)
+	//	return FALSE;
 
-	//defined on AtlhostEx.h
-	enum {
-		IDR_BROWSE_CONTEXT_MENU 	= 24641,
-		SHDVID_GETMIMECSETMENU		=	 27,
-	};
+	////defined on AtlhostEx.h
+	//enum {
+	//	IDR_BROWSE_CONTEXT_MENU 	= 24641,
+	//	SHDVID_GETMIMECSETMENU		=	 27,
+	//};
 
-	//ICommandTargetとIOleWindowを取得。ウィンドウハンドルは保管
-	hr	= spDoc->QueryInterface(IID_IOleCommandTarget, (void **) &spCT);
-	hr	= spDoc->QueryInterface(IID_IOleWindow, (void **) &spWnd);
-	if ( (!spCT) || (!spWnd) )
-		return FALSE;
+	////ICommandTargetとIOleWindowを取得。ウィンドウハンドルは保管
+	//hr	= spDoc->QueryInterface(IID_IOleCommandTarget, (void **) &spCT);
+	//hr	= spDoc->QueryInterface(IID_IOleWindow, (void **) &spWnd);
+	//if ( (!spCT) || (!spWnd) )
+	//	return FALSE;
 
-	hr	= spWnd->GetWindow(&m_hWndTarget);
-	if (m_hWndTarget == NULL)
-		return FALSE;
+	//hr	= spWnd->GetWindow(&m_hWndTarget);
+	//if (m_hWndTarget == NULL)
+	//	return FALSE;
 
-	//DLLからメニューをロードする
-	m_hInstDLL	 = LoadLibrary( TEXT("SHDOCLC.DLL") );
-	if (m_hInstDLL == NULL) {
-		m_hInstDLL = LoadLibrary( TEXT("ieframe.dll") );	// for vista
-		if (m_hInstDLL == NULL)
-			return FALSE;
-	}
+	////DLLからメニューをロードする
+	//m_hInstDLL	 = LoadLibrary( TEXT("SHDOCLC.DLL") );
+	//if (m_hInstDLL == NULL) {
+	//	m_hInstDLL = LoadLibrary( TEXT("ieframe.dll") );	// for vista
+	//	if (m_hInstDLL == NULL)
+	//		return FALSE;
+	//}
 
-	m_CtxMenu	 = LoadMenu( m_hInstDLL, MAKEINTRESOURCE(IDR_BROWSE_CONTEXT_MENU) );
-	m_CtxMenuSub = GetSubMenu(m_CtxMenu.m_hMenu, CONTEXT_MENU_DEFAULT);
+	//m_CtxMenu	 = LoadMenu( m_hInstDLL, MAKEINTRESOURCE(IDR_BROWSE_CONTEXT_MENU) );
+	//m_CtxMenuSub = GetSubMenu(m_CtxMenu.m_hMenu, CONTEXT_MENU_DEFAULT);
 
-	//エンコードメニューを取得する
-	//CComVariant 	var;
-	VARIANT	var = { 0 };
-	hr = spCT->Exec(&CGID_ShellDocView, SHDVID_GETMIMECSETMENU, 0, NULL, &var);
+	////エンコードメニューを取得する
+	////CComVariant 	var;
+	//VARIANT	var = { 0 };
+	//hr = spCT->Exec(&CGID_ShellDocView, SHDVID_GETMIMECSETMENU, 0, NULL, &var);
 
-	MENUITEMINFO	mii   = { sizeof (MENUITEMINFO) };
-	mii.fMask	 = MIIM_SUBMENU;
-	mii.hSubMenu = (HMENU) var.byref;
-	m_CtxMenuSub.SetMenuItemInfo(IDM_LANGUAGE, FALSE, &mii);
+	//MENUITEMINFO	mii   = { sizeof (MENUITEMINFO) };
+	//mii.fMask	 = MIIM_SUBMENU;
+	//mii.hSubMenu = (HMENU) var.byref;
+	//m_CtxMenuSub.SetMenuItemInfo(IDM_LANGUAGE, FALSE, &mii);
 
-	//m_CtxMenuSubにおけるエンコードメニューの先頭項目のIDを保管
-	MENUITEMINFO	mii2  = { sizeof (MENUITEMINFO) };
-	m_posStart	 = 0;
-	mii2.fMask	 = MIIM_SUBMENU | MIIM_ID;
-	int count = m_CtxMenuSub.GetMenuItemCount();
-	for (int i = 0; i < count; ++i) {
-		m_CtxMenuSub.GetMenuItemInfo(i, TRUE, &mii2);
-		if (mii2.hSubMenu == mii.hSubMenu)
-			m_posStart = mii2.wID;
-	}
+	////m_CtxMenuSubにおけるエンコードメニューの先頭項目のIDを保管
+	//MENUITEMINFO	mii2  = { sizeof (MENUITEMINFO) };
+	//m_posStart	 = 0;
+	//mii2.fMask	 = MIIM_SUBMENU | MIIM_ID;
+	//int count = m_CtxMenuSub.GetMenuItemCount();
+	//for (int i = 0; i < count; ++i) {
+	//	m_CtxMenuSub.GetMenuItemInfo(i, TRUE, &mii2);
+	//	if (mii2.hSubMenu == mii.hSubMenu)
+	//		m_posStart = mii2.wID;
+	//}
 
-	//エンコードメニューをコピー
-	int id = ID_START;
-	m_EncodeMenu.CreatePopupMenu();
-	CopySubMenu(m_EncodeMenu.m_hMenu, mii.hSubMenu, id);
+	////エンコードメニューをコピー
+	//int id = ID_START;
+	//m_EncodeMenu.CreatePopupMenu();
+	//CopySubMenu(m_EncodeMenu.m_hMenu, mii.hSubMenu, id);
 
 	return TRUE;
 }

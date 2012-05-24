@@ -348,7 +348,7 @@ void CBingTranslatorMenu::OnMenuSelect(UINT nItemID, UINT nFlags, CMenuHandle me
 // BingTranslator‚Å–|–ó‚·‚é
 void CBingTranslatorMenu::OnBingTranslate(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	m_pFrame->OpenBingTranslator(m_strSelectedText);
+	//m_pFrame->OpenBingTranslator(m_strSelectedText);
 }
 
 // –|–óŒ‹‰Ê‚ğƒRƒs[

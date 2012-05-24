@@ -41,11 +41,7 @@ END
 
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
-#ifdef WIN64
-IDR_MAINFRAME           ICON                    "res64\\Icon_64.ico"
-#else
 IDR_MAINFRAME           ICON                    "res\\Icon_100.ico"
-#endif
 IDR_MDICHILD            ICON                    "res\\DonutDoc.ico"
 IDI_DLSTOP              ICON                    "res\\DLStop.ico"
 IDI_GENERIC_DOCUMENT    ICON                    "res\\Generic_Document.ico"
@@ -316,11 +312,10 @@ BEGIN
     BEGIN
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_CLOSE_ALL
+        MENUITEM "このタブ以外を閉じる(&W)",              ID_WINDOW_CLOSE_EXCEPT
         MENUITEM SEPARATOR
         MENUITEM "このタブより左を閉じる(&Q)",             ID_LEFT_CLOSE
         MENUITEM "このタブより右を閉じる(&R)",             ID_RIGHT_CLOSE
-        MENUITEM SEPARATOR
-        MENUITEM "このウィンドウ以外を閉じる(&W)",           ID_WINDOW_CLOSE_EXCEPT
         MENUITEM SEPARATOR
         MENUITEM "左のタブ(&X)",                    ID_TAB_LEFT
         MENUITEM "右のタブ(&V)",                    ID_TAB_RIGHT

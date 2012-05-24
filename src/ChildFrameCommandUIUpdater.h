@@ -23,13 +23,14 @@ class CChildFrameUIStateChange;
 
 
 struct ChildFrameUIData {
-	CChildFrame*	pChild;
+	HANDLE	hMap;
+	HWND	hWndActiveChildFrame;
 	bool	bNavigateBack;
 	bool	bNavigateForward;
-	CString strTitle;
-	CString strLocationURL;
-	CString strFaviconURL;
-	CString	strStatusBar;
+	WCHAR	strTitle[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strLocationURL[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strFaviconURL[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strStatusBar[INTERNET_MAX_URL_LENGTH];
 	long	nProgress;
 	long	nProgressMax;
 	int		nSecureLockIcon;
@@ -40,7 +41,8 @@ struct ChildFrameUIData {
 	DWORD	dwAutoRefreshStyle;
 
 	ChildFrameUIData() :
-		pChild(nullptr),
+		hMap(NULL),
+		hWndActiveChildFrame(NULL),
 		bNavigateBack(false),
 		bNavigateForward(false),
 		nProgress(0),
@@ -51,9 +53,17 @@ struct ChildFrameUIData {
 		dwDLCtrl(0),
 		dwExStyle(0),
 		dwAutoRefreshStyle(0)
-	{	}
+	{
+		strTitle[0] = 0;
+		strLocationURL[0] = 0;
+		strFaviconURL[0] = 0;
+		strStatusBar[0] = 0;
+	}
 };
 
+
+//////////////////////////////////////////////////////////////////
+// CChildFrameCommandUIUpdater : メインフレームからチェインされてくる
 
 class CChildFrameCommandUIUpdater : public CUpdateCmdUI<CChildFrameCommandUIUpdater>
 {
@@ -68,24 +78,33 @@ public:
 	static void	ChangeCommandUIMap(HWND hWndChildFrame);
 
 	static HWND	GetActiveChildFrameWindowHandle() { return s_hWndActiveChildFrame; }
+	static ChildFrameUIData* GetActiveChildFrameUIData() { 
+		return s_nActiveUIIndex != -1 ? s_vecpUIData[s_nActiveUIIndex] : nullptr;
+	}
 
 	// Message map
 	BEGIN_MSG_MAP( CChildFrameCommandUIUpdater )
 		USER_MSG_WM_ADDCOMMANDUIMAP( OnAddCommandUIMap )
 		USER_MSG_WM_REMOVECOMMANDUIMAP( OnRemoveCommandUIMap )
 		USER_MSG_WM_CHANGECHILDFRAMEUIMAP( OnChangeChildFrameUIMap )
+
+		MESSAGE_HANDLER_EX( WM_BROWSERTITLECHANGEFORUIUPDATER	, OnBrowserTitleChangeForUIUpdater	  )
+		MESSAGE_HANDLER_EX( WM_BROWSERLOCATIONCHANGEFORUIUPDATER, OnBrowserLocationChangeForUIUpdater )
 	END_MSG_MAP()
 
 	void	OnAddCommandUIMap(HWND hWndChildFrame);
 	void	OnRemoveCommandUIMap(HWND hWndChildFrame);
 	void	OnChangeChildFrameUIMap(HWND hWndChildFrame);
 
+	LRESULT OnBrowserTitleChangeForUIUpdater(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnBrowserLocationChangeForUIUpdater(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 	// Update Command UI Map
 	BEGIN_UPDATE_COMMAND_UI_MAP( CChildFrameCommandUIUpdater )
 		if (s_nActiveUIIndex == -1)
 			return FALSE;
 
-		m_pUIData = s_vecpUIData[s_nActiveUIIndex].get();
+		m_pUIData = s_vecpUIData[s_nActiveUIIndex];
 
 		UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_VIEW_BACK   , m_pUIData->bNavigateBack   , true ) 	// with popup
 		UPDATE_COMMAND_UI_ENABLE_IF 		  ( ID_VIEW_FORWARD, m_pUIData->bNavigateForward )
@@ -168,7 +187,7 @@ private:
 	static void	_UIUpdate();
 
 	// Data members
-	static vector<unique_ptr<ChildFrameUIData> >	s_vecpUIData;
+	static vector<ChildFrameUIData*>	s_vecpUIData;
 	static int	s_nActiveUIIndex;
 	static HWND	s_hWndActiveChildFrame;
 	static boost::unordered_map<HWND, int>	s_mapHWND_int;
@@ -178,14 +197,18 @@ private:
 	ChildFrameUIData*	m_pUIData;
 };
 
+//////////////////////////////////////////////////////////////////////////
+// CChildFrameUIStateChange : ChildFrameがメインフレームにUIの変更を通知するために利用する
 
 class CChildFrameUIStateChange
 {
 public:
-	CChildFrameUIStateChange() : m_hWndChildFrame(NULL)
+	CChildFrameUIStateChange() : m_hWndChildFrame(NULL), m_hWndMainFrame(NULL), m_pUIData(NULL)
 	{	}
 
 	void	SetChildFrame(HWND hWnd) { m_hWndChildFrame = hWnd; }
+	void	AddCommandUIMap();
+	void	RemoveCommandUIMap();
 
 	void	SetNavigateBack(bool b);
 	void	SetNavigateForward(bool b);
@@ -201,10 +224,12 @@ public:
 	void	SetAutoRefreshStyle(DWORD dw);
 
 private:
-	ChildFrameUIData&	GetUIData();
+	void	_UIUpdate();
 
 	// Data members
 	HWND	m_hWndChildFrame;
+	HWND	m_hWndMainFrame;
+	ChildFrameUIData* m_pUIData;
 };
 
 

@@ -29,10 +29,26 @@ void	CFaviconManager::Init(HWND hWndTabBar)
 	s_hWndTabBar = hWndTabBar;
 }
 
+
+BOOL CFaviconManager::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
+{
+	if (pCopyDataStruct->dwData != kSetFaviconURL) {
+		SetMsgHandled(FALSE);
+		return 0;
+	}
+
+	thread td(boost::bind(_DLIconAndRegister, CString((LPCTSTR)pCopyDataStruct->lpData), wnd.m_hWnd));
+	return 0;
+}
+
 //-------------------------
 void	CFaviconManager::SetFavicon(HWND hWndChild, LPCTSTR strFaviconURL)
 {
-	thread td(boost::bind(_DLIconAndRegister, CString(strFaviconURL), hWndChild));
+	COPYDATASTRUCT	cds = { 0 };
+	cds.dwData	= kSetFaviconURL;
+	cds.lpData	= (LPVOID)strFaviconURL;
+	cds.cbData	= (::lstrlen(strFaviconURL) + 1) * sizeof(WCHAR);
+	CWindow(hWndChild).GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)hWndChild, (LPARAM)&cds);
 }
 
 //--------------------------
@@ -110,7 +126,7 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 				hFaviIcon = hIcon;
 			}
 		}
-		PostMessage(s_hWndTabBar, WM_SETFAVICONIMAGE, (WPARAM)hWnd, (LPARAM)hFaviIcon);
+		::PostMessage(s_hWndTabBar, WM_SETFAVICONIMAGE, (WPARAM)hWnd, (LPARAM)hFaviIcon);
 	} catch(...) {
 		ATLASSERT(FALSE);
 	}

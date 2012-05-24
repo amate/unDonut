@@ -16,6 +16,7 @@
 #include "dialog/CommandSelectDialog.h"
 #include "DropDownButton.h"
 #include "MainFrame.h"
+#include "ChildFrame.h"
 #include "FaviconManager.h"
 #include "PluginManager.h"
 

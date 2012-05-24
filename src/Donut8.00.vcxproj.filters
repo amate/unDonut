@@ -39,6 +39,15 @@
     <Filter Include="Source Files\DownloadManager">
       <UniqueIdentifier>{c62d03f5-8075-47c5-b214-1818866b90e8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="boost">
+      <UniqueIdentifier>{4519c687-f5db-420a-b0f8-aadca0d8990a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="boost\regex">
+      <UniqueIdentifier>{8ffd7242-3a9a-405e-aa36-e8ac2687f496}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="boost\thread">
+      <UniqueIdentifier>{db8abc57-b810-48af-84a3-8ba90ed9b485}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccelManager.cpp">
@@ -295,6 +304,63 @@
     </ClCompile>
     <ClCompile Include="option\LinkBarPropertyPage.cpp">
       <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\wc_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\wide_posix_api.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\winstances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\c_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\cpp_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\cregex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\fileiter.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\icu.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\instances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\posix_api.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\regex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\regex_debug.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\regex_raw_buffer.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\regex_traits_defaults.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\static_mutex.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\usinstances.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\regex\w32_regex_traits.cpp">
+      <Filter>boost\regex</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\thread\thread.cpp">
+      <Filter>boost\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="GlobalConfig.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -772,6 +838,9 @@
     <ClInclude Include="ShellFileDialog.h">
       <Filter>Source Files\Base</Filter>
     </ClInclude>
+    <ClInclude Include="GlobalConfig.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">
@@ -877,6 +946,9 @@
     </None>
     <None Include="res\folder.ico">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="MainFrame.inl">
+      <Filter>Source Files\Window</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

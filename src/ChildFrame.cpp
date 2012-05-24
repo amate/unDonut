@@ -5,24 +5,33 @@
 
 #include "stdafx.h"
 #include "ChildFrame.h"
+#include <regex>
+#include <sstream>
+#include <boost\archive\text_woarchive.hpp>
+#include <boost\archive\text_wiarchive.hpp>
 #include "MtlBrowser.h"
 #include "MtlWin.h"
+#include "ExStyle.h"
 #include "DonutView.h"
 #include "MultiThreadManager.h"
 #include "ChildFrameCommandUIUpdater.h"
-#include "option\MainOption.h"
-#include "option\DLControlOption.h"
-#include "option\MouseDialog.h"
-#include "option\IgnoreURLsOption.h"
-#include "option\CloseTitleOption.h"
-#include "option\UrlSecurityOption.h"
-#include "option\SearchPropertyPage.h"
-#include "option\AddressBarPropertyPage.h"
+#include "GlobalConfig.h"
+#include "option\RightClickMenuDialog.h"
+//#include "option\MainOption.h"
+//#include "option\DLControlOption.h"
+//#include "option\MouseDialog.h"
+//#include "option\IgnoreURLsOption.h"
+//#include "option\CloseTitleOption.h"
+//#include "option\UrlSecurityOption.h"
+//#include "option\SearchPropertyPage.h"
+//#include "option\AddressBarPropertyPage.h"
+//#include "option\UserDefinedCSSOption.h"
+//#include "option\UserDefinedJavascriptOption.h"
 #include "FaviconManager.h"
 #include "ToolTipManager.h"
-#include "PluginManager.h"
-#include "Download\DownloadManager.h"
-#include "MainFrame.h"
+//#include "PluginManager.h"
+//#include "Download\DownloadManager.h"
+//#include "MainFrame.h"
 
 DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 
@@ -319,10 +328,11 @@ public:
 
 	// Message map
 	BEGIN_MSG_MAP( Impl )
-		MSG_WM_CREATE		( OnCreate )
-		MSG_WM_DESTROY		( OnDestroy )
-		MSG_WM_CLOSE		( OnClose )
-		MSG_WM_SIZE			( OnSize )
+		MSG_WM_CREATE		( OnCreate		)
+		MSG_WM_DESTROY		( OnDestroy		)
+		MSG_WM_CLOSE		( OnClose		)
+		MSG_WM_SIZE			( OnSize		)
+		MSG_WM_COPYDATA		( OnCopyData	)
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
@@ -334,6 +344,7 @@ public:
 		USER_MSG_WM_SETPAGEBITMAP	( OnSetPageBitmap )
 		USER_MSG_WM_DRAWCHILDFRAMEPAGE( OnDrawChildFramePage )
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
+		USER_MSG_WM_GETBROWSERFONTSIZE()
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -361,8 +372,7 @@ public:
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_FORWARD1, ID_VIEW_FORWARD9, OnViewForwardX)
 		
 		// 検索バーから
-		MSG_WM_USER_HILIGHT 		( OnHilight 		)
-		MSG_WM_USER_FIND_KEYWORD	( OnFindKeyWord 	)
+		USER_MSG_WM_CHILDFRAMEFINDKEYWORD	( OnFindKeyWord 	)
 		// 独自ページ内検索バーから
 		USER_MSG_WM_HILIGHTFROMFINDBAR( OnHilightFromFindBar )
 		USER_MSG_WM_REMOVEHILIGHT( OnRemoveHilight )
@@ -395,9 +405,10 @@ public:
 	void	OnDestroy();
 	void	OnClose();
 	void	OnSize(UINT nType, CSize size);
+	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
-	void	OnGetChildFrameData(ChildFrameDataOnClose* pData) { _CollectDataOnClose(*pData); }
+	void	OnGetChildFrameData(int nID);
 
 	LRESULT OnMenuGoBack(HMENU hMenu)	 { MenuChgGoBack(hMenu);	return 0; }
 	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
@@ -431,8 +442,8 @@ public:
 	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	// 検索バーから
-	LRESULT OnHilight(CString strKeyWord);
-	LRESULT OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bFindDown, long Flags = 0);
+	LRESULT OnHilight(const CString& strKeyWord);
+	int		OnFindKeyWord(HANDLE handle);
 	// 独自ページ内検索バーから
 	int		OnHilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 	void	OnRemoveHilight();
@@ -455,11 +466,14 @@ private:
 	void	_SetFavicon(const CString& strURL);
 	void	_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord);
 	BOOL 	_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags = 0);
+	void	_SearchWebWithEngine(const CString& strText, const CString& strEngine);
 
 	// Data members
 	CChildFrame*	m_pParentChild;
 	CDonutView	m_view;
 	CChildFrameUIStateChange	m_UIChange;
+	GlobalConfigManageData		m_GlobalConfigManageData;
+	GlobalConfig*				m_pGlobalConfig;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
@@ -488,6 +502,7 @@ private:
 	bool	m_bClosing;
 	//CBitmap	m_bmpPage;
 	HBITMAP*	m_pPageBitmap;
+	HANDLE	m_hMapChildFrameData;
 };
 
 #include "ChildFrame.inl"
@@ -508,14 +523,35 @@ CChildFrame::~CChildFrame()
 /// スレッドを立ててCChildFrameのインスタンスを作る
 void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 {
-	CChildFrame*	pChild = new CChildFrame;
+	//CChildFrame*	pChild = new CChildFrame;
 	if (data.dwDLCtrl == -1)
 		data.dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
 	if (data.dwExStyle == -1)
 		data.dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
-	pChild->pImpl->m_view.SetDefaultFlags(data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
+	//pChild->pImpl->m_view.SetDefaultFlags(data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
 
-	MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
+	//MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
+
+	std::wstringstream ss;
+	boost::archive::text_woarchive ar(ss);
+	ar << data;
+	std::wstring serializedData = ss.str();
+
+	SECURITY_ATTRIBUTES	security_attributes = { sizeof(SECURITY_ATTRIBUTES) };
+	security_attributes.bInheritHandle = TRUE;
+	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)), NULL);
+	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
+	::UnmapViewOfFile((LPVOID)sharedMemData);
+
+	CString commandline;
+	commandline.Format(_T("-NewProcessSharedMemoryData=%d"), hMap);
+
+	STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
+	PROCESS_INFORMATION	processInfo = { 0 };
+	ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
+	::CloseHandle(processInfo.hProcess);
+	::CloseHandle(processInfo.hThread);
 }
 
 void	CChildFrame::SetThreadRefCount(int* pCount)
@@ -599,24 +635,24 @@ CComPtr<IWebBrowser2>	CChildFrame::GetMarshalIWebBrowser()
 
 CString	CChildFrame::GetLocationURL()
 {
-	CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
-	if (spBrowser == nullptr)
-		return CString();
-	CComBSTR	strtemp;
-	spBrowser->get_LocationURL(&strtemp);
-	if (strtemp)
-		return CString(strtemp);
+	//CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
+	//if (spBrowser == nullptr)
+	//	return CString();
+	//CComBSTR	strtemp;
+	//spBrowser->get_LocationURL(&strtemp);
+	//if (strtemp)
+	//	return CString(strtemp);
 	return CString();
 }
 
 CString CChildFrame::GetTitle()
 {
-	CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
-	if (spBrowser == nullptr)
-		return CString();
-	CComBSTR	strtemp;
-	spBrowser->get_LocationName(&strtemp);
-	if (strtemp)
-		return CString(strtemp);
+	//CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
+	//if (spBrowser == nullptr)
+	//	return CString();
+	//CComBSTR	strtemp;
+	//spBrowser->get_LocationName(&strtemp);
+	//if (strtemp)
+	//	return CString(strtemp);
 	return CString();
 }

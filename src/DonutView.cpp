@@ -6,9 +6,10 @@
 #include "stdafx.h"
 #include "DonutView.h"
 #include "mshtmdid.h"
-#include "option\DLControlOption.h"
-#include "option\MouseDialog.h"
-#include "option\MenuDialog.h"
+//#include "option\DLControlOption.h"
+//#include "option\MouseDialog.h"
+//#include "option\MenuDialog.h"
+#include "GlobalConfig.h"
 #include "Donut.h"
 
 #include "ScriptErrorCommandTargetImpl.h"
@@ -56,6 +57,7 @@ CDonutView::CDonutView(CChildFrameUIStateChange& UI)
 	, m_dwAutoRefreshStyle(0)
 	, m_dwExStyle(0)
 	, m_dwCurrentThreadId(0)
+	, m_pGlobalConfig(nullptr)
 { }
 
 
@@ -256,12 +258,18 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 	if (m_bDragAccept && m_bUseCustomDropTarget) {
 		CSimpleArray<CString>	arrFiles;
 		if ( MtlGetDropFileName(pDataObj, arrFiles) ) {	// ƒtƒ@ƒCƒ‹‚ªDrop‚³‚ê‚½
-			unsigned  df   = DonutGetStdOpenFlag();
-			unsigned  size = arrFiles.GetSize();
+			DWORD  df   = DonutGetStdOpenFlag();
+			int  size = arrFiles.GetSize();
 			//if (size == 1)
 			//	df |= D_OPENFILE_NOCREATE;
-			for (unsigned i = 0; i < size; ++i)
-				DonutOpenFile(arrFiles[i], df);
+			for (int i = 0; i < size; ++i) {
+				COPYDATASTRUCT cds = { 0 };
+				cds.dwData	= kNewDonutInstance;
+				cds.lpData	= static_cast<LPVOID>(arrFiles[i].GetBuffer(0));
+				cds.cbData	= (arrFiles[i].GetLength() + 1) * sizeof(TCHAR);
+				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+				//DonutOpenFile(arrFiles[i], df);
+			}
 			*pdwEffect = DROPEFFECT_COPY;
 		} else {
 			CString strText;
@@ -498,14 +506,14 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		_InitDLControlFlags();
 
-		SetIeMenuNoCstm(CMenuOption::s_bNoCustomIEMenu);
-		if (CMouseOption::s_nDragDropCommandID)
-			SetOperateDragDrop(TRUE, CMouseOption::s_nDragDropCommandID);
+		SetIeMenuNoCstm(m_pGlobalConfig->bNoCustomIEMenu);
+		if (m_pGlobalConfig->nDragDropCommandID)
+			SetOperateDragDrop(TRUE, m_pGlobalConfig->nDragDropCommandID);
 
 	  #if 1	//+++
-		if (m_dwExStyle == (DWORD)-1)
-			m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
-		m_UIChange.SetExStyle(m_dwExStyle);
+		if (m_dwExStyle == -1)
+			m_dwExStyle = m_pGlobalConfig->dwExtendedStyleFlags;
+		//m_UIChange.SetExStyle(m_dwExStyle);
 	  #else
 		ATLASSERT(m_dwExStyle == 0);
 		m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;

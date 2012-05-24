@@ -23,12 +23,15 @@
 #include "option/SkinOption.h"
 #include "option/StartUpOption.h"
 #include "option/ToolBarDialog.h"
+#include "option/AddressBarPropertyPage.h"
+#include "option/SearchPropertyPage.h"
 #include "option/FavoriteMenuDialog.h"
 #include "option/ExecutableDialog.h"
 #include "option/MDITabDialog.h"
 #include "option/LinkBarPropertyPage.h"
 #include "option/UserDefinedCSSOption.h"
 #include "option/UserDefinedJavascriptOption.h"
+#include "StyleSheetOption.h"
 
 //‚±‚±‚¾‚ÆƒŠƒ“ƒN‚ÌˆË‘¶ŠÖŒW‚ª–Ê“|‚È‚ñ‚Å‚â‚Á‚Ï‚èmainfrm.h‘¤‚Åinclude
 //#include "option/AddressBarPropertyPage.h"	//+++ AddressBar.h‚æ‚è•ª—£

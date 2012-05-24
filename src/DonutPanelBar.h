@@ -5,6 +5,8 @@
 #pragma once
 
 #include "DonutView.h"
+#include "ParseInternetShortcutFile.h"
+
 
 template <class _PanelBar>
 class CPanelMenu : public CExplorerMenu {
@@ -378,6 +380,7 @@ public:
 	//return value : _MTL_TRANSLATE_PASS : _MTL_TRANSLATE_HANDLE : _MTL_TRANSLATE_WANT
 	BYTE PreTranslateMessage(MSG *pMsg)
 	{
+#if 0
 		if ( pMsg->message == WM_MBUTTONDOWN && ::IsChild(m_hWnd, pMsg->hwnd) ) {
 			CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 			DWORD		dwLinkOpenBtnM = pr.GetValue(_T("LinkOpenBtnM"), 0);
@@ -403,7 +406,7 @@ public:
 				return _MTL_TRANSLATE_WANT;
 			}
 		}
-
+#endif
 		return _MTL_TRANSLATE_PASS;
 	}
 

@@ -27,6 +27,7 @@ enum EDvs_AutoRefresh {
 
 // ëOï˚êÈåæ
 class CChildFrameUIStateChange;
+struct GlobalConfig;
 
 //////////////////////////////////////////////////////////////////////
 // CDonutView
@@ -45,6 +46,8 @@ public:
 
 	// Constructor
 	CDonutView(CChildFrameUIStateChange& UI);
+
+	void	SetGlobalConfig(GlobalConfig* pConfig) { m_pGlobalConfig = pConfig; }
 
 	void	SetDefaultFlags(DWORD dwDefaultDLCtrl, DWORD dwDefaultExStyle, DWORD dwAutoRefresh);
 	void	SetAutoRefreshStyle(DWORD dwStyle);
@@ -201,6 +204,7 @@ private:
 	DWORD		m_dwCurrentThreadId;
 
 	CChildFrameUIStateChange&	m_UIChange;
+	GlobalConfig*				m_pGlobalConfig;
 public:
 	bool	m_bLightRefresh;
 };

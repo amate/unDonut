@@ -5,23 +5,81 @@
 
 #pragma once
 
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/vector.hpp>
+#include <boost/serialization/utility.hpp>
+
 class CChildFrame;
+
+namespace boost {
+  namespace serialization {
+
+	template <class Archive>
+	inline void save(Archive& ar, const WTL::CString& s, const unsigned int version)
+	{
+		static_cast<void>(version);
+
+		const std::wstring ss(s);
+		ar & ss;
+	}
+
+	template<class Archive>
+	inline void load(Archive& ar, WTL::CString& s, const unsigned int version) 
+	{
+		static_cast<void>(version);
+
+		std::wstring ss;
+		ar & ss;
+		s = ss.c_str();
+	}
+
+
+    template <class Archive>
+	inline void serialize(Archive& ar, WTL::CString& s, const unsigned int version)
+	{
+		boost::serialization::split_free(ar, s, version);
+	}
+  }
+}
+
 
 struct NewChildFrameData {
 	HWND	hWndParent;
 	CString	strURL;
+	vector<std::pair<CString, CString> > TravelLogFore;
+	vector<std::pair<CString, CString> > TravelLogBack;
 	DWORD	dwDLCtrl;
 	DWORD	dwExStyle;
 	DWORD	dwAutoRefresh;
 	bool	bActive;
 	bool	bLink;
-	function<void (CChildFrame*)>	funcCallAfterCreated;
-	NewChildFrameData*	pNext;
+
+	bool	bAutoHilight;
+	CString searchWord;
 
 	NewChildFrameData(HWND Parent) : 
-		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), bActive(false), bLink(false), pNext(nullptr)
+		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), 
+		bActive(false), bLink(false), bAutoHilight(false)
 	{	}
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & strURL & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefresh;
+		ar & bActive & bLink & bAutoHilight & searchWord;
+#ifdef WIN64
+		ar & reinterpret_cast<__int64&>(hWndParent);
+#else
+		ar & reinterpret_cast<__int32&>(hWndParent);
+#endif
+	}
 };
+
+#define CHILDFRAMEDATAONCLOSESHAREDMEMNAME	_T("DonutChildFrameDataOnCloseShaedMemName")
+#define NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME _T("DonutNowChildFrameDataOnCloseSharedMemName")
 
 struct ChildFrameDataOnClose {
 	CString strURL;
@@ -34,6 +92,31 @@ struct ChildFrameDataOnClose {
 
 	ChildFrameDataOnClose() : dwDLCtrl(0), dwExStyle(0), dwAutoRefreshStyle(0)
 	{	}
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & strURL & strTitle & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefreshStyle;
+	}
+};
+
+#define FINDKEYWORDATASHAREDMEMNAME	_T("DonutFindKeywordDataSharedMemName")
+
+struct FindKeywordData
+{
+	CString strKeyword;
+	bool	bFindDown;
+	long	Flags;
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & strKeyword & bFindDown & Flags;
+	}
 };
 
 
@@ -43,6 +126,9 @@ struct ChildFrameDataOnClose {
 class CChildFrame
 {
 public:
+	CChildFrame();
+	~CChildFrame();
+
 	/// スレッドを立ててCChildFrameのインスタンスを作る
 	static void	AsyncCreate(NewChildFrameData& data);
 
@@ -66,9 +152,6 @@ public:
 	CString GetTitle();
 
 private:
-	CChildFrame();
-	~CChildFrame();
-
 	class Impl;
 	Impl*	pImpl;
 };

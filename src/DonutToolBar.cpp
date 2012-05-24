@@ -257,6 +257,8 @@ class CDonutToolBar::Impl
 	enum { s_kcxSeparator	= 8 };
 
 public:
+	DECLARE_WND_SUPERCLASS(_T("DonutToolBar"), CToolBarCtrl::GetWndClassName())
+
 	Impl() { };
 	~Impl() { };
 
@@ -274,7 +276,7 @@ public:
 	BEGIN_MSG_MAP( Impl )
 		MSG_WM_RBUTTONUP	( OnRButtonUp )
 		MSG_WM_LBUTTONDBLCLK( OnLButtonDblClk )
-		NOTIFY_CODE_HANDLER(TTN_GETDISPINFO, OnToolTipText)
+		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnToolTipText)
 		REFLECTED_NOTIFY_CODE_HANDLER( RBN_CHEVRONPUSHED, OnChevronPushed)
 		REFLECTED_NOTIFY_CODE_HANDLER( TBN_DROPDOWN		, OnDropDown   )
 		// Customize
@@ -287,7 +289,7 @@ public:
 
 	void	OnRButtonUp(UINT nFlags, CPoint point);
 	void	OnLButtonDblClk(UINT nFlags, CPoint point);
-	LRESULT OnToolTipText(int idCtrl, LPNMHDR pnmh, BOOL &bHandled);
+	LRESULT OnToolTipText(LPNMHDR pnmh);
 	LRESULT OnChevronPushed(int /*idCtrl*/, LPNMHDR pnmh, BOOL &bHandled);
 	LRESULT OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled);
 
@@ -420,11 +422,11 @@ void	CDonutToolBar::Impl::OnLButtonDblClk(UINT nFlags, CPoint point)
 
 //-----------------------------
 /// ツールチップテキスト表示前
-LRESULT CDonutToolBar::Impl::OnToolTipText(int idCtrl, LPNMHDR pnmh, BOOL &bHandled)
+LRESULT CDonutToolBar::Impl::OnToolTipText(LPNMHDR pnmh)
 {
-	CString strText = CExMenuManager::GetToolTip(idCtrl);
+	CString strText = CExMenuManager::GetToolTip((int)pnmh->idFrom);
 	if ( strText.IsEmpty() ) {
-		bHandled = FALSE;
+		SetMsgHandled(FALSE);
 		return 0;
 	}
 
@@ -569,7 +571,8 @@ void	CDonutToolBar::Impl::_InitButton()
 	}
 	CSize size;
 	GetButtonSize(size);
-	//SetWindowPos(NULL, 0, 0, 3000, size.cy, SWP_NOMOVE | SWP_NOZORDER);
+	SetWindowPos(NULL, 0, 0, 10, size.cy, SWP_NOMOVE | SWP_NOZORDER);
+
 
 }
 
@@ -837,22 +840,14 @@ void	CDonutToolBar::Impl::_UpdateBandInfo()
 	if ( !GetItemRect(0, &rcLeft) )
 		return ;
 
+	int nIndex = rebar.IdToIndex(GetDlgCtrlID());
+	if (nIndex == -1)
+		return ;
+
 	REBARBANDINFO rbbi = { sizeof (REBARBANDINFO) };
-
-	static int wID = -1;
-	if (wID == -1) {
-		for (UINT i = 0; i < nCount; ++i) {
-			rbbi.fMask = RBBIM_CHILD | RBBIM_ID;
-			rebar.GetBandInfo(i, &rbbi);
-			if (rbbi.hwndChild == m_hWnd) {
-				wID = rbbi.wID;
-				break;
-			}
-		}
-	}
-	int nIndex = rebar.IdToIndex(wID);
-
-	rbbi.fMask		= RBBIM_IDEALSIZE | RBBIM_CHILDSIZE;
+	rbbi.fMask		= RBBIM_IDEALSIZE | RBBIM_CHILDSIZE | RBBIM_STYLE;
+	rebar.GetBandInfo(nIndex, &rbbi);
+	rbbi.fStyle		|= RBBS_USECHEVRON;
 	rbbi.cxMinChild = rcLeft.right;
 	rbbi.cyMinChild = rcLeft.Height();
 	rbbi.cxIdeal	= rcRight.right;

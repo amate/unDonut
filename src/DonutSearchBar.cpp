@@ -410,6 +410,7 @@ bool	CDonutSearchBar::Impl::ForceSetHilightBtnOn(bool bOn)
 {
 	bool bChanged = (BOOL)bOn != m_bHilightSw;
 	m_bHilightSw = bOn;
+	GetTopLevelWindow().SendMessage(WM_HILIGHTSWITCHCHANGE, bOn);
 	m_wndToolBar.PressButton(ID_SEARCHBAR_HILIGHT, m_bHilightSw);
 	return bChanged;
 }
@@ -751,6 +752,7 @@ void	CDonutSearchBar::Impl::SearchHilight()
 	CString str = GetSearchStr();
 	if (str.IsEmpty() && m_bHilightSw) {
 		m_bHilightSw = FALSE;
+		GetTopLevelWindow().SendMessage(WM_HILIGHTSWITCHCHANGE, FALSE);
 		return;	// キーワードがない状態でハイライトボタンが押されたら帰る
 	}
 	_AddToolBarIcon(str);

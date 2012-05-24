@@ -63,6 +63,15 @@ enum EDvs_Ex {
 #define DONUT_BACKUP_THREADWAIT 90000					//+++ 自動更新スレッドの終了に90秒待つ
 
 
+enum WmCopyDataUseage {
+	kNewDonutInstance	= 1,
+	kSetFaviconURL		= 2,
+	kSearchTextWithEngine = 3,
+	kSetSearchText		= 4,
+	kHilightText		= 5,
+
+};
+
 // UH
 __declspec(selectany) BOOL	   	g_bSwapProxy 		 = FALSE;
 __declspec(selectany) DWORD    	g_dwProgressPainWidth = 0;			//*+++ 手抜きでグローバル変数。あとで、なんとかする...
@@ -475,12 +484,12 @@ enum TabCreateOption {
 	}
 
 
-// void	OnAddRecentClosedTab(ChildFrameDataOnClose* pClosedTabData)
+// void	OnAddRecentClosedTab(HWND hWndChildFrame)
 #define WM_ADDRECENTCLOSEDTAB	(WM_USER + 107)
 #define USER_MSG_WM_ADDRECENTCLOSEDTAB(func)	\
 	if (uMsg == WM_ADDRECENTCLOSEDTAB) {	   \
 		SetMsgHandled(TRUE);		   \
-		func((ChildFrameDataOnClose*)wParam);    \
+		func((HWND)wParam);    \
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
@@ -510,12 +519,12 @@ enum TabCreateOption {
 
 #define WM_COMMAND_FROM_CHILDFRAME	(WM_USER + 110)
 
-// void	OnGetChildFrameData(ChildFrameDataOnClose* pData)
+// void	OnGetChildFrameData(int nID)
 #define WM_GETCHILDFRAMEDATA	(WM_USER + 111)
 #define USER_MSG_WM_GETCHILDFRAMEDATA(func)	\
 	if (uMsg == WM_GETCHILDFRAMEDATA) {	   \
 		SetMsgHandled(TRUE);		   \
-		func((ChildFrameDataOnClose*)wParam);    \
+		func((int)wParam);    \
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
@@ -676,6 +685,44 @@ enum TabCreateOption {
 		SetMsgHandled(TRUE);		   \
 		func((HDC)wParam);						\
 		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_BROWSERTITLECHANGEFORUIUPDATER		(WM_USER + 125)
+#define WM_BROWSERLOCATIONCHANGEFORUIUPDATER	(WM_USER + 126)
+
+#define WM_SETFAVICONFROMCHILDFRAME		(WM_USER + 127)
+
+// void	OnHilightSwitchChange(bool bOn)
+#define WM_HILIGHTSWITCHCHANGE			(WM_USER + 128)
+#define USER_MSG_WM_HILIGHTSWITCHCHANGE(func)	\
+	if (uMsg == WM_HILIGHTSWITCHCHANGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func(wParam != 0);						\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_GETBROWSERFONTSIZE		(WM_USER + 129)
+#define USER_MSG_WM_GETBROWSERFONTSIZE()	\
+	if (uMsg == WM_GETBROWSERFONTSIZE) {	   \
+		SetMsgHandled(TRUE);		   \
+		CComVariant 	var;			\
+		CComVariant		varIn;			\
+		m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);	\
+		lResult = var.lVal;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	int OnChildFrameFindKeyword(HANDLE handle)
+#define WM_CHILDFRAMEFINDKEYWORD	(WM_USER + 130)
+#define USER_MSG_WM_CHILDFRAMEFINDKEYWORD(func)	\
+	if (uMsg == WM_CHILDFRAMEFINDKEYWORD) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = func((HANDLE)wParam);			\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
 	}

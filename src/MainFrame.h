@@ -9,44 +9,6 @@
 
 #pragma once
 
-#include "DonutDefine.h"
-#include "DonutFavoritesMenu.h"
-#include "DonutOptions.h"
-#include "DonutSecurityZone.h"
-#include "DonutSimpleEventManager.h"
-#include "MainFrameFileDropTarget.h"
-#include "DonutRebarCtrl.h"
-#include "PluginBar.h"
-#include "DonutExplorerBar.h"
-#include "DonutLinkBarCtrl.h"
-#include "DonutToolBar.h"
-#include "DonutStatusBarCtrl.h"
-#include "DonutAddressBar.h"
-#include "DonutSearchBar.h"
-#include "DonutTabBar.h"
-#include "DonutP.h"
-//#include "DonutP_i.c"
-//+++ #include "FileCriticalSection.h"				//+++ 別の方法をとるので、不要になった.
-#include "MDIChildUserMessenger.h"
-#include "ChildFrame.h"								//+++ "ChildFrm.h"
-#include "MenuControl.h"
-#include "AccelManager.h"
-#include "dialog/DebugWindow.h"
-#include "MenuEncode.h"
-#include "BingTranslatorMenu.h"
-#include "StyleSheetOption.h"
-#include "ExStyle.h"
-#include "MenuDropTargetWindow.h"
-#include "Download/DownloadManager.h"
-#include "option/AddressBarPropertyPage.h"
-#include "option/SearchPropertyPage.h"
-#include "FindBar.h"
-#include "ChildFrameCommandUIUpdater.h"
-#include "DonutViewOption.h"
-#include "RecentClosedTabList.h"
-#include "ExMenu.h"
-
-
 ///////////////////////////////////////////////////////////////
 // CChildFrameClient
 
@@ -81,6 +43,31 @@ private:
 //////////////////////////////////////////////////////////////////////////////
 // CMainFrame
 
+class CMainFrame
+{
+public:
+	CMainFrame();
+	~CMainFrame();
+
+	HWND	CreateEx();
+	void	StartupMainFrameStyle(int nCmdShow, bool bTray);
+	void	RestoreAllTab(LPCTSTR strFilePath = nullptr, bool bCloseAllTab = false);
+
+	void	UserOpenFile(LPCTSTR url, DWORD openFlags, 
+						 DWORD DLCtrl = -1, 
+						 DWORD ExStyle = -1, 
+						 DWORD AutoRefresh = 0);
+
+	CString	GetActiveSelectedText();
+	CString GetActiveLocationURL() { return CString(); }
+
+
+private:
+	class Impl;
+	Impl* pImpl;
+};
+
+#if 0
 class CMainFrame
 	:	public CFrameWindowImpl				< CMainFrame >
 	,	public CMessageFilter
@@ -177,23 +164,14 @@ public:
 	HWND 		ApiGetHWND(long nType);	//IAPI4
 
 public:
-	#define 	RELECT_STATUSBAR_DRAWITEM_MESSAGE() 						   \
-	{																		   \
-		LPDRAWITEMSTRUCT lpdis = (LPDRAWITEMSTRUCT) lParam; 				   \
-		if (uMsg == WM_DRAWITEM && lpdis->hwndItem == m_wndStatusBar.m_hWnd) { \
-			bHandled = TRUE;												   \
-			lResult  = ReflectNotifications(uMsg, wParam, lParam, bHandled);   \
-			if (bHandled)													   \
-				return TRUE;												   \
-		}																	   \
-	}
 
 	// Overrides
 	virtual BOOL PreTranslateMessage(MSG *pMsg);	// 各ウィンドウへ(主にキー)メッセージを転送する
 	virtual BOOL OnIdle();
 	void 	UpdateLayout(BOOL bResizeBars = TRUE);
 
-	// Message map
+
+#pragma region Messagemap
 	BEGIN_MSG_MAP( CMainFrame )
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {
@@ -201,7 +179,6 @@ public:
 			m_bCommandFromChildFrame	= true;
 		}
 		COMMAND_EXMENU_RANGE( EXMENU_FIRST, EXMENU_LAST )
-		RELECT_STATUSBAR_DRAWITEM_MESSAGE( )
 
 		CHAIN_MSG_MAP_MEMBER( m_FavGroupMenu	)
 		CHAIN_MSG_MAP_MEMBER( m_FavoriteMenu	)
@@ -341,9 +318,9 @@ public:
 
 		// ウィンドウ
 		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_ALL		, OnWindowCloseAll		)
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_EXCEPT	, OnWindowCloseExcept	)
 		COMMAND_ID_HANDLER_EX( ID_LEFT_CLOSE			, OnLeftRightClose		)
 		COMMAND_ID_HANDLER_EX( ID_RIGHT_CLOSE			, OnLeftRightClose		)
-		COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_EXCEPT	, OnWindowCloseExcept	)
 		COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabLeft 			)
 		COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabRight			)
 		//COMMAND_RANGE_HANDLER( ID_TAB_IDX_1, ID_TAB_IDX_LAST, OnTabIdx )	
@@ -429,9 +406,9 @@ public:
 		CHAIN_MSG_MAP	( baseClass )
 		REFLECT_NOTIFICATIONS( )	// must be last
 	END_MSG_MAP()
+#pragma endregion
 
-
-public:
+#pragma region UIMAP
 	BEGIN_UPDATE_COMMAND_UI_MAP( CMainFrame )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_MainOption  )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_secZone	  )
@@ -591,7 +568,7 @@ public:
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_SEL_DOWN , bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_HILIGHT	, bActiveChild )
 	END_UPDATE_COMMAND_UI_MAP()
-
+#pragma endregion
 
 	void	OnTabCreate(HWND hWndChildFrame, DWORD dwOption);
 	void	OnTabDestory(HWND hWndChildFrame);	
@@ -956,5 +933,5 @@ private:
 	static const LPTSTR		STDBAR_TEXT[];
 
 };
-
+#endif
 /////////////////////////////////////////////////////////////////////////////

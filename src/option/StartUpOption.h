@@ -106,25 +106,25 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 
 	switch (s_dwFlags) {
 	case STARTUP_NOINITWIN:
-		__frame.PostMessage(WM_INITPROCESSFINISHED);
+//		__frame.PostMessage(WM_INITPROCESSFINISHED);
 		break;
 
 	case STARTUP_GOHOME:
-		__frame.OnFileNewHome(0, 0, NULL);
+//		__frame.OnFileNewHome(0, 0, NULL);
 		break;
 
 	case STARTUP_LATEST:
 		__frame.RestoreAllTab();
 		break;
 
-	case STARTUP_DFG:
-		{
-			CString 	strPath(s_szDfgPath);
-			if ( !strPath.IsEmpty() )
-				__frame.UserOpenFile(s_szDfgPath, 0);
-		}
-		__frame.PostMessage(WM_INITPROCESSFINISHED);
-		break;
+	//case STARTUP_DFG:
+	//	{
+	//		CString 	strPath(s_szDfgPath);
+	//		if ( !strPath.IsEmpty() )
+	//			__frame.UserOpenFile(s_szDfgPath, 0);
+	//	}
+	//	__frame.PostMessage(WM_INITPROCESSFINISHED);
+	//	break;
 
 	default:
 		ATLASSERT(FALSE);

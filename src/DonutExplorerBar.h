@@ -12,6 +12,7 @@
 #include "DonutClipboardBar.h"
 #include "DonutPanelBar.h"
 #include "DonutPFunc.h"
+#include "PluginBar.h"
 
 
 class CDonutExplorerBar

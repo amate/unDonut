@@ -23,10 +23,16 @@
 /////////////////////////////////////////////////
 /// FaviconÇä«óùÇ∑ÇÈ 
 
-class CFaviconManager
+class CFaviconManager : CWindowImpl<CFaviconManager>
 {
 public:
 	static void	Init(HWND hWndTabBar);
+
+	BEGIN_MSG_MAP_EX( CFaviconManager )
+		MSG_WM_COPYDATA( OnCopyData )
+	END_MSG_MAP()
+
+	BOOL OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 
 	static void		SetFavicon(HWND hWndChild, LPCTSTR strFaviconURL);
 	static HICON	GetFavicon(LPCTSTR strFaviconURL);

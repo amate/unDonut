@@ -9,8 +9,9 @@
 #include "DonutPCP.h"
 
 #include "MDIChildUserMessenger.h"
-#include "option/CloseTitleOption.h"
-#include "dialog/aboutdlg.h"
+#include "option\CloseTitleOption.h"
+#include "option\DonutConfirmOption.h"
+#include "dialog\aboutdlg.h"
 #include "ChildFrame.h"			//#include ""ChildFrm.h"	//+++
 #include "MainFrame.h"			//#include "mainfrm.h"		//+++
 
@@ -20,7 +21,7 @@ class	CAPI;
 extern	CAPI *	   g_pAPI;
 
 
-
+#if 0
 
 /////////////////////////////////////////////////////////////////////////////
 // CAPI
@@ -103,10 +104,10 @@ public:
 			_pThis->m_bFirst = FALSE;
 
 			if ( _pThis->IsConfirmScripting() ) {
-				HWND hWnd = (g_pMainWnd) ? g_pMainWnd->m_hWnd : NULL;
-				int  nRet = ::MessageBox(hWnd,  _T("スクリプトまたはプラグインがDonutの機能を使用しようとしています。\n")
-												_T("悪意のあるコードが実行される可能性があります。\n")
-												_T("処理の続行を許可しますか？"), _T("確認"), MB_YESNO);
+				//HWND hWnd = (g_pMainWnd) ? g_pMainWnd->m_hWnd : NULL;
+				//int  nRet = ::MessageBox(hWnd,  _T("スクリプトまたはプラグインがDonutの機能を使用しようとしています。\n")
+				//								_T("悪意のあるコードが実行される可能性があります。\n")
+				//								_T("処理の続行を許可しますか？"), _T("確認"), MB_YESNO);
 
 				if (nRet == IDYES) {
 					return CComObjectRootEx<CComSingleThreadModel>::InternalQueryInterface(pThis, pEntries, iid, ppvObject);
@@ -509,6 +510,6 @@ public:
 
 };
 
-
+#endif
 
 #endif	//__API_H_

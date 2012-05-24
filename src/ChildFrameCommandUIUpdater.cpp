@@ -5,11 +5,14 @@
 
 #include "stdafx.h"
 #include "ChildFrameCommandUIUpdater.h"
+#include <boost\range\algorithm.hpp>
 #include "ChildFrame.h"
 #include "FaviconManager.h"
 
+#define DONUTSHAREDUIDATA	_T("DonutSharedUIData")
+
 // Data members
-vector<unique_ptr<ChildFrameUIData> >	CChildFrameCommandUIUpdater::s_vecpUIData;
+vector<ChildFrameUIData*>	CChildFrameCommandUIUpdater::s_vecpUIData;
 int		CChildFrameCommandUIUpdater::s_nActiveUIIndex	= -1;
 HWND	CChildFrameCommandUIUpdater::s_hWndActiveChildFrame	= NULL;
 boost::unordered_map<HWND, int>	CChildFrameCommandUIUpdater::s_mapHWND_int;
@@ -30,6 +33,9 @@ void	CChildFrameCommandUIUpdater::RemoveCommandUIMap(HWND hWndChildFrame)
 void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 {
 	s_hWndActiveChildFrame = hWndChildFrame;
+	boost::for_each(s_vecpUIData, [hWndChildFrame](ChildFrameUIData* pUIData) {
+		pUIData->hWndActiveChildFrame	= hWndChildFrame;
+	});
 	if (hWndChildFrame == NULL) {
 		s_nActiveUIIndex = -1;
 
@@ -57,9 +63,15 @@ void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 
 void	CChildFrameCommandUIUpdater::OnAddCommandUIMap(HWND hWndChildFrame)
 {
-	s_vecpUIData.push_back(unique_ptr<ChildFrameUIData>(new ChildFrameUIData));
+	CString sharedName;
+	sharedName.Format(_T("%s0x%x"), DONUTSHAREDUIDATA, hWndChildFrame);
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, sharedName);
+	ATLASSERT( hMap );
+	ChildFrameUIData* pUIData = (ChildFrameUIData*)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	
+	s_vecpUIData.push_back(pUIData);
 	int nIndex = (int)s_vecpUIData.size() - 1;
-	s_vecpUIData[nIndex]->pChild = (CChildFrame*)::SendMessage(hWndChildFrame, WM_GET_CHILDFRAME, 0, 0);
+	//s_vecpUIData[nIndex]->pChild = (CChildFrame*)::SendMessage(hWndChildFrame, WM_GET_CHILDFRAME, 0, 0);
 	s_mapHWND_int.insert(make_pair(hWndChildFrame, nIndex));
 }
 
@@ -68,6 +80,10 @@ void	CChildFrameCommandUIUpdater::OnRemoveCommandUIMap(HWND hWndChildFrame)
 	auto it = s_mapHWND_int.find(hWndChildFrame);
 	ATLASSERT( it != s_mapHWND_int.end() );
 	int nDestroyIndex = it->second;
+
+	::UnmapViewOfFile(s_vecpUIData[nDestroyIndex]);
+	::CloseHandle(s_vecpUIData[nDestroyIndex]->hMap);
+
 	s_vecpUIData.erase(s_vecpUIData.begin() + nDestroyIndex);
 	s_mapHWND_int.erase(it);
 
@@ -84,54 +100,51 @@ void	CChildFrameCommandUIUpdater::OnChangeChildFrameUIMap(HWND hWndChildFrame)
 {
 	ATLASSERT( ::IsWindow(hWndChildFrame) );
 	s_hWndActiveChildFrame	= hWndChildFrame;
+	boost::for_each(s_vecpUIData, [hWndChildFrame](ChildFrameUIData* pUIData) {
+		pUIData->hWndActiveChildFrame	= hWndChildFrame;
+	});
 	s_nActiveUIIndex = _GetIndexFromHWND(hWndChildFrame);
 	ATLASSERT(s_nActiveUIIndex != -1);
+}
+
+
+LRESULT CChildFrameCommandUIUpdater::OnBrowserTitleChangeForUIUpdater(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	int nIndex = _GetIndexFromHWND((HWND)wParam);
+	::SendMessage(s_hWndMainFrame, WM_BROWSERTITLECHANGE, wParam, (LPARAM)s_vecpUIData[nIndex]->strTitle);
+	return 0;
+}
+
+LRESULT CChildFrameCommandUIUpdater::OnBrowserLocationChangeForUIUpdater(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	::SendMessage(s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)s_vecpUIData[s_nActiveUIIndex]->strLocationURL, 0);
+	return 0;
 }
 
 // UI map
 
 void 	CChildFrameCommandUIUpdater::OnUpdateFontSmallestUI(CCmdUI *pCmdUI)
 {
-	CComPtr<IWebBrowser2>	spBrowser = m_pUIData->pChild->GetMarshalIWebBrowser();
-	if (spBrowser) {
-		CComVariant 	var;
-		CComVariant		varIn;
-		spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);
-		pCmdUI->SetRadio( var == CComVariant(0L));
-	}
+	LRESULT lFontSize = ::SendMessage(s_hWndActiveChildFrame, WM_GETBROWSERFONTSIZE, 0, 0);
+	pCmdUI->SetRadio( lFontSize == 0L);
 }
 
 void 	CChildFrameCommandUIUpdater::OnUpdateFontSmallerUI(CCmdUI *pCmdUI)
 {
-	CComPtr<IWebBrowser2>	spBrowser = m_pUIData->pChild->GetMarshalIWebBrowser();
-	if (spBrowser) {
-		CComVariant 	var;
-		CComVariant		varIn;
-		spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);
-		pCmdUI->SetRadio( var == CComVariant(1L));
-	}
+	LRESULT lFontSize = ::SendMessage(s_hWndActiveChildFrame, WM_GETBROWSERFONTSIZE, 0, 0);
+	pCmdUI->SetRadio( lFontSize == 1L);
 }
 
 void 	CChildFrameCommandUIUpdater::OnUpdateFontMediumUI(CCmdUI *pCmdUI)
 {
-	CComPtr<IWebBrowser2>	spBrowser = m_pUIData->pChild->GetMarshalIWebBrowser();
-	if (spBrowser) {
-		CComVariant 	var;
-		CComVariant		varIn;
-		spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);
-		pCmdUI->SetRadio( var == CComVariant(2L));
-	}
+	LRESULT lFontSize = ::SendMessage(s_hWndActiveChildFrame, WM_GETBROWSERFONTSIZE, 0, 0);
+	pCmdUI->SetRadio( lFontSize == 2L);
 }
 
 void 	CChildFrameCommandUIUpdater::OnUpdateFontLargerUI(CCmdUI *pCmdUI)
 {
-	CComPtr<IWebBrowser2>	spBrowser = m_pUIData->pChild->GetMarshalIWebBrowser();
-	if (spBrowser) {
-		CComVariant 	var;
-		CComVariant		varIn;
-		spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);
-		pCmdUI->SetRadio( var == CComVariant(3L));
-	}
+	LRESULT lFontSize = ::SendMessage(s_hWndActiveChildFrame, WM_GETBROWSERFONTSIZE, 0, 0);
+	pCmdUI->SetRadio( lFontSize == 3L);
 }
 
 void 	CChildFrameCommandUIUpdater::OnUpdateFontLargestUI(CCmdUI *pCmdUI)
@@ -139,13 +152,8 @@ void 	CChildFrameCommandUIUpdater::OnUpdateFontLargestUI(CCmdUI *pCmdUI)
 	if (pCmdUI->m_menuSub.m_hMenu) { // popup menu
 		pCmdUI->m_menu.EnableMenuItem(pCmdUI->m_nIndex, MF_BYPOSITION | MF_ENABLED);
 	} else {
-		CComPtr<IWebBrowser2>	spBrowser = m_pUIData->pChild->GetMarshalIWebBrowser();
-		if (spBrowser) {
-			CComVariant 	var;
-			CComVariant		varIn;
-			spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &varIn, &var);
-			pCmdUI->SetRadio( var == CComVariant(4L));
-		}
+		LRESULT lFontSize = ::SendMessage(s_hWndActiveChildFrame, WM_GETBROWSERFONTSIZE, 0, 0);
+		pCmdUI->SetRadio( lFontSize == 4L);
 	}
 }
 
@@ -364,122 +372,135 @@ void	CChildFrameCommandUIUpdater::_UIUpdate()
 /////////////////////////////////////////////////////////////////////////////////////
 // CChildFrameUIStateChange
 
+void	CChildFrameUIStateChange::AddCommandUIMap()
+{
+	CString sharedName;
+	sharedName.Format(_T("%s0x%x"), DONUTSHAREDUIDATA, m_hWndChildFrame);
+	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, sizeof(ChildFrameUIData), sharedName);
+	ATLASSERT( hMap );
+	m_pUIData = (ChildFrameUIData*)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	ATLASSERT( m_pUIData );
+	m_pUIData->hMap	= hMap;
+
+	m_hWndMainFrame = CWindow(m_hWndChildFrame).GetTopLevelWindow();
+	::SendMessage(m_hWndMainFrame, WM_ADDCOMMANDUIMAP, (WPARAM)m_hWndChildFrame, 0);
+}
+
+void	CChildFrameUIStateChange::RemoveCommandUIMap()
+{
+	::UnmapViewOfFile(m_pUIData);
+	::CloseHandle(m_pUIData->hMap);
+	::SendMessage(m_hWndMainFrame, WM_REMOVECOMMANDUIMAP, (WPARAM)m_hWndChildFrame, 0);
+}
+
+
 void	CChildFrameUIStateChange::SetNavigateBack(bool b)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.bNavigateBack != b) {
 		data.bNavigateBack = b;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetNavigateForward(bool b)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.bNavigateForward != b) {
 		data.bNavigateForward = b;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetTitle(LPCTSTR strTitle)
 {
-	ChildFrameUIData& data = GetUIData();
-	data.strTitle	= strTitle;
-	::SendMessage(CChildFrameCommandUIUpdater::s_hWndMainFrame, WM_BROWSERTITLECHANGE, (WPARAM)m_hWndChildFrame, (LPARAM)strTitle);
+	ChildFrameUIData& data = *m_pUIData;
+	::wcscpy_s(data.strTitle, strTitle);
+	// タブのタイトルも変える
+	::SendMessage(m_hWndMainFrame, WM_BROWSERTITLECHANGEFORUIUPDATER, (WPARAM)m_hWndChildFrame, 0);
 }
 
 void	CChildFrameUIStateChange::SetLocationURL(LPCTSTR strURL)
 {
-	ChildFrameUIData& data = GetUIData();
-	if (data.strLocationURL != strURL) {
-		data.strLocationURL	= strURL;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			::SendMessage(CChildFrameCommandUIUpdater::s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)strURL, 0);
+	ChildFrameUIData& data = *m_pUIData;
+	if (::_wcsicmp(data.strLocationURL, strURL) != 0) {
+		::wcscpy_s(data.strLocationURL, strURL);
+		if (m_pUIData->hWndActiveChildFrame == m_hWndChildFrame)
+			::SendMessage(m_hWndMainFrame, WM_BROWSERLOCATIONCHANGEFORUIUPDATER, (WPARAM)m_hWndChildFrame, 0);
 	}
 }
 
 void	CChildFrameUIStateChange::SetFaviconURL(LPCTSTR strURL)
 {
-	ChildFrameUIData& data = GetUIData();
-	data.strFaviconURL = strURL;
+	ChildFrameUIData& data = *m_pUIData;
+	::wcscpy_s(data.strFaviconURL, strURL);
 }
 
 void	CChildFrameUIStateChange::SetStatusText(LPCTSTR strText)
 {
-	ChildFrameUIData& data = GetUIData();
-	if (data.strStatusBar != strText) {
-		data.strStatusBar = strText;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+	ChildFrameUIData& data = *m_pUIData;
+	if (::_wcsicmp(data.strStatusBar, strText) != 0) {
+		::wcscpy_s(data.strStatusBar, strText);
+		_UIUpdate();
 	}
 
 }
 
 void	CChildFrameUIStateChange::SetProgress(long nProgress, long nProgressMax)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.nProgress != nProgress || data.nProgressMax != nProgressMax) {
 		data.nProgress		= nProgress;
 		data.nProgressMax	= nProgressMax;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetSecureLockIcon(int nIcon)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.nSecureLockIcon != nIcon) {
 		data.nSecureLockIcon = nIcon;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetPrivacyImpacted(bool b)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.bPrivacyImpacted != b) {
 		data.bPrivacyImpacted = b;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetDLCtrl(DWORD dw)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	if (data.dwDLCtrl != dw) {
 		data.dwDLCtrl = dw;
-		if (CChildFrameCommandUIUpdater::s_hWndActiveChildFrame == m_hWndChildFrame)
-			CChildFrameCommandUIUpdater::_UIUpdate();
+		_UIUpdate();
 	}
 }
 
 void	CChildFrameUIStateChange::SetExStyle(DWORD dw)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	data.dwExStyle = dw;
 }
 
 void	CChildFrameUIStateChange::SetAutoRefreshStyle(DWORD dw)
 {
-	ChildFrameUIData& data = GetUIData();
+	ChildFrameUIData& data = *m_pUIData;
 	data.dwAutoRefreshStyle = dw;
 }
 
 
-ChildFrameUIData&	CChildFrameUIStateChange::GetUIData()
+void	CChildFrameUIStateChange::_UIUpdate()
 {
-	int nIndex = CChildFrameCommandUIUpdater::_GetIndexFromHWND(m_hWndChildFrame);
-	return *CChildFrameCommandUIUpdater::s_vecpUIData[nIndex];
+	if (m_pUIData->hWndActiveChildFrame == m_hWndChildFrame)
+		::PostMessage(m_hWndMainFrame, WM_UIUPDATE, 0, 0);
 }
-
-
-
 
 
 

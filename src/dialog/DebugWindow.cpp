@@ -31,8 +31,8 @@ private:
 //------------------------------------
 CDebugUtility::Impl::Impl()
 {
-	::AllocConsole();
-	m_hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
+	//::AllocConsole();
+	//m_hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
 }
 
 //------------------------------------
