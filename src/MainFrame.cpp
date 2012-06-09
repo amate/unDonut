@@ -30,6 +30,7 @@
 
 #include "DonutRebarCtrl.h"
 #include "MtlCtrlw.h"			// CommandBar
+#include "DonutCommandBar.h"
 #include "DonutToolBar.h"
 #include "DonutAddressBar.h"
 #include "DonutSearchBar.h"
@@ -646,6 +647,7 @@ private:
 	// Data members
 	CDonutReBarCtrl 	m_ReBar;
 	CCommandBarCtrl2	m_CmdBar;
+	CDonutCommandBar	m_CommandBar;
 	CDonutToolBar		m_ToolBar;
 	CDonutAddressBar	m_AddressBar;
 	CDonutSearchBar 	m_SearchBar;

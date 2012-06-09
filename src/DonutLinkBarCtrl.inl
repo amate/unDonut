@@ -622,33 +622,36 @@ void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 	ptItem.add_child(L"favicon", ptFavicon);
  }
 
- void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder)
+ void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder, std::atomic<bool>* pbCancel)
  {
 	 for (auto it = pLinkFolder->begin(); it != pLinkFolder->end(); ++it) {
-		LinkItem& item = *it->get();
-		if (item.pFolder) {
-			if (item.strName == _T("ChevronFolder")) {	// Chevron
-				_AddPtree(ptFolder, item.pFolder);
-			} else {
-				wptree ptChildFolder;
-				_AddPtree(ptChildFolder, item.pFolder);
-				ptFolder.add_child(L"Folder", ptChildFolder).put(L"<xmlattr>.name", (LPCTSTR)item.strName);
-			}
-		} else {
-			wptree ptItem;
-			ptItem.add(L"name", (LPCTSTR)item.strName);
-			ptItem.add(L"url", (LPCTSTR)item.strUrl);
+		 if (pbCancel->load())
+			 return ;
+		 LinkItem& item = *it->get();
+		 if (item.pFolder) {
+			 if (item.strName == _T("ChevronFolder")) {	// Chevron
+				 _AddPtree(ptFolder, item.pFolder, pbCancel);
+			 } else {
+				 wptree ptChildFolder;
+				 _AddPtree(ptChildFolder, item.pFolder, pbCancel);
+				 ptFolder.add_child(L"Folder", ptChildFolder).put(L"<xmlattr>.name", (LPCTSTR)item.strName);
+			 }
+		 } else {
+			 wptree ptItem;
+			 ptItem.add(L"name", (LPCTSTR)item.strName);
+			 ptItem.add(L"url", (LPCTSTR)item.strUrl);
 
-			if (item.bExPropEnable) {
-				ptItem.add(L"ExProp", item.dwExProp.get());
-				ptItem.add(L"ExPropOpt", item.dwExPropOpt.get());
-			}
+			 if (item.bExPropEnable) {
+				 ptItem.add(L"ExProp", item.dwExProp.get());
+				 ptItem.add(L"ExPropOpt", item.dwExPropOpt.get());
+			 }
 
-			if (item.icon)
-				_AddFaviconData(ptItem, item);
+			 if (item.icon)
+				 _AddFaviconData(ptItem, item);
 
-			ptFolder.add_child(L"Link", ptItem);
-		}
+			 ptFolder.add_child(L"Link", ptItem);
+			 ::Sleep(1);
+		 }
 	 }
  }
 
@@ -698,6 +701,25 @@ void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 	 }
  }
 
+LRESULT CDonutLinkBarCtrl::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	HWND hWnd = ::WindowFromPoint(pt);
+	if (hWnd && s_pSubMenu) {
+		bool bChildWnd = false;
+		CLinkPopupMenu* pSubMenu = s_pSubMenu.get();
+		do {
+			if (pSubMenu->m_hWnd == hWnd) {
+				bChildWnd = true;
+				break;
+			}
+		} while (pSubMenu = pSubMenu->GetSubMenu());
+		if (bChildWnd) {
+			::SendMessage(hWnd, WM_MOUSEWHEEL, wParam, lParam);
+		}
+	}
+	return 0;
+}
 
 
 void CDonutLinkBarCtrl::Impl::OnLButtonDown(UINT nFlags, CPoint point)
@@ -914,6 +936,7 @@ void	CDonutLinkBarCtrl::Impl::_RefreshBandInfo()
 	}
 }
 
+/// ptItem にある faviconツリーからアイコンを作成する
 void	_AddFaviconDataToLinkItem(wptree& ptItem, LinkItem* pLinkItem)
 {
 	if (auto value = ptItem.get_child_optional(L"favicon")) {
@@ -989,7 +1012,7 @@ void	_AddFaviconDataToLinkItem(wptree& ptItem, LinkItem* pLinkItem)
 	}
 }
 
-void	CDonutLinkBarCtrl::Impl::_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
+void	_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
 {
 	for (auto it = pt.begin(); it != pt.end(); ++it) {
 		if (it->first == L"<xmlattr>")
@@ -1005,6 +1028,7 @@ void	CDonutLinkBarCtrl::Impl::_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
 				pItem->dwExPropOpt	= ptItem.get<DWORD>(L"ExPropOpt");
 			}
 			_AddFaviconDataToLinkItem(ptItem, pItem.get());
+			::Sleep(1);
 		} else if (it->first == L"Folder") {
 			pItem->strName	= ptItem.get<std::wstring>(L"<xmlattr>.name").c_str();
 			pItem->pFolder = new LinkFolder;		
@@ -1061,7 +1085,7 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 {
 	static CCriticalSection	s_cs;
-
+	static std::atomic<bool> s_bCancel(false);
 	boost::thread	td([this]() {
 		for (;;) {
 			if (s_cs.TryEnter()) {
@@ -1071,11 +1095,12 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 					std::wofstream	filestream(tempPath);
 					if (!filestream) {
 						s_cs.Leave();
+						s_bCancel.store(false);
 						return ;
 					}
 		
 					wptree	pt;
-					_AddPtree(pt.add(L"LinkBookmark", L""), &m_BookmarkList);
+					_AddPtree(pt.add(L"LinkBookmark", L""), &m_BookmarkList, &s_bCancel);
 
 					filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 					write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
@@ -1088,11 +1113,13 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 					this->MessageBox(strError, NULL, MB_ICONERROR);
 				}
 				s_cs.Leave();
+				s_bCancel.store(false);
 				break;
 
 			} else {
 				// 他のスレッドが保存処理を実行中...
 				TRACEIN(_T("_SaveLinkBookmark : TryEnter failed"));
+				s_bCancel.store(true);
 				::Sleep(100);
 				continue;
 			}
@@ -1552,16 +1579,16 @@ void	CDonutLinkBarCtrl::Impl::_DrawDragImage(CDCHandle dc, const LinkItem& item)
 void	CDonutLinkBarCtrl::Impl::_ClearLinkBookmark()
 {
 	// 以前のリンクフォルダを削除する
-	std::function<void (LinkFolderPtr)>	funcDelFolder;
-	funcDelFolder	= [&funcDelFolder] (LinkFolderPtr pFolder) {
-		for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
-			if (it->get()->pFolder) {
-				funcDelFolder(it->get()->pFolder);
-				delete it->get()->pFolder;
-			}
-		}
-	};
-	funcDelFolder(&m_BookmarkList);
+	//std::function<void (LinkFolderPtr)>	funcDelFolder;
+	//funcDelFolder	= [&funcDelFolder] (LinkFolderPtr pFolder) {
+	//	for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
+	//		if (it->get()->pFolder) {
+	//			funcDelFolder(it->get()->pFolder);
+	//			delete it->get()->pFolder;
+	//		}
+	//	}
+	//};
+	//funcDelFolder(&m_BookmarkList);
 	m_BookmarkList.clear();
 }
 

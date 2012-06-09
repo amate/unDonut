@@ -92,6 +92,7 @@ public:
 		MSG_WM_CREATE( OnCreate )
 		MSG_WM_DESTROY( OnDestroy )
 		MSG_WM_SIZE( OnSize )
+		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel	)
 		MSG_WM_LBUTTONDOWN( OnLButtonDown )
 		MSG_WM_LBUTTONUP( OnLButtonUp )
 		MSG_WM_RBUTTONUP( OnRButtonUp )
@@ -107,6 +108,7 @@ public:
 	 int  OnCreate(LPCREATESTRUCT lpCreateStruct);
 	 void OnDestroy();
 	 void OnSize(UINT nType, CSize size);
+	 LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	 void OnLButtonDown(UINT nFlags, CPoint point);
 	 void OnLButtonUp(UINT nFlags, CPoint point);
 	 void OnRButtonUp(UINT nFlags, CPoint point);
@@ -121,7 +123,6 @@ public:
 private:
 	void	_InitTooltip();
 	void	_RefreshBandInfo();
-	void	_AddLinkItem(LinkFolderPtr pFolder, wptree pt);
 	void	_LoadLinkBookmark();
 	void	_SaveLinkBookmark();
 	void	_UpdateItemPosition();

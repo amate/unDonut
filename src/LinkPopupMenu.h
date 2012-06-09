@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include <atomic>
 #include <boost\optional.hpp>
+#include <boost\property_tree\ptree.hpp>
 #include <atlscrl.h>
 #include "MtlWin.h"
 #include "MtlMisc.h"
@@ -41,13 +43,41 @@ struct LinkItem
 	LinkItem() : pFolder(nullptr), state(kItemNormal), bExPropEnable(false)
 	{}
 
+	~LinkItem() 
+	{
+		if (pFolder)
+			delete pFolder; 
+	}
+
+	LinkItem(LinkItem& item)
+	{
+		strName	= item.strName;
+		strUrl	= item.strUrl;
+		if (item.icon)
+			icon	= item.icon.DuplicateIcon();	// ‘S‘Ì‚Å0.05•b‚Ù‚Ç’x‚­‚È‚é
+		if (bExPropEnable = item.bExPropEnable) {
+			dwExProp	= item.dwExProp;
+			dwExPropOpt	= item.dwExPropOpt;
+		}
+		pFolder = nullptr;
+	}
+
 };
 typedef vector<unique_ptr<LinkItem> >	LinkFolder;
 typedef vector<unique_ptr<LinkItem> >*	LinkFolderPtr;
 
 
+// ’è‹`‚ÍDonutLinkBarCtrl.ini‚É‚ ‚é
+void	_AddFaviconDataToLinkItem(boost::property_tree::wptree& ptItem, LinkItem* pLinkItem);	
+void	_AddLinkItem(LinkFolderPtr pFolder, boost::property_tree::wptree pt);
+
+ void	_AddFaviconData(boost::property_tree::wptree& ptItem, LinkItem& item);
+ void	_AddPtree(boost::property_tree::wptree& ptFolder, LinkFolderPtr pLinkFolder, std::atomic<bool>* pbCancel);
+
+
 #define WM_CLOSEBASESUBMENU		(WM_APP + 1)
 #define WM_SAVELINKBOOKMARK		(WM_APP + 2)
+#define WM_UPDATESUBMENUITEMPOS	(WM_APP + 3)
 
 /////////////////////////////////////////////////////////////
 // CLinkItemDataObject
@@ -172,7 +202,7 @@ public:
 	// Constructor
 	CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex = -1);
 
-	static void	SetLinkBarHWND(HWND hWnd) { s_wndLinkBar = hWnd; }
+	static HWND	SetLinkBarHWND(HWND hWnd);
 
 	int	ComputeWindowWidth();
 	int ComputeWindowHeight();
@@ -229,6 +259,7 @@ public:
 		MSG_WM_LBUTTONDOWN( OnLButtonDown )
 		MSG_WM_RBUTTONUP	( OnRButtonUp )
 		MSG_WM_MBUTTONDOWN( OnMButtonDown )
+		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		CHAIN_MSG_MAP( CScrollWindowImpl<CLinkPopupMenu> )
 		CHAIN_MSG_MAP( CThemeImpl<CLinkPopupMenu> )
@@ -248,6 +279,7 @@ public:
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnRButtonUp(UINT nFlags, CPoint point);
 	void OnMButtonDown(UINT nFlags, CPoint point);
+	LRESULT OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 
 private:

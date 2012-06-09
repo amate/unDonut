@@ -147,7 +147,7 @@ void CRecentClosedTabList::Impl::SetMaxItemLength(int cchMaxLen)
 // Oparation
 BOOL CRecentClosedTabList::Impl::AddToList(ChildFrameDataOnClose* pClosedTabData)
 {
-	if ((int)m_vecpClosedTabData.size() == m_nMaxEntries)
+	while ((int)m_vecpClosedTabData.size() > m_nMaxEntries)
 		m_vecpClosedTabData.erase(m_vecpClosedTabData.begin() + m_nMaxEntries - 1);
 
 	m_vecpClosedTabData.insert(m_vecpClosedTabData.begin(), unique_ptr<ChildFrameDataOnClose>(std::move(pClosedTabData)));

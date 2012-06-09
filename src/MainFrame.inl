@@ -493,25 +493,16 @@ void	CMainFrame::Impl::_initRebar()
 HWND	CMainFrame::Impl::_initCommandBar()
 {
 	SetMenu(NULL);		// remove menu
-	HWND	hWndCmdBar = m_CmdBar.Create(m_hWnd, rcDefault, NULL, MTL_SIMPLE_CMDBAR2_PANE_STYLE, 0, ATL_IDW_COMMAND_BAR);
+
+	HWND	hWndCmdBar = m_CommandBar.Create(m_ReBar);
+	m_CmdBar.Create(m_hWnd, rcDefault, NULL, MTL_SIMPLE_CMDBAR2_PANE_STYLE, 0, ATL_IDW_COMMAND_BAR);
 	ATLASSERT( ::IsWindow(hWndCmdBar) );
+	m_CmdBar.ShowWindow(FALSE);
 
-	{
-		CIniFileI	prFont( g_szIniFileName, _T("Main") );
-		MTL::CLogFont	lf;
-		lf.InitDefault();
-		if ( lf.GetProfile(prFont) ) {
-			m_CmdBar.SetMenuLogFont(lf);
-
-			CFontHandle 	font;	//\\ SetFontもここでするように
-			MTLVERIFY( font.CreateFontIndirect(&lf) );
-			if (font.m_hFont) 
-				SetFont(font);
-		}
-	}
 	CMenuHandle menu;
 	menu.LoadMenu(IDR_MAINFRAME);
-	m_CmdBar.AttachMenu(menu);
+	m_CmdBar.AttachMenu(menu);		//\\---
+	m_CommandBar.SetRecentClosedTabList(&m_RecentClosedTabList);	// 最近閉じたタブ ポップアップメニュー用
 
 	return hWndCmdBar;
 }
@@ -692,6 +683,20 @@ void	CMainFrame::Impl::_initSkin()
 	m_SearchBar.SetFont		(CSkinOption::s_lfSearchBar.CreateFontIndirect());
 	m_LinkBar.SetFont		(CSkinOption::s_lfLinkBar.CreateFontIndirect());
 	m_StatusBar.SetProxyComboBoxFont(CSkinOption::s_lfProxyComboBox.CreateFontIndirect());
+
+	{
+		CIniFileI	prFont( g_szIniFileName, _T("Main") );
+		MTL::CLogFont	lf;
+		lf.InitDefault();
+		if ( lf.GetProfile(prFont) ) {
+			m_CommandBar.SetFont(::CreateFontIndirect(&lf));
+
+			CFontHandle 	font;	//\\ SetFontもここでするように
+			MTLVERIFY( font.CreateFontIndirect(&lf) );
+			if (font.m_hFont) 
+				SetFont(font);
+		}
+	}
 
 	/* スキン */
 	//initCurrentIcon();											//+++ アイコン

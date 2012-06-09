@@ -373,7 +373,7 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 		CChildFrame* pChild = new CChildFrame;
 		int	nThreadRefCount = 0;
 		pChild->SetThreadRefCount(&nThreadRefCount);
-
+		
 		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);
 		pChild->SetDLCtrl(NewChildData.dwDLCtrl);
 		pChild->SetExStyle(NewChildData.dwExStyle);

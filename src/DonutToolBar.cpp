@@ -12,10 +12,9 @@
 #include "ChevronHandler.h"
 #include "option/ToolBarDialog.h"
 #include "ToolTipManager.h"
-
+#include "PopupMenu.h"
 
 using namespace 	MTL;
-
 
 /////////////////////////////////////////////////////////////////////////////
 // Adding the special form to the toolbar's customize dialog
@@ -239,8 +238,8 @@ private:
 	}
 };
 
-__declspec(selectany) HHOOK 								CStdToolBarAdditionalCustomizeDlg::s_hCreateHook	= NULL;
-__declspec(selectany) CStdToolBarAdditionalCustomizeDlg *	CStdToolBarAdditionalCustomizeDlg::s_pThis			= NULL;
+HHOOK 								CStdToolBarAdditionalCustomizeDlg::s_hCreateHook	= NULL;
+CStdToolBarAdditionalCustomizeDlg *	CStdToolBarAdditionalCustomizeDlg::s_pThis			= NULL;
 
 
 
@@ -279,6 +278,9 @@ public:
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnToolTipText)
 		REFLECTED_NOTIFY_CODE_HANDLER( RBN_CHEVRONPUSHED, OnChevronPushed)
 		REFLECTED_NOTIFY_CODE_HANDLER( TBN_DROPDOWN		, OnDropDown   )
+		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseSubMenu )
+		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel	)
+
 		// Customize
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_QUERYINSERT  , OnTbnQueryInsert	)
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_QUERYDELETE  , OnTbnQueryDelete	)
@@ -292,6 +294,8 @@ public:
 	LRESULT OnToolTipText(LPNMHDR pnmh);
 	LRESULT OnChevronPushed(int /*idCtrl*/, LPNMHDR pnmh, BOOL &bHandled);
 	LRESULT OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled);
+	LRESULT OnCloseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam) { _CloseSubMenu(); return 0; }
+	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT OnTbnQueryInsert(LPNMHDR pnmh) { return TRUE; }
 	LRESULT OnTbnQueryDelete(LPNMHDR pnmh) { return TRUE; }
@@ -310,14 +314,24 @@ private:
 	void	_UpdateBandInfo();
 	HMENU	_GetDropDownMenu(int nCmdID, bool &bDestroy, bool &bSubMenu);
 
+	void	_DoPopupSubMenu(int nCmdID);
+	void	_CloseSubMenu();
+	static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 	// Data members;
 	CMenuHandle 	m_menuFavorites;
 	CMenuHandle 	m_menuFavoritesUser;
 	CMenuHandle 	m_menuCSS;
 
+	static IBasePopupMenu*	s_pSubMenu;
+	static HHOOK	s_hHook;
+	static HWND		s_hWnd;
+
 };
 
+IBasePopupMenu*	CDonutToolBar::Impl::s_pSubMenu = nullptr;
+HHOOK	CDonutToolBar::Impl::s_hHook= NULL;
+HWND	CDonutToolBar::Impl::s_hWnd	= NULL;
 
 //------------------------------
 /// DonutToolBarウィンドウ作成
@@ -330,6 +344,7 @@ HWND	CDonutToolBar::Impl::Create(HWND hWndParent)
 	SetButtonStructSize();
 
 	//_InitButton();	// ボタン登録
+	s_hWnd = hWnd;
 
 	return hWnd;
 }
@@ -454,6 +469,11 @@ LRESULT CDonutToolBar::Impl::OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled
 {
 	LPNMTOOLBAR lpnmtb = (LPNMTOOLBAR) pnmh;
 	int 		nCmdID = lpnmtb->iItem;
+	
+	if (nCmdID == ID_RECENT_DOCUMENT) {
+		_DoPopupSubMenu(nCmdID);
+		return TBDDRET_DEFAULT;
+	}
 
 	auto funcTrackDropDownMenu = [this](int nCmdID, HMENU hMenu, HWND hWndOwner) {
 		CRect	  rc;
@@ -480,6 +500,29 @@ LRESULT CDonutToolBar::Impl::OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled
 		menu.DestroyMenu();
 
 	return TBDDRET_DEFAULT;
+}
+
+LRESULT CDonutToolBar::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	HWND hWnd = ::WindowFromPoint(pt);
+	if (hWnd && s_pSubMenu) {
+		bool bChildWnd = false;
+		IBasePopupMenu* pSubMenu = s_pSubMenu;
+		if (pSubMenu->GetHWND() == hWnd) {
+			bChildWnd = true;
+		} else {
+			CString className;
+			GetClassName(hWnd, className.GetBuffer(128), 128);
+			className.ReleaseBuffer();
+			if (className == _T("DonutBasePopupMenu") || className == _T("DonutLinkPopupMenu"))
+				bChildWnd = true;
+		}
+		if (bChildWnd) {
+			::SendMessage(hWnd, WM_MOUSEWHEEL, wParam, lParam);
+		}
+	}
+	return 0;
 }
 
 //---------------------------
@@ -966,7 +1009,74 @@ HMENU CDonutToolBar::Impl::_GetDropDownMenu(int nCmdID, bool &bDestroy, bool &bS
 }
 
 
+void	CDonutToolBar::Impl::_DoPopupSubMenu(int nCmdID)
+{
+	SetFocus();
 
+	CRect	  rc;
+	GetItemRect(CommandToIndex(nCmdID), &rc);
+	ClientToScreen(&rc);
+	ATLASSERT( s_pSubMenu == nullptr );
+	s_pSubMenu = new CRecentClosedTabPopupMenu;
+	s_pSubMenu->DoTrackPopupMenu(NULL, CPoint(rc.left, rc.bottom - 1), m_hWnd);
+
+	ATLVERIFY(s_hHook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, _Module.GetModuleInstance(), 0));
+
+	CMessageLoop loop;
+	loop.Run();
+}
+
+void	CDonutToolBar::Impl::_CloseSubMenu()
+{
+	if (s_pSubMenu) {
+		s_pSubMenu->DestroyWindow();
+		s_pSubMenu = nullptr;
+
+		::UnhookWindowsHookEx(s_hHook);
+		s_hHook = NULL;
+
+		PostQuitMessage(0);
+	}
+}
+
+LRESULT  CDonutToolBar::Impl::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode < 0)
+		return CallNextHookEx(s_hHook, nCode, wParam, lParam);
+	if (nCode == HC_ACTION) {
+		switch (wParam) {
+		case WM_LBUTTONDOWN:
+		case WM_RBUTTONDOWN: 
+			{
+				LPMSLLHOOKSTRUCT pllms = (LPMSLLHOOKSTRUCT)lParam;
+				HWND hWnd = WindowFromPoint(pllms->pt);
+
+				bool bChildWnd = false;
+				IBasePopupMenu* pSubMenu = s_pSubMenu;
+				if (pSubMenu->GetHWND() == hWnd) {
+					bChildWnd = true;
+				} else {
+					CString className;
+					GetClassName(hWnd, className.GetBuffer(128), 128);
+					className.ReleaseBuffer();
+					if (className == _T("DonutBasePopupMenu") || className == _T("DonutLinkPopupMenu"))
+						bChildWnd = true;
+				}
+
+				if (CLinkPopupMenu::s_bNowShowRClickMenu)
+					break;
+				if (/*hWnd != s_hWnd &&*/ bChildWnd == false) {
+					::SendMessage(s_hWnd, WM_CLOSEBASESUBMENU, 0, 0);
+				} 
+			}
+			break;
+
+		default:
+			break;
+		}
+	}
+	return CallNextHookEx(s_hHook, nCode, wParam, lParam);
+}
 
 
 //////////////////////////////////////////////////

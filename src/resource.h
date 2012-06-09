@@ -959,7 +959,7 @@
 #define ID_RECENTDOCUMENT_7             56006
 #define ID_RECENTDOCUMENT_8             56007
 #define ID_RECENTDOCUMENT_9             56008
-#define ID_RECENTDOCUMENT_LAST          56063
+#define ID_RECENTDOCUMENT_LAST          56099
 #define ID_DOCKINGPLUGIN_FIRST          56200
 #define ID_DOCKINGPLUGIN_LAST           56250
 #define ID_PROGRESS_PANE                61403

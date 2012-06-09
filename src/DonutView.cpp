@@ -20,20 +20,9 @@
 
 // Constants
 enum {
-	#if 1	//+++ xp未満ではフラットスクロールバーを設定、xp以後ではthemeを適用.
-	DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	DOCHOSTUIFLAG_THEME_VIEW    = (DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
-	#elif 1	// unDonut+
-	DOCHOSTUIFLAG_FLATVIEW		= (DOCHOSTUIFLAG_FLAT_SCROLLBAR | DOCHOSTUIFLAG_NO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	DOCHOSTUIFLAG_NOT_FLATVIEW	= ( /*DOCHOSTUIFLAG_NO3DBORDER*/ DOCHOSTUIFLAG_NO3DOUTERBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),
-	#else
-	//docHostUIFlagDEFAULT		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE |DOCHOSTUIFLAG_THEME),
-	//docHostUIFlagNotFlatView	= (docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE),		// UDT DGSTR ( added by dai
-	// DonutRAPT(1.26)の値.
-	//docHostUIFlagDEFAULT 		= (docHostUIFlagFLAT_SCROLLBAR | docHostUIFlagNO3DBORDER | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	//docHostUIFlagNotFlatScrBar= (docHostUIFlagNO3DBORDER     | DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | DOCHOSTUIFLAG_THEME),
-	#endif
+	DOCHOSTUIFLAG_THEME_VIEW =	DOCHOSTUIFLAG_NO3DBORDER | 
+								DOCHOSTUIFLAG_ENABLE_FORMS_AUTOCOMPLETE | 
+								DOCHOSTUIFLAG_THEME
 };
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -469,22 +458,7 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		m_spAxAmbient	= spAxHostWindow;
 		ATLASSERT(m_spAxAmbient);
-
-		//フラットビューの可否を適用
-		//hr = m_spAxAmbient->put_DocHostFlags(_bFlatView ? docHostUIFlagNotFlatView : docHostUIFlagDEFAULT); // UDT DGSTR ( added by dai
-	  #if 1	//+++ xp以降は themeによって平面的であることを期待して、フラットスクロールバーにしないtheme onの設定にする.
-		//BOOL	bFlatView	= (m_dwDefaultExtendedStyleFlags & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
-		BOOL	bFlatView	= (m_dwExStyle      & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
-
-		unsigned flags      = DOCHOSTUIFLAG_NOT_FLATVIEW;
-		if (bFlatView) {
-			flags = _CheckOsVersion_XPLater() ? DOCHOSTUIFLAG_THEME_VIEW : DOCHOSTUIFLAG_NOT_FLATVIEW;
-		}
-	  #else
-		BOOL	bFlatView	= (CDLControlOption::s_dwExtendedStyleFlags & DVS_EX_FLATVIEW) != 0;	//+++ ? 1 : 0;
-		unsigned flags      = bFlatView ? DOCHOSTUIFLAG_FLATVIEW : DOCHOSTUIFLAG_NOT_FLATVIEW;
-	  #endif
-		hr	= m_spAxAmbient->put_DocHostFlags(flags);		//\\ flagsを設定する
+		hr	= m_spAxAmbient->put_DocHostFlags(DOCHOSTUIFLAG_THEME_VIEW);
 		if (FAILED(hr))
 			AtlThrow(hr);
 

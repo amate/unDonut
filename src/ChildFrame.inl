@@ -2233,7 +2233,7 @@ void	CChildFrame::Impl::_InitTravelLog()
 /// 最近閉じたタブ用のデータを集める
 void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 {	
-	data.strTitle	= GetLocationName();
+	data.strTitle	= MtlGetWindowText(m_hWnd);
 	data.strTitle.Replace(_T('\"'), _T('_'));
 	data.strURL		= GetLocationURL();
 	data.dwDLCtrl	= m_view.GetDLControlFlags();

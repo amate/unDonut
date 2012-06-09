@@ -625,6 +625,12 @@ CLinkPopupMenu::CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex /*= -1*/
 	m_font = lf.CreateFontIndirect();
 }
 
+HWND	CLinkPopupMenu::SetLinkBarHWND(HWND hWnd)
+{
+	HWND oldHwnd = s_wndLinkBar;
+	s_wndLinkBar = hWnd;
+	return oldHwnd;
+}
 
 int	CLinkPopupMenu::ComputeWindowWidth()
 {
@@ -784,20 +790,25 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 
 	case ID_SORTBYNAME:
 		if (pLinkItem == nullptr) {
-			int nChevronIndex = (int)pFolder->size() - 1;
-			LinkFolderPtr pChevronFolder = pFolder->back()->pFolder;
-			for (auto it = pChevronFolder->begin(); it != pChevronFolder->end(); ++it) {
-				pFolder->push_back(std::move(*it));
+			if ((CWindow(s_wndLinkBar).GetStyle() & WS_CHILD) == 0) { // メインメニューのお気に入り
+				SortByName(pFolder);
+
+			} else {
+				int nChevronIndex = (int)pFolder->size() - 1;
+				LinkFolderPtr pChevronFolder = pFolder->back()->pFolder;
+				for (auto it = pChevronFolder->begin(); it != pChevronFolder->end(); ++it) {
+					pFolder->push_back(std::move(*it));
+				}
+				delete pChevronFolder;
+				pFolder->erase(pFolder->begin() + nChevronIndex);
+
+				SortByName(pFolder);
+
+				unique_ptr<LinkItem>	pItem(new LinkItem);
+				pItem->strName	= _T("ChevronFolder");
+				pItem->pFolder	= new LinkFolder;
+				pFolder->push_back(std::move(pItem));
 			}
-			delete pChevronFolder;
-			pFolder->erase(pFolder->begin() + nChevronIndex);
-
-			SortByName(pFolder);
-
-			unique_ptr<LinkItem>	pItem(new LinkItem);
-			pItem->strName	= _T("ChevronFolder");
-			pItem->pFolder	= new LinkFolder;
-			pFolder->push_back(std::move(pItem));
 		} else {
 			ATLASSERT(pLinkItem->pFolder);
 			SortByName(pLinkItem->pFolder);
@@ -811,7 +822,7 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 			LinkItem* pItem = it->get();
 			if (pItem->pFolder)
 				continue;
-			OpenLink(*pLinkItem, D_OPENFILE_CREATETAB);
+			OpenLink(*pItem, D_OPENFILE_CREATETAB);
 		}
 		break;
 
@@ -1190,8 +1201,14 @@ DROPEFFECT CLinkPopupMenu::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffec
 			m_DragItemData.first->erase(m_DragItemData.first->begin() + m_DragItemData.second);
 		else
 			CLinkPopupMenu::GetFaviconToLinkItem(pLinkItemForFavicon->strUrl, item.pFolder, pLinkItemForFavicon, m_hWnd);
+
+		::SendMessage(s_wndLinkBar, WM_UPDATESUBMENUITEMPOS, 0, 0);
+		//_UpdateItemPosition();
+		s_bNoCloseBaseSubMenu = true;
+		_CloseSubMenu();
+		_HotItem(-1);
 		// メニューを閉じる
-		_CloseBaseSubMenu();
+		//_CloseBaseSubMenu();
 
 	} else if (htflag == htItemNone) {
 		m_pFolder->insert(m_pFolder->begin(), std::move(pItem));
@@ -1226,10 +1243,38 @@ DROPEFFECT CLinkPopupMenu::OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffec
 				m_DragItemData.first->erase(m_DragItemData.first->begin() + m_DragItemData.second);
 			else
 				CLinkPopupMenu::GetFaviconToLinkItem(pLinkItemForFavicon->strUrl, m_pFolder, pLinkItemForFavicon, m_hWnd);
+
+			CRect rcWork = Misc::GetMonitorWorkArea(m_hWnd);
+			CRect rcWindow;
+			GetWindowRect(&rcWindow);
+			bool	bScrollBarVisible = false;
+			if (rcWindow.right == rcWork.right)
+				bScrollBarVisible = true;
+			rcWindow.bottom	= rcWindow.top	+ ComputeWindowHeight();
+			rcWindow.right	= rcWindow.left	+ ComputeWindowWidth();
+			
+			if (rcWork.bottom < rcWindow.bottom) {	// 下にはみ出る
+				rcWindow.bottom	= rcWork.bottom;
+				if (bScrollBarVisible == false)
+					rcWindow.right += ::GetSystemMetrics(SM_CXVSCROLL);
+			}
+			if (rcWork.right < rcWindow.right) {	// 右にはみ出る
+				int nWidth = rcWindow.Width();
+				rcWindow.right = rcWork.right;
+			}
+			if ((GetStyle() & WS_CHILD) == 0)
+				MoveWindow(&rcWindow);
+			enum { kBorderMargin = 2 };
+			SetScrollSize(rcWindow.Width() - kBorderMargin, ComputeWindowHeight() - kBorderMargin);
+			SetScrollLine(1, kItemHeight);
+
 			::InvalidateRect(s_wndLinkBar, NULL, FALSE);
 
+			::SendMessage(s_wndLinkBar, WM_UPDATESUBMENUITEMPOS, 0, 0);
+			//_UpdateItemPosition();
+			s_bNoCloseBaseSubMenu = true;
 			// メニューを閉じる
-			_CloseBaseSubMenu();
+			//_CloseBaseSubMenu();
 		}
 	}
 	SaveLinkBookmark();
@@ -1411,6 +1456,16 @@ void CLinkPopupMenu::OnMButtonDown(UINT nFlags, CPoint point)
 	}
 }
 
+
+LRESULT CLinkPopupMenu::OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	_UpdateItemPosition();
+	if (m_pSubMenu)
+		m_pSubMenu->SendMessage(WM_UPDATESUBMENUITEMPOS);
+	return 0;
+}
+
+
 LRESULT CLinkPopupMenu::OnTooltipGetDispInfo(LPNMHDR pnmh)
 {
 	LPNMTTDISPINFO pntdi = (LPNMTTDISPINFO)pnmh;
@@ -1435,29 +1490,11 @@ LRESULT CLinkPopupMenu::OnTooltipGetDispInfo(LPNMHDR pnmh)
 
 void	CLinkPopupMenu::_InitTooltip()
 {
-	bool bUseTheme = false;
-	// comctl32のバージョンを取得
-    HINSTANCE         hComCtl;
-    HRESULT           hr;
-    DLLGETVERSIONPROC pDllGetVersion;
-	DLLVERSIONINFO    dvi = { sizeof(DLLVERSIONINFO) };
-    hComCtl = LoadLibrary(_T("comctl32.dll"));
-    if (hComCtl) {
-        pDllGetVersion = (DLLGETVERSIONPROC)GetProcAddress(hComCtl, "DllGetVersion");
-        if (pDllGetVersion) {
-            hr = (*pDllGetVersion)(&dvi);
-            if (SUCCEEDED(hr) && dvi.dwMajorVersion >= 6) {
-				bUseTheme = true;
-			}
-        }
-    }
-    FreeLibrary(hComCtl);
-
 	m_tip.Create(m_hWnd, 0, NULL, TTS_ALWAYSTIP, WS_EX_TRANSPARENT);
 	m_tip.Activate(TRUE);
 	CToolInfo ti(TTF_SUBCLASS | TTF_TRANSPARENT, m_hWnd);
 	ti.hwnd	 = m_hWnd;
-	if (bUseTheme == false)
+	if (RunTimeHelper::IsCommCtrl6() == false)
 		ti.cbSize = sizeof(TOOLINFO) - sizeof(void*);
 	ATLVERIFY(m_tip.AddTool(&ti));
 

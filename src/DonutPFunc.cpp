@@ -10,7 +10,7 @@
 #include "ToolTipManager.h"
 #include "resource.h"
 #include <Shlobj.h>
-
+#include "GdiplusUtil.h"
 
 #include "MtlMisc.h"
 #include "IniFile.h"
@@ -49,12 +49,18 @@ HICON	CreateIconFromIDList(PCIDLIST_ABSOLUTE pidl)
 	if (FAILED(hr)) 
 		return NULL;
 
+	if (::wcsncmp(szPath, L"http", 4) != 0 && ::wcsncmp(szPath, L"file", 4) != 0)
+		return NULL;
+
 	HICON	hIcon;
 	hr = pExtractIcon->Extract(szPath, iIndex, NULL, &hIcon, MAKELONG(32, 16));
 	if (FAILED(hr)) 
 		return NULL;
 	ATLASSERT(hIcon);
 
+	Gdiplus::Bitmap	bmp(hIcon);
+	::DestroyIcon(hIcon);
+	bmp.GetHICON(&hIcon);
 	//CDC dc = ::GetDC(NULL);
 	//dc.DrawIconEx(CPoint(2000, 250), hIcon, CSize(16,16));
 	return hIcon;
