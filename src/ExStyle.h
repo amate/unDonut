@@ -42,13 +42,21 @@ enum EExProp {
 	EXPROP_REFRESH_DEFAULT	= 0x80000000,
 };
 
-
 enum {
 	EXPROPOPT_ADDRESSBAR	=	0x00000001,	//+++ 検索でアドレスバーの文字列を対象にする.
 	EXPROPOPT_FLATVIEW		=   0x0000000C,	//+++ そのページを平面的な表示にする
 };
 
+enum EDvs_Ex {
+	DVS_EX_OPENNEWWIN		= 0x00000001L,
 
+	//+++ unDonut+ での値 (+modも)
+	DVS_EX_FLATVIEW 		= 0x00000002L,	//\\ 廃止予定
+	DVS_EX_MESSAGE_FILTER	= 0x00000004L,
+	DVS_EX_MOUSE_GESTURE	= 0x00000008L,
+	DVS_EX_BLOCK_MAILTO 	= 0x00000010L,
+	//DVS_EX_NEWWINDOWFLG		= 0x00000020L,	// リンクを開くことと同じようにする
+};
 
 /*
 	拡張プロパティ形式データとDonut標準のデータフラグとの相互変換を行うクラス

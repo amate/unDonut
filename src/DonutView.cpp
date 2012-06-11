@@ -10,6 +10,7 @@
 //#include "option\MouseDialog.h"
 //#include "option\MenuDialog.h"
 #include "GlobalConfig.h"
+#include "ExStyle.h"
 #include "Donut.h"
 
 #include "ScriptErrorCommandTargetImpl.h"

@@ -266,12 +266,7 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 #import "msxml3.dll" named_guids	//raw_interfaces_only
 using namespace MSXML2;
 
-
-#include "dbg_wm.h"
-
-#include "DonutPFunc.h"
-#include "DonutDefine.h"
-#include "Misc.h"
+// Debug用
 #include "dialog/DebugWindow.h"
 
 
@@ -279,6 +274,9 @@ using namespace MSXML2;
 #undef max
 using std::min;
 using std::max;
+
+#undef BEGIN_MSG_MAP
+#define BEGIN_MSG_MAP	BEGIN_MSG_MAP_EX
 
 
 

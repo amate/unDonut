@@ -8,6 +8,9 @@
 #include "stdafx.h"
 
 #include "UrlSecurityOption.h"
+#include <sstream>
+#include <boost\archive\text_woarchive.hpp>
+#include <boost\archive\text_wiarchive.hpp>
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../MtlMisc.h"
@@ -28,7 +31,7 @@
 #endif
 
 
-
+#define DONUTURLSECURITYSHAREDMEMNAME	_T("DonutUrlSecuritySharedMemName")
 
 
 #ifdef USE_REGEX
@@ -46,9 +49,8 @@ using boost::regex_match;
 #endif
 
 
-CUrlSecurityOption::COptUrlList 	CUrlSecurityOption::s_urlSecurity;
-bool 								CUrlSecurityOption::s_bValid			= true;
-bool 								CUrlSecurityOption::s_bActivePageToo	= true;
+std::list<UrlSecurityData>	CUrlSecurityOption::s_UrlSecurityList;
+bool 						CUrlSecurityOption::s_bValid			= true;
 
 
 
@@ -58,13 +60,7 @@ void CUrlSecurityOption::GetProfile()
 	int			nValid	= int( pr.GetValue( _T("IsValid"), -1 ) );
 	if (nValid >= 0)
 		s_bValid = nValid != 0;
-  #if 1	//+++ +mod.1.35にて、必ず0書き込みされてしまってるので、しばらく強制的に1にする...
-	s_bActivePageToo = 1;
-  #else
-	int			nActPagNavi	= int( pr.GetValue( _T("ActPagNavi"), -1 ) );
-	if (nActPagNavi >= 0)
-		s_bActivePageToo = nActPagNavi != 0;
-  #endif
+
 	pr.Close();
 
 	//+++ ファイルより読み込む
@@ -72,11 +68,8 @@ void CUrlSecurityOption::GetProfile()
 	::FileReadString(_GetFilePath( _T("UrlEntry.ini") ), urls);
 
 	//+++ ファイルから読み込んだデータを分解する
-	COptUrlList().swap( s_urlSecurity );
-	for (std::list<CString>::iterator it = urls.begin();
-		it != urls.end();
-		++it)
-	{
+	s_UrlSecurityList.clear();
+	for (auto it = urls.begin(); it != urls.end(); ++it) {
 		LPCTSTR		p = LPCTSTR( *it );
 		if (p == NULL)
 			continue;
@@ -103,7 +96,7 @@ void CUrlSecurityOption::GetProfile()
 		CString	url( p + 1 );
 		url.TrimLeft(_T(" \t\r\n　"));
 		url.TrimRight(_T(" \t\r\n　"));
-		s_urlSecurity.push_back( COptUrl( f, o, o2, url) );
+		s_UrlSecurityList.emplace_back(f, o, o2, (LPCTSTR)url);
 	}
 }
 
@@ -112,39 +105,55 @@ void CUrlSecurityOption::GetProfile()
 void CUrlSecurityOption::WriteProfile()
 {
 	CIniFileO	 pr( g_szIniFileName, _T("UrlSecurity") );
-	pr.DeleteSection();
-	pr.SetValue( s_bValid		  != 0, _T("IsValid"   ) );
-	pr.SetValue( s_bActivePageToo != 0, _T("ActPagNavi") );
+	pr.SetValue( s_bValid, _T("IsValid") );
 
 	//+++ ファイルから読み込んだデータを分解する
 	std::list<CString>		urls;
-	for (COptUrlList::iterator it = s_urlSecurity.begin();
-		it != s_urlSecurity.end();
-		++it)
-	{
+	for (auto it = s_UrlSecurityList.begin(); it != s_UrlSecurityList.end(); ++it)	{
 	  #if 1	//+++
-		urls.push_back( Misc::StrFmt(_T("%u,%u,%u,%s"), it->m_flags, it->m_opts, it->m_opts2, LPCTSTR(it->m_url)) );
+		urls.push_back( Misc::StrFmt(_T("%u,%u,%u,%s"), it->flags, it->opts, it->opts2, it->urlPatern.c_str()) );
 	  #else
 		unsigned fl = (it->m_flags & 1) | (it->opts2 & ~3);
 		urls.push_back( Misc::StrFmt(_T("%u,%u,%s"), fl, it->m_opts, LPCTSTR(it->m_url)) );
 	  #endif
 	}
 
-	COptUrlList().swap( s_urlSecurity );
-
 	FileWriteString( _GetFilePath( _T("UrlEntry.ini") ), urls );
 }
 
 
-
-CUrlSecurityOption::COptUrlList::iterator	CUrlSecurityOption::get_optUrlList_iterator(unsigned no)
+void CUrlSecurityOption::UpdateOriginalUrlSecurityList(HWND hWndMainFrame)
 {
-	CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::s_urlSecurity.begin();
-	for (unsigned i = 0; i < no && it != s_urlSecurity.end(); ++i)
-		++it;
-	return it;
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
+	if (hMap) {
+		::CloseHandle(hMap);
+	}
+
+	std::wstringstream ss;
+	boost::archive::text_woarchive ar(ss);
+	ar << s_UrlSecurityList;
+	std::wstring serializedData = ss.str();
+
+	hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), sharedMemName);
+	ATLASSERT( hMap );
+	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
+	::UnmapViewOfFile((LPVOID)sharedMemData);
+
+	::SendMessage(hWndMainFrame, WM_UPDATEURLSECURITYLIST, 0, 0);
 }
 
+void CUrlSecurityOption::CloseOriginalUrlSecurityList(HWND hWndMainFrame)
+{
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
+	if (hMap) {
+		::CloseHandle(hMap);
+	}
+}
 
 
 #if 0
@@ -158,21 +167,89 @@ bool CUrlSecurityOption::SearchString(const CString &strURL)
 #endif
 
 
-
-bool CUrlSecurityOption::FindUrl(const CString &strURL, DWORD* pExProp, DWORD* pExPropOpt, DWORD* pFlags)
+int	CUrlSecurityOption::MatchTest(const CString& strURL)
 {
-	if (!s_bValid)
-		return false;
-	bool rc = false;
-  #if 1	//+++
-	int	n = 0;
-	auto it = s_urlSecurity.begin();
-	for (; it != s_urlSecurity.end(); ++it) {
-		CString 	ptn = it->m_url;
-		if (it->m_flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
-			if (ptn[0] != _T('*')) {
+	int nIndex = 0;
+	auto it = s_UrlSecurityList.begin();
+	for (; it != s_UrlSecurityList.end(); ++it) {
+		//CString ptn = it->m_url;
+		const std::wstring& patern = it->urlPatern;
+		if (it->flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
+			if (patern[0] != L'*') {
 				try {	//正規表現が不正だとエラーが投げられるので、無視するようにする
-					basic_regex<TCHAR> 	re(LPCTSTR(it->m_url));
+					basic_regex<TCHAR> 	re(patern.c_str());
+					if ( regex_search(LPCTSTR(strURL), re) ) {
+						return nIndex;
+						break;
+	 				}
+				} catch (...) {
+					;
+				}
+			}
+		} else {
+			if (patern.find(L'*') == std::wstring::npos && patern.find(L'?') == std::wstring::npos) {
+				//ptn += _T('*');
+				if (patern == (LPCTSTR)strURL) {
+					return nIndex;
+					break;
+				}
+			} else {
+				if ( MtlStrMatchWildCard(patern.c_str(), strURL) ) {
+					return nIndex;
+					break;
+				}
+			}
+		}
+		++nIndex;
+	}
+	return -1;
+}
+
+void CUrlSecurityOption::Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL)
+{
+	auto it = std::find_if(s_UrlSecurityList.begin(), s_UrlSecurityList.end(), [&](const UrlSecurityData& data) {
+		return strURL == data.urlPatern.c_str();
+	});
+	if (it != s_UrlSecurityList.end()) {
+		it->flags = flags;
+		it->opts  = opts;
+		it->opts2 = opts2 & ~1;
+	} else {
+		s_UrlSecurityList.emplace_back( flags, opts, opts2, (LPCTSTR)strURL );
+	}
+}
+
+////////////////////////////////////////////////////////////////////////////////
+// CUrlSecurityForChildFrame
+
+void	CUrlSecurityForChildFrame::ReloadList()
+{
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, m_hWndMainFrame);
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
+	ATLASSERT( hMap );
+	LPTSTR shardMemData = static_cast<LPTSTR>(::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0));
+	std::wstringstream ss;
+	ss << shardMemData;
+	::UnmapViewOfFile(shardMemData);
+	::CloseHandle(hMap);
+	boost::archive::text_wiarchive	ar(ss);
+	ar >> m_UrlSecurityList;
+}
+
+
+bool CUrlSecurityForChildFrame::FindUrl(const CString &strURL, DWORD* pExProp, DWORD* pExPropOpt, DWORD* pFlags)
+{
+	bool rc = false;
+
+	auto it = m_UrlSecurityList.begin();
+	for (; it != m_UrlSecurityList.end(); ++it) {
+		//CString ptn = it->m_url;
+		const std::wstring& patern = it->urlPatern;
+		if (it->flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
+			if (patern[0] != L'*') {
+				try {	//正規表現が不正だとエラーが投げられるので、無視するようにする
+					basic_regex<TCHAR> 	re(patern.c_str());
 					if ( regex_search(LPCTSTR(strURL), re) ) {
 						rc = true;
 						break;
@@ -182,14 +259,14 @@ bool CUrlSecurityOption::FindUrl(const CString &strURL, DWORD* pExProp, DWORD* p
 				}
 			}
 		} else {
-			if (ptn.Find(_T('*')) < 0 && ptn.Find(_T('?')) < 0) {
+			if (patern.find(L'*') == std::wstring::npos && patern.find(L'?') == std::wstring::npos) {
 				//ptn += _T('*');
-				if (ptn == strURL) {
+				if (patern == (LPCTSTR)strURL) {
 					rc = true;
 					break;
 				}
 			} else {
-				if ( MtlStrMatchWildCard(ptn, strURL) ) {
+				if ( MtlStrMatchWildCard(patern.c_str(), strURL) ) {
 					rc = true;
 					break;
 				}
@@ -198,51 +275,25 @@ bool CUrlSecurityOption::FindUrl(const CString &strURL, DWORD* pExProp, DWORD* p
 	}
 	if (rc) {
 		if (pFlags)
-			*pFlags		= it->m_flags;
+			*pFlags		= it->flags;
 		if (pExProp)
-			*pExProp	= it->m_opts;
+			*pExProp	= it->opts;
 		if (pExPropOpt)
-			*pExPropOpt	= it->m_opts2 & ~1;
+			*pExPropOpt	= it->opts2 & ~1;
 	}
 	return rc;
-  #else
-	COptUtlList::iterator it = MtlFindStringWildCard(s_urlSecurity.begin(), s_urlSecurity.end(), strURL);
-	if (it == s_urlSecurity.end())
-		return false;
-	if (pFlags)
-		*pFlags		= it->m_flags;
-	if (pExprop)
-		*pExprop	= it->m_opts;
-  #endif
-}
-
-
-
-void CUrlSecurityOption::Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL)
-{
-	COptUrlList::iterator it = std::find(s_urlSecurity.begin(), s_urlSecurity.end(), COptUrl(0,0,0,strURL));
-	if (it != s_urlSecurity.end()) {
-		it->m_flags = flags;
-		it->m_opts  = opts;
-		it->m_opts2 = opts2 & ~1;
-	} else {
-		s_urlSecurity.push_back( COptUrl(flags, opts, opts2, strURL) );
-	}
 }
 
 // セキュリティをもとに戻すかどうか(このURLでのみ有効)
-bool CUrlSecurityOption::IsUndoSecurity(const CString& strURL)
+bool CUrlSecurityForChildFrame::IsUndoSecurity(const CString& strURL)
 {
-	if (!s_bValid)
-		return false;
-
-	for (auto it = s_urlSecurity.cbegin(); it != s_urlSecurity.cend(); ++it) {
-		if (it->m_flags & USP_ONLYTHISURL) {
-			CString 	ptn = it->m_url;
-			if (it->m_flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
-				if (ptn[0] != _T('*')) {
+	for (auto it = m_UrlSecurityList.cbegin(); it != m_UrlSecurityList.cend(); ++it) {
+		if (it->flags & USP_ONLYTHISURL) {
+			const std::wstring& patern = it->urlPatern;
+			if (it->flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
+				if (patern[0] != _T('*')) {
 					try {	//正規表現が不正だとエラーが投げられるので、無視するようにする
-						basic_regex<TCHAR> 	re(LPCTSTR(it->m_url));
+						basic_regex<TCHAR> 	re(patern.c_str());
 						if ( regex_search(LPCTSTR(strURL), re) ) {
 							return true;
 	 					}
@@ -251,13 +302,13 @@ bool CUrlSecurityOption::IsUndoSecurity(const CString& strURL)
 					}
 				}
 			} else {
-				if (ptn.Find(_T('*')) < 0 && ptn.Find(_T('?')) < 0) {
+				if (patern.find(L'*') == std::wstring::npos && patern.find(L'?') == std::wstring::npos) {
 					//ptn += _T('*');
-					if (ptn == strURL) {
+					if (strURL == patern.c_str()) {
 						return true;
 					}
 				} else {
-					if ( MtlStrMatchWildCard(ptn, strURL) ) {
+					if ( MtlStrMatchWildCard(patern.c_str(), strURL) ) {
 						return true;
 					}
 				}
@@ -268,22 +319,17 @@ bool CUrlSecurityOption::IsUndoSecurity(const CString& strURL)
 }
 
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //CUrlSecurityPropertyPageの定義
 ////////////////////////////////////////////////////////////////////////////////
 
 // Constructor
-CUrlSecurityPropertyPage::CUrlSecurityPropertyPage(const CString &strAddressBar)
+CUrlSecurityPropertyPage::CUrlSecurityPropertyPage(const CString &strAddressBar, HWND hWndMainFrame)
 	: m_strAddressBar(strAddressBar)
+	, m_hWndMainFrame(hWndMainFrame)
 	, m_wndList(this, 1)
 {
-	m_nValid  = CUrlSecurityOption::s_bValid		 != 0;
-  #if 1	//+++ +mod.1.35にて、必ず0書き込みされてしまってるので、しばらく強制的に1にする...
-	m_nActPag = 1;
-  #else
-	m_nActPag = CUrlSecurityOption::s_bActivePageToo != 0;
-  #endif
+	m_nValid  = CUrlSecurityOption::s_bValid;
 }
 
 
@@ -325,8 +371,9 @@ BOOL CUrlSecurityPropertyPage::_DoDataExchange(BOOL bSaveAndValidate)	// get dat
 
 		m_listbox.ResetContent();
 		
-		auto funcAddString = [this](const COptUrl& it) { m_listbox.AddString(it.m_url); };
-		std::for_each(CUrlSecurityOption::s_urlSecurity.begin(), CUrlSecurityOption::s_urlSecurity.end(), funcAddString);
+		std::for_each(s_UrlSecurityList.begin(), s_UrlSecurityList.end(), [this](const UrlSecurityData& data) {
+			m_listbox.AddString(data.urlPatern.c_str());
+		});
 
 		if (!m_edit.m_hWnd)
 			m_edit.Attach( GetDlgItem(IDC_URL_EDIT) );
@@ -374,9 +421,11 @@ void CUrlSecurityPropertyPage::OnDelCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 		for (std::list<int>::iterator it = sellist.begin(); it != sellist.end(); ++it) {
 			CString 	strURL;
 			m_listbox.GetText(*it, strURL);
-			CUrlSecurityOption::COptUrlList::iterator it2 = std::find(CUrlSecurityOption::s_urlSecurity.begin(), CUrlSecurityOption::s_urlSecurity.end(), CUrlSecurityOption::COptUrl(0,0,0,strURL));
-			if (it2 != CUrlSecurityOption::s_urlSecurity.end())
-				CUrlSecurityOption::s_urlSecurity.erase(it2);
+			auto it2 = std::find_if(s_UrlSecurityList.begin(), s_UrlSecurityList.end(), [&](const UrlSecurityData& data) {
+				return strURL == data.urlPatern.c_str();
+			});
+			if (it2 != s_UrlSecurityList.end())
+				s_UrlSecurityList.erase(it2);
 
 			m_listbox.DeleteString(*it);
 		}
@@ -392,7 +441,7 @@ void CUrlSecurityPropertyPage::OnDelCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 void CUrlSecurityPropertyPage::OnDelAllCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
 	m_listbox.ResetContent();
-	CUrlSecurityOption::COptUrlList().swap( CUrlSecurityOption::s_urlSecurity );
+	s_UrlSecurityList.clear();
 
 	DispExOpts();
 }
@@ -417,7 +466,7 @@ void CUrlSecurityPropertyPage::OnAddCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 		m_listbox.SetSel(nIndex, TRUE);
 	}
 
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
 
 	DispExOpts();
 }
@@ -438,7 +487,7 @@ void CUrlSecurityPropertyPage::OnSelChange(UINT /*code*/, int /*id*/, HWND /*hWn
 
 	DispExOpts();
 
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
 }
 
 // リストをダブルクリックした
@@ -458,27 +507,9 @@ void CUrlSecurityPropertyPage::OnListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags
 
 void CUrlSecurityPropertyPage::_GetData()
 {
-	// update ignored urls list
-	int 	nCount = m_listbox.GetCount();
-	CString strbuf;
-
-	CUrlSecurityOption::COptUrlList 	urlSecurity;
-	for (int i = 0; i < nCount; i++) {
-		m_listbox.GetText(i, strbuf);
-		CUrlSecurityOption::COptUrlList::iterator it = std::find(CUrlSecurityOption::s_urlSecurity.begin(), CUrlSecurityOption::s_urlSecurity.end(), CUrlSecurityOption::COptUrl(0,0,0,strbuf));
-		if (it != CUrlSecurityOption::s_urlSecurity.end())
-			urlSecurity.push_back( *it );
-		else
-			urlSecurity.push_back( CUrlSecurityOption::COptUrl(0,0,0,strbuf) );
-	}
-	CUrlSecurityOption::s_urlSecurity.swap( urlSecurity );
-
-	CUrlSecurityOption::s_bValid		 = m_nValid  != 0;
-  #if 1	//+++ +mod.1.35にて、必ず0書き込みされてしまってるので、しばらく強制的に1にする...
-	CUrlSecurityOption::s_bActivePageToo = 1;
-  #else
-	CUrlSecurityOption::s_bActivePageToo = m_nActPag != 0;
-  #endif
+	CUrlSecurityOption::s_bValid = m_nValid != 0;
+	WriteProfile();
+	UpdateOriginalUrlSecurityList(m_hWndMainFrame);
 }
 
 
@@ -494,16 +525,13 @@ void CUrlSecurityPropertyPage::OnBtnUp(UINT /*wNotifyCode*/, int wID, HWND /*hWn
 	m_listbox.GetText(nIndex - 1, strKeep);
 	m_listbox.DeleteString(nIndex - 1);
 	m_listbox.InsertString(nIndex, strKeep);
-
-	CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::get_optUrlList_iterator(nIndex - 1);
-	CUrlSecurityOption::COptUrl					tmp ( *it );
-	it = CUrlSecurityOption::s_urlSecurity.erase(it);
-	//if (it == CUrlSecurityOption::s_urlSecurity.end())
-	//	return;
+	auto it = std::next(s_UrlSecurityList.begin(), nIndex - 1);
+	UrlSecurityData	tmp(*it);
+	it = s_UrlSecurityList.erase(it);
 	++it;
-	CUrlSecurityOption::s_urlSecurity.insert(it, tmp);
+	s_UrlSecurityList.insert(it, tmp);
 
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
 }
 
 
@@ -521,15 +549,15 @@ void CUrlSecurityPropertyPage::OnBtnDown(UINT /*wNotifyCode*/, int wID, HWND /*h
 	m_listbox.DeleteString(nIndex + 1);
 	m_listbox.InsertString(nIndex, strKeep);
 
-	CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::get_optUrlList_iterator(nIndex);
-	CUrlSecurityOption::COptUrl					tmp ( *it );
-	it = CUrlSecurityOption::s_urlSecurity.erase(it);
-	if (it == CUrlSecurityOption::s_urlSecurity.end())
+	auto it = std::next(s_UrlSecurityList.begin(), nIndex);
+	UrlSecurityData tmp(*it);
+	it = s_UrlSecurityList.erase(it);
+	if (it == s_UrlSecurityList.end())
 		return;
 	++it;
-	CUrlSecurityOption::s_urlSecurity.insert(it, tmp);
+	s_UrlSecurityList.insert(it, tmp);
 
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
 }
 
 
@@ -542,50 +570,57 @@ void CUrlSecurityPropertyPage::OnBtnSetting(UINT /*wNotifyCode*/, int wID, HWND 
 	int l = m_listbox.GetCount();
 	if (nIndex < 0 || nIndex >= l)
 		return;
-	CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::get_optUrlList_iterator(nIndex);
-
-	CString		str		= it->m_url;
-	unsigned	flags	= it->m_flags;
-	unsigned	opts	= it->m_opts;
-	unsigned	opts2	= it->m_opts2 & ~1;		//+++
+	auto it = std::next(s_UrlSecurityList.begin(), nIndex);
+	
+	CString str	= it->urlPatern.c_str();
+	unsigned	flags	= it->flags;
+	unsigned	opts	= it->opts;
+	unsigned	opts2	= it->opts2 & ~1;		//+++
 	CExPropertyDialog2	dlg(str, flags, opts, opts2);
 	dlg.DoModal();
-	if (it->m_url != str || flags != it->m_flags || opts != it->m_opts || opts2 != it->m_opts2) {
+	if (it->urlPatern.c_str() != str || flags != it->flags || opts != it->opts || opts2 != it->opts2) {
 		if (str.IsEmpty()) {
 			OnDelCmd(0,0,NULL);
 		} else {
-			it->m_url   = str;
-			it->m_flags = flags;
-			it->m_opts  = opts;
-			it->m_opts2 = opts2;
+			it->urlPatern   = str;
+			it->flags = flags;
+			it->opts  = opts;
+			it->opts2 = opts2;
 			m_listbox.DeleteString(nIndex);
 			m_listbox.InsertString(nIndex, str);
 		}
 	}
 
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
 
 	DispExOpts();
 }
 
-
-
-void CUrlSecurityPropertyPage::DebugPrint()
+void	CUrlSecurityPropertyPage::OnMatchTest(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
-	ATLASSERT(CUrlSecurityOption::s_urlSecurity.size() == m_listbox.GetCount());
-	int 	n = 0;
-	for (CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::s_urlSecurity.begin();
-		it != CUrlSecurityOption::s_urlSecurity.end();
-		++it)
-	{
-		CString		name;
-		m_listbox.GetText(n, name);
-		ErrorLogPrintf(_T("%3d %3d,%#08x %s\t%s\n"), n, it->m_flags, it->m_opts, LPCTSTR(it->m_url), LPCTSTR(name));
-		++n;
+	int nIndex = MatchTest(m_strAddressBar);
+	if (nIndex != -1) {
+		auto it = std::next(s_UrlSecurityList.begin(), nIndex);
+		CString msg;
+		msg.Format(_T("「%s」にマッチしました"), it->urlPatern.c_str());
+		MessageBox(msg, m_strAddressBar);
+	} else {
+		MessageBox(_T("どれにもマッチしませんでした"), m_strAddressBar);
 	}
 }
 
 
+void CUrlSecurityPropertyPage::DebugPrint()
+{
+	ATLASSERT(s_UrlSecurityList.size() == m_listbox.GetCount());
+	int 	n = 0;
+	for (auto it = s_UrlSecurityList.begin(); it != s_UrlSecurityList.end(); ++it) {
+		CString		name;
+		m_listbox.GetText(n, name);
+		//ErrorLogPrintf(_T("%3d %3d,%#08x %s\t%s\n"), n, it->m_flags, it->m_opts, LPCTSTR(it->m_url), LPCTSTR(name));
+		++n;
+	}
+}
 
 void CUrlSecurityPropertyPage::DispExOpts()
 {
@@ -597,20 +632,18 @@ void CUrlSecurityPropertyPage::DispExOpts()
 	int		flags	= 0;
 	int		l 		= m_listbox.GetCount();
 	if (0 <= nIndex && nIndex < l) {
-		CUrlSecurityOption::COptUrlList::iterator 	it = CUrlSecurityOption::get_optUrlList_iterator(nIndex);
-		exopts  = it->m_opts;
-		exopts2 = it->m_opts2 & ~1;
-		flags   = it->m_flags;
+		auto 	it = std::next(s_UrlSecurityList.begin(), nIndex);
+		exopts  = it->opts;
+		exopts2 = it->opts2 & ~1;
+		flags   = it->flags;
 	}
 	DispExOptsFlag(exopts, exopts2, flags);
-	InvalidateRect(NULL, TRUE);
 }
-
 
 
 void CUrlSecurityPropertyPage::DispExOptsFlag(unsigned exopts, unsigned exopts2, unsigned flags)
 {
-	CButton(GetDlgItem(IDC_CHK_URLSEC_REGEX    )).SetCheck( (flags & 1 ) != 0 );
+	CButton(GetDlgItem(IDC_CHK_URLSEC_REGEX)).SetCheck( (flags & 1 ) != 0 );
 
 	CExProperty		prop(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, exopts, exopts2);
 	//CExProperty	prop(0, 0, 0, exopts, 0);

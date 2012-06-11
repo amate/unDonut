@@ -299,9 +299,11 @@ public:
 		USER_MSG_WM_UIUPDATE()
 		USER_MSG_WM_BROWSERTITLECHANGE		( OnBrowserTitleChange		)
 		USER_MSG_WM_BROWSERLOCATIONCHANGE	( OnBrowserLocationChange	)
-
 		USER_MSG_WM_OPEN_WITHEXPROP			( OnOpenWithExProp	)	// SearchBar‚©‚ç
 		USER_MSG_WM_HILIGHTSWITCHCHANGE		( OnHilightSwitchChange	)
+		USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
+
+		USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
 
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loop–hŽ~
@@ -571,6 +573,9 @@ public:
 	void	OnHilightSwitchChange(bool bOn) {
 		m_GlobalConfigManageData.pGlobalConfig->bHilightSwitch = bOn;
 	}
+	void	OnUpdateUrlSecurityList();
+
+	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }
 
 	void	OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl);

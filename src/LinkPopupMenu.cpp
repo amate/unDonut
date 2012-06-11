@@ -1157,7 +1157,8 @@ DROPEFFECT CLinkPopupMenu::OnDragOver(IDataObject *pDataObject, DWORD dwKeyState
 		case htItemTop:		rcEdge.top = item.rcItem.top;		break;
 		case htItemBottom:	rcEdge.top = item.rcItem.bottom - 2;	break;
 		}
-		_DrawInsertEdge(rcEdge);
+
+		_DrawInsertEdge(_GetClientItemRect(rcEdge));
 
 		if (m_rcInvalidateOnDrawingInsertionEdge != rcEdge) {
 			_ClearInsertionEdge();
@@ -1666,6 +1667,7 @@ void	CLinkPopupMenu::_ClearInsertionEdge()
 	if (m_rcInvalidateOnDrawingInsertionEdge != CRect()) {
 		CRect rc = m_rcInvalidateOnDrawingInsertionEdge;
 		rc.bottom= rc.top + 2;
+		rc = _GetClientItemRect(rc);
 		InvalidateRect(&rc);
 		UpdateWindow();
 		m_rcInvalidateOnDrawingInsertionEdge.SetRectEmpty();
@@ -1682,7 +1684,7 @@ int		CLinkPopupMenu::_HitTestOnDragging(const CPoint& pt, hitTestFlag& htflag)
 	}
 	for (int i = 0; i < nCount; ++i) {
 		const CRect& rcOrg = m_pFolder->at(i)->rcItem;
-		CRect rcItem = rcOrg;
+		CRect rcItem = _GetClientItemRect(rcOrg);
 		rcItem.left = 0;
 		rcItem.right += kBoundMargin;
 

@@ -192,15 +192,21 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 	pData->pChild->SetThreadRefCount(&nThreadRefCount);
 
 	CWindow wnd = pData->pChild->CreateEx(pData->ConstructData.hWndParent);
-	pData->pChild->Navigate2(pData->ConstructData.strURL);
+	NewChildFrameData& NewChildData = pData->ConstructData;
+	pData->pChild->SetDLCtrl(NewChildData.dwDLCtrl);
+	pData->pChild->SetExStyle(NewChildData.dwExStyle);
+	pData->pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
+	pData->pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
+	pData->pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
+	pData->pChild->Navigate2(NewChildData.strURL);
 
 	DWORD dwOption = 0;
-	if (pData->ConstructData.bActive)
+	if (NewChildData.bActive)
 		dwOption |= TAB_ACTIVE;
-	if (pData->ConstructData.bLink)
+	if (NewChildData.bLink)
 		dwOption |= TAB_LINK;
-	wnd.GetTopLevelWindow().SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
-
+	CWindow wndMainFrame = wnd.GetTopLevelWindow();
+	wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
 
 	class CThreadRefManager : public CMessageFilter
 	{
@@ -387,7 +393,10 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 			dwOption |= TAB_ACTIVE;
 		if (NewChildData.bLink)
 			dwOption |= TAB_LINK;
-		wnd.GetTopLevelWindow().SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+		CWindow wndMainFrame = wnd.GetTopLevelWindow();
+		wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+
+		wndMainFrame.PostMessage(WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE, 0, (LPARAM)hMap);
 	
 		//if (pData->ConstructData.funcCallAfterCreated)
 		//	pData->ConstructData.funcCallAfterCreated(pData->pChild);

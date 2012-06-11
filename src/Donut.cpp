@@ -277,10 +277,8 @@ static bool _PrivateInit()
 // iniÉtÉ@ÉCÉãÇ…ê›íËÇï€ë∂Ç∑ÇÈ
 void _PrivateTerm()
 {
-	CDLControlOption::WriteProfile();
 	CIgnoredURLsOption::WriteProfile();
 	CCloseTitlesOption::WriteProfile();
-	CUrlSecurityOption::WriteProfile();
 	CFileNewOption::WriteProfile();
 	CStartUpOption::WriteProfile();
 	CDonutConfirmOption::WriteProfile();

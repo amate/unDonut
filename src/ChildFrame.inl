@@ -149,32 +149,33 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			m_view.m_bLightRefresh = false;	// 手動でセキュリティを設定したので何もしない
 		} else	{	
 			// URL別セキュリティの設定
-			//DWORD exopts	= 0xFFFFFFFF;
-			//DWORD dlCtlFlg	= 0xFFFFFFFF;
-			//DWORD exstyle	= 0xFFFFFFFF;
-			//DWORD autoRefresh = 0xFFFFFFFF;
-			//DWORD dwExPropOpt = 8;
-			//if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
-			//	m_view.PutDLControlFlags(CDLControlOption::s_dwDLControlFlags);
-			//	SetExStyle(CDLControlOption::s_dwExtendedStyleFlags);
-			//}
-			//if (CUrlSecurityOption::FindUrl( strURL, &exopts, &dwExPropOpt, 0 )) {
-			//	CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, exopts, dwExPropOpt);
-			//	dlCtlFlg	= ExProp.GetDLControlFlags();
-			//	exstyle		= ExProp.GetExtendedStyleFlags();
-			//	autoRefresh = ExProp.GetAutoRefreshFlag();
-			//}
+			if (m_pGlobalConfig->bUrlSecurityValid) {
+				DWORD exopts	= 0xFFFFFFFF;
+				DWORD dlCtlFlg	= 0xFFFFFFFF;
+				DWORD exstyle	= 0xFFFFFFFF;
+				DWORD autoRefresh = 0xFFFFFFFF;
+				DWORD dwExPropOpt = 8;
+				CString nowLocation = GetLocationURL();
+				if (m_UrlSecurity.IsUndoSecurity(nowLocation)) {
+					m_view.PutDLControlFlags(m_pGlobalConfig->dwDLControlFlags);
+					SetExStyle(m_pGlobalConfig->dwExtendedStyleFlags);
+				}
+				if (m_UrlSecurity.FindUrl( strURL, &exopts, &dwExPropOpt, 0 )) {
+					CExProperty  ExProp(m_pGlobalConfig->dwDLControlFlags, m_pGlobalConfig->dwExtendedStyleFlags, 0, exopts, dwExPropOpt);
+					dlCtlFlg	= ExProp.GetDLControlFlags();
+					exstyle		= ExProp.GetExtendedStyleFlags();
+					autoRefresh = ExProp.GetAutoRefreshFlag();
+				}
 
-			////+++ url別拡張プロパティの処理....
-			////+++	戻る・進むでの拡張プロパティ情報の頁ごとの保存ができていないので、破綻する...
-			////+++	が、バグっても反映されることのほうが意味ありそうなので利用
-			//if (CUrlSecurityOption::s_bValid) {
-			//	if (exopts != 0xFFFFFFFF && CUrlSecurityOption::activePageToo()) {
-			//		m_view.PutDLControlFlags( dlCtlFlg );
-			//		m_view.SetAutoRefreshStyle( autoRefresh );
-			//		SetExStyle( exstyle );	//+++メモ: マウス中ボタンクリックでの、リンク別タブ表示の場合、まだタブ位置未決定のため設定できない...
-			//	}
-			//}
+				//+++ url別拡張プロパティの処理....
+				//+++	戻る・進むでの拡張プロパティ情報の頁ごとの保存ができていないので、破綻する...
+				//+++	が、バグっても反映されることのほうが意味ありそうなので利用
+				if (exopts != 0xFFFFFFFF) {
+					m_view.PutDLControlFlags( dlCtlFlg );
+					m_view.SetAutoRefreshStyle( autoRefresh );
+					SetExStyle( exstyle );	//+++メモ: マウス中ボタンクリックでの、リンク別タブ表示の場合、まだタブ位置未決定のため設定できない...
+				}
+			}
 		}
 
 		/* Faviconを白紙に設定 */
@@ -842,6 +843,9 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_GlobalConfigManageData = GetGlobalConfig(GetTopLevelWindow());
 	m_pGlobalConfig	= m_GlobalConfigManageData.pGlobalConfig;
 	m_view.SetGlobalConfig(m_pGlobalConfig);
+
+	m_UrlSecurity.SetMainFrameHWND(GetTopLevelWindow());
+	m_UrlSecurity.ReloadList();
 
 	if (CCustomContextMenuOption::s_menuDefault.IsNull())
 		CCustomContextMenuOption::GetProfile();

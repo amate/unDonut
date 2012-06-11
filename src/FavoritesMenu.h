@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include "BeginMsgMap_decl.h"
+
 // for debug
 #ifdef _DEBUG
 	const bool _Mtl_FavoritesMenu_traceOn = false;

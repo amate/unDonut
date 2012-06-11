@@ -19,7 +19,7 @@
 #include "ChildFrame.h"
 #include "FaviconManager.h"
 #include "PluginManager.h"
-
+#include "ChildFrameCommandUIUpdater.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // CTabCtrlItem : É^ÉuÇPå¬ÇÃèÓïÒ
@@ -2084,7 +2084,10 @@ HRESULT CDonutTabBar::Impl::OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, 
 			ATLASSERT( ::IsWindow(hWnd) );
 			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
 			CString 	 strName = MtlGetWindowText(hWnd);
-			CString 	 strUrl  = pChild->GetLocationURL();
+			CString 	 strUrl;
+			auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(hWnd);
+			if (pChildFrameUIData)
+				strUrl = pChildFrameUIData->strLocationURL;
 
 			if ( strUrl.Left(5) == _T("file:") ) {	// Donut, to be explorer or not
 				strName.Empty();

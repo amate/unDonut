@@ -8,6 +8,7 @@
 #include "../MtlUpdateCmdUI.h"
 #include "../MtlProfile.h"
 #include "../MtlUser.h"
+#include "../resource.h"
 
 enum EMain_Ex {
 	MAIN_EX_NEWWINDOW				= 0x00000001L,
@@ -16,7 +17,7 @@ enum EMain_Ex {
 	MAIN_EX_ONEINSTANCE 			= 0x00000008L,
 	MAIN_EX_WINDOWLIMIT 			= 0x00000010L,
 	MAIN_EX_NOCLOSEDFG				= 0x00000020L,
-	MAIN_EX_NOMDI					= 0x00000040L,
+	// MAIN_EX_NOMDI					= 0x00000040L,
 	// MAIN_EX_VIEWCLIPBOARD		= 0x00000080L,
 	MAIN_EX_FULLSCREEN				= 0x00000100L,
 	MAIN_EX_BACKUP					= 0x00000200L,
@@ -69,6 +70,11 @@ enum EAutoImageResize {
 	AUTO_IMAGE_RESIZE_LCLICK	= 2,
 };
 
+enum BROWSEROPERATINGMODE {
+	kMultiThreadMode  = 0,
+	kMultiProcessMode = 1,
+};
+
 /////////////////////////////////////////////////////////////////////////////
 // CMainOption
 
@@ -82,8 +88,7 @@ public:
 	static DWORD	s_dwExplorerBarStyle;
 
 	static DWORD	s_dwBackUpTime;
-	static DWORD	s_dwAutoRefreshTime;		// UDT DGSTR ( dai
-	static bool 	s_bTabMode;
+	static DWORD	s_dwAutoRefreshTime;
 	static volatile bool	s_bAppClosing;
 
 	static volatile bool 	s_bIgnoreUpdateClipboard;	// for insane WM_DRAWCLIBOARD
@@ -101,6 +106,9 @@ public:
 	static int		s_RecentClosedTabMenuType;
 
 	static int		s_nAutoImageResizeType;
+
+	/// ブラウザビューの動作モード　起動時にのみ値を設定する
+	static BROWSEROPERATINGMODE s_BrowserOperatingMode;
 
 private:
 
@@ -173,7 +181,6 @@ public:
 		DDX_CHECK( IDC_CHECK_MAIN_NOACTIVATE_NEWWIN 	, m_nNoActivateNewWin	)
 		DDX_CHECK( IDC_CHECK_EXTERNALNEWTAB				, s_bExternalNewTab		)
 		DDX_CHECK( IDC_CHECK_EXTERNALNEWTABACTIVE		, s_bExternalNewTabActive)
-		DDX_CHECK( IDC_CHECK_MAIN_NOMDI 				, m_nNoMDI				)
 		DDX_CHECK( IDC_CHECK_MAIN_INHERIT_OPTIONS		, m_nInheritOptions 	)
 		DDX_CHECK( IDC_CHECK_ONEINSTANCE				, m_nOneInstance		)
 		DDX_CHECK( IDC_CHECK_MAIN_LIMIT 				, m_nLimit				)
@@ -187,6 +194,7 @@ public:
 		DDX_CHECK( IDC_CHK_IGNORE_BLANK					, s_bIgnore_blank		)
 		DDX_CHECK( IDC_CHK_USECUSTOMFINDBAR				, s_bUseCustomFindBar	)
 		//+++ DDX_CHECK( IDC_CHECK_NOCLOSE_NAVILOCK 	, m_nNoCloseNL			)
+		DDX_COMBO_INDEX( IDC_COMBO_BROWSREOPERATINGMODE	, m_nBrowserOperatingMode)
 
 		DDX_INT_RANGE( IDC_EDIT_MAIN_LIMITEDCOUNT		, m_nMaxWindowCount, 0, 255 )
 		DDX_INT_RANGE( IDC_EDIT_MAIN_BACKUPTIME 		, m_nBackUpTime    , 1, 120 )
@@ -199,11 +207,13 @@ public:
 
 	// Message map and handlers
 	BEGIN_MSG_MAP( CMainPropertyPage )
+		MSG_WM_INITDIALOG( OnInitDialog )
 		COMMAND_ID_HANDLER_EX( IDC_CHECK_EXTERNALNEWTAB, OnCheckExternalNewTab )
 		COMMAND_ID_HANDLER_EX( IDC_BUTTON_BAR_FONT, OnFont )
 		CHAIN_MSG_MAP( CPropertyPageImpl<CMainPropertyPage> )
 	END_MSG_MAP()
 
+	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
 	void OnCheckExternalNewTab(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
 	void OnFont(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl);
 	
@@ -222,7 +232,6 @@ private:
 	int 	m_nOneInstance;
 	int 	m_nLimit;
 	int 	m_nNoCloseDFG;
-	int 	m_nNoMDI;
 	int 	m_nBackUp;
 	int 	m_nAddFavoriteOldShell;
 	int 	m_nOrgFavoriteOldShell;
@@ -236,6 +245,7 @@ private:
 	int 	m_nKillDialog;
 	int 	m_nInheritOptions;
 	//+++ int		m_nNoCloseNL;			//+++ ナビロック時閉じれなくするフラグ
+	int		m_nBrowserOperatingMode;
 
 	CWindow m_wnd;
 	MTL::CLogFont	m_lf;

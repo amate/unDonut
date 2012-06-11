@@ -42,23 +42,6 @@ enum DonutOpenFileFlags {
 #define WM_MOUSEWHEEL			0x020A
 #endif
 
-enum EDvs_Ex {
-	DVS_EX_OPENNEWWIN		= 0x00000001L,
-  #ifdef USE_ORG_UNDONUT_INI				//+++ unDonutオリジナルの値
-	DVS_EX_MESSAGE_FILTER	= 0x00000002L,
-	DVS_EX_MOUSE_GESTURE	= 0x00000004L,
-	DVS_EX_BLOCK_MAILTO 	= 0x00000008L,
-	DVS_EX_FLATVIEW 		= 0x00000010L,	//+++ オリジナルにはないので適当に設定.
-  #else										//+++ unDonut+ での値 (+modも)
-	DVS_EX_FLATVIEW 		= 0x00000002L,	//\\ 廃止予定
-	DVS_EX_MESSAGE_FILTER	= 0x00000004L,
-	DVS_EX_MOUSE_GESTURE	= 0x00000008L,
-	DVS_EX_BLOCK_MAILTO 	= 0x00000010L,
-  #endif
-	//DVS_EX_NEWWINDOWFLG		= 0x00000020L,	// リンクを開くことと同じようにする
-};
-
-
 #define DONUT_THREADWAIT		5000					//+++ スレッドの終了に5秒待つ
 #define DONUT_BACKUP_THREADWAIT 90000					//+++ 自動更新スレッドの終了に90秒待つ
 
@@ -75,7 +58,6 @@ enum WmCopyDataUseage {
 // UH
 __declspec(selectany) BOOL	   	g_bSwapProxy 		 = FALSE;
 __declspec(selectany) DWORD    	g_dwProgressPainWidth = 0;			//*+++ 手抜きでグローバル変数。あとで、なんとかする...
-extern	const LPCTSTR			g_lpszLight[];						//*+++ ヘッダへ
 extern	class CMainFrame *		g_pMainWnd;
 
 
@@ -727,6 +709,28 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
+//	void OnCleanUpNewProcessSharedMemHandle(HANDLE hDel)
+#define WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE	(WM_USER + 131)
+#define USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE(func)	\
+	if (uMsg == WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HANDLE)wParam);			\
+		lResult = 0;								\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	void OnUpdateUrlSecurityList()
+#define WM_UPDATEURLSECURITYLIST	(WM_USER + 132)
+#define USER_MSG_WM_UPDATEURLSECURITYLIST(func)	\
+	if (uMsg == WM_UPDATEURLSECURITYLIST) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();			\
+		lResult = 0;								\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)
@@ -738,47 +742,6 @@ enum TabCreateOption {
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
 	}
-
-//----------------------------------------------------------------------------
-#define BEGIN_MSG_MAP_EX_decl(theClass) 				\
-public:													\
-	BOOL m_bMsgHandled; 								\
-	/* "handled" management for cracked handlers */ 	\
-	__inline BOOL IsMsgHandled() const {				\
-		return m_bMsgHandled; 							\
-	} 													\
-	__inline void SetMsgHandled(BOOL bHandled) {		\
-		m_bMsgHandled = bHandled; 						\
-	} 													\
-	BOOL ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& lResult, DWORD dwMsgMapID = 0); \
-	BOOL _ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& lResult, DWORD dwMsgMapID);
-
-
-
-#define BEGIN_MSG_MAP_EX_impl(theClass) 				\
-	BOOL theClass::ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& lResult, DWORD dwMsgMapID) \
-	{ 													\
-		BOOL bOldMsgHandled = m_bMsgHandled; 			\
-		BOOL bRet 			= _ProcessWindowMessage(hWnd, uMsg, wParam, lParam, lResult, dwMsgMapID); \
-		m_bMsgHandled 		= bOldMsgHandled;			\
-		return bRet;									\
-	} 													\
-	BOOL theClass::_ProcessWindowMessage(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, LRESULT& lResult, DWORD dwMsgMapID) \
-	{ 													\
-		BOOL bHandled = TRUE; 							\
-		hWnd; 											\
-		uMsg; 											\
-		wParam; 										\
-		lParam; 										\
-		lResult; 										\
-		bHandled; 										\
-		switch(dwMsgMapID) 								\
-		{ 												\
-		case 0:
-
-
-#define BEGIN_DDX_MAP_decl(theClass)
-#define END_DDX_MAP_decl(theClass)
 
 
 #endif // __DONUTDEFINE_H__

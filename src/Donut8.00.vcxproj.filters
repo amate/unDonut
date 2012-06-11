@@ -979,6 +979,9 @@
     <ClInclude Include="PopupMenu.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="BeginMsgMap_decl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

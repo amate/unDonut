@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
-// Microsoft Visual C++ generated include file.
-// Used by Donut.rc
+// Microsoft Visual C++ で生成されたインクルード ファイル。
+// Donut.rc で使用
 //
 #define ID_GETFAVICONFROMFILE           3
 #define IDD_ABOUTBOX                    100
@@ -589,6 +589,9 @@
 #define IDC_BTN_LINKIMPORTFROMFOLDER    1438
 #define IDC_BTN_LINKEXPORTTOFOLDER      1439
 #define IDC_EDIT_MAXTEXTWIDTH           1440
+#define IDC_COMBO_BROWSREOPERATINGMODE  1441
+#define IDC_BUTTON_MUTCHTEST            1442
+#define IDC_BUTTON_MATCHTEST            1442
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -972,9 +975,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        327
+#define _APS_NEXT_RESOURCE_VALUE        328
 #define _APS_NEXT_COMMAND_VALUE         33226
-#define _APS_NEXT_CONTROL_VALUE         1441
+#define _APS_NEXT_CONTROL_VALUE         1443
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

@@ -12,6 +12,9 @@
 class CFileNotification 
 {
 public:
+	// Constants
+	enum { kWaitThreadTime = 5000 };
+
 	// Ctor/Dtor
 	CFileNotification()
 		: m_hNotification(INVALID_HANDLE_VALUE)
@@ -57,7 +60,7 @@ private:
 
 		ATLVERIFY( ::SetEvent(m_hExitEvent) );
 
-		if (!m_thread_Notification.timed_join(boost::posix_time::milliseconds(DONUT_THREADWAIT)))
+		if (!m_thread_Notification.timed_join(boost::posix_time::milliseconds(kWaitThreadTime)))
 			ATLASSERT(FALSE);
 
 		::CloseHandle(m_hExitEvent);

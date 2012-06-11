@@ -4,6 +4,7 @@
 #include "resource.h"
 #include "DonutOption.h"
 #include "IniFile.h"
+#include "DonutPFunc.h"
 
 ////////////////////////////////////////////////////////////////////////////
 // CTreeViewPropertySheet

@@ -7,7 +7,7 @@
 
 #include "stdafx.h"
 #include "IniFile.h"
-//#include "DonutPFunc.h"
+#include "Misc.h"
 
 
 #if defined USE_ATLDBGMEM

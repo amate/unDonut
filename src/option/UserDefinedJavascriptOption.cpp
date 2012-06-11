@@ -301,7 +301,7 @@ unique_ptr<UserDefinedJsData> CUserDefinedJsOption::_CreateJsData(const CString&
 	filestream.clear();
 	filestream.seekg(curPos);
 	auto scriptSize = LastPos - curPos;
-	CTempBuffer<wchar_t>	strtemp(scriptSize + 1);
+	CTempBuffer<wchar_t>	strtemp(static_cast<int>(scriptSize) + 1);
 	filestream.get(strtemp, scriptSize, L'\0');
 	pData->strScript = strtemp;
 

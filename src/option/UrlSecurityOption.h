@@ -9,52 +9,71 @@
 
 #include "../resource.h"
 
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/list.hpp>
+
+struct UrlSecurityData
+{
+	DWORD	flags;
+	DWORD	opts;
+	DWORD	opts2;
+	std::wstring urlPatern;
+
+	UrlSecurityData() {	}	// for serialize
+
+	UrlSecurityData(DWORD f, DWORD op, DWORD op2, LPCWSTR url) : flags(f), opts(op), opts2(op2), urlPatern(url)
+	{	}
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & flags & opts & opts2 & urlPatern;
+	}
+};
 
 /// URL別セキュリティ
 class CUrlSecurityOption {
 	friend class CUrlSecurityPropertyPage;
 
 public:
-	class COptUrl {
-	public:
-		COptUrl() : m_opts(0), m_flags(0), m_opts2(0) {}
-		COptUrl(unsigned flags, unsigned opts, unsigned opts2, LPCTSTR pUrl) : m_flags(flags), m_opts(opts), m_opts2(opts2), m_url(pUrl) {;}
-
-		operator LPCTSTR() const { return LPCTSTR(m_url); }		//+++ 無理やり文字列のふりをする
-		bool operator==(const COptUrl& rhs) const { return m_url == rhs.m_url; }
-		bool operator==(LPCTSTR r) const { return m_url == r; }
-
-	public:
-		unsigned	m_flags;
-		unsigned	m_opts;
-		unsigned	m_opts2;		//+++ flatview用に追加
-		CString		m_url;
-	};
-	typedef std::list<COptUrl>		COptUrlList;
-
-	static bool 					s_bValid;		//+++ ref by CMainFrame
+	static bool s_bValid;		//+++ ref by CMainFrame
 
 	static void GetProfile();
 	static void WriteProfile();
 
-	//static bool SearchString(const CString &strURL);
-	static bool FindUrl(const CString &strURL, DWORD* exprop, DWORD* exprop2, DWORD* flags);
-	static void Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL);
-	static bool IsUndoSecurity(const CString& strURL);
+	static void UpdateOriginalUrlSecurityList(HWND hWndMainFrame);
+	static void CloseOriginalUrlSecurityList(HWND hWndMainFrame);
 
-  #if 1	//+++ とりあえず常時onにしとく
-	static bool activePageToo() { return 1; }
-  #else
-	static bool activePageToo() { return s_bActivePageToo; }
-  #endif
+	//static bool SearchString(const CString &strURL);
+	static int	MatchTest(const CString& strURL);
+	static void Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL);
 
 private:
-	static COptUrlList				s_urlSecurity;
-	static bool						s_bActivePageToo;
-
-	static COptUrlList::iterator	get_optUrlList_iterator(unsigned no);
+	static std::list<UrlSecurityData>	s_UrlSecurityList;
 };
 
+class CUrlSecurityForChildFrame
+{
+public:
+	void	SetMainFrameHWND(HWND hWnd) { m_hWndMainFrame = hWnd; }
+
+	void	ReloadList();
+
+	bool	FindUrl(const CString& strURL, DWORD* exprop, DWORD* exprop2, DWORD* flags);
+	bool	IsUndoSecurity(const CString& strURL);
+
+private:
+	// Data members
+	HWND	m_hWndMainFrame;	// for Sharedmemory name
+	std::list<UrlSecurityData>	m_UrlSecurityList;
+
+};
+
+////////////////////////////////////////////////////////////////////////////
+// URL別セキュリティ
 
 class CUrlSecurityPropertyPage
 	: public CPropertyPageImpl<CUrlSecurityPropertyPage>
@@ -66,12 +85,11 @@ public:
 	enum { IDD = IDD_PROPPAGE_URLSECURITY };
 
 	// Constructor
-	CUrlSecurityPropertyPage(const CString &strAddressBar);
+	CUrlSecurityPropertyPage(const CString &strAddressBar, HWND hWndMainFrame);
 
 	// DDX map
 	BEGIN_DDX_MAP( CUrlSecurityPropertyPage )
 		DDX_CHECK( IDC_CHK_URLSECURITY		, m_nValid  )
-		DDX_CHECK( IDC_CHK_URLSEC_ACTPAG    , m_nActPag )
 	END_DDX_MAP()
 
 	// Overrides
@@ -96,6 +114,7 @@ public:
 		COMMAND_ID_HANDLER_EX( IDC_BTN_URLSEC_UP	, OnBtnUp	  )
 		COMMAND_ID_HANDLER_EX( IDC_BTN_URLSEC_DOWN	, OnBtnDown	  )
 		COMMAND_ID_HANDLER_EX( IDC_BTN_URLSEC_SETTING,OnBtnSetting)
+		COMMAND_ID_HANDLER_EX( IDC_BUTTON_MATCHTEST	, OnMatchTest )
 		COMMAND_HANDLER_EX( IDC_IGNORED_URL_LIST, LBN_SELCHANGE	, OnSelChange )
 		COMMAND_HANDLER_EX( IDC_IGNORED_URL_LIST, LBN_DBLCLK	, OnDblclkList)
 		CHAIN_MSG_MAP( CPropertyPageImpl<CUrlSecurityPropertyPage> )
@@ -116,26 +135,18 @@ private:
 	void	OnBtnUp(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnBtnDown(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnBtnSetting(UINT wNotifyCode, int wID, HWND hWndCtl);
+	void	OnMatchTest(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void 	DispExOpts();
 	void 	DispExOptsFlag(unsigned exopts, unsigned exopts2, unsigned flags);	//+++ exopts2追加
 
-	struct _AddToListBox : public std::unary_function<const CUrlSecurityOption::COptUrl &, void> {
-		CListBox &_box;
-		_AddToListBox(CListBox &box) : _box(box) { }
-		result_type operator ()(argument_type src)
-		{
-			_box.AddString(src.m_url);
-		}
-	};
-
+private:
 	void _GetData();
 
-private:
 	// Data members
-	CString 						m_strAddressBar;
-	CListBox						m_listbox;
-	CEdit							m_edit;
-	int 							m_nValid;
-	int 							m_nActPag;
-	CContainedWindow				m_wndList;
+	CString 			m_strAddressBar;
+	HWND				m_hWndMainFrame;
+	CListBox			m_listbox;
+	CEdit				m_edit;
+	int 				m_nValid;
+	CContainedWindow	m_wndList;
 };

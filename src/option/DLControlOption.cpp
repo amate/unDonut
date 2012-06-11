@@ -7,7 +7,7 @@
 #include "DLControlOption.h"
 #include "../IniFile.h"
 #include "MainOption.h" 				//+++ 強引対処
-
+#include "../ExStyle.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
@@ -190,6 +190,8 @@ void CDLControlPropertyPage::_GetData()
 	m_edit.GetWindowText(CDLControlOption::s_szUserAgent, MAX_PATH);	// UDT DGSTR
 
 	SetUserAgent();	// ユーザーエージェント変更
+
+	WriteProfile();
 }
 
 //-------------------------------------------

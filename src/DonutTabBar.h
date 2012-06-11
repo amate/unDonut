@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "BeginMsgMap_decl.h"
 
 #define PASS_MSG_MAP_MDICHILD_TO_TAB(x)		CHAIN_MSG_MAP_ALT_MEMBER(x, 1)
 

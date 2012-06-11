@@ -6,7 +6,7 @@
 #include "stdafx.h"
 #include "FileNewOption.h"
 #include "../IniFile.h"
-
+#include "../Misc.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW

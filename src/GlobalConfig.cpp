@@ -10,6 +10,7 @@
 #include "option\MenuDialog.h"
 #include "option\DLControlOption.h"
 #include "option\SearchPropertyPage.h"
+#include "option\UrlSecurityOption.h"
 
 #define DONUTGLOBALCONFIGSHAREDNAME	_T("DonutGlobalConfigSharedData")
 
@@ -27,6 +28,7 @@ void	CreateGlobalConfig(GlobalConfigManageData* pMangeData)
 	ATLASSERT( pMangeData->pGlobalConfig );
 
 	pMangeData->pGlobalConfig->bHilightSwitch	= false;
+
 }
 
 void	SetGlobalConfig(GlobalConfig* pConfig)
@@ -48,10 +50,14 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	pConfig->bNoCustomIEMenu	= CMenuOption::s_bNoCustomIEMenu;
 
 	// CDLControlOption
+	pConfig->dwDLControlFlags		= CDLControlOption::s_dwDLControlFlags;
 	pConfig->dwExtendedStyleFlags	= CDLControlOption::s_dwExtendedStyleFlags;
 
 	// CSearchBarOption
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
+
+	// CUrlSecurityOption
+	pConfig->bUrlSecurityValid = CUrlSecurityOption::s_bValid;
 
 }
 

@@ -25,6 +25,7 @@ void	CVersionControl::Run()
 		case 2: _2to3();
 		case 3: _3to4();
 		case 4: _4to5();
+		case 5: _5to6();
 			break;
 		}
 	}
@@ -117,7 +118,18 @@ void	CVersionControl::_4to5()
 	pr.DeleteValue(_T("ExtendedStyle"));
 }
 
+void	CVersionControl::_5to6()
+{
+	CIniFileIO pr(g_szIniFileName, _T("Main"));
 
+	enum { MAIN_EX_NOMDI = 0x00000040L };
+	DWORD dwExStyle = pr.GetValue(_T("Extended_Style"), CMainOption::s_dwMainExtendedStyle);
+	dwExStyle &= ~MAIN_EX_NOMDI;
+	pr.SetValue(dwExStyle, _T("Extended_Style"));
+
+	pr.ChangeSectionName(_T("UrlSecurity"));
+	pr.DeleteValue(_T("ActPagNavi"));
+}
 
 
 

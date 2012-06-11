@@ -6,6 +6,7 @@
 #define __MENUENCODE_H_
 
 #include <mshtmcid.h>
+#include "DonutDefine.h"
 
 // ‘O•ûéŒ¾
 class CMainFrame;

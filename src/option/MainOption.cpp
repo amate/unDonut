@@ -16,8 +16,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 DWORD		CMainOption::s_dwMainExtendedStyle		=
-	  MAIN_EX_KILLDIALOG 
-	| MAIN_EX_NOMDI 
+	  MAIN_EX_KILLDIALOG
 	| MAIN_EX_INHERIT_OPTIONS 
 	| MAIN_EX_EXTERNALNEWTAB 
 	| MAIN_EX_EXTERNALNEWTABACTIVE;
@@ -26,8 +25,7 @@ DWORD		CMainOption::s_dwMainExtendedStyle2 	= 0;
 DWORD		CMainOption::s_dwExplorerBarStyle		= 0;
 DWORD		CMainOption::s_dwMaxWindowCount 		= 0;
 DWORD		CMainOption::s_dwBackUpTime 			= 1;
-DWORD		CMainOption::s_dwAutoRefreshTime		= 10;			// UDT DGSTR ( dai
-bool		CMainOption::s_bTabMode 				= false;
+DWORD		CMainOption::s_dwAutoRefreshTime		= 10;
 
 volatile bool CMainOption::s_bAppClosing			= false;
 volatile bool CMainOption::s_bIgnoreUpdateClipboard	= false;
@@ -51,6 +49,8 @@ int		CMainOption::s_nMaxRecentClosedTabCount		= 16;
 int		CMainOption::s_RecentClosedTabMenuType		= RECENTDOC_MENUTYPE_URL;
 
 int		CMainOption::s_nAutoImageResizeType	= AUTO_IMAGE_RESIZE_LCLICK;
+
+BROWSEROPERATINGMODE CMainOption::s_BrowserOperatingMode = kMultiThreadMode;
 
 
 CMainOption::CMainOption()
@@ -76,7 +76,6 @@ void CMainOption::GetProfile()
 		pr.QueryValue( s_RecentClosedTabMenuType , _T("RecentClosedTabMenuType"));
 	}
 
-	s_bTabMode			= (s_dwMainExtendedStyle & MAIN_EX_NOMDI) != 0;
 	s_bIgnore_blank		= (s_dwMainExtendedStyle & MAIN_EX_IGNORE_BLANK) != 0;
 	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
 	s_bExternalNewTab	= (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTAB) != 0;
@@ -89,7 +88,7 @@ void CMainOption::GetProfile()
 	}
 
 	pr.QueryValue(s_nAutoImageResizeType, _T("AutoImageResizeType"));
-
+	s_BrowserOperatingMode	= (BROWSEROPERATINGMODE)pr.GetValue(_T("BrowserOperatingMode"), s_BrowserOperatingMode);
 
 	pr.ChangeSectionName( _T("Explorer_Bar") );
 	s_strExplorerUserDirectory = pr.GetStringUW(_T("UserDirectory"));	
@@ -187,6 +186,15 @@ void CMainOption::OnMainExNoActivateNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, H
 ////////////////////////////////////////////////////////////////////////////////
 
 
+BOOL CMainPropertyPage::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+{
+	CComboBox cmb = GetDlgItem(IDC_COMBO_BROWSREOPERATINGMODE);
+	cmb.AddString(_T("マルチスレッド"));
+	cmb.AddString(_T("マルチプロセス"));
+
+	return 0;
+}
+
 void CMainPropertyPage::OnCheckExternalNewTab(WORD /*wNotifyCode*/, WORD /*wID*/, HWND hWndCtl)
 {
 	bool bCheck = CButton(GetDlgItem(IDC_CHECK_EXTERNALNEWTAB)).GetCheck() != 0;
@@ -262,7 +270,6 @@ void CMainPropertyPage::_GetData()
 	if (m_nOneInstance			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ONEINSTANCE;
 	if (m_nLimit				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_WINDOWLIMIT;
 	if (m_nNoCloseDFG			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOCLOSEDFG;
-	if (m_nNoMDI				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOMDI;
 	if (m_nBackUp				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_BACKUP;
 	if (m_nAddFavoriteOldShell	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ADDFAVORITEOLDSHELL;
 	if (m_nOrgFavoriteOldShell	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ORGFAVORITEOLDSHELL;
@@ -305,6 +312,10 @@ void CMainPropertyPage::_GetData()
 	CIniFileO pr( g_szIniFileName, _T("Main") );
 	m_lf.WriteProfile(pr);
 
+	pr.SetValue(m_nBrowserOperatingMode, _T("BrowserOperatingMode"));
+
+	pr.Close();
+
 	WriteProfile();
 }
 
@@ -320,7 +331,6 @@ void CMainPropertyPage::_SetData()
 	m_nOneInstance		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ONEINSTANCE		  ) != 0;		//+++ ? 1 : 0;
 	m_nLimit			   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_WINDOWLIMIT		  ) != 0;		//+++ ? 1 : 0;
 	m_nNoCloseDFG		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG		  ) != 0;		//+++ ? 1 : 0;
-	m_nNoMDI			   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOMDI			  ) != 0;		//+++ ? 1 : 0;
 	m_nBackUp			   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP			  ) != 0;		//+++ ? 1 : 0;
 	m_nMaxWindowCount	   = CMainOption::s_dwMaxWindowCount;
 	m_nBackUpTime		   = CMainOption::s_dwBackUpTime;
@@ -346,6 +356,8 @@ void CMainPropertyPage::_SetData()
 	MTL::CLogFont	 lf;
 	if ( lf.GetProfile(pr) )
 		m_lf = lf;
+
+	m_nBrowserOperatingMode	= pr.GetValuei(_T("BrowserOperatingMode"), s_BrowserOperatingMode);
 }
 
 

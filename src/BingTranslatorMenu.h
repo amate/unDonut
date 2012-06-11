@@ -4,7 +4,9 @@
 
 #include "resource.h"
 
+// ‘O•ûéŒ¾
 class CDictionaryWindow;
+class CMainFrame;
 
 /////////////////////////////////////////////////////////////////////
 // CBingTranslatorMenu

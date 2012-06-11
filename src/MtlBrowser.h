@@ -877,6 +877,7 @@ public:
 	static _ATL_FUNC_INFO	FileDownloadInfo;
 	static _ATL_FUNC_INFO	NewWindow3Info;
 	static _ATL_FUNC_INFO	WindowClosingInfo;
+	static _ATL_FUNC_INFO	RedirectXDomainBlocked;
 };
 
 
@@ -894,6 +895,7 @@ __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::PrivacyImpactedStat
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::FileDownloadInfo			= { CC_STDCALL, VT_EMPTY, 2, { VT_BOOL, VT_BYREF | VT_BOOL} };
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::NewWindow3Info 			= { CC_STDCALL, VT_EMPTY, 5, { VT_BYREF | VT_DISPATCH, VT_BYREF | VT_BOOL, VT_VARIANT, VT_BSTR, VT_BSTR } };
 __declspec(selectany) _ATL_FUNC_INFO IWebBrowserEvents2Base::WindowClosingInfo			= { CC_STDCALL, VT_EMPTY, 2, { VT_BOOL, VT_BYREF | VT_BOOL} };
+
 
 template <class T, UINT nID>
 class IWebBrowserEvents2Impl
@@ -1026,7 +1028,7 @@ public:
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_PRIVACYIMPACTEDSTATECHANGE, &__OnPrivacyImpactedStateChange, &PrivacyImpactedStateChange)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_FILEDOWNLOAD		, &__OnFileDownload		, &FileDownloadInfo)
 		//SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_NEWWINDOW3			, &__OnNewWindow3		, &NewWindow3Info)
-		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_WINDOWCLOSING		, &__OnWindowClosing	, &WindowClosingInfo)
+		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_WINDOWCLOSING		, &__OnWindowClosing	, &WindowClosingInfo)	
 	END_SINK_MAP()
 
 

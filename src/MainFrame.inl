@@ -428,6 +428,8 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_RecentClosedTabList.ReadFromXmlFile();
 	m_RecentClosedTabList.UpdateMenu();
 
+	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
+
 	RegisterDragDrop();
 
 	return 0;
@@ -466,6 +468,8 @@ void	CMainFrame::Impl::OnDestroy()
 	} else {
 		m_RecentClosedTabList.WriteToXmlFile();
 	}
+
+	CUrlSecurityOption::CloseOriginalUrlSecurityList(m_hWnd);
 
 	// メッセージループからメッセージフィルタとアイドルハンドラを削除
     CMessageLoop* pLoop = _Module.GetMessageLoop();
@@ -874,6 +878,13 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 	return 0;
 }
 
+/// ChildFrameのURL別セキュリティリストを更新する
+void	CMainFrame::Impl::OnUpdateUrlSecurityList()
+{
+	m_TabBar.ForEachWindow([](HWND hWnd) {
+		::SendMessage(hWnd, WM_UPDATEURLSECURITYLIST, 0, 0);
+	});
+}
 
 void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -1162,15 +1173,14 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CLinkBarPropertyPage			pageLinks(m_LinkBar);
 
 	CString strURL, strTitle;
-	//CChildFrame* pChild = GetActiveChildFrame();
-	//if (pChild) {
-	//	strURL	 = pChild->GetLocationURL();
-	//	strTitle = MtlGetWindowText(pChild->GetHwnd());
-	//}
+	if (auto pChildUIData = CChildFrameCommandUIUpdater::GetActiveChildFrameUIData()) {
+		strURL	 = pChildUIData->strLocationURL;
+		strTitle = pChildUIData->strTitle;
+	}
 
 	CIgnoredURLsPropertyPage		pageURLs(strURL);
-	CCloseTitlesPropertyPage		pageTitles( strTitle );
-	CUrlSecurityPropertyPage		pageUrlSecu(strURL);		//+++
+	CCloseTitlesPropertyPage		pageTitles(strTitle);
+	CUrlSecurityPropertyPage		pageUrlSecu(strURL, m_hWnd);		//+++
 	CUserDefinedCSSPropertyPage		pageUserCSS(strURL);
 	CUserDefinedJsPropertyPage		pageUserJs(strURL);
 	CDonutExecutablePropertyPage	pageExe;
@@ -1213,6 +1223,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	/* [Donutのオプション]を表示 */
 	sheet.DoModal();
 
+	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 	//m_cmbBox.ResetProxyList();
 
 	// キーの呼出

@@ -58,12 +58,6 @@ public: 													   \
 public: 													   \
 	BOOL m_bCmdUIHandled;									   \
 	/* "handled" management for cracked handlers */ 		   \
-	BOOL IsCmdUIHandled() const; 							   \
-	void SetCmdUIHandled(BOOL bHandled);					   \
-	BOOL ProcessCmdUIMap(UINT nID, CCmdUI * pCmdUI); 		   \
-	BOOL _ProcessCmdUIMap(UINT nID, CCmdUI * pCmdUI);
-
-#define BEGIN_UPDATE_COMMAND_UI_MAP_impl(theClass)			   \
 	BOOL IsCmdUIHandled() const 							   \
 	{														   \
 		return m_bCmdUIHandled; 							   \
@@ -79,7 +73,10 @@ public: 													   \
 		m_bCmdUIHandled = bOldCmdUIHandled; 				   \
 		return bRet;										   \
 	}														   \
-	BOOL _ProcessCmdUIMap(UINT nID, CCmdUI * pCmdUI)		   \
+	BOOL _ProcessCmdUIMap(UINT nID, CCmdUI * pCmdUI);		   \
+
+#define BEGIN_UPDATE_COMMAND_UI_MAP_impl(theClass)			   \
+	BOOL theClass::_ProcessCmdUIMap(UINT nID, CCmdUI * pCmdUI) \
 	{
 
 #endif

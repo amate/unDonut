@@ -6,6 +6,7 @@
 #include "../DonutSearchBar.h"
 #include "../IniFile.h"
 #include "../MtlBase.h"
+#include "../DonutDefine.h"
 
 ///////////////////////////////////////////////////////////////
 // CAddressBarOption

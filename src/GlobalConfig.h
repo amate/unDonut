@@ -25,6 +25,7 @@ struct GlobalConfig
 	bool	bNoCustomIEMenu;
 
 	// CDLControlOption
+	DWORD	dwDLControlFlags;
 	DWORD	dwExtendedStyleFlags;
 
 	// CSearchBarOption
@@ -32,6 +33,9 @@ struct GlobalConfig
 	
 	// SerachBar
 	bool	bHilightSwitch;
+
+	// CUrlSecurityOption
+	bool	bUrlSecurityValid;
 
 };
 

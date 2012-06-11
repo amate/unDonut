@@ -22,7 +22,7 @@
 //#include "option\MouseDialog.h"
 //#include "option\IgnoreURLsOption.h"
 //#include "option\CloseTitleOption.h"
-//#include "option\UrlSecurityOption.h"
+#include "option\UrlSecurityOption.h"
 //#include "option\SearchPropertyPage.h"
 //#include "option\AddressBarPropertyPage.h"
 //#include "option\UserDefinedCSSOption.h"
@@ -262,10 +262,10 @@ struct _Function_Hilight2 {
 // CChildFrame::Impl
 
 class CChildFrame::Impl :
-	public CDoubleBufferWindowImpl<Impl>,
+	public CDoubleBufferWindowImpl<CChildFrame::Impl>,
 	public CMessageFilter,
-	public IWebBrowserEvents2Impl<Impl, ID_DONUTVIEW>,
-	public CWebBrowserCommandHandler<Impl>,
+	public IWebBrowserEvents2Impl<CChildFrame::Impl, ID_DONUTVIEW>,
+	public CWebBrowserCommandHandler<CChildFrame::Impl>,
 	public CWebBrowser2
 {
 	friend class CChildFrame;
@@ -345,6 +345,7 @@ public:
 		USER_MSG_WM_DRAWCHILDFRAMEPAGE( OnDrawChildFramePage )
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
+		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -394,8 +395,8 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH		, OnViewRefresh 	)
 
 		CHAIN_COMMANDS_MEMBER( m_view )
-		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
-		CHAIN_MSG_MAP( CWebBrowserCommandHandler<Impl> )
+		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CChildFrame::Impl> )
+		CHAIN_MSG_MAP( CWebBrowserCommandHandler<CChildFrame::Impl> )
 
 		if (uMsg == WM_COMMAND)
 			GetTopLevelWindow().PostMessage(WM_COMMAND_FROM_CHILDFRAME, wParam, lParam);
@@ -416,6 +417,7 @@ public:
 	void	OnExecuteUserJavascript(CString* pstrScriptText);
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
+	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -474,6 +476,7 @@ private:
 	CChildFrameUIStateChange	m_UIChange;
 	GlobalConfigManageData		m_GlobalConfigManageData;
 	GlobalConfig*				m_pGlobalConfig;
+	CUrlSecurityForChildFrame	m_UrlSecurity;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
@@ -523,35 +526,43 @@ CChildFrame::~CChildFrame()
 /// スレッドを立ててCChildFrameのインスタンスを作る
 void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 {
-	//CChildFrame*	pChild = new CChildFrame;
 	if (data.dwDLCtrl == -1)
 		data.dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
 	if (data.dwExStyle == -1)
 		data.dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
 	//pChild->pImpl->m_view.SetDefaultFlags(data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
 
-	//MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
+	if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiThreadMode) {
+		CChildFrame*	pChild = new CChildFrame;
+		MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
 
-	std::wstringstream ss;
-	boost::archive::text_woarchive ar(ss);
-	ar << data;
-	std::wstring serializedData = ss.str();
+	} else if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
 
-	SECURITY_ATTRIBUTES	security_attributes = { sizeof(SECURITY_ATTRIBUTES) };
-	security_attributes.bInheritHandle = TRUE;
-	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)), NULL);
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-	::UnmapViewOfFile((LPVOID)sharedMemData);
+		std::wstringstream ss;
+		boost::archive::text_woarchive ar(ss);
+		ar << data;
+		std::wstring serializedData = ss.str();
 
-	CString commandline;
-	commandline.Format(_T("-NewProcessSharedMemoryData=%d"), hMap);
+		SECURITY_ATTRIBUTES	security_attributes = { sizeof(SECURITY_ATTRIBUTES) };
+		security_attributes.bInheritHandle = TRUE;
+		HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), NULL);
+		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
+		::UnmapViewOfFile((LPVOID)sharedMemData);
 
-	STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
-	PROCESS_INFORMATION	processInfo = { 0 };
-	ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
-	::CloseHandle(processInfo.hProcess);
-	::CloseHandle(processInfo.hThread);
+		CString commandline;
+		commandline.Format(_T("-NewProcessSharedMemoryData=%d"), hMap);
+
+		STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
+		PROCESS_INFORMATION	processInfo = { 0 };
+		ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
+		::CloseHandle(processInfo.hProcess);
+		::CloseHandle(processInfo.hThread);
+
+
+	} else {
+		ATLASSERT(FALSE);
+	}
 }
 
 void	CChildFrame::SetThreadRefCount(int* pCount)

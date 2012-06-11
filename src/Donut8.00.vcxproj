@@ -1438,6 +1438,7 @@
     <ClInclude Include="API.h" />
     <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
+    <ClInclude Include="BeginMsgMap_decl.h" />
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />
     <ClInclude Include="ChildFrame.inl" />

@@ -11,6 +11,7 @@ using boost::thread;
 #include "GdiplusUtil.h"
 #include <atlsync.h>
 #include <atlfile.h>
+#include "DonutDefine.h"
 
 using std::unordered_map;
 
