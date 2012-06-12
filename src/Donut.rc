@@ -88,8 +88,8 @@ BEGIN
             MENUITEM "現在のページ(&C)\tShift+Ctrl+C",    ID_FILE_NEW_COPY
             MENUITEM "クリップボード(&L)\tShilf+Ctrl+V",   ID_FILE_NEW_CLIPBOARD
             MENUITEM SEPARATOR
-            MENUITEM "リンクを開く(&R)\tCtrl+G",          ID_EDIT_OPEN_SELECTED_REF
-            MENUITEM "URLテキストを開く(&E)\tCtrl+J",      ID_EDIT_OPEN_SELECTED_TEXT
+            MENUITEM "選択範囲のリンクを開く(&R)\tCtrl+G",     ID_EDIT_OPEN_SELECTED_REF
+            MENUITEM "選択テキストをURLとして開く(&E)\tCtrl+J", ID_EDIT_OPEN_SELECTED_TEXT
             MENUITEM SEPARATOR
             MENUITEM "TabList.xmlを開く(&D)",          ID_FILE_OPEN_TABLIST
         END
@@ -179,10 +179,12 @@ BEGIN
             MENUITEM "前に戻る(&P)",                    ID_VIEW_BACK
             MENUITEM "次に進む(&N)",                    ID_VIEW_FORWARD
             MENUITEM SEPARATOR
+            MENUITEM "一つ上の階層へ(&U)",                 ID_VIEW_UP
+            MENUITEM "ルート階層へ(&R)",                  ID_VIEW_ROOT
+            MENUITEM SEPARATOR
             MENUITEM "ホーム ページ(&H)",                 ID_VIEW_HOME
         END
         MENUITEM "中止(&P)",                      ID_VIEW_STOP
-        MENUITEM "一つ上の階層へ(&U)",                 ID_VIEW_UP
         MENUITEM "最新の情報に更新(&R)",                ID_VIEW_REFRESH
         POPUP "自動更新(&A)"
         BEGIN
@@ -194,10 +196,6 @@ BEGIN
             MENUITEM "5分(&G)",                      ID_AUTOREFRESH_5MIN
             MENUITEM "設定した時間",                      ID_AUTOREFRESH_USER
         END
-        MENUITEM SEPARATOR
-        MENUITEM "すべて中止(&S)",                   ID_VIEW_STOP_ALL
-        MENUITEM "すべて更新(&L)",                   ID_VIEW_REFRESH_ALL
-        MENUITEM "このウィンドウ以外を更新(&X)",            ID_WINDOW_REFRESH_EXCEPT
         MENUITEM SEPARATOR
         POPUP "文字のサイズ(&X)"
         BEGIN
@@ -308,7 +306,7 @@ BEGIN
         MENUITEM "インターネットオプション(&O)...",         ID_VIEW_OPTION
         MENUITEM "Donutのオプション(&D)...",          ID_VIEW_OPTION_DONUT
     END
-    POPUP "ウィンドウ(&W)"
+    POPUP "タブ(&W)"
     BEGIN
         MENUITEM "閉じる(&C)",                     ID_FILE_CLOSE
         MENUITEM "すべて閉じる(&L)",                  ID_WINDOW_CLOSE_ALL
@@ -316,6 +314,10 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "このタブより左を閉じる(&Q)",             ID_LEFT_CLOSE
         MENUITEM "このタブより右を閉じる(&R)",             ID_RIGHT_CLOSE
+        MENUITEM SEPARATOR
+        MENUITEM "すべて中止(&S)",                   ID_VIEW_STOP_ALL
+        MENUITEM "すべて更新(&L)",                   ID_VIEW_REFRESH_ALL
+        MENUITEM "このタブ以外を更新(&X)",               ID_WINDOW_REFRESH_EXCEPT
         MENUITEM SEPARATOR
         MENUITEM "左のタブ(&X)",                    ID_TAB_LEFT
         MENUITEM "右のタブ(&V)",                    ID_TAB_RIGHT
@@ -988,25 +990,19 @@ BEGIN
     CONTROL         "リンクのターゲット名を考慮する(&M)",IDC_CHECK_MAIN_REGISTER_AS_BROWSER,
                     "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,112,117,10
     CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,164,85,10
-    CONTROL         "タブの数を制限する(&L):",IDC_CHECK_MAIN_LIMIT,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,95,10
-    EDITTEXT        IDC_EDIT_MAIN_LIMITEDCOUNT,144,204,25,12,ES_AUTOHSCROLL
     CONTROL         "状態をTabList.xmlへ定期的に保存する(&S):",IDC_CHECK_MAIN_BACKUP,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,131,10
-    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,144,216,25,12,ES_AUTOHSCROLL
-    CONTROL         "オン/オフラインの状態を保存する(&G)",IDC_CHECK_MAIN_LOADGLOBALOFFLINE,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,228,122,10
-    CONTROL         "警告ダイアログを自動的に閉じる(&K)",IDC_CHECK_MAIN_KILLDIALOG,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,240,119,10
-    LTEXT           "(0-255個)",IDC_STATIC,172,204,30,12,SS_CENTERIMAGE
-    LTEXT           "(1-120分)",IDC_STATIC,172,216,30,12,SS_CENTERIMAGE
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,131,10
+    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,144,204,25,12,ES_AUTOHSCROLL
+    LTEXT           "(1-120分)",IDC_STATIC,172,204,30,12,SS_CENTERIMAGE
     CONTROL         "タブのオプション/セキュリティを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,252,140,10
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,88,268,25,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,123,268,25,12,ES_AUTOHSCROLL
-    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,8,268,80,12,SS_CENTERIMAGE
-    LTEXT           "分",IDC_STATIC,114,270,8,8
-    LTEXT           "秒",IDC_STATIC,151,270,8,8
-    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,284,44,15,BS_FLAT
-    LTEXT           "(バーに対してのフォント、アプリケーション再起動後有効)",IDC_STATIC,56,284,164,16,SS_CENTERIMAGE
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,140,10
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,88,232,25,12,ES_AUTOHSCROLL
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,123,232,25,12,ES_AUTOHSCROLL
+    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,8,232,80,12,SS_CENTERIMAGE
+    LTEXT           "分",IDC_STATIC,114,234,8,8
+    LTEXT           "秒",IDC_STATIC,151,234,8,8
+    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,248,44,15,BS_FLAT
+    LTEXT           "(バーに対してのフォント、アプリケーション再起動後有効)",IDC_STATIC,56,248,164,16,SS_CENTERIMAGE
     LTEXT           "動作",IDC_STATIC,4,4,269,9,SS_SUNKEN
     LTEXT           "システム",IDC_STATIC,4,152,269,9,SS_SUNKEN
     LTEXT           "その他",IDC_STATIC,4,192,269,9,SS_SUNKEN
@@ -1015,7 +1011,7 @@ BEGIN
     CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,136,115,9
     CONTROL         "外部からURLを開いたとき、新規タブで開く",IDC_CHECK_EXTERNALNEWTAB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,40,136,10
     CONTROL         "↑で開かれたタブをアクティブにする",IDC_CHECK_EXTERNALNEWTABACTIVE,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,51,120,11
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,52,120,11
     COMBOBOX        IDC_COMBO_BROWSREOPERATINGMODE,163,175,64,44,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
     LTEXT           "ブラウザビューの動作モード(※再起動後の有効)",IDC_STATIC,16,176,144,12,SS_CENTERIMAGE
 END
@@ -2887,7 +2883,7 @@ BEGIN
     ID_DLCTL_CHG_MULTI      "マルチメディア\nマルチメディア"
     ID_DLCTL_CHG_SECU       "セキュリティ\nセキュリティ"
     ID_URLACTION_COOKIES_CHG "クッキー\nクッキー"
-    ID_VIEW_UP              "一つ上の階層へ\t一つ上の階層へ移動します。\n上へ"
+    ID_VIEW_UP              "一つ上の階層へ\t一つ上の階層へ移動します。\n一つ上の階層へ"
     ID_VIEW_FAVEXPBAR_GROUP "お気に入りグループを表示します。\nグループ"
     ID_VIEW_SEARCHBAR       "検索バーを表示します。\n検索"
     ID_FILE_OPEN_DEF        "Default.dfgを開きます。\nDefault.dfg"
@@ -3039,6 +3035,11 @@ BEGIN
     ID_FILE_MRU_FILE7       "最後に閉じたファイル-7\n最後ファイル-7"
     ID_FILE_MRU_FILE8       "最後に閉じたファイル-8\n最後ファイル-8"
     ID_FILE_MRU_FILE9       "最後に閉じたファイル-9\n最後ファイル-9"
+END
+
+STRINGTABLE
+BEGIN
+    ID_VIEW_ROOT            "ルート階層へ\nルート階層へ"
 END
 
 #endif    // 日本語 (日本) resources

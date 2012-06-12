@@ -34,6 +34,9 @@ struct GlobalConfig
 	// SerachBar
 	bool	bHilightSwitch;
 
+	// CAddressBarOption
+	bool	bReplaceSpace;
+
 	// CUrlSecurityOption
 	bool	bUrlSecurityValid;
 

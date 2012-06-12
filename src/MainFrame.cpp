@@ -117,11 +117,21 @@
 
 namespace {
 
-static const CLSID CLSID_IEnumPrivacyRecords = { 0x3050f844, 0x98b5, 0x11cf, { 0xbb, 0x82, 0x00, 0xaa, 0x00, 0xbd, 0xce, 0x0b } };
+struct ReBarIDAndStyle {
+	UINT nID;
+	UINT fStyle;
+};
 
-const UINT		STDBAR_ID[] 	= { ATL_IDW_COMMAND_BAR, ATL_IDW_TOOLBAR				, IDC_ADDRESSBAR, IDC_MDITAB , IDC_LINKBAR				   , IDC_SEARCHBAR					};
-const UINT		STDBAR_STYLE[]	= { RBBS_USECHEVRON    , RBBS_USECHEVRON | RBBS_BREAK	, RBBS_BREAK	, RBBS_BREAK , RBBS_USECHEVRON | RBBS_BREAK, RBBS_BREAK 					};
-//const UINT	CMainFrame::STDBAR_STYLE[]	= { RBBS_USECHEVRON    , RBBS_USECHEVRON | RBBS_BREAK	, RBBS_BREAK	, RBBS_BREAK , RBBS_USECHEVRON | RBBS_BREAK, RBBS_USECHEVRON | RBBS_BREAK	};
+const ReBarIDAndStyle	 DefaultReBarStyle[] = {
+	{ ATL_IDW_COMMAND_BAR	, RBBS_BREAK },
+	{ ATL_IDW_TOOLBAR		, RBBS_USECHEVRON | RBBS_BREAK },
+	{ IDC_ADDRESSBAR		, RBBS_BREAK	},
+	{ IDC_MDITAB			, RBBS_BREAK	},
+	{ IDC_LINKBAR			, RBBS_BREAK	},
+	{ IDC_SEARCHBAR			, RBBS_BREAK	}
+};
+
+
 const LPTSTR	STDBAR_TEXT[]	= { _T("")/*NULL*/	   , _T("")/*NULL*/ 				,_T("アドレス") , NULL		 , _T("リンク") 			   , _T("検索") 					};	// memo. NULL だと一番左のボタンをシェブロンに含めることができない
 
 };	// namespace 
@@ -255,14 +265,14 @@ BOOL CChildFrameClient::OnEraseBkgnd(CDCHandle dc)
 // CMainFrame::Impl
 
 class CMainFrame::Impl :
-	public CFrameWindowImpl<Impl>,
+	public CFrameWindowImpl<CMainFrame::Impl>,
 	public CMessageFilter,
 	public CIdleHandler,
-	public CAppCommandHandler<Impl>,
-	public CUpdateCmdUI<Impl>,
-	public CDDEMessageHandler<Impl>,
-	public CMSMouseWheelMessageHandler<Impl>,	// 必要？
-	public CMainFrameFileDropTarget<Impl>
+	public CAppCommandHandler<CMainFrame::Impl>,
+	public CUpdateCmdUI<CMainFrame::Impl>,
+	public CDDEMessageHandler<CMainFrame::Impl>,
+	public CMSMouseWheelMessageHandler<CMainFrame::Impl>,	// 必要？
+	public CMainFrameFileDropTarget<CMainFrame::Impl>
 {
 public:
 	DECLARE_FRAME_WND_CLASS(DONUT_WND_CLASS_NAME, IDR_MAINFRAME)
@@ -291,7 +301,9 @@ public:
 		MSG_WM_DESTROY	( OnDestroy )
 		
 		MSG_WM_ACTIVATE ( OnActivate )
+		MSG_WM_SYSCOMMAND( OnSysCommand	)
 		MSG_WM_COPYDATA	( OnCopyData	)
+		MESSAGE_HANDLER_EX( MYWM_NOTIFYICON , OnMyNotifyIcon  )
 
 		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
 		CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
@@ -357,6 +369,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_FULLSCREEN		, OnViewFullScreen		)
 
 		// ツール
+		COMMAND_ID_HANDLER_EX( ID_GET_OUT				, OnGetOut			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION			, OnViewOption		)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut	)
 
@@ -367,6 +380,9 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_RIGHT_CLOSE			, OnTabClose		)
 		COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabSwitch 		)
 		COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabSwitch		)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP_ALL			, OnOperateCommandToAllTab )
+		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH_ALL		, OnOperateCommandToAllTab )
+		COMMAND_ID_HANDLER_EX( ID_WINDOW_REFRESH_EXCEPT	, OnOperateCommandToAllTab )
 
 		// Special Command
 		COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
@@ -383,11 +399,11 @@ public:
 		USER_MSG_WM_CHILDFRAMEDOWNLOADING	( OnChildFrameDownloading	)
 		USER_MSG_WM_CHILDFRAMECOMPLETE		( OnChildFrameComplete		)
 
-		CHAIN_MSG_MAP( CFrameWindowImpl<Impl> )
-		CHAIN_MSG_MAP( CAppCommandHandler<Impl> )
-		CHAIN_MSG_MAP( CUpdateCmdUI<Impl> )
-		CHAIN_MSG_MAP( CDDEMessageHandler<Impl> )
-		CHAIN_MSG_MAP( CMSMouseWheelMessageHandler<Impl> )
+		CHAIN_MSG_MAP( CFrameWindowImpl<CMainFrame::Impl> )
+		CHAIN_MSG_MAP( CAppCommandHandler<CMainFrame::Impl> )
+		CHAIN_MSG_MAP( CUpdateCmdUI<CMainFrame::Impl> )
+		CHAIN_MSG_MAP( CDDEMessageHandler<CMainFrame::Impl> )
+		CHAIN_MSG_MAP( CMSMouseWheelMessageHandler<CMainFrame::Impl> )
 		if (uMsg == WM_COMMAND && m_bCommandFromChildFrame == false) {
 			HWND hWndChild = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
 			if (hWndChild)
@@ -564,7 +580,9 @@ public:
 	void	OnDestroy();
 
 	void	OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther);
+	void	OnSysCommand(UINT nID, CPoint pt);
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
+	LRESULT OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	void	OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
 	void	OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon);
@@ -592,11 +610,13 @@ public:
 	void	OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	void	OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnViewOption(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnTabClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnTabSwitch(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnOperateCommandToAllTab(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnMenuRecentLast(UINT uNotifyCode, int nID, CWindow wndCtl) { 
 		OnFileRecent(0, ID_RECENTDOCUMENT_FIRST, NULL);
@@ -632,6 +652,9 @@ private:
 
 	void	_FullScreen(bool bOn);
 	void	_ShowBandsFullScreen(bool bOn);
+
+	void	_SetHideTrayIcon();
+	void	_DeleteTrayIcon();
 
 	// for updateUI
 	bool	_IsClipboardAvailable() { return ::IsClipboardFormatAvailable(MTL_CF_TEXT) == TRUE; }
@@ -3661,45 +3684,6 @@ void CMainFrame::OnShowTextChg(BOOL bShow)
 
 
 
-LRESULT CMainFrame::OnSysCommand(UINT nID, CPoint point)
-{
-	switch (nID) {
-	case ID_VIEW_COMMANDBAR:
-		SendMessage(m_hWnd, WM_COMMAND, ID_VIEW_COMMANDBAR, 0);
-		SetMsgHandled(TRUE);
-		break;
-
-  #if 1	//+++ 最小化ボタンを押した時に、タスクトレイに入るようにしてみる.
-	case SC_MINIMIZE:
-		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
-			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
-		) {
-			OnGetOut(0,0,0);
-			SetMsgHandled(TRUE);
-			break;
-		}
-		SetMsgHandled(FALSE);
-		break;
-
-	case SC_CLOSE:
-		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_CLOSEBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
-			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
-		) {
-			OnGetOut(0,0,0);
-			SetMsgHandled(TRUE);
-			break;
-		}
-		SetMsgHandled(FALSE);
-		break;
-  #endif
-
-	default:
-		SetMsgHandled(FALSE);
-		break;
-	}
-
-	return 0;
-}
 
 /// ポップアップ抑止をトグル
 LRESULT CMainFrame::OnPopupClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
@@ -4924,93 +4908,6 @@ void CMainFrame::OnGetOut(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 	}
 }
 // ENDE
-
-
-
-// UDT DGSTR ( hide window & display icon )
-LRESULT CMainFrame::OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL & /*bHandled*/)
-{
-	if ( IsWindowVisible() ) {
-		return -1;
-	} else {
-		switch (lParam) {
-		case WM_LBUTTONUP:
-			ShowWindow_Restore(0);	//ShowWindow(SW_SHOW);
-			DeleteTrayIcon();	//+++
-			return 0;
-			break;
-
-		case WM_RBUTTONUP:
-		  #if 1	//+++
-			{
-				::SetForegroundWindow(m_hWnd);
-				CMenu/*Handle*/ 	menu0;
-				menu0.LoadMenu(IDR_TRAYICON_MENU);
-				if (menu0.m_hMenu == NULL)
-					return 0;
-				CMenuHandle menu = menu0.GetSubMenu(0);
-				if (menu.m_hMenu == NULL)
-					return 0;
-
-				// ポップアップメニューを開く.
-				POINT 	pt;
-				::GetCursorPos(&pt);
-				HRESULT hr = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON| TPM_RETURNCMD, pt.x, pt.y, m_hWnd, NULL);
-				if (hr == 57666/*復帰*/) {
-					ShowWindow_Restore(0);	//ShowWindow(SW_SHOW);
-					DeleteTrayIcon();	//+++
-					return 0;
-				}
-				if (hr == 57665/*終了*/) {
-					DeleteTrayIcon();	//+++
-					PostMessage(WM_CLOSE, 0, 0);
-					break;
-				}
-			}
-		  #else
-			DeleteTrayIcon();	//+++
-			PostMessage(WM_CLOSE, 0, 0);
-			break;
-		  #endif
-		}
-
-		return -1;
-	}
-}
-// ENDE
-
-
-
-#if 1 //+++ トレイアイコンの設定.
-void CMainFrame::SetHideTrayIcon()
-{
-  #if 1 //+++
-	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
-	HICON hIcon = 0;
-	if (Misc::IsExistFile(m_strIconSm))
-		hIcon	= (HICON)::LoadImage(ModuleHelper::GetResourceInstance(), m_strIconSm, IMAGE_ICON, 16, 16, LR_SHARED|LR_LOADFROMFILE);
-	if (hIcon == 0)
-		hIcon = LoadIcon( _Module.GetResourceInstance(), MAKEINTRESOURCE(IDR_MAINFRAME) );
-	TrayMessage( m_hWnd, NIM_ADD, TM_TRAY, hIcon, DONUT_NAME/*_T("unDonut")*/ );		//+++
-  #else //元
-	//x TrayMessage( m_hWnd, NIM_ADD, TM_TRAY, IDR_MAINFRAME, DONUT_NAME/*_T("unDonut")*/ );
-  #endif
-	ShowWindow(SW_HIDE);
-}
-#endif
-
-
-//+++ トレイ化の終了/トレイアイコンの削除.
-void CMainFrame::DeleteTrayIcon()
-{
-	TrayMessage(m_hWnd, NIM_DELETE, TM_TRAY, 0, NULL);
-	//x m_bTrayFlag = false;
-
-	RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
-}
-
-
-
 
 // ===========================================================================
 // エクスプローラバー

@@ -196,16 +196,16 @@ static bool CheckOneInstance(LPTSTR lpstrCmdLine)
 		HWND hWnd = ::FindWindow(DONUT_WND_CLASS_NAME, NULL);
 		if (hWnd) {		// Šù‚É‹N“®‚µ‚Ä‚¢‚éunDonut‚ªŒ©‚Â‚©‚Á‚½
 			COPYDATASTRUCT	cd;
-			cd.dwData	= 1;
+			cd.dwData	= kNewDonutInstance;
 			size_t	cbCommandLine = 0;
-			StringCbLength(lpstrCmdLine, sizeof(TCHAR) * 2048, &cbCommandLine);
+			StringCbLength(lpstrCmdLine, sizeof(TCHAR) * 4096, &cbCommandLine);
 			cd.cbData	= (DWORD)cbCommandLine + sizeof(TCHAR);
 			cd.lpData	= lpstrCmdLine;
 			::SendMessage(hWnd, WM_COPYDATA, NULL, (LPARAM)&cd);
 		
-			bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
-			if (bActive)
-				::SetForegroundWindow(hWnd);
+			//bool	bActive = !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE);
+			//if (bActive)
+			//	::SetForegroundWindow(hWnd);
 			return true;
 		}
 	}

@@ -78,6 +78,21 @@ private:
 	}
 };
 
+struct NavigateChildFrame {
+	CString strURL;
+	DWORD	dwDLCtrl;
+	DWORD	dwExStyle;
+	DWORD	dwAutoRefresh;
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & strURL & dwDLCtrl & dwExStyle & dwAutoRefresh;
+	}
+};
+
 #define CHILDFRAMEDATAONCLOSESHAREDMEMNAME	_T("DonutChildFrameDataOnCloseShaedMemName")
 #define NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME _T("DonutNowChildFrameDataOnCloseSharedMemName")
 

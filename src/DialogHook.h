@@ -95,10 +95,10 @@ private:
 					if (   strStaticText.Find(ACTIVEXDIALOG_MESSAGE_PARTIAL) != -1
 						|| strStaticText.Find(ACTIVEXDIALOG_MESSAGE_REASONS) != -1		//+++ 2chƒXƒŒ"unDonut Part16" 149 ‚ð”½‰f.
 					) {
-						if ( _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle) ) {
-							//::SendMessage(hDialog,WM_CLOSE,0,0);
-							::DestroyWindow(hDialog);
-						}
+						//if ( _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle) ) {
+						//	//::SendMessage(hDialog,WM_CLOSE,0,0);
+						//	::DestroyWindow(hDialog);
+						//}
 					}
 				}
 			}

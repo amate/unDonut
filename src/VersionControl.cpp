@@ -26,6 +26,7 @@ void	CVersionControl::Run()
 		case 3: _3to4();
 		case 4: _4to5();
 		case 5: _5to6();
+		case 6: _6to7();
 			break;
 		}
 	}
@@ -131,7 +132,20 @@ void	CVersionControl::_5to6()
 	pr.DeleteValue(_T("ActPagNavi"));
 }
 
+void	CVersionControl::_6to7()
+{
+	CIniFileIO pr(g_szIniFileName, _T("Main"));
+	pr.DeleteValue(_T("Max_Window_Count"));
 
+	enum {  
+		MAIN_EX_WINDOWLIMIT = 0x00000010L, 
+		MAIN_EX_LOADGLOBALOFFLINE = 0x00004000L,
+		MAIN_EX_KILLDIALOG		= 0x00008000L
+	};
+	DWORD dwExStyle = pr.GetValue(_T("Extended_Style"), CMainOption::s_dwMainExtendedStyle);
+	dwExStyle &= ~(MAIN_EX_WINDOWLIMIT | MAIN_EX_LOADGLOBALOFFLINE | MAIN_EX_KILLDIALOG);
+	pr.SetValue(dwExStyle, _T("Extended_Style"));
+}
 
 
 

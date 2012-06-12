@@ -746,7 +746,7 @@ void CChildFrame::Impl::searchEngines(const CString& strKeyWord)
 {
 	CString 	strSearchWord = strKeyWord;
 
-//	if (CAddressBarOption::s_bReplaceSpace)
+	if (m_pGlobalConfig->bReplaceSpace)
 		strSearchWord.Replace( _T("　"), _T(" ") );
 
 	//_ReplaceCRLF(strSearchWord,CString(_T(" ")));
@@ -755,9 +755,8 @@ void CChildFrame::Impl::searchEngines(const CString& strKeyWord)
 	strSearchWord.Replace( _T("\r\n"), _T("") );
 
 	CIniFileI	pr( g_szIniFileName, _T("AddressBar") );
-	CString 		strEngin = pr.GetStringUW( _T("EnterCtrlEngin"), NULL, 256 );
-
-	::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) strSearchWord, (LPARAM) (LPCTSTR) strEngin);
+	CString 		strEngine = pr.GetStringUW( _T("EnterCtrlEngin"), NULL, 256 );
+	_SearchWebWithEngine(strSearchWord, strEngine);
 }
 
 static int _Pack(int hi, int low)
@@ -934,6 +933,19 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 {
 	if (pCopyDataStruct->dwData	== kHilightText) {
 		OnHilight(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
+	} else if (pCopyDataStruct->dwData == kNavigateChildFrame) {
+		NavigateChildFrame	data;
+		std::wstringstream	ss;
+		ss << static_cast<LPWSTR>(pCopyDataStruct->lpData);
+		boost::archive::text_wiarchive	ar(ss);
+		ar >> data;
+		
+		SetDLCtrl(data.dwDLCtrl);
+		SetExStyle(data.dwExStyle);
+		if (data.dwAutoRefresh)
+			SetAutoRefreshStyle(data.dwAutoRefresh);
+		Navigate2(data.strURL);
+	
 	} else {
 		SetMsgHandled(FALSE);
 	}
@@ -1778,7 +1790,11 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 				bNoAddFromMenu = true;	// 選択範囲からリンクが見つかったので
 		}
 	});
-#if 1	//:::
+
+	std::vector<CString> vecUrl(arrUrls.GetData(), arrUrls.GetData() + arrUrls.GetSize());
+	auto pair = CreateMultiText(vecUrl);
+	OpenMultiUrl(pair, m_hWnd);
+#if 0	//:::
 	//m_MDITab.SetLinkState(LINKSTATE_B_ON);
 	int size = arrUrls.GetSize();
 	for (int i = 0; i < size; ++i) {
@@ -1786,13 +1802,14 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 		if (  i == (size - 1) 
 			&& !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE_NEWWIN))
 			dwOpenFlags |= D_OPENFILE_ACTIVATE;	// リンクを開くときアクティブにしないに従う
+
 		DonutOpenFile(arrUrls[i], dwOpenFlags);
 	}
 	//m_MDITab.SetLinkState(LINKSTATE_OFF);
 #endif
 }
 
-/// URLテキストを開く
+/// URLテキストを開く : 選択文字列からURLっぽい文字列を取り出して開く
 void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	std::wstring strText = GetSelectedText();
@@ -1812,6 +1829,8 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 		vecUrls.push_back(strUrl);
 		itbegin = result[0].second;
 	}
+	auto pair = CreateMultiText(vecUrls);
+	OpenMultiUrl(pair, m_hWnd);
 #if 0
 	std::vector<CString> lines;
 	lines.reserve(20);
@@ -1838,6 +1857,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 		}
 	}
 #endif
+#if 0
 	size_t size = vecUrls.size();
 	for (unsigned i = 0; i < size; ++i) {
 		CString& strUrl = vecUrls[i];
@@ -1848,6 +1868,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 			dwOpenFlags |= D_OPENFILE_ACTIVATE;	// リンクを開くときアクティブにしないに従う
 		DonutOpenFile(strUrl, dwOpenFlags);
 	}
+#endif
 }
 
 /// ポップアップ抑止に追加して閉じます。
@@ -1926,6 +1947,75 @@ void	CChildFrame::Impl::OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCt
 
 	m_nDownloadCounter = 0;
 	OnStateCompleted();
+}
+
+/// ルート階層へ
+void	CChildFrame::Impl::OnViewRoot(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
+{
+	CString strURL = GetLocationURL();
+	int nPos = strURL.Find(_T('/'), 9);
+	if (nPos == -1)
+		return ;
+	if (strURL.ReverseFind(_T('/')) == nPos) {	// すでルートなのでさらに遡る
+		std::wregex	rx(L"(http(?:s)?://)([^/]+/)");
+		std::wsmatch result;
+		std::wstring url = strURL;
+		if (std::regex_match(url, result, rx)) {
+			std::wstring prefix = result[1].str();
+			std::wstring body = result[2].str();
+			int nDotPos = body.find(L'.');
+			if (nDotPos != -1) {
+				strURL.Format(_T("%s%s"), prefix.c_str(), body.substr(nDotPos + 1).c_str());
+				Navigate2(strURL);
+				return ;
+			}
+		}
+	}
+
+	strURL = strURL.Left(nPos + 1);
+	Navigate2(strURL);
+}
+
+/// プライバシーレポート
+void	CChildFrame::Impl::OnPrivacyReport(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
+{
+	CString 	strURL = GetLocationURL();
+	CComBSTR	bstrURL(strURL);
+
+	CComQIPtr<IServiceProvider>	spSP = m_spBrowser;
+	if (spSP == NULL)
+		return ;
+
+	static const CLSID CLSID_IEnumPrivacyRecords = { 0x3050f844, 0x98b5, 0x11cf, { 0xbb, 0x82, 0x00, 0xaa, 0x00, 0xbd, 0xce, 0x0b } };
+
+	CComPtr<IEnumPrivacyRecords>	spEnumRecords;
+	spSP->QueryService(CLSID_IEnumPrivacyRecords, &spEnumRecords);
+	if (spEnumRecords == NULL)
+		return ;
+
+	HINSTANCE		hInstDLL;
+	typedef DWORD	(WINAPI* FuncDoPrivacyDlg)(HWND, LPOLESTR, IEnumPrivacyRecords*, BOOL);
+	FuncDoPrivacyDlg pfnDoPrivacyDlg = NULL;
+
+	if (Misc::getIEMejourVersion() >= 8 && _CheckOsVersion_VistaLater() == 0){//\\ XP+IE8の場合
+		hInstDLL = ::LoadLibrary( _T("ieframe.dll") );
+	} else {//vista+IE8の場合
+		hInstDLL = ::LoadLibrary( _T("shdocvw.dll") );
+	}
+	if ( hInstDLL == NULL )
+		return ;
+
+	pfnDoPrivacyDlg	= (FuncDoPrivacyDlg)GetProcAddress( hInstDLL, "DoPrivacyDlg" );
+	if (pfnDoPrivacyDlg == NULL) {
+		::FreeLibrary(hInstDLL);
+		return ;
+	}
+
+	BOOL	bPrivacyImpacted = FALSE;
+	spEnumRecords->GetPrivacyImpacted(&bPrivacyImpacted);
+	pfnDoPrivacyDlg(m_hWnd, bstrURL, spEnumRecords, !bPrivacyImpacted);
+
+	::FreeLibrary( hInstDLL );
 }
 
 
@@ -2282,7 +2372,7 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 			{
 				CString strTitle = szTitle;
 				strTitle.Replace(_T('\"'), _T('_'));
-				vecLog.push_back(std::make_pair<CString, CString>(szTitle, szURL));
+				vecLog.push_back(std::make_pair(CString(szTitle), CString(szURL)));
 				++count;
 			}
 			if (szTitle) ::CoTaskMemFree( szTitle );

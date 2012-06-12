@@ -1438,9 +1438,9 @@ void CLinkPopupMenu::OnRButtonUp(UINT nFlags, CPoint point)
 	} else {
 		CLinkPopupMenu::ShowRClickMenuAndExecCommand(m_pFolder, nullptr, m_hWnd);
 	}
-	if (nCount != (int)m_pFolder->size())
-		_CloseBaseSubMenu();
-	else
+	//if (nCount != (int)m_pFolder->size())
+	//	_CloseBaseSubMenu();
+	//else
 		_UpdateItemPosition();
 }
 

@@ -139,7 +139,13 @@ bool	GetDonutTempPath(CString& strTempPath);
 /// エクスプローラーを開いてアイテムを選択する
 void	OpenFolderAndSelectItem(const CString& strPath);
 
+///------------------------------------------
+/// vecTextを "テキスト１\0テキスト２\0テキスト３\0\0" といった形式に変換して返す
+std::pair<std::unique_ptr<WCHAR[]>, int>	CreateMultiText(const std::vector<CString>& vecText);
 
+///------------------------------------------
+/// "テキスト１\0テキスト２\0テキスト３\0\0" といった文字列を vector<CString> にして返す
+std::vector<CString>	GetMultiText(LPCWSTR multiText);
 
 #endif	// __DONUTPFUNC_H__
 

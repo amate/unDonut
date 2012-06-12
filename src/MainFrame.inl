@@ -217,13 +217,22 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
 			::PostMessage(pChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
 		} else*/ {
-			//if (DLCtrl)
-			//	pChild->SetDLCtrl(DLCtrl.get());
-			//if (ExStyle)
-			//	pChild->SetExStyle(ExStyle.get());
-			//if (AutoRefresh)
-			//	pChild->SetAutoRefreshStyle(AutoRefresh.get());
-			//pChild->Navigate2(strFileOrURL);
+			NavigateChildFrame	data;
+			data.strURL	= strFileOrURL;
+			data.dwDLCtrl	= (DLCtrl != -1)  ? DLCtrl  : CDLControlOption::s_dwDLControlFlags;
+			data.dwExStyle	= (ExStyle != -1) ? ExStyle : CDLControlOption::s_dwExtendedStyleFlags;
+			data.dwAutoRefresh	= AutoRefresh;
+			
+			std::wstringstream ss;
+			boost::archive::text_woarchive ar(ss);
+			ar << data;
+			std::wstring serializedData = ss.str();
+
+			COPYDATASTRUCT cds = { sizeof(cds) };
+			cds.dwData	= kNavigateChildFrame;
+			cds.lpData	= (LPVOID)serializedData.data();
+			cds.cbData	= (serializedData.length() + 1) * sizeof(TCHAR);
+			::SendMessage(hWndActive, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 		}
 
 		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlags) ) {
@@ -374,7 +383,7 @@ bool CMainFrame::Impl::OnDDEOpenFile(const CString& strFileName)
 
 	UserOpenFile( strFileName, dwOpen );
 	if (CStartUpOption::s_dwActivate) {
-		//IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
+		_DeleteTrayIcon();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
 			ShowWindow(SW_RESTORE);
 			//ShowWindow_Restore(true);
@@ -574,6 +583,18 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 		LPTSTR		lpText;
 		UINT		cx; 		// can be 0
 	};
+
+	auto funcGetDefaultStyle = [](UINT nID) -> UINT {
+		auto it = std::find_if(std::begin(DefaultReBarStyle), std::end(DefaultReBarStyle), 
+			[nID](const ReBarIDAndStyle& idAndstyle) { return idAndstyle.nID == nID; }
+		);
+		if (it != std::end(DefaultReBarStyle)) {
+			return it->fStyle;
+		} else {
+			ATLASSERT( FALSE );
+			return 0;
+		}
+	};
 	std::vector<ReBarBandInfo>	vecReBarBandInfo;
 	CIniFileI	pr(g_szIniFileName, _T("ReBar"));
 	for (auto it = vecBand.cbegin(); it != vecBand.cend(); ++it) {
@@ -584,7 +605,7 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 		prefix.Format(_T("band#%d"), rbi.nID);
 		rbi.nIndex	= pr.GetValuei(prefix + _T(".index"));
 		rbi.cx		= pr.GetValuei(prefix + _T(".cx"));
-		rbi.fStyle	= pr.GetValuei(prefix + _T(".fStyle"));
+		rbi.fStyle	= pr.GetValuei(prefix + _T(".fStyle"), funcGetDefaultStyle(rbi.nID));
 		vecReBarBandInfo.push_back(rbi);
 	}
 	boost::sort(vecReBarBandInfo, [](const ReBarBandInfo& rbi1, const ReBarBandInfo& rbi2) {
@@ -688,18 +709,20 @@ void	CMainFrame::Impl::_initSkin()
 	m_LinkBar.SetFont		(CSkinOption::s_lfLinkBar.CreateFontIndirect());
 	m_StatusBar.SetProxyComboBoxFont(CSkinOption::s_lfProxyComboBox.CreateFontIndirect());
 
-	{
-		CIniFileI	prFont( g_szIniFileName, _T("Main") );
-		MTL::CLogFont	lf;
-		lf.InitDefault();
-		if ( lf.GetProfile(prFont) ) {
-			m_CommandBar.SetFont(::CreateFontIndirect(&lf));
+	CIniFileI	prFont( g_szIniFileName, _T("Main") );
+	MTL::CLogFont	lf;
+	lf.InitDefault();
+	if ( lf.GetProfile(prFont) ) {
+		m_CommandBar.SetFont(::CreateFontIndirect(&lf));
 
-			CFontHandle 	font;	//\\ SetFontもここでするように
-			MTLVERIFY( font.CreateFontIndirect(&lf) );
-			if (font.m_hFont) 
-				SetFont(font);
-		}
+		CFontHandle 	font;	//\\ SetFontもここでするように
+		MTLVERIFY( font.CreateFontIndirect(&lf) );
+		if (font.m_hFont) 
+			SetFont(font);
+	} else {
+		WTL::CLogFont	lf;
+		lf.SetMenuFont();
+		m_CommandBar.SetFont(lf.CreateFontIndirect());
 	}
 
 	/* スキン */
@@ -768,15 +791,74 @@ void	CMainFrame::Impl::OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther
 	}
 }
 
+/// タイトルバーの右クリックメニューのコマンド
+void	CMainFrame::Impl::OnSysCommand(UINT nID, CPoint pt)
+{
+	switch (nID) {
+	case ID_VIEW_COMMANDBAR:
+		OnViewBar(0, ID_VIEW_COMMANDBAR, NULL);
+		break;
+
+	case SC_RESTORE:
+		if (m_bFullScreen) {
+			_FullScreen(false);
+		} else {
+			SetMsgHandled(FALSE);
+		}
+		break;
+
+  #if 0	//+++ 最小化ボタンを押した時に、タスクトレイに入るようにしてみる.
+	case SC_MINIMIZE:
+		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
+			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
+		) {
+			OnGetOut(0,0,0);
+			SetMsgHandled(TRUE);
+			break;
+		}
+		SetMsgHandled(FALSE);
+		break;
+
+	case SC_CLOSE:
+		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_CLOSEBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
+			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
+		) {
+			OnGetOut(0,0,0);
+			SetMsgHandled(TRUE);
+			break;
+		}
+		SetMsgHandled(FALSE);
+		break;
+  #endif
+
+	default:
+		SetMsgHandled(FALSE);
+		break;
+	}
+
+}
+
 BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 {
 	switch (pCopyDataStruct->dwData) {
 	case kNewDonutInstance:
 		{
 			CString strURL = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
-			UserOpenFile(strURL);
+			std::vector<CString> vecUrl;
+			PerseUrls(strURL, vecUrl);
+			if (vecUrl.size() == 1) {
+				OnDDEOpenFile(strURL);
+			} else if (vecUrl.size() > 1) {
+				for (auto it = vecUrl.cbegin(); it !=  vecUrl.cend(); ++it) {
+					std::unique_ptr<NewChildFrameData>	item(new NewChildFrameData(m_ChildFrameClient));
+					item->strURL	= *it;
+					m_deqNewChildFrameData.push_back(std::move(item));
+				}
+				OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
+			}
 		}
 		break;
+
 	case kSearchTextWithEngine:
 		{
 			CString str = (LPCWSTR)pCopyDataStruct->lpData;
@@ -798,11 +880,70 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kOpenMultiUrl:
+		{
+			std::vector<CString> vecUrl = GetMultiText((LPCWSTR)pCopyDataStruct->lpData);
+			for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
+				NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
+				pdata->strURL	= *it;
+				pdata->bLink	= true;
+
+				m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
+			}
+			if (m_deqNewChildFrameData.size() > 0) {
+				std::reverse(m_deqNewChildFrameData.begin(), m_deqNewChildFrameData.end());
+				//m_TabBar.InsertHere(true);
+				//m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
+				CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
+			} 
+		}
+		break;
+
 	default:
 		SetMsgHandled(FALSE);
-		return 0;
+		break;
 	}
 	return 0;
+}
+
+/// タスクトレイからの通知メッセージ
+LRESULT CMainFrame::Impl::OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if ( IsWindowVisible() ) {
+		return -1;
+	} else {
+		switch (lParam) {
+		case WM_LBUTTONUP:
+			_DeleteTrayIcon();
+			return 0;
+			break;
+
+		case WM_RBUTTONUP:
+			{
+				::SetForegroundWindow(m_hWnd);
+				CMenu	menu0;
+				menu0.LoadMenu(IDR_TRAYICON_MENU);
+				CMenuHandle menu = menu0.GetSubMenu(0);
+				ATLASSERT(menu.IsNull() == false);
+
+				// ポップアップメニューを開く.
+				POINT 	pt;
+				::GetCursorPos(&pt);
+				HRESULT hr = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON| TPM_RETURNCMD, pt.x, pt.y, m_hWnd, NULL);
+				if (hr == 57666/*復帰*/) {
+					_DeleteTrayIcon();
+					return 0;
+				}
+				if (hr == 57665/*終了*/) {
+					_DeleteTrayIcon();
+					PostMessage(WM_CLOSE);
+					break;
+				}
+			}
+		}
+
+		return -1;
+	}
 }
 
 void	CMainFrame::Impl::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
@@ -1135,6 +1276,34 @@ void	CMainFrame::Impl::OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wnd
 	MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
 }
 
+/// タスクトレイに退避
+void	CMainFrame::Impl::OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	static int nShow = SW_SHOWNORMAL;
+
+	if ( IsWindowVisible() ) {
+		//+++ メモ:窓状態のときはトレイ化
+#if 0
+		m_bTray = true; 		//+++
+		WINDOWPLACEMENT wp = { sizeof (WINDOWPLACEMENT) };
+		::GetWindowPlacement(m_hWnd, &wp);
+		nShow		  = wp.showCmd;
+	  #if 1 //+++ フルスクリーン以外なら今が最大かどうかを控える
+		if (m_bFullScreen == 0)
+			m_bOldMaximized = (nShow == SW_MAXIMIZE);
+	  #endif
+#endif
+		_SetHideTrayIcon();	//+++ トレイアイコン化
+		//Sleep(100); 		// UDT TODO
+	} else {				// just db F9 press , come here :p
+		//m_bTray      = false;	//+++
+		//m_bMinimized = 0;
+		//x ShowWindow( SW_SHOW /*nShow*/ );
+
+		_DeleteTrayIcon();	//+++ トレイアイコン削除
+	}
+}
+
 /// IEのオプションを表示する
 void	CMainFrame::Impl::OnViewOption(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -1296,6 +1465,31 @@ void	CMainFrame::Impl::OnTabSwitch(UINT uNotifyCode, int nID, CWindow wndCtl)
 	}
 }
 
+void	CMainFrame::Impl::OnOperateCommandToAllTab(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	int nApplyCommand = 0;
+	HWND hWndExceptChildFrame = NULL;
+	switch (nID) {
+	case ID_VIEW_STOP_ALL:
+		nApplyCommand = ID_VIEW_STOP;
+		break;
+
+	case ID_VIEW_REFRESH_ALL:
+		nApplyCommand = ID_VIEW_REFRESH;
+		break;
+
+	case ID_WINDOW_REFRESH_EXCEPT:
+		nApplyCommand = ID_VIEW_REFRESH;
+		hWndExceptChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
+		break;
+	}
+	m_TabBar.ForEachWindow([=](HWND hWnd) {
+		if (hWnd != hWndExceptChildFrame)
+			::SendMessage(hWnd, WM_COMMAND, nApplyCommand, 0);
+	});
+}
+
+
 /// メインメニューの [表示]-[ツールバー]を表示する
 LRESULT CMainFrame::Impl::OnShowToolBarMenu()
 {
@@ -1324,7 +1518,8 @@ void	CMainFrame::Impl::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 	if (m_deqNewChildFrameData.size() > 0) {
 		m_deqNewChildFrameData.pop_front();
 		if (m_deqNewChildFrameData.size() > 0) {
-			m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
+			if (m_deqNewChildFrameData[0]->bLink == false)
+				m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
 			CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
 		} else {
 			m_TabBar.InsertHere(false);
@@ -1497,8 +1692,8 @@ void	CMainFrame::Impl::_ShowBandsFullScreen(bool bOn)
 		int nToolbarPluginCount = CPluginManager::GetCount(PLT_TOOLBAR);
 		s_mapToolbarOldVisible.RemoveAll();
 
-		for (nIndex = 0; nIndex < _countof(STDBAR_ID); nIndex++) {
-			s_mapToolbarOldVisible.Add( STDBAR_ID[nIndex], MtlIsBandVisible( m_hWndToolBar, STDBAR_ID[nIndex] ) );
+		for (nIndex = 0; nIndex < _countof(DefaultReBarStyle); nIndex++) {
+			s_mapToolbarOldVisible.Add( DefaultReBarStyle[nIndex].nID, MtlIsBandVisible( m_hWndToolBar, DefaultReBarStyle[nIndex].nID ) );
 		}
 		//for (nIndex = 0; nIndex < nToolbarPluginCount; nIndex++) {
 		//	s_mapToolbarOldVisible.Add( IDC_PLUGIN_TOOLBAR + nIndex,
@@ -1531,4 +1726,30 @@ void	CMainFrame::Impl::_ShowBandsFullScreen(bool bOn)
 	SetRedraw(TRUE);
 }
 
+
+/// トレイアイコンの設定.
+void CMainFrame::Impl::_SetHideTrayIcon()
+{
+	//RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
+	CString iconPath = _GetSkinDir() + _T("icon.ico");
+	CIconHandle icon;
+	if (::PathFileExists(iconPath))
+		icon.LoadIcon((LPCTSTR)iconPath, 16, 16, LR_LOADFROMFILE);
+	if (icon.IsNull())
+		icon.LoadIcon(IDR_MAINFRAME);
+	TrayMessage(m_hWnd, NIM_ADD, TM_TRAY, icon, DONUT_NAME);		//+++
+
+	ShowWindow(SW_HIDE);
+}
+
+/// トレイ化の終了/トレイアイコンの削除.
+void CMainFrame::Impl::_DeleteTrayIcon()
+{
+	TrayMessage(m_hWnd, NIM_DELETE, TM_TRAY, 0, NULL);
+	//x m_bTrayFlag = false;
+	if (IsWindowVisible() == false)
+		ShowWindow(SW_RESTORE);
+
+	//RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
+}
 

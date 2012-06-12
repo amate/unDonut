@@ -590,7 +590,6 @@
 #define IDC_BTN_LINKEXPORTTOFOLDER      1439
 #define IDC_EDIT_MAXTEXTWIDTH           1440
 #define IDC_COMBO_BROWSREOPERATINGMODE  1441
-#define IDC_BUTTON_MUTCHTEST            1442
 #define IDC_BUTTON_MATCHTEST            1442
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
@@ -932,6 +931,8 @@
 #define ID_ITEMNONE_33223               33223
 #define ID_SORTBYNAME                   33224
 #define ID_ID_SORTBYNAME                33225
+#define ID_33226                        33226
+#define ID_VIEW_ROOT                    33227
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -976,7 +977,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        328
-#define _APS_NEXT_COMMAND_VALUE         33226
+#define _APS_NEXT_COMMAND_VALUE         33228
 #define _APS_NEXT_CONTROL_VALUE         1443
 #define _APS_NEXT_SYMED_VALUE           130
 #endif

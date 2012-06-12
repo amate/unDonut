@@ -31,6 +31,9 @@ public:
 
 	bool SetUpFileNotification(const CString& strDirPath, bool bWatchSubTree = false)
 	{
+		if (::PathIsDirectory(strDirPath) == FALSE)
+			return false;
+
 		if (m_hExitEvent != INVALID_HANDLE_VALUE)
 			return false;	// ŠÄ‹‚ğÀs’†‚Å‚ ‚é
 		ATLASSERT(m_funcNotify);

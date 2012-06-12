@@ -1024,6 +1024,15 @@ LRESULT	CDonutAddressBar::Impl::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM l
 // コンボボックスがダブルクリックされた
 LRESULT	CDonutAddressBar::Impl::OnLButtonDoubleClick(UINT /*uMsg */ , WPARAM /*wParam */ , LPARAM /*lParam */ , BOOL & /*bHandled */ )
 {
+	CPoint pt;
+	::GetCursorPos(&pt);
+	m_comboFlat.ScreenToClient(&pt);
+	CRect rcIcon;
+	rcIcon.bottom	= _CalcBtnHeight(16);
+	rcIcon.right	= 23;
+	if (rcIcon.PtInRect(pt) == FALSE)
+		return 0;
+
 	CString strUrl	= GetAddressBarText();
 	if ( strUrl.IsEmpty() )
 		return 0;

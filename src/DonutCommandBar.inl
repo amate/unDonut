@@ -168,6 +168,7 @@ int  CDonutCommandBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		m_ChevronSize.SetSize(17, 24);
 
 	m_menu.LoadMenu(IDR_MAINFRAME);
+	_UpdateItemPosition();
 
 	CRootFavoritePopupMenu::LoadFavoriteBookmark();
 
@@ -374,8 +375,8 @@ void	CDonutCommandBar::Impl::_RefreshBandInfo()
 
 void	CDonutCommandBar::Impl::_UpdateItemPosition()
 {
-	CRect rcClient;
-	GetClientRect(&rcClient);
+	m_vecCommandButton.clear();
+
 	int nLeftPos = 0;
 	int nCount = m_menu.GetMenuItemCount();
 	for (int i = 0; i < nCount; ++i) {

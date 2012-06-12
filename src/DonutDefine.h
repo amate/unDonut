@@ -48,10 +48,12 @@ enum DonutOpenFileFlags {
 
 enum WmCopyDataUseage {
 	kNewDonutInstance	= 1,
-	kSetFaviconURL		= 2,
-	kSearchTextWithEngine = 3,
-	kSetSearchText		= 4,
-	kHilightText		= 5,
+	kSetFaviconURL,
+	kSearchTextWithEngine,
+	kSetSearchText,
+	kHilightText,
+	kNavigateChildFrame,
+	kOpenMultiUrl,
 
 };
 

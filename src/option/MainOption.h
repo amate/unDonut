@@ -15,7 +15,7 @@ enum EMain_Ex {
 	MAIN_EX_NOACTIVATE				= 0x00000002L,
 	// MAIN_EX_NOINITWND			= 0x00000004L,	// obsolete
 	MAIN_EX_ONEINSTANCE 			= 0x00000008L,
-	MAIN_EX_WINDOWLIMIT 			= 0x00000010L,
+	// MAIN_EX_WINDOWLIMIT 			= 0x00000010L,
 	MAIN_EX_NOCLOSEDFG				= 0x00000020L,
 	// MAIN_EX_NOMDI					= 0x00000040L,
 	// MAIN_EX_VIEWCLIPBOARD		= 0x00000080L,
@@ -25,8 +25,8 @@ enum EMain_Ex {
 	MAIN_EX_ADDFAVORITEOLDSHELL 	= 0x00000800L,
 	MAIN_EX_ORGFAVORITEOLDSHELL 	= 0x00001000L,
 	MAIN_EX_GLOBALOFFLINE			= 0x00002000L,
-	MAIN_EX_LOADGLOBALOFFLINE		= 0x00004000L,
-	MAIN_EX_KILLDIALOG				= 0x00008000L,
+	// MAIN_EX_LOADGLOBALOFFLINE		= 0x00004000L,
+	// MAIN_EX_KILLDIALOG				= 0x00008000L,
 	MAIN_EX_REGISTER_AS_BROWSER 	= 0x00010000L,
 	MAIN_EX_INHERIT_OPTIONS 		= 0x00020000L,
 	MAIN_EX_IGNORE_BLANK			= 0x00040000L,
@@ -111,9 +111,6 @@ public:
 	static BROWSEROPERATINGMODE s_BrowserOperatingMode;
 
 private:
-
-	static DWORD	s_dwMaxWindowCount;
-
 	static DWORD	s_dwErrorBlock;
 
 	static CString	s_strExplorerUserDirectory;
@@ -126,7 +123,6 @@ public:
 	static void 	WriteProfile();
 	static void 	SetExplorerUserDirectory(const CString &strPath);
 	static const CString&	GetExplorerUserDirectory();
-	static bool 	IsQualify(int nWindowCount);
 
 
 	// Message map and handlers
@@ -183,20 +179,16 @@ public:
 		DDX_CHECK( IDC_CHECK_EXTERNALNEWTABACTIVE		, s_bExternalNewTabActive)
 		DDX_CHECK( IDC_CHECK_MAIN_INHERIT_OPTIONS		, m_nInheritOptions 	)
 		DDX_CHECK( IDC_CHECK_ONEINSTANCE				, m_nOneInstance		)
-		DDX_CHECK( IDC_CHECK_MAIN_LIMIT 				, m_nLimit				)
 		DDX_CHECK( IDC_CHECK_MAIN_BACKUP				, m_nBackUp 			)
 		DDX_CHECK( IDC_CHECK_MAIN_NOCLOSEDFG			, m_nNoCloseDFG 		)
 		DDX_CHECK( IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL	, m_nAddFavoriteOldShell)
 		DDX_CHECK( IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL	, m_nOrgFavoriteOldShell)
-		DDX_CHECK( IDC_CHECK_MAIN_LOADGLOBALOFFLINE 	, m_nLoadGlobalOffline	)
-		DDX_CHECK( IDC_CHECK_MAIN_KILLDIALOG			, m_nKillDialog 		)
 		DDX_CHECK( IDC_CHECK_MAIN_REGISTER_AS_BROWSER	, m_nRegisterAsBrowser	)
 		DDX_CHECK( IDC_CHK_IGNORE_BLANK					, s_bIgnore_blank		)
 		DDX_CHECK( IDC_CHK_USECUSTOMFINDBAR				, s_bUseCustomFindBar	)
 		//+++ DDX_CHECK( IDC_CHECK_NOCLOSE_NAVILOCK 	, m_nNoCloseNL			)
 		DDX_COMBO_INDEX( IDC_COMBO_BROWSREOPERATINGMODE	, m_nBrowserOperatingMode)
 
-		DDX_INT_RANGE( IDC_EDIT_MAIN_LIMITEDCOUNT		, m_nMaxWindowCount, 0, 255 )
 		DDX_INT_RANGE( IDC_EDIT_MAIN_BACKUPTIME 		, m_nBackUpTime    , 1, 120 )
 
 		// UDT DGSTR ( dai
@@ -230,19 +222,15 @@ private:
 	int 	m_nNoActivate;
 	int 	m_nNoActivateNewWin;
 	int 	m_nOneInstance;
-	int 	m_nLimit;
 	int 	m_nNoCloseDFG;
 	int 	m_nBackUp;
 	int 	m_nAddFavoriteOldShell;
 	int 	m_nOrgFavoriteOldShell;
 	int 	m_nRegisterAsBrowser;
-	int 	m_nMaxWindowCount;
 	int 	m_nBackUpTime;
 	int 	m_nAutoRefreshTime;
 	int 	m_nAutoRefTimeMin;
 	int 	m_nAutoRefTimeSec; // UDT DGSTR ( dai
-	int 	m_nLoadGlobalOffline;
-	int 	m_nKillDialog;
 	int 	m_nInheritOptions;
 	//+++ int		m_nNoCloseNL;			//+++ ナビロック時閉じれなくするフラグ
 	int		m_nBrowserOperatingMode;

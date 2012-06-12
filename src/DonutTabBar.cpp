@@ -533,7 +533,7 @@ public:
 	// Constant
 	enum _ETabDrawConstants {
 		s_kcxTextMargin = 7,
-		s_kcyTextMargin = 3,	// タブとテキスト間の上下の余白
+		s_kcyTextMargin = 7,	// タブとテキスト間の上下の余白
 		s_kcxGap		= 2,
 		s_kcyGap		= 2,	// タブの上下間の幅
 		s_kSideMargin	= 2,	// 左右の余白
@@ -2486,6 +2486,8 @@ CRect	CDonutTabBar::Impl::_MeasureItem(const CString& strText)
 	int cx = MtlComputeWidthOfText(strText, m_font);
 	// width is width of text plus a bunch of stuff
 	cx += s_kcxTextMargin * 2;	// L/R margin for readability
+	if (CTabBarOption::s_bShowFavicon)
+		cx += 20;
 
 	int	cy = GetFontHeight(m_font);
 	cy += s_kcyTextMargin * 2;

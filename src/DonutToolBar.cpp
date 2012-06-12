@@ -266,7 +266,6 @@ public:
 	void	SetDropDownMenu(HMENU hMenu, HMENU hMenuUser, HMENU hMenuCSS);
 	void	ReloadSkin();
 	void	Customize();
-	function<void ()> GetInitButtonfunction();
 
 	// Overrides
 	HMENU	ChevronHandler_OnGetChevronMenu(int nCmdID, HMENU &hMenuDestroy);
@@ -612,11 +611,14 @@ void	CDonutToolBar::Impl::_InitButton()
 			InsertButton(-1, &tbBtn);
 		}
 	}
-	CSize size;
-	GetButtonSize(size);
-	SetWindowPos(NULL, 0, 0, 10, size.cy, SWP_NOMOVE | SWP_NOZORDER);
-
-
+	//CSize size;
+	//GetButtonSize(size);
+	//if (s_vecShowBtn.size() > 0) {
+	//	CRect rcLastButton;
+	//	GetRect(s_vecTBbtns[s_vecShowBtn.back()].idCommand, &rcLastButton);
+	//	size.cx = rcLastButton.right;
+	//}
+	//SetWindowPos(NULL, 0, 0, size.cy, size.cy, SWP_NOMOVE | SWP_NOZORDER);
 }
 
 //------------------------

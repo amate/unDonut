@@ -16,14 +16,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 DWORD		CMainOption::s_dwMainExtendedStyle		=
-	  MAIN_EX_KILLDIALOG
-	| MAIN_EX_INHERIT_OPTIONS 
+	  MAIN_EX_INHERIT_OPTIONS 
 	| MAIN_EX_EXTERNALNEWTAB 
 	| MAIN_EX_EXTERNALNEWTABACTIVE;
 
 DWORD		CMainOption::s_dwMainExtendedStyle2 	= 0;
 DWORD		CMainOption::s_dwExplorerBarStyle		= 0;
-DWORD		CMainOption::s_dwMaxWindowCount 		= 0;
 DWORD		CMainOption::s_dwBackUpTime 			= 1;
 DWORD		CMainOption::s_dwAutoRefreshTime		= 10;
 
@@ -65,7 +63,6 @@ void CMainOption::GetProfile()
 	{
 		pr.QueryValue( s_dwMainExtendedStyle	, _T("Extended_Style")		);
 		pr.QueryValue( s_dwMainExtendedStyle2	, _T("Extended_Style2") 	);
-		pr.QueryValue( s_dwMaxWindowCount		, _T("Max_Window_Count")	);
 		pr.QueryValue( s_dwBackUpTime			, _T("BackUp_Time") 		);
 		pr.QueryValue( s_dwAutoRefreshTime		, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
 		pr.QueryValue( s_dwExplorerBarStyle 	, _T("ExplorerBar_Style")	);	// UH
@@ -80,12 +77,6 @@ void CMainOption::GetProfile()
 	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
 	s_bExternalNewTab	= (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTAB) != 0;
 	s_bExternalNewTabActive = (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTABACTIVE) != 0;
-
-	// NOTE. If all the Web Browser server on your desktop is unloaded, some OS automatically goes online.
-	//		 And if all the Web Browser server on you application is unloaded, some OS automatically goes online.
-	if ( _check_flag(MAIN_EX_LOADGLOBALOFFLINE, s_dwMainExtendedStyle) ) {
-		MtlSetGlobalOffline( _check_flag(MAIN_EX_GLOBALOFFLINE, s_dwMainExtendedStyle) );
-	}
 
 	pr.QueryValue(s_nAutoImageResizeType, _T("AutoImageResizeType"));
 	s_BrowserOperatingMode	= (BROWSEROPERATINGMODE)pr.GetValue(_T("BrowserOperatingMode"), s_BrowserOperatingMode);
@@ -108,7 +99,6 @@ void CMainOption::WriteProfile()
 		pr.SetValue( s_dwMainExtendedStyle	, _T("Extended_Style")		);
 		pr.SetValue( s_dwMainExtendedStyle2 , _T("Extended_Style2") 	);
 		pr.SetValue( s_dwExplorerBarStyle	, _T("ExplorerBar_Style")	);	// UDT DGSTR ( dai
-		pr.SetValue( s_dwMaxWindowCount 	, _T("Max_Window_Count")	);
 		pr.SetValue( s_dwBackUpTime 		, _T("BackUp_Time") 		);
 		pr.SetValue( s_dwAutoRefreshTime	, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
 		pr.SetValue( s_bTravelLogGroup		, _T("TravelLogGroup")		);
@@ -136,20 +126,6 @@ const CString& CMainOption::GetExplorerUserDirectory()
 {
 	return s_strExplorerUserDirectory;
 }
-
-
-bool CMainOption::IsQualify(int nWindowCount)
-{
-	if ( !(s_dwMainExtendedStyle & MAIN_EX_WINDOWLIMIT) )
-		return true;
-
-	if (nWindowCount < (int) s_dwMaxWindowCount)
-		return true;
-	else
-		return false;
-}
-
-
 
 void CMainOption::OnMainExNewWindow(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
@@ -268,7 +244,6 @@ void CMainPropertyPage::_GetData()
 	if (m_nNoActivate			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOACTIVATE;
 	if (m_nNoActivateNewWin 	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOACTIVATE_NEWWIN;
 	if (m_nOneInstance			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ONEINSTANCE;
-	if (m_nLimit				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_WINDOWLIMIT;
 	if (m_nNoCloseDFG			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOCLOSEDFG;
 	if (m_nBackUp				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_BACKUP;
 	if (m_nAddFavoriteOldShell	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ADDFAVORITEOLDSHELL;
@@ -281,8 +256,6 @@ void CMainPropertyPage::_GetData()
 		MtlSendOffCommand(m_wnd, ID_REGISTER_AS_BROWSER);
 	}
 
-	if (m_nLoadGlobalOffline	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_LOADGLOBALOFFLINE;
-	if (m_nKillDialog			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_KILLDIALOG;
 	if (m_nInheritOptions		/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_INHERIT_OPTIONS;
 
 	//+++ if (m_nNoCloseNL				) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOCLOSE_NAVILOCK;			//+++ ’Ç‰Á
@@ -300,8 +273,6 @@ void CMainPropertyPage::_GetData()
 		}
 	}
 
-	// update max window count
-	CMainOption::s_dwMaxWindowCount  = m_nMaxWindowCount;
 	CMainOption::s_dwBackUpTime 	 = m_nBackUpTime;
 	// UDT DGSTR ( dai
 	m_nAutoRefreshTime				 = m_nAutoRefTimeMin * 60 + m_nAutoRefTimeSec;
@@ -329,10 +300,8 @@ void CMainPropertyPage::_SetData()
 	m_nNoActivate		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE		  ) != 0;		//+++ ? 1 : 0;
 	m_nNoActivateNewWin    = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOACTIVATE_NEWWIN  ) != 0;		//+++ ? 1 : 0;
 	m_nOneInstance		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ONEINSTANCE		  ) != 0;		//+++ ? 1 : 0;
-	m_nLimit			   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_WINDOWLIMIT		  ) != 0;		//+++ ? 1 : 0;
 	m_nNoCloseDFG		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG		  ) != 0;		//+++ ? 1 : 0;
 	m_nBackUp			   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP			  ) != 0;		//+++ ? 1 : 0;
-	m_nMaxWindowCount	   = CMainOption::s_dwMaxWindowCount;
 	m_nBackUpTime		   = CMainOption::s_dwBackUpTime;
 	// UDT DGSTR ( dai
 	m_nAutoRefreshTime	   = CMainOption::s_dwAutoRefreshTime;
@@ -341,8 +310,6 @@ void CMainPropertyPage::_SetData()
 	// ENDE
 	m_nAddFavoriteOldShell = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ADDFAVORITEOLDSHELL) != 0;		//+++ ? 1 : 0;
 	m_nOrgFavoriteOldShell = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ORGFAVORITEOLDSHELL) != 0;		//+++ ? 1 : 0;
-	m_nLoadGlobalOffline   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_LOADGLOBALOFFLINE  ) != 0;		//+++ ? 1 : 0;
-	m_nKillDialog		   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_KILLDIALOG		  ) != 0;		//+++ ? 1 : 0;
 	m_nRegisterAsBrowser   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_REGISTER_AS_BROWSER) != 0;		//+++ ? 1 : 0;
 	m_nInheritOptions	   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_INHERIT_OPTIONS	  ) != 0;		//+++ ? 1 : 0;
 	//+++ m_nNoCloseNL	   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSE_NAVILOCK   ) != 0;		//+++ ’Ç‰Á.

@@ -256,6 +256,16 @@ struct _Function_Hilight2 {
 	}
 };
 
+void	OpenMultiUrl(const std::pair<std::unique_ptr<WCHAR[]>, int>& pair, CWindow wndChildFrame)
+{
+	COPYDATASTRUCT cds;
+	cds.dwData	= kOpenMultiUrl;
+	cds.lpData	= static_cast<LPVOID>(pair.first.get());
+	cds.cbData	= pair.second * sizeof(WCHAR);
+	wndChildFrame.GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)wndChildFrame.m_hWnd, (LPARAM)&cds);
+}
+
+
 };	// namespace
 
 /////////////////////////////////////////////////////////////
@@ -361,6 +371,8 @@ public:
 		// 表示
 		COMMAND_ID_HANDLER_EX( ID_VIEW_SETFOCUS 		, OnViewSetFocus			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP				, OnViewStop				)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_ROOT				, OnViewRoot				)
+		COMMAND_ID_HANDLER_EX( ID_PRIVACYREPORT			, OnPrivacyReport			)
 		
 		// ツール
 		COMMAND_ID_HANDLER_EX( ID_EDIT_IGNORE			, OnAddClosePopupUrl		)
@@ -433,6 +445,8 @@ public:
 	// 表示
 	void	OnViewSetFocus(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { m_view.SetFocus(); }
 	void	OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnViewRoot(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnPrivacyReport(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewForwardX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 

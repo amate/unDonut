@@ -10,6 +10,7 @@
 #include "option\MenuDialog.h"
 #include "option\DLControlOption.h"
 #include "option\SearchPropertyPage.h"
+#include "option\AddressBarPropertyPage.h"
 #include "option\UrlSecurityOption.h"
 
 #define DONUTGLOBALCONFIGSHAREDNAME	_T("DonutGlobalConfigSharedData")
@@ -55,6 +56,9 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 
 	// CSearchBarOption
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
+
+	// CAddressBarOption
+	pConfig->bReplaceSpace	= CAddressBarOption::s_bReplaceSpace;
 
 	// CUrlSecurityOption
 	pConfig->bUrlSecurityValid = CUrlSecurityOption::s_bValid;

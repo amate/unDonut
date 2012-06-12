@@ -1006,5 +1006,58 @@ void	OpenFolderAndSelectItem(const CString& strPath)
 	::ILFree(pidlChild);
 }
 
+///------------------------------------------
+/// vecTextを "テキスト１\0テキスト２\0テキスト３\0\0" といった形式に変換して返す
+std::pair<std::unique_ptr<WCHAR[]>, int>	CreateMultiText(const std::vector<CString>& vecText)
+{
+	int AllTextLength = 0;
+	std::for_each(vecText.cbegin(), vecText.cend(), [&](const CString& text) {
+		AllTextLength	+= text.GetLength() + 1;
+	});
+	if (AllTextLength == 0) {
+		std::unique_ptr<WCHAR[]> text(new WCHAR[2]);
+		text[0] = 0;
+		text[1] = 0;
+		return std::make_pair(std::move(text), 2);	// return "\0\0"
+	} else {
+		int AllocSize = AllTextLength + 1;
+		std::unique_ptr<WCHAR[]> texts(new WCHAR[AllocSize]);
+		SecureZeroMemory(texts.get(), AllocSize);
+		LPWSTR strStart = texts.get();
+		for (auto it = vecText.cbegin(); it != vecText.cend(); ++it) {
+			::lstrcpyW(strStart, *it);
+			strStart += it->GetLength() + 1;
+		}
+		strStart[0] = L'\0';
+		return std::make_pair(std::move(texts), AllocSize);
+	}
+}
+
+///------------------------------------------
+/// "テキスト１\0テキスト２\0テキスト３\0\0" といった文字列を vector<CString> にして返す
+std::vector<CString>	GetMultiText(LPCWSTR multiText)
+{
+	LPWSTR strStart = const_cast<LPWSTR>(multiText);
+	if (strStart[0] == L'\0' && strStart[1] == L'\0')
+		return std::vector<CString>();
+	std::vector<CString> vecText;
+	do {
+		CString text = strStart;
+		vecText.emplace_back(text);
+		strStart += text.GetLength() + 1;
+	} while (strStart[0] != L'\0');
+	return vecText;
+}
+
+
+
+
+
+
+
+
+
+
+
 
 
