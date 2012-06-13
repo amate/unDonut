@@ -343,6 +343,7 @@ public:
 		MSG_WM_CLOSE		( OnClose		)
 		MSG_WM_SIZE			( OnSize		)
 		MSG_WM_COPYDATA		( OnCopyData	)
+		MSG_WM_SETFOCUS		( OnSetFocus	)
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
@@ -356,6 +357,7 @@ public:
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
 		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
+		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -371,6 +373,7 @@ public:
 		// 表示
 		COMMAND_ID_HANDLER_EX( ID_VIEW_SETFOCUS 		, OnViewSetFocus			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP				, OnViewStop				)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_UP				, OnViewUp					)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_ROOT				, OnViewRoot				)
 		COMMAND_ID_HANDLER_EX( ID_PRIVACYREPORT			, OnPrivacyReport			)
 		
@@ -419,6 +422,7 @@ public:
 	void	OnClose();
 	void	OnSize(UINT nType, CSize size);
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
+	void	OnSetFocus(CWindow wndOld);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
 	void	OnGetChildFrameData(int nID);
@@ -445,6 +449,7 @@ public:
 	// 表示
 	void	OnViewSetFocus(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { m_view.SetFocus(); }
 	void	OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	void	OnViewUp(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewRoot(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnPrivacyReport(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);

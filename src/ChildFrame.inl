@@ -437,43 +437,40 @@ BOOL	CChildFrame::Impl::OnMButtonHook(MSG* pMsg)
 	return FALSE;																//+++ falseを返すことで、IEコンポーネントにウィールクリックの処理を任せる.
 }
 
-static DWORD GetMouseButtonCommand(const MSG& msg)
-{
-	CString 	strKey;
-	switch (msg.message) {
-	case WM_LBUTTONUP:	strKey = _T("LButtonUp");					break;
-	case WM_MBUTTONUP:	strKey = _T("MButtonUp");					break;
-	case WM_XBUTTONUP:	strKey.Format(_T("XButtonUp%d"), GET_XBUTTON_WPARAM(msg.wParam)); break;
-	case WM_MOUSEWHEEL:
-		short zDelta = (short)HIWORD(msg.wParam);
-		if (zDelta > 0)
-			strKey = _T("WHEEL_UP");
-		else
-			strKey = _T("WHEEL_DOWN");
-		break;
-	}
-
-	CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-	return pr.GetValue(strKey, 0);;
-}
-
-static int PointDistance(const CPoint& pt1, const CPoint& pt2)
-{
-	return (int)sqrt( pow(float (pt1.x - pt2.x), 2.0f) + pow(float (pt1.y - pt2.y), 2.0f) );
-}
 
 BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 {
 	if ( !(m_view.GetExStyle() & DVS_EX_MOUSE_GESTURE) )
 		return FALSE;
 
+	MouseGestureData	data;
+	data.hwnd	= pMsg->hwnd;
+	data.wParam	= pMsg->wParam;
+	data.lParam	= pMsg->lParam;
+	data.bCursorOnSelectedText	= m_pGlobalConfig->bUseRightDragSearch && _CursorOnSelectedText();
+	data.strSelectedTextLine	= GetSelectedTextLine();
+	std::wstringstream ss;
+	boost::archive::text_woarchive	ar(ss);
+	ar << data;
+	std::wstring serializedData = ss.str();
+
+	CString strSharedMemName;
+	strSharedMemName.Format(_T("%s0x%x"), MOUSEGESTUREDATASHAREDMEMNAME, m_hWnd);
+	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), strSharedMemName);
+	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
+	::UnmapViewOfFile((LPVOID)sharedMemData);
+
+	GetTopLevelWindow().PostMessage(WM_MOUSEGESTURE, (WPARAM)m_hWnd, (LPARAM)hMap);
+	return TRUE;
+#if 0
 	SetCapture();
 
 	CPoint	ptDown(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 	::ClientToScreen(pMsg->hwnd, &ptDown);
 	CPoint	ptLast = ptDown;
 
-	bool bCursorOnSelectedText = m_pGlobalConfig->bUseRightDragSearch && _CursorOnSelectedText();
+	bool bCursorOnSelectedText
 	HMODULE	hModule	= ::LoadLibrary(_T("ole32.dll"));
 	CCursor cursor	= ::LoadCursor(hModule, MAKEINTRESOURCE(3));
 	CString	strSearchEngine;
@@ -670,6 +667,7 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 		::PostMessage(pMsg->hwnd, WM_RBUTTONUP, pMsg->wParam, pMsg->lParam);
 	}
 	return !bNoting;
+#endif
 }
 
 BOOL CChildFrame::Impl::OnXButtonUp(WORD wKeys, WORD wButton)
@@ -721,10 +719,10 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		return TRUE;
 
 	// 右ドラッグキャンセル用
-	if ( pMsg->message == WM_RBUTTONUP && m_bCancelRButtonUp ) {
-		m_bCancelRButtonUp = false;
-		return TRUE;
-	}
+	//if ( pMsg->message == WM_RBUTTONUP && m_bCancelRButtonUp ) {
+	//	m_bCancelRButtonUp = false;
+	//	return TRUE;
+	//}
 	// マウスジェスチャーへ
 	if ( pMsg->message == WM_RBUTTONDOWN && OnRButtonHook(pMsg) )
 		return TRUE;
@@ -733,6 +731,15 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	if (pMsg->message == WM_XBUTTONUP) {
 		if ( OnXButtonUp( GET_KEYSTATE_WPARAM(pMsg->wParam), GET_XBUTTON_WPARAM(pMsg->wParam)) )
 			return TRUE;
+	}
+
+	// メインフレームのマウスジェスチャー用にホイールを通知する
+	if (pMsg->message == WM_MOUSEWHEEL) {
+		CWindow wndMainFrame = GetTopLevelWindow();
+		if (GetCapture() == wndMainFrame) {
+			wndMainFrame.PostMessage(pMsg->message, pMsg->wParam, pMsg->lParam);
+			return TRUE;
+		}
 	}
 
 	// アクセラレータキー
@@ -951,6 +958,30 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 	}
 
 	return 0;
+}
+
+
+void	CChildFrame::Impl::OnSetFocus(CWindow wndOld)
+{
+	if (m_spBrowser == nullptr)
+		return ;
+
+	CComPtr<IDispatch>	spDisp;
+	HRESULT hr = m_spBrowser->get_Document(&spDisp);
+	if ( FAILED(hr) )
+		return;
+
+	CComQIPtr<IHTMLDocument2> spDoc = spDisp;
+	if (!spDoc) 								// document not initialized yet
+		return;
+
+	CComPtr<IHTMLWindow2>	spWnd;
+	hr	= spDoc->get_parentWindow(&spWnd);
+	if (!spWnd)
+		return;
+
+	//m_bPageFocusInitialized = true; 			// avoid the endless loop
+	hr = spWnd->focus();	// makes mainframe active
 }
 
 void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
@@ -1947,6 +1978,25 @@ void	CChildFrame::Impl::OnViewStop(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCt
 
 	m_nDownloadCounter = 0;
 	OnStateCompleted();
+}
+
+/// 一つ上の階層へ
+void	CChildFrame::Impl::OnViewUp(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
+{
+	CString strURL = GetLocationURL();
+
+	if ( strURL.ReverseFind(_T('/')) == (strURL.GetLength() - 1) )
+		strURL = strURL.Left( strURL.ReverseFind(_T('/')) );
+
+	if (strURL.ReverseFind(_T('/')) != -1) {
+		strURL = strURL.Left(strURL.ReverseFind(_T('/')) + 1);
+	} else
+		return;
+
+	if (strURL[strURL.GetLength() - 2] == _T('/'))
+		return;
+
+	Navigate2(strURL);
 }
 
 /// ルート階層へ

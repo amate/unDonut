@@ -44,6 +44,7 @@
 #include "Download/DownloadManager.h"
 #include "GdiplusUtil.h"
 #include "AccelManager.h"
+#include "ToolTipManager.h"
 #include "ExMenu.h"
 #include "ChildFrameCommandUIUpdater.h"
 #include "GlobalConfig.h"
@@ -302,8 +303,10 @@ public:
 		
 		MSG_WM_ACTIVATE ( OnActivate )
 		MSG_WM_SYSCOMMAND( OnSysCommand	)
+		MSG_WM_INITMENUPOPUP( OnInitMenuPopup	)
 		MSG_WM_COPYDATA	( OnCopyData	)
 		MESSAGE_HANDLER_EX( MYWM_NOTIFYICON , OnMyNotifyIcon  )
+		MSG_WM_MOUSEWHEEL( OnMouseWheel	)
 
 		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
 		CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
@@ -398,6 +401,7 @@ public:
 		USER_MSG_WM_CHILDFRAMECONNECTING	( OnChildFrameConnecting	)
 		USER_MSG_WM_CHILDFRAMEDOWNLOADING	( OnChildFrameDownloading	)
 		USER_MSG_WM_CHILDFRAMECOMPLETE		( OnChildFrameComplete		)
+		USER_MSG_WM_MOUSEGESTURE			( OnMouseGesture			)
 
 		CHAIN_MSG_MAP( CFrameWindowImpl<CMainFrame::Impl> )
 		CHAIN_MSG_MAP( CAppCommandHandler<CMainFrame::Impl> )
@@ -581,8 +585,10 @@ public:
 
 	void	OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther);
 	void	OnSysCommand(UINT nID, CPoint pt);
+	void	OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu);
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	LRESULT OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 
 	void	OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
 	void	OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon);
@@ -632,6 +638,7 @@ public:
 	void	OnChildFrameConnecting(HWND hWndChildFrame)	{ m_TabBar.SetConnecting(hWndChildFrame); }
 	void	OnChildFrameDownloading(HWND hWndChildFrame){ m_TabBar.SetDownloading(hWndChildFrame); }
 	void	OnChildFrameComplete(HWND hWndChildFrame)	{ m_TabBar.SetComplete(hWndChildFrame); }
+	void	OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose);
 
 private:
 	void	_initRebar();
@@ -699,6 +706,7 @@ private:
 	HWND	m_hWndRestoreFocus;
 	bool	m_bCommandFromChildFrame;
 	bool	m_bFullScreen;
+
 };
 
 #include "MainFrame.inl"

@@ -734,6 +734,28 @@ enum TabCreateOption {
 	}
 
 
+//	void OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
+#define WM_MOUSEGESTURE	(WM_USER + 133)
+#define USER_MSG_WM_MOUSEGESTURE(func)	\
+	if (uMsg == WM_MOUSEGESTURE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam, (HANDLE)lParam);			\
+		lResult = 0;								\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+#define WM_CLOSEHANDLEFORSHAREDMEM	(WM_USER + 134)
+#define USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()	\
+	if (uMsg == WM_CLOSEHANDLEFORSHAREDMEM) {	   \
+		SetMsgHandled(TRUE);		   \
+		::CloseHandle((HWND)wParam);			\
+		lResult = 0;								\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)
 #define USER_MSG_WM_INCREMENTTHREADREFCOUNT()	\

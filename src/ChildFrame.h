@@ -135,6 +135,32 @@ private:
 };
 
 
+#define MOUSEGESTUREDATASHAREDMEMNAME	_T("DonutMouseGestureDataSharedMemName")
+
+struct MouseGestureData
+{
+	HWND	hwnd;
+	WPARAM	wParam;
+	LPARAM	lParam;
+	bool	bCursorOnSelectedText;
+	CString strSelectedTextLine;
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & wParam & lParam & bCursorOnSelectedText & strSelectedTextLine;
+
+#ifdef WIN64
+		ar & reinterpret_cast<__int64&>(hwnd);
+#else
+		ar & reinterpret_cast<__int32&>(hwnd);
+#endif
+	}
+};
+
+
 /////////////////////////////////////////////////////////////
 // CChildFrame
 
