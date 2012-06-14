@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 8.00.0594 */
-/* at Sat Jun 09 15:19:15 2012
+/* at Thu Jun 14 12:53:12 2012
  */
 /* Compiler settings for DonutP.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0594 

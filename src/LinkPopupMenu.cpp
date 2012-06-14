@@ -674,6 +674,24 @@ void	CLinkPopupMenu::OpenLink(const LinkItem& item, DWORD openFlag)
 	}
 }
 
+void	CLinkPopupMenu::OpenMultiLink(LinkFolderPtr pFolder)
+{
+	std::vector<CMainFrame::OpenMultiFileData> vecData;
+	vecData.reserve(pFolder->size());
+	std::transform(pFolder->cbegin(), pFolder->cend(), std::back_inserter(vecData), 
+		[](const std::unique_ptr<LinkItem>& pItem) -> CMainFrame::OpenMultiFileData {
+			const LinkItem& item = *pItem;
+			if (item.bExPropEnable == false)
+				return CMainFrame::OpenMultiFileData(item.strUrl);
+			
+			CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, 
+				CDLControlOption::s_dwExtendedStyleFlags, 0, 
+				item.dwExProp.get(), item.dwExPropOpt.get());
+			return CMainFrame::OpenMultiFileData(item.strUrl, ExProp.GetDLControlFlags(), ExProp.GetExtendedStyleFlags(), ExProp.GetAutoRefreshFlag());		
+	});
+	g_pMainWnd->UserOpenMultiFile(vecData);
+}
+
 void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd)
 {
 	s_bNowShowRClickMenu = true;
@@ -818,12 +836,7 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 
 	case ID_OPENALLLINKINFOLDER:
 		ATLASSERT(pLinkItem->pFolder);
-		for (auto it = pLinkItem->pFolder->begin(); it != pLinkItem->pFolder->end(); ++it) {
-			LinkItem* pItem = it->get();
-			if (pItem->pFolder)
-				continue;
-			OpenLink(*pItem, D_OPENFILE_CREATETAB);
-		}
+		OpenMultiLink(pLinkItem->pFolder);
 		break;
 
 	case ID_EDITFOLDERNAME:

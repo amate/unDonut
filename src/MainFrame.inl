@@ -254,6 +254,28 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 	}
 }
 
+/// 複数URLを開く
+void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink /*= false*/)
+{
+	for (auto it = vecOpenData.cbegin(); it != vecOpenData.cend(); ++it) {
+		NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
+		pdata->strURL	= it->strURL;
+		pdata->dwDLCtrl	= it->DLCtrl;
+		pdata->dwExStyle= it->ExStyle;
+		pdata->dwAutoRefresh = it->AutoRefresh;
+		pdata->bLink	= bLink;
+
+		m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
+	}
+	if (m_deqNewChildFrameData.size() > 0) {
+		if (bLink)	// kNowDonutInstanceからなら逆転
+			std::reverse(m_deqNewChildFrameData.begin(), m_deqNewChildFrameData.end());
+		//m_TabBar.InsertHere(true);
+		//m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
+		CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
+	} 
+}
+
 // Overrides
 
 BOOL CMainFrame::Impl::AddSimpleReBarBandCtrl(HWND hWndReBar, HWND hWndBand, int nID, LPTSTR lpstrTitle, UINT fStyle, int cxWidth)
@@ -336,8 +358,9 @@ void CMainFrame::Impl::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 	}
 //END:
 	UpdateBarsPosition(rc, bResizeBars);
-	//if (m_bFullScreen == false)
-	//	rc.top++;
+
+	if (m_bFullScreen == false)
+		rc.top++;
 
 	// ページ内検索バー
 	//HWND hWndFind = m_FindBar.GetHWND();
@@ -441,6 +464,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	RegisterDragDrop();
 
+	TIMERSTOP(L"メインフレームのOnCreateにかかった時間");
 	return 0;
 }
 
@@ -485,6 +509,21 @@ void	CMainFrame::Impl::OnDestroy()
     pLoop->RemoveMessageFilter(this);
     pLoop->RemoveIdleHandler(this);
 
+
+	DWORD	dwTime = ::timeGetTime();
+	boost::thread	terminateWatch([dwTime]() {
+		extern bool g_bSefShutDown;
+		while (dwTime + (5 * 1000) > ::timeGetTime()) {
+			if (g_bSefShutDown)
+				return ;
+
+			::Sleep(50);
+		}
+		if (g_bSefShutDown == false) {
+			TRACEIN(_T("待機時間を過ぎたので強制終了します-------------------"));
+			ExitProcess(-5);
+		}
+	});
 }
 
 
@@ -909,19 +948,11 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 	case kOpenMultiUrl:
 		{
 			std::vector<CString> vecUrl = GetMultiText((LPCWSTR)pCopyDataStruct->lpData);
-			for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
-				NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
-				pdata->strURL	= *it;
-				pdata->bLink	= true;
-
-				m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
-			}
-			if (m_deqNewChildFrameData.size() > 0) {
-				std::reverse(m_deqNewChildFrameData.begin(), m_deqNewChildFrameData.end());
-				//m_TabBar.InsertHere(true);
-				//m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
-				CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
-			} 
+			std::vector<OpenMultiFileData> vecData;
+			std::transform(vecUrl.begin(), vecUrl.end(), std::back_inserter(vecData), [](const CString& url) {
+				return OpenMultiFileData(url);
+			});
+			UserOpenMultiFile(vecData, true);
 		}
 		break;
 
@@ -1669,7 +1700,7 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 		}
 	};
 	auto funcRButtonHook = [&,this]() -> BOOL {
-		SetCapture();
+		::SetCapture(m_hWnd);
 
 		CPoint	ptDown(GET_X_LPARAM(data.lParam), GET_Y_LPARAM(data.lParam));
 		::ClientToScreen(data.hwnd, &ptDown);

@@ -4,9 +4,14 @@
  */
 #include "stdafx.h"
 #include "DebugWindow.h"
+#include <fstream>
+#include <codecvt>
+#include <boost\timer.hpp>
+#include "../Misc.h"
 
 #ifdef _DEBUG
 static CDebugUtility	g_debugutil;
+boost::timer	g_timer;
 #endif
 
 /////////////////////////////////////////////////
@@ -21,7 +26,6 @@ public:
 	void	Write(LPCTSTR strFormat, va_list argList);
 	void	WriteIn(LPCTSTR strFormat, va_list argList);
 
-private:
 	void	_WriteConsole(LPCTSTR str);
 
 	HANDLE m_hOut;
@@ -31,8 +35,16 @@ private:
 //------------------------------------
 CDebugUtility::Impl::Impl()
 {
-	//::AllocConsole();
-	//m_hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
+	HWND hWnd = ::FindWindow(DONUT_WND_CLASS_NAME, NULL);
+	if (hWnd) {
+		return ;	// マルチプロセスモードの時コンソールが乱立しないように
+	} else {
+		// ログファイル作成
+		FILE* fp = _wfopen(Misc::GetExeDirectory() + _T("log.txt"), L"w");
+		fclose(fp);
+	}
+	::AllocConsole();
+	m_hOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
 }
 
 //------------------------------------
@@ -62,17 +74,15 @@ void	CDebugUtility::Impl::WriteIn(LPCTSTR strFormat, va_list argList)
 //------------------------------------
 void	CDebugUtility::Impl::_WriteConsole(LPCTSTR str)
 {
+	static CString strFilePath = Misc::GetExeDirectory() + _T("log.txt");
+	std::wfstream	filestream(strFilePath, std::ios::app);
+	if (filestream) {
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+		filestream << str;
+	}
 	DWORD dwWrite;
 	::WriteConsole(m_hOut, str, lstrlen(str), &dwWrite, NULL);
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -112,7 +122,28 @@ void CDebugUtility::WriteIn(LPCTSTR pstrFormat, ...)
 	va_end(args);
 }
 
+void	CDebugUtility::TimerStart()
+{
+#ifdef _DEBUG
+	g_timer.restart();
+#endif
+}
 
+void	CDebugUtility::TimerStop(LPCTSTR pstrFormat, ...)
+{	
+#ifdef _DEBUG
+	va_list args;
+	va_start(args, pstrFormat);	
+	CString str;
+	str.FormatV(pstrFormat, args);
+	va_end(args);
+	CString strTime;
+	strTime.Format(_T(" : %.4lf\n"), g_timer.elapsed());
+
+	str += strTime;
+	pImpl->_WriteConsole(str);
+#endif
+}
 
 
 #if 0

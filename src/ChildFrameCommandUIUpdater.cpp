@@ -80,6 +80,7 @@ void	CChildFrameCommandUIUpdater::OnAddCommandUIMap(HWND hWndChildFrame)
 	HANDLE hMap = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, sharedName);
 	ATLASSERT( hMap );
 	ChildFrameUIData* pUIData = (ChildFrameUIData*)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	pUIData->hMapForMainFrameOpen = hMap;
 	
 	s_vecpUIData.push_back(pUIData);
 	int nIndex = (int)s_vecpUIData.size() - 1;
@@ -93,8 +94,9 @@ void	CChildFrameCommandUIUpdater::OnRemoveCommandUIMap(HWND hWndChildFrame)
 	ATLASSERT( it != s_mapHWND_int.end() );
 	int nDestroyIndex = it->second;
 
+	HANDLE hMap = s_vecpUIData[nDestroyIndex]->hMapForMainFrameOpen;
 	::UnmapViewOfFile(s_vecpUIData[nDestroyIndex]);
-	::CloseHandle(s_vecpUIData[nDestroyIndex]->hMap);
+	::CloseHandle(hMap);
 
 	s_vecpUIData.erase(s_vecpUIData.begin() + nDestroyIndex);
 	s_mapHWND_int.erase(it);
@@ -481,9 +483,10 @@ void	CChildFrameUIStateChange::AddCommandUIMap()
 
 void	CChildFrameUIStateChange::RemoveCommandUIMap()
 {
-	::UnmapViewOfFile(m_pUIData);
-	::CloseHandle(m_pUIData->hMap);
 	::SendMessage(m_hWndMainFrame, WM_REMOVECOMMANDUIMAP, (WPARAM)m_hWndChildFrame, 0);
+	HANDLE hMap = m_pUIData->hMap;
+	::UnmapViewOfFile(m_pUIData);
+	::CloseHandle(hMap);
 }
 
 

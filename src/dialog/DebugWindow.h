@@ -13,6 +13,13 @@
  #ifndef TRACEIN
   #define TRACEIN	CDebugUtility::WriteIn
  #endif
+#ifndef TIMERSTART
+	#define	TIMERSTART	CDebugUtility::TimerStart
+#endif
+#ifndef TIMERSTOP
+	#define	TIMERSTOP	CDebugUtility::TimerStop
+#endif
+
 #else // NODEBUG
  #ifndef TRACE
   #define TRACE		__noop
@@ -20,6 +27,12 @@
  #ifndef TRACEIN
   #define TRACEIN	__noop
  #endif
+#ifndef TIMERSTART
+	#define	TIMERSTART	__noop
+#endif
+#ifndef TIMERSTOP
+	#define	TIMERSTOP	__noop
+#endif
 #endif
 
 /////////////////////////////////////////////////
@@ -33,7 +46,8 @@ public:
 
 	static void Write(LPCTSTR pstrFormat, ...);
 	static void WriteIn(LPCTSTR pstrFormat, ...);
-	
+	static void	TimerStart();
+	static void	TimerStop(LPCTSTR pstrFormat, ...);
 
 private:
 	class Impl;

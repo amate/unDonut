@@ -63,9 +63,9 @@ extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandI
 
 
 CServerAppModule	_Module;
-CMainFrame*			g_pMainWnd				  = NULL;
-CAPI*				g_pAPI					  = NULL;
-
+CMainFrame*			g_pMainWnd		= NULL;
+CAPI*				g_pAPI			= NULL;
+bool				g_bSefShutDown	= false;
 
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -474,6 +474,8 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 
 int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 {
+	TIMERSTART();
+
 	// DLLçUåÇëŒçÙ
 	SetDllDirectory(_T(""));
 #if 1
@@ -595,6 +597,8 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	}
 
 	//_PrivateTerm();
+	g_bSefShutDown = true;
+
 	ATLTRACE(_T("ê≥èÌèIóπÇµÇ‹ÇµÇΩÅB\n"));
 END_APP:
 	_Module.Term();

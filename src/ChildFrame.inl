@@ -2422,7 +2422,7 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 			{
 				CString strTitle = szTitle;
 				strTitle.Replace(_T('\"'), _T('_'));
-				vecLog.push_back(std::make_pair(CString(szTitle), CString(szURL)));
+				vecLog.push_back(std::make_pair<WTL::CString, WTL::CString>(szTitle, szURL));
 				++count;
 			}
 			if (szTitle) ::CoTaskMemFree( szTitle );

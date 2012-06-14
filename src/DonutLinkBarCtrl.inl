@@ -622,10 +622,18 @@ void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 	ptItem.add_child(L"favicon", ptFavicon);
  }
 
+#if _MSC_VER >= 1700
  void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder, std::atomic<bool>* pbCancel)
+#else
+void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder, bool* pbCancel)
+#endif
  {
 	 for (auto it = pLinkFolder->begin(); it != pLinkFolder->end(); ++it) {
+#if _MSC_VER >= 1700
 		 if (pbCancel->load())
+#else
+		 if (*pbCancel)
+#endif
 			 return ;
 		 LinkItem& item = *it->get();
 		 if (item.pFolder) {
@@ -1085,7 +1093,11 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 {
 	static CCriticalSection	s_cs;
+#if _MSC_VER >= 1700
 	static std::atomic<bool> s_bCancel(false);
+#else
+	static bool	s_bCancel = false;
+#endif
 	boost::thread	td([this]() {
 		for (;;) {
 			if (s_cs.TryEnter()) {
@@ -1095,7 +1107,11 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 					std::wofstream	filestream(tempPath);
 					if (!filestream) {
 						s_cs.Leave();
+#if _MSC_VER >= 1700
 						s_bCancel.store(false);
+#else
+						s_bCancel = false;
+#endif
 						return ;
 					}
 		
@@ -1113,13 +1129,21 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 					this->MessageBox(strError, NULL, MB_ICONERROR);
 				}
 				s_cs.Leave();
+#if _MSC_VER >= 1700
 				s_bCancel.store(false);
+#else
+				s_bCancel = false;
+#endif
 				break;
 
 			} else {
 				// 他のスレッドが保存処理を実行中...
 				TRACEIN(_T("_SaveLinkBookmark : TryEnter failed"));
+#if _MSC_VER >= 1700
 				s_bCancel.store(true);
+#else
+				s_bCancel = true;
+#endif
 				::Sleep(100);
 				continue;
 			}
@@ -1494,28 +1518,31 @@ void	CDonutLinkBarCtrl::Impl::_ClearInsertionEdge()
 void	CDonutLinkBarCtrl::Impl::_DrawItem(CDCHandle dc, const LinkItem& item)
 {
 	const CRect& rcItem = item.rcItem;
-	POINT ptIcon;
-	ptIcon.x	= rcItem.left + kLeftIconMargin;
-	ptIcon.y	= rcItem.top  + kTopIconMargin;
-	if (IsThemeNull() && item.state == item.kItemPressed) {
-		ptIcon.x += 2;
-		ptIcon.y += 2;
-	}
-	CIconHandle icon;
-	if (item.pFolder) {
-		icon = CLinkPopupMenu::s_iconFolder;
-	} else {
-		icon = item.icon;
-		if (icon == NULL)
-			icon = CLinkPopupMenu::s_iconLink;
-	}
-	icon.DrawIconEx(dc, ptIcon, CSize(kcxIcon, kcyIcon));
-
 	CRect rcText = item.rcItem;
 	rcText.left	+= kLeftTextPadding;//+= kRightLeftPadding;
 	rcText.right-= kRightTextMargin;
 
+	auto funcDrawIcon = [&, this]() {
+		POINT ptIcon;
+		ptIcon.x	= rcItem.left + kLeftIconMargin;
+		ptIcon.y	= rcItem.top  + kTopIconMargin;
+		if (IsThemeNull() && item.state == item.kItemPressed) {
+			ptIcon.x += 2;
+			ptIcon.y += 2;
+		}
+		CIconHandle icon;
+		if (item.pFolder) {
+			icon = CLinkPopupMenu::s_iconFolder;
+		} else {
+			icon = item.icon;
+			if (icon == NULL)
+				icon = CLinkPopupMenu::s_iconLink;
+		}
+		icon.DrawIconEx(dc, ptIcon, CSize(kcxIcon, kcyIcon));
+	};
 	if (IsThemeNull() == false) {
+		funcDrawIcon();
+
 		int nState = TS_NORMAL;
 		if (item.state == item.kItemHot)
 			nState = TS_HOT;
@@ -1535,7 +1562,10 @@ void	CDonutLinkBarCtrl::Impl::_DrawItem(CDCHandle dc, const LinkItem& item)
 			rcText.top += 2;
 			rcText.left	+= 2;
 		}
+		funcDrawIcon();
 	}
+
+
 
 	dc.DrawText(item.strName, item.strName.GetLength(), &rcText, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX);
 }

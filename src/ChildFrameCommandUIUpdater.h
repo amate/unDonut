@@ -24,6 +24,7 @@ class CChildFrameUIStateChange;
 
 struct ChildFrameUIData {
 	HANDLE	hMap;
+	HANDLE	hMapForMainFrameOpen;
 	HWND	hWndActiveChildFrame;
 	bool	bNavigateBack;
 	bool	bNavigateForward;
@@ -42,6 +43,7 @@ struct ChildFrameUIData {
 
 	ChildFrameUIData() :
 		hMap(NULL),
+		hMapForMainFrameOpen(NULL),
 		hWndActiveChildFrame(NULL),
 		bNavigateBack(false),
 		bNavigateForward(false),

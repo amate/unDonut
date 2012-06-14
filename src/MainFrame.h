@@ -46,6 +46,19 @@ private:
 class CMainFrame
 {
 public:
+
+	struct OpenMultiFileData {
+		CString strURL;
+		DWORD	DLCtrl;
+		DWORD	ExStyle;
+		DWORD	AutoRefresh;
+
+		OpenMultiFileData(LPCTSTR url, DWORD  dlctrl = -1, DWORD exstyle = -1, DWORD autorefresh = 0)
+			: strURL(url), DLCtrl(dlctrl), ExStyle(exstyle), AutoRefresh(autorefresh)
+		{	}
+	};
+
+
 	CMainFrame();
 	~CMainFrame();
 
@@ -57,10 +70,10 @@ public:
 						 DWORD DLCtrl = -1, 
 						 DWORD ExStyle = -1, 
 						 DWORD AutoRefresh = 0);
+	void	UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData);
 
 	CString	GetActiveSelectedText();
 	CString GetActiveLocationURL() { return CString(); }
-
 
 private:
 	class Impl;

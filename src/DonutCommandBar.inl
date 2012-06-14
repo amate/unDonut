@@ -390,7 +390,11 @@ void	CDonutCommandBar::Impl::_UpdateItemPosition()
 		rcItem.bottom	= _GetBandHeight();//24;//rcClient.bottom;
 		rcItem.right	= nLeftPos + nTextWidth + (kTextSideMargin * 2);
 		nLeftPos = rcItem.right;
+#if _MSC_VER >= 1700
 		m_vecCommandButton.emplace_back(name, rcItem);
+#else
+		m_vecCommandButton.push_back(CommandButton(name, rcItem));
+#endif
 	}
 }
 

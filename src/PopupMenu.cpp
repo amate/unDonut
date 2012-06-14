@@ -372,8 +372,11 @@ void CRecentClosedTabPopupMenu::_initMenuItem()
 			break;
 		}
 		nTop = rc.bottom;
-
+#if _MSC_VER >= 1700
 		m_vecMenuItem.emplace_back(name, ID_RECENTDOCUMENT_FIRST + i, rc);
+#else
+		m_vecMenuItem.push_back(MenuItem(name, ID_RECENTDOCUMENT_FIRST + i, rc));
+#endif
 		m_vecMenuItem.back().pUserData = static_cast<void*>(pItem);
 	}
 	dc.SelectFont(prevFont);
@@ -479,7 +482,11 @@ void	CChevronPopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, 
 		rc.right= nWidht - kBoundMargin;
 		rc.bottom= nTop +  (bSeparator ? kSeparatorHeight : kItemHeight);
 		nTop = rc.bottom;
+#if _MSC_VER >= 1700
 		m_vecMenuItem.emplace_back(name, nID, rc, bSeparator, m_menu.GetSubMenu(i));
+#else
+		m_vecMenuItem.push_back(MenuItem(name, nID, rc, bSeparator, m_menu.GetSubMenu(i)));
+#endif
 		m_vecMenuItem.back().state = state;
 		m_vecMenuItem.back().bChecked = (mii.fState & MFS_CHECKED) != 0;
 	}
@@ -511,7 +518,11 @@ CCriticalSection				CRootFavoritePopupMenu::s_csBookmarkLock;
 bool							CRootFavoritePopupMenu::s_bSaveBookmark = false;
 boost::thread					CRootFavoritePopupMenu::s_SaveBookmarkListThread;
 bool							CRootFavoritePopupMenu::s_bBookmarkLoading = false;
+#if _MSC_VER >= 1700
 std::atomic<bool>				CRootFavoritePopupMenu::s_bCancel(false);
+#else
+bool							CRootFavoritePopupMenu::s_bCancel = false;
+#endif
 
 void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
@@ -804,7 +815,11 @@ void	CRootFavoritePopupMenu::_SaveFavoriteBookmark()
 					std::wofstream	filestream(tempPath);
 					if (!filestream) {
 						s_csBookmarkLock.Leave();
+#if _MSC_VER >= 1700
 						s_bCancel.store(false);
+#else
+						s_bCancel = false;
+#endif
 						delete pvecBookmark;
 						return ;
 					}
@@ -824,15 +839,23 @@ void	CRootFavoritePopupMenu::_SaveFavoriteBookmark()
 					::MessageBox(NULL, strError, NULL, MB_ICONERROR);
 				}
 				s_csBookmarkLock.Leave();
+#if _MSC_VER >= 1700
 				ATLTRACE(_T("SaveFavoriteBookmark : %d  (Cancel:%d)\n"), ::timeGetTime() - dwTime, s_bCancel.load());
 				s_bCancel.store(false);
+#else
+				s_bCancel = false;
+#endif
 				delete pvecBookmark;
 				break;
 
 			} else {
 				// 他のスレッドが保存処理を実行中...
 				TRACEIN(_T("_SaveLinkBookmark : TryEnter failed"));
+#if _MSC_VER >= 1700
 				s_bCancel.store(true);
+#else
+				s_bCancel = true;
+#endif
 				::Sleep(100);
 				continue;
 			}

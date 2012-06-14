@@ -258,7 +258,7 @@ class CDonutToolBar::Impl
 public:
 	DECLARE_WND_SUPERCLASS(_T("DonutToolBar"), CToolBarCtrl::GetWndClassName())
 
-	Impl() { };
+	Impl() : m_pMainMessageLoop(nullptr) { };
 	~Impl() { };
 
 	HWND	Create(HWND hWndParent);
@@ -325,6 +325,7 @@ private:
 	static IBasePopupMenu*	s_pSubMenu;
 	static HHOOK	s_hHook;
 	static HWND		s_hWnd;
+	CMessageLoop*	m_pMainMessageLoop;
 
 };
 
@@ -1015,16 +1016,21 @@ void	CDonutToolBar::Impl::_DoPopupSubMenu(int nCmdID)
 {
 	SetFocus();
 
+	ATLASSERT( m_pMainMessageLoop == nullptr );
+	m_pMainMessageLoop = _Module.GetMessageLoop();
+	_Module.RemoveMessageLoop();
+	CMessageLoop loop;
+	_Module.AddMessageLoop(&loop);
+
 	CRect	  rc;
 	GetItemRect(CommandToIndex(nCmdID), &rc);
 	ClientToScreen(&rc);
 	ATLASSERT( s_pSubMenu == nullptr );
 	s_pSubMenu = new CRecentClosedTabPopupMenu;
-	s_pSubMenu->DoTrackPopupMenu(NULL, CPoint(rc.left, rc.bottom - 1), m_hWnd);
+	s_pSubMenu->DoTrackPopupMenu(NULL, CPoint(rc.left, rc.bottom), m_hWnd);
 
 	ATLVERIFY(s_hHook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, _Module.GetModuleInstance(), 0));
 
-	CMessageLoop loop;
 	loop.Run();
 }
 
@@ -1038,6 +1044,10 @@ void	CDonutToolBar::Impl::_CloseSubMenu()
 		s_hHook = NULL;
 
 		PostQuitMessage(0);
+
+		_Module.RemoveMessageLoop();
+		_Module.AddMessageLoop(m_pMainMessageLoop);
+		m_pMainMessageLoop = nullptr;
 	}
 }
 

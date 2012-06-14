@@ -288,6 +288,7 @@ public:
 						 DWORD DLCtrl = -1, 
 						 DWORD ExStyle = -1, 
 						 DWORD AutoRefresh = 0);
+	void	UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink = false);
 
 	// Overrides
 	BOOL AddSimpleReBarBandCtrl(HWND hWndReBar, HWND hWndBand, int nID, LPTSTR lpstrTitle, UINT fStyle, int cxWidth);
@@ -764,6 +765,11 @@ void	CMainFrame::UserOpenFile(LPCTSTR url, DWORD openFlags,
 								 DWORD AutoRefresh /*= 0*/)
 {
 	pImpl->UserOpenFile(url, openFlags, DLCtrl, ExStyle, AutoRefresh);
+}
+
+void	CMainFrame::UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData)
+{
+	pImpl->UserOpenMultiFile(vecOpenData);
 }
 
 /// 現在表示中のページで選択されたテキストを返す

@@ -96,7 +96,11 @@ void CUrlSecurityOption::GetProfile()
 		CString	url( p + 1 );
 		url.TrimLeft(_T(" \t\r\n@"));
 		url.TrimRight(_T(" \t\r\n@"));
+#if _MSC_VER >= 1700
 		s_UrlSecurityList.emplace_back(f, o, o2, (LPCTSTR)url);
+#else
+		s_UrlSecurityList.push_back(UrlSecurityData(f, o, o2, (LPCTSTR)url));
+#endif
 	}
 }
 
@@ -215,7 +219,11 @@ void CUrlSecurityOption::Add(unsigned flags, unsigned opts, unsigned opts2, cons
 		it->opts  = opts;
 		it->opts2 = opts2 & ~1;
 	} else {
+#if _MSC_VER >= 1700
 		s_UrlSecurityList.emplace_back( flags, opts, opts2, (LPCTSTR)strURL );
+#else
+		s_UrlSecurityList.push_back(UrlSecurityData(flags, opts, opts2, (LPCTSTR)strURL));
+#endif
 	}
 }
 

@@ -5,7 +5,9 @@
 
 #pragma once
 
+#if _MSC_VER >= 1700
 #include <atomic>
+#endif
 #include <boost\optional.hpp>
 #include <boost\property_tree\ptree.hpp>
 #include <atlscrl.h>
@@ -72,8 +74,11 @@ void	_AddFaviconDataToLinkItem(boost::property_tree::wptree& ptItem, LinkItem* p
 void	_AddLinkItem(LinkFolderPtr pFolder, boost::property_tree::wptree pt);
 
  void	_AddFaviconData(boost::property_tree::wptree& ptItem, LinkItem& item);
+ #if _MSC_VER >= 1700
  void	_AddPtree(boost::property_tree::wptree& ptFolder, LinkFolderPtr pLinkFolder, std::atomic<bool>* pbCancel);
-
+#else
+ void	_AddPtree(boost::property_tree::wptree& ptFolder, LinkFolderPtr pLinkFolder, bool* pbCancel);
+#endif
 
 #define WM_CLOSEBASESUBMENU		(WM_APP + 1)
 #define WM_SAVELINKBOOKMARK		(WM_APP + 2)
@@ -211,6 +216,7 @@ public:
 	CLinkPopupMenu*	GetSubMenu() const { return m_pSubMenu;	}
 
 	static void	OpenLink(const LinkItem& item, DWORD openFlag);
+	static void OpenMultiLink(LinkFolderPtr pFolder);
 	static void	ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd);
 	static bool	s_bNowShowRClickMenu;
 	static void SaveLinkBookmark();

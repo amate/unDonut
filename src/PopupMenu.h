@@ -462,7 +462,11 @@ protected:
 			rc.right= nWidht - kBoundMargin;
 			rc.bottom= nTop +  (bSeparator ? kSeparatorHeight : kItemHeight);
 			nTop = rc.bottom;
+#if _MSC_VER >= 1700
 			m_vecMenuItem.emplace_back(name, nID, rc, bSeparator, m_menu.GetSubMenu(i));
+#else
+			m_vecMenuItem.push_back(MenuItem(name, nID, rc, bSeparator, m_menu.GetSubMenu(i)));
+#endif
 			m_vecMenuItem.back().state = state;
 			m_vecMenuItem.back().bChecked = (mii.fState & MFS_CHECKED) != 0;
 		}
@@ -858,8 +862,11 @@ private:
 	static bool								s_bSaveBookmark;
 	static boost::thread					s_SaveBookmarkListThread;
 	static bool								s_bBookmarkLoading;
+#if _MSC_VER >= 1700
 	static std::atomic<bool>				s_bCancel;
-
+#else
+	static bool	s_bCancel;
+#endif
 	CLinkPopupMenu*	m_pLinkSubMenu;
 	HWND	m_hWndLinkBar;
 

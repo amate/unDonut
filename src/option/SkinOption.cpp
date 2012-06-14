@@ -99,7 +99,8 @@ __inline int CSkinOption::QueryValueCustom(CIniFileI &pr, LPCTSTR lpKey, int dfl
 
 void CSkinOption::GetProfile()
 {
-	CString 	strSkinPath = _GetSkinDir() + "skin.ini";
+	CString 	strSkinPath = _GetSkinDir();
+	strSkinPath	+= _T("skin.ini");
 
 	CIniFileI	pr( strSkinPath, _T("Interface") );
 	s_nTabStyle 		= QueryValueCustom( pr, _T("TabStyle")	);
