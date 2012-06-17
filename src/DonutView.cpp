@@ -6,6 +6,8 @@
 #include "stdafx.h"
 #include "DonutView.h"
 #include "mshtmdid.h"
+#include <sstream>
+#include <boost\archive\text_woarchive.hpp>
 //#include "option\DLControlOption.h"
 //#include "option\MouseDialog.h"
 //#include "option\MenuDialog.h"
@@ -149,7 +151,37 @@ void CDonutView::SetOperateDragDrop(BOOL bOn, int nCommand)
 	m_nDDCommand = nCommand;
 }
 
+bool CDonutView::UseDownloadManager() const
+{
+	return m_pGlobalConfig->bUseDownloadManager;
+}
 
+/// ダウンロードマネージャーで strURL をダウンロードする
+void CDonutView::StartTheDownload(LPCTSTR strURL, bool bSaveImage /*= false*/)
+{
+	CWindow wndMainFrame = GetTopLevelWindow();
+
+	DownloadData	DLdata;
+	DLdata.strURL	= strURL;
+	DLdata.strReferer	= GetLocationURL();
+	DLdata.unique		= ::timeGetTime();
+	DLdata.dwImageExStyle	= m_pGlobalConfig->dwDLImageExStyle;
+	if (bSaveImage) {
+		DLdata.strFolder	= m_pGlobalConfig->strImageDLFolder;
+		DLdata.dwImageExStyle	|= DLO_SAVEIMAGE;
+	}
+	
+	std::wstringstream ss;
+	boost::archive::text_woarchive	ar(ss);
+	ar << DLdata;
+	std::wstring serializedData = ss.str();
+
+	COPYDATASTRUCT cds;
+	cds.dwData	= kFileDownload;
+	cds.lpData	= (LPVOID)serializedData.data();
+	cds.cbData	= (serializedData.length() + 1) * sizeof(WCHAR);
+	GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+}
 
 // Overrides
 BOOL CDonutView::PreTranslateMessage(MSG *pMsg)
@@ -197,7 +229,7 @@ STDMETHODIMP CDonutView::QueryInterface(REFIID iid, void ** ppvObject)
 // QueryService
 STDMETHODIMP CDonutView::QueryService(REFGUID guidService, REFIID riid, void** ppv)
 {
-	if (guidService == SID_SDownloadManager && CDownloadManager::UseDownloadManager()) {
+	if (guidService == SID_SDownloadManager && m_pGlobalConfig->bUseDownloadManager) {
 		*ppv = (IDownloadManager*)this;
 		return S_OK;
 	}
@@ -328,17 +360,15 @@ STDMETHODIMP CDonutView::Download(
 	LPCOLESTR pszRedir,  
 	UINT	  uiCP )
 {
-	if (CDLControlOption::s_bUseDLManager == false)
-		return E_FAIL;
-
 	if (::GetKeyState(VK_SHIFT) < 0)
 		return E_FAIL;	// shiftを押しているとデフォルトに任せる
 
-	if (CDLOptions::bShowWindowOnDL)
-		CDownloadManager::GetInstance()->OnShowDLManager(0, 0, NULL);
+	CWindow wndMainFrame = GetTopLevelWindow();
+	if (m_pGlobalConfig->bShowDLManagerOnDL)
+		wndMainFrame.SendMessage(WM_COMMAND, ID_SHOW_DLMANAGER);
 
 	CString strReferer = GetLocationURL();
-	CCustomBindStatusCallBack* pCBSCB = CDownloadManager::GetInstance()->_CreateCustomBindStatusCallBack();
+	CCustomBindStatusCallBack* pCBSCB = CDownloadManager::CreateCustomBindStatusCallBack(wndMainFrame, reinterpret_cast<uintptr_t>(pmk), m_pGlobalConfig->strDefaultDLFolder);
 	IBindStatusCallback* pbscbPrev;
 	HRESULT hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, &pbscbPrev, 0);
 	if (FAILED(hr) && pbscbPrev) {
@@ -373,6 +403,7 @@ STDMETHODIMP CDonutView::Download(
 		}
 	}
 	if (SUCCEEDED(hr)) {
+		pCBSCB->SetOption(_T(""), NULL, m_pGlobalConfig->dwDLImageExStyle);
 		pCBSCB->SetThreadId(m_dwCurrentThreadId);
 		GetParent().SendMessage(WM_INCREMENTTHREADREFCOUNT);
 		CComPtr<IStream>	spStream;

@@ -21,14 +21,14 @@
 // どうもm_spBSCBPrevがNULLだとＤＬが正常終了しないようで（Ｘ押しても止まらないし）
 
 // Constructor;
-CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing)
+CCustomBindStatusCallBack::CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing, LPCTSTR defaultDLFolder)
 	: m_dwTotalRead(0)
 	, m_hFile(INVALID_HANDLE_VALUE)
 	, m_pDLItem(pItem)
 	, m_hWndDLing(hWndDLing) 
+	, m_strDefaultDLFolder(defaultDLFolder)
 	, m_cRef(1)
 	, m_hWndNotify(NULL)
-	, m_dwThreadId(0)
 {	}
 
 // Destructor
@@ -37,11 +37,16 @@ CCustomBindStatusCallBack::~CCustomBindStatusCallBack()
 }
 
 
+void	CCustomBindStatusCallBack::SetThreadId(DWORD dwID)
+{ 
+	m_pDLItem->dwThreadId = dwID;
+}
+
 //------------------------------
 /// リファラを設定
 void	CCustomBindStatusCallBack::SetReferer(LPCTSTR strReferer)
 {
-	m_pDLItem->strReferer = strReferer;
+	::wcscpy_s(m_pDLItem->strReferer, strReferer);
 }
 
 
@@ -136,11 +141,11 @@ HRESULT CCustomBindStatusCallBack::OnProgress(
     /* [in] */ LPCWSTR szStatusText) 
 {
 	if (ulStatusCode == BINDSTATUS_BEGINDOWNLOADDATA) {
-		m_pDLItem->strURL = szStatusText;
+		::wcscpy_s(m_pDLItem->strURL, szStatusText);
 		WCHAR strDomain[INTERNET_MAX_URL_LENGTH];
 		DWORD cchResult = INTERNET_MAX_URL_LENGTH;
 		if (::CoInternetParseUrl(m_pDLItem->strURL, PARSE_DOMAIN, 0, strDomain, INTERNET_MAX_URL_LENGTH, &cchResult, 0) == S_OK) {
-			m_pDLItem->strDomain = strDomain;
+			::wcscpy_s(m_pDLItem->strDomain, strDomain);
 		}
 	}
 
@@ -177,11 +182,8 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
 	/* 外部にDL終了通知 */
 	if (m_hWndNotify) {
 		UINT uMsg = ::RegisterWindowMessage(REGISTERMESSAGE_DLCOMPLETE);
-		::SendMessage(m_hWndNotify, uMsg, (WPARAM)(LPCTSTR)m_pDLItem->strText, 0);
+		::SendMessage(m_hWndNotify, uMsg, 0, 0);
 	}
-
-	/* DLリストから削除 */
-	::PostMessage(m_hWndDLing, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem, (LPARAM)this);
 
 	// お片付け
 	if (m_hFile != INVALID_HANDLE_VALUE) {
@@ -192,19 +194,23 @@ HRESULT CCustomBindStatusCallBack::OnStopBinding(
 			m_pDLItem->bAbort = true;
 			if (::PathFileExists(m_pDLItem->strIncompleteFilePath)) {
 				::DeleteFile(m_pDLItem->strIncompleteFilePath);
-				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), nullptr);
-				TRACEIN(_T("不完全ファイルを削除しました。: %s"), (LPCTSTR)m_pDLItem->strIncompleteFilePath);
+				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, m_pDLItem->strIncompleteFilePath, nullptr);
+				TRACEIN(_T("不完全ファイルを削除しました。: %s"), m_pDLItem->strIncompleteFilePath);
 			}
 		} else {
-			TRACEIN(_T("OnStopBinding() : 正常終了しました(%s)"), (LPCTSTR)m_pDLItem->strFileName);
+			TRACEIN(_T("OnStopBinding() : 正常終了しました(%s)"), m_pDLItem->strFileName);
 			::MoveFileEx(m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath, MOVEFILE_REPLACE_EXISTING);
 			/* エクスプローラーにファイルの変更通知 */
-			::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), static_cast<LPCTSTR>(m_pDLItem->strFilePath));
+			::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath);
 		}
 	}
 
-	
+	/* DLリストから削除 */
+	::SendMessage(m_hWndDLing, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)m_pDLItem->unique, 0);
 
+	HANDLE hMap = m_pDLItem->hMapForClose;
+	::UnmapViewOfFile(static_cast<LPVOID>(m_pDLItem));
+	::CloseHandle(hMap);
 
 	return S_OK;
 }
@@ -234,12 +240,15 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 		if (m_spStream == NULL && pstgmed->tymed == TYMED_ISTREAM) {
 			m_spStream = pstgmed->pstm;	
 
+			/* DLリストに追加 */
+			::PostMessage(m_hWndDLing, WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem->unique, 0);
+
 			// ファイル名を取得する
 			if (_GetFileName() == false) {
 				// キャンセルされたので帰る
 				Cancel();
-				if (m_dwThreadId)
-					::PostThreadMessage(m_dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
+				//if (m_pDLItem->dwThreadId)
+				//	::PostThreadMessage(m_pDLItem->dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
 				return E_ABORT;
 			}
 
@@ -257,9 +266,6 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 				Cancel();
 				return E_ABORT;
 			}
-
-			/* DLリストに追加 */
-			::PostMessage(m_hWndDLing, WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem, 0);
 		}
 	}
 
@@ -298,13 +304,13 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 			if (m_pDLItem->nProgress != m_pDLItem->nProgressMax && m_pDLItem->nProgressMax != 0) {
 				m_pDLItem->bAbort = true;
 				::DeleteFile(m_pDLItem->strIncompleteFilePath);
-				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), nullptr);
-				TRACEIN(_T("BSCF_LASTDATANOTIFICATION (%s): サイズが一致しません！"), (LPCTSTR)m_pDLItem->strFileName);
+				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, m_pDLItem->strIncompleteFilePath, nullptr);
+				TRACEIN(_T("BSCF_LASTDATANOTIFICATION (%s): サイズが一致しません！"), m_pDLItem->strFileName);
 			} else {
-				TRACEIN(_T("BSCF_LASTDATANOTIFICATION : 正常終了しました(%s)"), (LPCTSTR)m_pDLItem->strFileName);
+				TRACEIN(_T("BSCF_LASTDATANOTIFICATION : 正常終了しました(%s)"), m_pDLItem->strFileName);
 				::MoveFileEx(m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath, MOVEFILE_REPLACE_EXISTING);
 				/* エクスプローラーにファイルの変更通知 */
-				::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(m_pDLItem->strIncompleteFilePath), static_cast<LPCTSTR>(m_pDLItem->strFilePath));
+				::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, m_pDLItem->strIncompleteFilePath, m_pDLItem->strFilePath);
 			}
 		}
 	}
@@ -323,12 +329,12 @@ HRESULT CCustomBindStatusCallBack::BeginningTransaction(
 	LPWSTR *pszAdditionalHeaders ) 
 {
 	TRACEIN(_T("CCustomBindStatusCallBack::BeginningTransaction()"));
-	m_pDLItem->strURL	 = szURL;
+	::wcscpy_s(m_pDLItem->strURL, szURL);
 	if (pszAdditionalHeaders == NULL) 
 		return E_POINTER;
 	*pszAdditionalHeaders = NULL;
 
-	if (m_pDLItem->strReferer.IsEmpty() == FALSE) {	// リファラーを追加する
+	if (m_pDLItem->strReferer[0] != L'\0') {	// リファラーを追加する
 		CString strBuffer;
 		strBuffer.Format(_T("Referer: %s\r\n"), m_pDLItem->strReferer);
 		TRACEIN(_T("　Referer : %s"), m_pDLItem->strReferer);
@@ -360,14 +366,14 @@ HRESULT CCustomBindStatusCallBack::OnResponse(
 		if (std::regex_search(strRespons, smatch, regex)) {
 			CString strBuffer = smatch[1].str().c_str();
 			vector<char> filename = Misc::urlstr_decode(strBuffer);
-			m_pDLItem->strFileName = Misc::UnknownToCString(filename);
+			::wcscpy_s(m_pDLItem->strFileName, Misc::UnknownToCString(filename));
 			TRACEIN(_T("　filename : %s"), (LPCTSTR)m_pDLItem->strFileName);
 		} else {
-			m_pDLItem->strFileName = m_pDLItem->strURL;
-			m_pDLItem->strFileName = Misc::GetFileBaseName(m_pDLItem->strFileName);
-			int nQuestion = m_pDLItem->strFileName.ReverseFind(_T('?'));
+			::wcscpy_s(m_pDLItem->strFileName, Misc::GetFileBaseName(m_pDLItem->strFileName));
+			CString temp = m_pDLItem->strFileName;
+			int nQuestion = temp.ReverseFind(_T('?'));
 			if (nQuestion != -1) {
-				m_pDLItem->strFileName = m_pDLItem->strFileName.Left(nQuestion);
+				::wcscpy_s(m_pDLItem->strFileName, temp.Left(nQuestion));
 			}
 		}
 	}
@@ -392,51 +398,40 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 			if (std::regex_search(strbuff, result, rx)) {
 				CString strtemp = result.str(1).c_str();
 				vector<char> strurldecoded = Misc::urlstr_decode(strtemp);
-				m_pDLItem->strFileName = Misc::utf8_to_CString(strurldecoded);	//
+				::wcscpy_s(m_pDLItem->strFileName, Misc::utf8_to_CString(strurldecoded));	//
 			} else if (std::regex_search(strbuff, result, rx1))  {
 				std::string strtemp1 = result.str(1);
 
-				int nPerCount = 0;
-				std::for_each(strtemp1.begin(), strtemp1.end(), [&nPerCount](char c) {
-					if (c == '%')
-						++nPerCount;
-				});
+				/* URLデコードする */
 				vector<char> strUrlDecoded;
-				bool	bShiftJis = false;
-				if (nPerCount != 0) {
-					double dRate = double(strtemp1.length()) / double(nPerCount);
-					if (dRate >= 2.4) {	// '%'が多いならURLDecode
-						char tempdecoded[INTERNET_MAX_PATH_LENGTH] = "\0";
-						DWORD dwBufferLength = INTERNET_MAX_PATH_LENGTH;
-						hr = ::UrlUnescapeA(const_cast<LPSTR>(strtemp1.c_str()), tempdecoded, &dwBufferLength, 0);
-						if (FAILED(hr)) {
-							TRACEIN(_T("UrlUnescapeA 失敗 : Error「%s」\n　(%s)"), (LPCTSTR)GetLastErrorString(hr), (LPCTSTR)CString(strtemp1.c_str()));
-							::strcpy_s(tempdecoded, strtemp1.c_str());	// 失敗したので元に戻しておく
-						} else {
-							strtemp1 = tempdecoded;
-							for (auto it = strtemp1.begin(); it != strtemp1.end(); ++it) {	// '+'を空白に置換する
-								if (*it == '+')
-									*it = ' ';
-							}
-						}
-					} 
+				char tempdecoded[INTERNET_MAX_PATH_LENGTH] = "\0";
+				DWORD dwBufferLength = INTERNET_MAX_PATH_LENGTH;
+				hr = ::UrlUnescapeA(const_cast<LPSTR>(strtemp1.c_str()), tempdecoded, &dwBufferLength, 0);
+				if (FAILED(hr)) {
+					TRACEIN(_T("UrlUnescapeA 失敗 : Error「%s」\n　(%s)"), (LPCTSTR)GetLastErrorString(hr), (LPCTSTR)CString(strtemp1.c_str()));
+					::strcpy_s(tempdecoded, strtemp1.c_str());	// 失敗したので元に戻しておく
 				} else {
-					if (Misc::IsShiftJIS(strtemp1.c_str(), (int)strtemp1.length())) {
-						bShiftJis = true;
-						m_pDLItem->strFileName = strtemp1.c_str();
-						TRACEIN(_T("Shift-JIS文字列でした : %s"), (LPCTSTR)m_pDLItem->strFileName);
+					strtemp1 = tempdecoded;
+					for (auto it = strtemp1.begin(); it != strtemp1.end(); ++it) {	// '+'を空白に置換する
+						if (*it == '+')
+							*it = ' ';
 					}
-				}
-				if (bShiftJis == false) {
+				} 
+
+				if (Misc::IsShiftJIS(strtemp1.c_str(), (int)strtemp1.length())) {
+					::wcscpy_s(m_pDLItem->strFileName, Misc::sjis_to_CString(strtemp1.c_str()));
+					TRACEIN(_T("_GetFileName(), Shift-JIS文字列でした : %s"), m_pDLItem->strFileName);
+				} else {
 					strUrlDecoded.resize(strtemp1.length() + 1, '\0');
 					::strcpy_s(strUrlDecoded.data(), strtemp1.length() + 1, strtemp1.c_str());
-					m_pDLItem->strFileName = Misc::utf8_to_CString(strUrlDecoded);
+					::wcscpy_s(m_pDLItem->strFileName, Misc::utf8_to_CString(strUrlDecoded));
+					TRACEIN(_T("_GetFileName(), UTF8と解釈しました : %s"), m_pDLItem->strFileName);
 				}
 			} else {
 				TRACEIN(_T("CONTENT_DISPOSITIONが見つからない？ 内容: %s"), (LPCTSTR)CString(buff));
 			}
 		}
-		if (m_pDLItem->strFileName.IsEmpty()) {
+		if (m_pDLItem->strFileName[0] == L'\0') {
 			dwBuffSize = 1024;
 			hr = spInfo->QueryOption(INTERNET_OPTION_DATAFILE_NAME, (LPVOID)buff, &dwBuffSize);
 			if (hr == S_OK) {
@@ -444,35 +439,37 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 				CString strBaseName = Misc::GetFileBaseName(buff);
 				int nIndex = strBaseName.ReverseFind(_T('['));
 				if (nIndex != -1) {
-					m_pDLItem->strFileName = strBaseName.Left(nIndex);
-					CString strExt = Misc::GetFileExt(strBaseName);
+					::wcscpy_s(m_pDLItem->strFileName, strBaseName.Left(nIndex));
+					CString strExt = _T('.') + Misc::GetFileExt(strBaseName);
 					if (strExt.IsEmpty() == FALSE) {
-						m_pDLItem->strFileName += _T('.') + strExt;
+						::wcscat_s(m_pDLItem->strFileName, strExt);
 					}
 				} else {
-					m_pDLItem->strFileName = strBaseName;
+					::wcscpy_s(m_pDLItem->strFileName, strBaseName);
 				}
 			}
 		}
 	} else {
 		ATLASSERT(m_strDLFolder.IsEmpty() == FALSE);	// これ以外で失敗すると困る
-		m_pDLItem->strFileName = Misc::GetFileBaseName(m_pDLItem->strURL);	// [?]がつくかも
-		int nQIndex = m_pDLItem->strFileName.ReverseFind(_T('?'));
+		::wcscpy_s(m_pDLItem->strFileName, Misc::GetFileBaseName(m_pDLItem->strURL));	// [?]がつくかも
+		CString temp = m_pDLItem->strFileName;
+		int nQIndex = temp.ReverseFind(_T('?'));
 		if (nQIndex != -1) {
-			m_pDLItem->strFileName = m_pDLItem->strFileName.Left(nQIndex);
+			::wcscpy_s(m_pDLItem->strFileName, temp.Left(nQIndex));	// "?"から右は無視する
 		}
-		if (m_pDLItem->strFileName.IsEmpty())
-			m_pDLItem->strFileName = _T("index");	// めったにないと思うけど一応
+		if (m_pDLItem->strFileName == L'\0')
+			::wcscpy_s(m_pDLItem->strFileName, _T("index"));	// めったにないと思うけど一応
 
-		if (m_pDLItem->strFileName.Find(_T('%')) != -1) {	// URLデコードする
+		temp = m_pDLItem->strFileName;
+		if (temp.Find(_T('%')) != -1) {	// URLデコードする
 			//vector<char> filename = Misc::urlstr_decode(m_pDLItem->strFileName);
-			m_pDLItem->strFileName = Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3);//Misc::UnknownToCString(filename);
+			::wcscpy_s(m_pDLItem->strFileName, Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3));//Misc::UnknownToCString(filename);
 		}
 	}
 
 	// リンク抽出ダイアログより(画像を保存も)
 	if (m_strDLFolder.IsEmpty() == FALSE) {
-		m_pDLItem->strFilePath = m_strDLFolder + m_pDLItem->strFileName;
+		::wcscpy_s(m_pDLItem->strFilePath, m_strDLFolder + m_pDLItem->strFileName);
 		if (::PathFileExists(m_pDLItem->strFilePath)) {
 			if (m_dwDLOption & DLO_OVERWRITEPROMPT) {
 				CString strMessage;
@@ -486,26 +483,28 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 				while (TRUE) {
 					CString strAppend;
 					strAppend.Format(_T("_[%d]"), nCount);
-					int nExt = m_pDLItem->strFileName.Find(_T('.'));
+					CString temp = m_pDLItem->strFileName;
+					int nExt = temp.Find(_T('.'));
 					if (nExt != -1) {
-						m_pDLItem->strFileName.Insert(nExt, strAppend);
+						temp.Insert(nExt, strAppend);
 					} else {
-						m_pDLItem->strFileName += strAppend;
+						temp += strAppend;
 					}
-					m_pDLItem->strFilePath = m_strDLFolder + m_pDLItem->strFileName;
+					::wcscpy_s(m_pDLItem->strFileName, temp);
+					::wcscpy_s(m_pDLItem->strFilePath, m_strDLFolder + m_pDLItem->strFileName);
 					if (::PathFileExists(m_pDLItem->strFilePath) == FALSE)
 						break;
 
-					m_pDLItem->strFileName = strOriginalFileName;
+					::wcscpy_s(m_pDLItem->strFileName, strOriginalFileName);
 					++nCount;
 				}
 			}
 		}
-		m_pDLItem->strIncompleteFilePath = m_pDLItem->strFilePath + _T(".incomplete");
+		::swprintf_s(m_pDLItem->strIncompleteFilePath, L"%s.incomplete", m_pDLItem->strFilePath);
 		return true;
 	}
 	// 名前を付けて保存ダイアログを出す
-	if (CDLOptions::bUseSaveFileDialog || ::GetKeyState(VK_CONTROL) < 0) {
+	if (::SendMessage(m_hWndDLing, WM_USER_USESAVEFILEDIALOG, 0, 0) != 0 || ::GetKeyState(VK_CONTROL) < 0) {
 		COMDLG_FILTERSPEC filter[] = {
 			{ L"テキスト文書 (*.txt)", L"*.txt" },// ダミー
 			{ L"すべてのファイル", L"*.*" }
@@ -518,35 +517,77 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		CShellFileSaveDialog	ShellSaveFileDialog(m_pDLItem->strFileName, FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT, strExt, filter, 2);
 		if (ShellSaveFileDialog.IsNull()  == false) {
 			if (ShellSaveFileDialog.DoModal(NULL) == IDOK) {		
-				ShellSaveFileDialog.GetFileTitle(m_pDLItem->strFileName);
-				ShellSaveFileDialog.GetFilePath(m_pDLItem->strFilePath);
+				ShellSaveFileDialog.GetFileTitle(m_pDLItem->strFileName, MAX_PATH);
+				ShellSaveFileDialog.GetFilePath(m_pDLItem->strFilePath, MAX_PATH);
 			} else {
 				return false;
 			}
 		} else {
 			CFileDialog dlg(FALSE, NULL, m_pDLItem->strFileName, OFN_OVERWRITEPROMPT, _T("すべてのファイル (*.*)\0*.*\0\0"));
 			if (dlg.DoModal(NULL) == IDOK) {
-				m_pDLItem->strFileName = dlg.m_szFileTitle;
+				::wcscpy_s(m_pDLItem->strFileName, dlg.m_szFileTitle);
+				strExt.Insert(0, _T('.'));
 				if (Misc::GetFileExt(m_pDLItem->strFileName).IsEmpty())
-					m_pDLItem->strFileName += _T(".") + strExt;
-				m_pDLItem->strFilePath = dlg.m_szFileName;
+					::wcscat_s(m_pDLItem->strFileName, strExt);
+
+				::wcscpy_s(m_pDLItem->strFilePath, dlg.m_szFileName);
 				if (Misc::GetFileExt(m_pDLItem->strFilePath).IsEmpty())
-					m_pDLItem->strFilePath += _T(".") + strExt;
+					::wcscat_s(m_pDLItem->strFilePath, strExt);
 			} else {
 				return false;
 			}
 		}
 	} else {
-		m_pDLItem->strFilePath = CDLOptions::strDLFolderPath + m_pDLItem->strFileName;
+		ATLASSERT( m_pDLItem->strFileName[0] != L'\0' );
+		::swprintf_s(m_pDLItem->strFilePath, _T("%s%s"), m_strDefaultDLFolder, m_pDLItem->strFileName);
+
+		COPYDATASTRUCT cds;
+		cds.dwData	= kDownloadingFileExists;
+		cds.lpData	= static_cast<LPVOID>(m_pDLItem->strFilePath);
+		cds.cbData	= (::lstrlen(m_pDLItem->strFilePath) + 1) * sizeof(WCHAR);
+		bool bExistsFileDownloading = ::SendMessage(m_hWndDLing, WM_COPYDATA, m_pDLItem->unique, (LPARAM)&cds) != 0;
+		if (bExistsFileDownloading && (m_dwDLOption & DLO_OVERWRITEPROMPT)) {
+			// 保存先がかぶったらＤＬできないので
+			CString err;
+			err.Format(_T("「%s」\n保存先がかぶっているのでダウンロードできません。\nダウンロードはキャンセルされます"), m_pDLItem->strFilePath);
+			MessageBox(NULL, err, NULL, MB_ICONERROR);
+			return false;
+		}
 		if (::PathFileExists(m_pDLItem->strFilePath)) {
-			CString strMessage;
-			strMessage.Format(_T("%s は既に存在します。\n上書きしますか？\n"), (LPCTSTR)m_pDLItem->strFileName);;
-			if (MessageBox(NULL, strMessage, _T("確認"), MB_OKCANCEL | MB_ICONWARNING) == IDCANCEL) {
-				return false;
+			if (m_dwDLOption & DLO_OVERWRITEPROMPT) {
+				CString strMessage;
+				strMessage.Format(_T("%s は既に存在します。\n上書きしますか？\n"), (LPCTSTR)m_pDLItem->strFileName);;
+				if (MessageBox(NULL, strMessage, _T("確認"), MB_OKCANCEL | MB_ICONWARNING) == IDCANCEL) {
+					return false;
+				}
+			} else if (m_dwDLOption & DLO_USEUNIQUENUMBER) {
+				int nCount = 1;
+				CString strOriginalFileName = m_pDLItem->strFileName;
+				for (;;) {
+					CString strAppend;
+					strAppend.Format(_T("(%d)"), nCount);
+					CString temp = m_pDLItem->strFileName;
+					int nExt = temp.Find(_T('.'));
+					if (nExt != -1) {
+						temp.Insert(nExt, strAppend);
+					} else {
+						temp += strAppend;
+					}
+					::wcscpy_s(m_pDLItem->strFileName, temp);
+					::wcscpy_s(m_pDLItem->strFilePath, m_strDefaultDLFolder + m_pDLItem->strFileName);
+					cds.lpData	= static_cast<LPVOID>(m_pDLItem->strFilePath);
+					cds.cbData	= (::lstrlen(m_pDLItem->strFilePath) + 1) * sizeof(WCHAR);
+					if (::PathFileExists(m_pDLItem->strFilePath) == FALSE && 
+						::SendMessage(m_hWndDLing, WM_COPYDATA, m_pDLItem->unique, (LPARAM)&cds) == 0)
+						break;
+
+					::wcscpy_s(m_pDLItem->strFileName, strOriginalFileName);
+					++nCount;
+				}
 			}
 		}
 	}
-	m_pDLItem->strIncompleteFilePath = m_pDLItem->strFilePath + _T(".incomplete");
+	::swprintf_s(m_pDLItem->strIncompleteFilePath, _T("%s.incomplete"), m_pDLItem->strFilePath);
 	return true;
 }
 

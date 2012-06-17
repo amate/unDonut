@@ -44,6 +44,9 @@ inline bool _MtlIsHlinkDataObject(IDataObject *pDataObject)
 		   || MtlIsDataAvailable(pDataObject, CF_DONUTURLLIST) );
 }
 
+
+#define DONUTURLLISTSHAREDMEMNAME	_T("DonutURLListSharedMemName")
+
 //-------------------------------------------------
 /// pDataObject‚©‚çDonutURLList‚ð•Ô‚·
 inline bool GetDonutURLList(IDataObject* pDataObject, std::vector<CString>&	vecUrl) 
@@ -53,14 +56,22 @@ inline bool GetDonutURLList(IDataObject* pDataObject, std::vector<CString>&	vecU
 	STGMEDIUM stgmedium = { 0 };
 	if ( SUCCEEDED(pDataObject->GetData(&formatetc, &stgmedium)) ) {
 		if (stgmedium.hGlobal) {
-			LPWSTR strList = reinterpret_cast<LPWSTR>(stgmedium.hGlobal);
+			CString sharedMemName;
+			sharedMemName.Format(_T("%s%#x"), DONUTURLLISTSHAREDMEMNAME, stgmedium.hGlobal);
+			HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
+			LPVOID lpOrg = ::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
+			HANDLE* pMapForClose = reinterpret_cast<HANDLE*>(lpOrg);
+			HANDLE hMapForClose = *pMapForClose;
+			LPWSTR strList = reinterpret_cast<LPWSTR>(pMapForClose + 1);
 			while (*strList) {
 				CString strUrl = strList;
 				vecUrl.push_back(strUrl);
 				strList += strUrl.GetLength() + 1;				
 			}
 			bResult = true;
-			delete (LPWSTR)stgmedium.hGlobal;
+			::UnmapViewOfFile(lpOrg);
+			::CloseHandle(hMap);
+			::CloseHandle(hMapForClose);
 		}		
 	}
 
@@ -277,13 +288,19 @@ private:
 		DWORD	dwSize = 0;
 		int nCount = m_arrNameAndUrl.GetSize();
 		for (int i = 0; i < nCount; ++i) {
-			dwSize += (m_arrNameAndUrl[i].second.GetLength() + 1) * sizeof(WCHAR);
+			dwSize += ((m_arrNameAndUrl[i].second.GetLength() + 1) * sizeof(WCHAR));
 		}
-		dwSize += sizeof(WCHAR);
+		dwSize += sizeof(WCHAR) + sizeof(HANDLE);
 
-		
-		LPWSTR	lpszDest = new WCHAR[dwSize];
-		HGLOBAL hMem = (HGLOBAL)lpszDest;
+		HGLOBAL hMem = static_cast<HGLOBAL>(m_arrNameAndUrl[0].second.GetBuffer(0));
+		CString sharedMemName;
+		sharedMemName.Format(_T("%s%#x"), DONUTURLLISTSHAREDMEMNAME, hMem);
+		HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, dwSize, sharedMemName);
+		ATLASSERT( hMap );
+		LPVOID lpMapOrg = static_cast<LPVOID>(::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0));
+		HANDLE* pMap = reinterpret_cast<HANDLE*>(lpMapOrg);
+		*pMap	= hMap;
+		LPWSTR lpszDest = reinterpret_cast<LPWSTR>(pMap + 1);
 		LPWSTR	pEnd = lpszDest + dwSize;
 		for (int i = 0; i < nCount; ++i) {
 			const CString& strUrl = m_arrNameAndUrl[i].second;
@@ -291,7 +308,7 @@ private:
 			lpszDest += strUrl.GetLength() + 1;
 		}
 		*lpszDest = L'\0';
-		::GlobalUnlock(hMem);
+		::UnmapViewOfFile(lpMapOrg);
 		return hMem;
 	}
 

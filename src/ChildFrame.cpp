@@ -29,6 +29,7 @@
 //#include "option\UserDefinedJavascriptOption.h"
 #include "FaviconManager.h"
 #include "ToolTipManager.h"
+#include "BingTranslatorMenu.h"
 //#include "PluginManager.h"
 //#include "Download\DownloadManager.h"
 //#include "MainFrame.h"
@@ -410,6 +411,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH		, OnViewRefresh 	)
 
 		CHAIN_COMMANDS_MEMBER( m_view )
+		CHAIN_MSG_MAP_MEMBER( m_BingTranslatorMenu )
 		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CChildFrame::Impl> )
 		CHAIN_MSG_MAP( CWebBrowserCommandHandler<CChildFrame::Impl> )
 
@@ -496,6 +498,7 @@ private:
 	GlobalConfigManageData		m_GlobalConfigManageData;
 	GlobalConfig*				m_pGlobalConfig;
 	CUrlSecurityForChildFrame	m_UrlSecurity;
+	CBingTranslatorMenu			m_BingTranslatorMenu;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
 	bool	m_bSaveSearchWordflg;
@@ -685,4 +688,9 @@ CString CChildFrame::GetTitle()
 	//if (strtemp)
 	//	return CString(strtemp);
 	return CString();
+}
+
+CString CChildFrame::GetSelectedTextLine()
+{
+	return pImpl->GetSelectedTextLine();
 }

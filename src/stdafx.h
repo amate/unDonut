@@ -26,11 +26,11 @@
 #define _WIN32_WINNT			0x0502	// XP
 #define _WIN32_IE				0x0603
 #define _RICHEDIT_VER			0x0100
-#define DONUT_NAME				_T("unDonut")
+#define DONUT_NAME				_T("unDonut_mp")
 #ifdef NDEBUG
- #define DONUT_WND_CLASS_NAME	_T("WTL:Donut") 		//+++ 名前かえるとプラグインとかスクリプトでマズイ?
+ #define DONUT_WND_CLASS_NAME	_T("WTL:Donut_mp") 		//+++ 名前かえるとプラグインとかスクリプトでマズイ?
 #else
- #define DONUT_WND_CLASS_NAME	_T("WTL::Donut_DEBUG")
+ #define DONUT_WND_CLASS_NAME	_T("WTL::Donut_mp_DEBUG")
 #endif
 #endif
 

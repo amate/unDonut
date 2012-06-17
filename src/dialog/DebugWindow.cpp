@@ -7,7 +7,8 @@
 #include <fstream>
 #include <codecvt>
 #include <boost\timer.hpp>
-#include "../Misc.h"
+#include "..\Misc.h"
+#include "..\DonutDefine.h"
 
 #ifdef _DEBUG
 static CDebugUtility	g_debugutil;
@@ -28,15 +29,17 @@ public:
 
 	void	_WriteConsole(LPCTSTR str);
 
-	HANDLE m_hOut;
+	HANDLE	m_hOut;
+	HWND	m_hWndMainFrame;
 };
 
 
 //------------------------------------
-CDebugUtility::Impl::Impl()
+CDebugUtility::Impl::Impl()  : m_hOut(NULL), m_hWndMainFrame(NULL) 
 {
 	HWND hWnd = ::FindWindow(DONUT_WND_CLASS_NAME, NULL);
 	if (hWnd) {
+		m_hWndMainFrame = hWnd;
 		return ;	// マルチプロセスモードの時コンソールが乱立しないように
 	} else {
 		// ログファイル作成
@@ -74,14 +77,23 @@ void	CDebugUtility::Impl::WriteIn(LPCTSTR strFormat, va_list argList)
 //------------------------------------
 void	CDebugUtility::Impl::_WriteConsole(LPCTSTR str)
 {
-	static CString strFilePath = Misc::GetExeDirectory() + _T("log.txt");
-	std::wfstream	filestream(strFilePath, std::ios::app);
-	if (filestream) {
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-		filestream << str;
+	if (m_hWndMainFrame) {
+		COPYDATASTRUCT cds;
+		cds.dwData	= kDebugTrace;
+		cds.lpData	= (LPVOID)str;
+		cds.cbData	= (::lstrlen(str) + 1) * sizeof(TCHAR);
+		::SendMessage(m_hWndMainFrame, WM_COPYDATA, NULL, (LPARAM)&cds);
+
+	} else {
+		static CString strFilePath = Misc::GetExeDirectory() + _T("log.txt");
+		std::wfstream	filestream(strFilePath, std::ios::app);
+		if (filestream) {
+			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+			filestream << str;
+		}
+		DWORD dwWrite;
+		::WriteConsole(m_hOut, str, lstrlen(str), &dwWrite, NULL);
 	}
-	DWORD dwWrite;
-	::WriteConsole(m_hOut, str, lstrlen(str), &dwWrite, NULL);
 }
 
 

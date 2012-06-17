@@ -8,6 +8,7 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_pParentChild(pChild), 
 	m_pThreadRefCount(nullptr), 
 	m_view(m_UIChange),
+	m_BingTranslatorMenu(pChild),
 	m_bNowActive(false),
 	m_bSaveSearchWordflg(false),
 	m_nPainBookmark(0),
@@ -82,12 +83,13 @@ CString CChildFrame::Impl::GetSelectedText()
 }
 
 
-
-//+++ _OpenSelectedText()より分離.
+/// 選択されたテキストを一行だけ返す
 CString CChildFrame::Impl::GetSelectedTextLine()
 {
 	CString str = GetSelectedText();
-	if (str.IsEmpty() == 0) {
+	if (str.GetLength() > 0) {
+		str.TrimLeft();
+		str.TrimRight();
 		int 	n	= str.Find(_T("\r"));
 		int 	n2	= str.Find(_T("\n"));
 		if ((n < 0 || n > n2) && n2 >= 0)
@@ -947,8 +949,10 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		boost::archive::text_wiarchive	ar(ss);
 		ar >> data;
 		
-		SetDLCtrl(data.dwDLCtrl);
-		SetExStyle(data.dwExStyle);
+		if (data.dwDLCtrl != -1)
+			SetDLCtrl(data.dwDLCtrl);
+		if (data.dwExStyle != -1)
+			SetExStyle(data.dwExStyle);
 		if (data.dwAutoRefresh)
 			SetAutoRefreshStyle(data.dwAutoRefresh);
 		Navigate2(data.strURL);
@@ -1608,16 +1612,16 @@ void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 	};
 
 	CString strUrl = m_view.GetAnchorURL();
-	if (strUrl.IsEmpty() == FALSE) {
-//		CDownloadManager::GetInstance()->DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
-	} else {
+	if (strUrl.IsEmpty()) {
 		CComPtr<IDispatch>	spDisp;
 		m_spBrowser->get_Document(&spDisp);
 		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
 		ATLASSERT(spDocument);
-		CPoint	pt;
-		::GetCursorPos(&pt);
-		ScreenToClient(&pt);
+		CPoint	pt = m_view.GetMenuPoint();
+		if (pt != CPoint(-1, -1)) {
+			::GetCursorPos(&pt);
+			ScreenToClient(&pt);
+		}
 		CComPtr<IHTMLElement>	spHitElement;
 		spDocument->elementFromPoint(pt.x, pt.y, &spHitElement);
 		// Hit先が画像の場合
@@ -1642,11 +1646,12 @@ void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 			}
 		}
 		if (spImg) {
-			CString strUrl = funcGetUrl(spImg.p);
-			//if (strUrl.IsEmpty() == FALSE)
-			//	CDownloadManager::GetInstance()->DownloadStart(strUrl, NULL, NULL, DLO_SAVEIMAGE);
+			strUrl = funcGetUrl(spImg.p);
 		}
 	}
+
+	if (strUrl.GetLength() > 0)
+		m_view.StartTheDownload(strUrl, true);
 }
 
 

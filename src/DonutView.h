@@ -61,10 +61,14 @@ public:
 	void	SetExStyle(DWORD dwExStyle);
 	void	SetIeMenuNoCstm(int nStatus);
 	CString GetAnchorURL() const { return m_ExternalUIDispatch.GetAnchorURL(); }
+	CPoint	GetMenuPoint() const { return m_ExternalUIDispatch.GetPoint(); }
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか
 	void	SetOperateDragDrop(BOOL bOn, int nCommand);
+
+	bool	UseDownloadManager() const;	// for DocHostUIHandlerDispatch
+	void	StartTheDownload(LPCTSTR strURL, bool bSaveImage = false);
 
 	// Overrides
 	BOOL	PreTranslateMessage(MSG *pMsg);
@@ -116,7 +120,7 @@ public:
 		MSG_WM_DESTROY	( OnDestroy )
 		MSG_WM_TIMER( OnTimer )
 		if (uMsg == WM_INITMENUPOPUP || uMsg == WM_MENUSELECT) {
-			GetTopLevelWindow().SendMessage(uMsg, wParam, lParam);
+			GetParent().SendMessage(uMsg, wParam, lParam);
 			return TRUE;
 		}
 		COMMAND_ID_HANDLER_EX( ID_DLCTL_BGSOUNDS		, OnMultiBgsounds		)

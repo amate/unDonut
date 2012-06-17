@@ -11,6 +11,10 @@ struct DLItem;
 
 #define WM_USER_REMOVEFROMDOWNLIST	(WM_APP + 1)
 #define WM_USER_ADDTODOWNLOADLIST	(WM_APP	+ 2)
+#define WM_USER_USESAVEFILEDIALOG	(WM_APP + 3)
+
+enum { kDownloadingFileExists = 1, kDownloadingURLExists = 2, };
+
 
 //////////////////////////////////////////////////
 // CCustomBindStatusCallBack
@@ -21,11 +25,10 @@ class CCustomBindStatusCallBack
 {
 public:
 	// Constructor\Destructor
-	CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing);
+	CCustomBindStatusCallBack(DLItem* pItem, HWND hWndDLing, LPCTSTR defaultDLFolder);
 	~CCustomBindStatusCallBack();
 
-	void	SetThreadId(DWORD dwID) { m_dwThreadId = dwID; }
-	DWORD	GetThreadId() const { return m_dwThreadId; }
+	void	SetThreadId(DWORD dwID);
 	void	SetReferer(LPCTSTR strReferer);
 	void	SetOption(LPCTSTR strDLFolder, HWND hWnd, DWORD dwOption);
 	void	SetBSCB(IBindStatusCallback* pPrev) { m_spBSCBPrev = pPrev; }
@@ -102,8 +105,8 @@ private:
 	HANDLE							m_hFile;
 	ULONG						m_cRef;
 
-	CString				m_strDLFolder;
-	HWND				m_hWndNotify;
-	DWORD				m_dwDLOption;
-	DWORD				m_dwThreadId;
+	CString			m_strDefaultDLFolder;
+	CString			m_strDLFolder;
+	HWND			m_hWndNotify;
+	DWORD			m_dwDLOption;
 };

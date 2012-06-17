@@ -17,38 +17,70 @@ enum EDLItem_Ex
 	//DLITEMSTATE_
 };
 
+#define DLITEMSHAREDMEMNAME	_T("DonutDLItemSharedMemName")
+
 struct DLItem
 {
+	WCHAR	strURL[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strDomain[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strReferer[INTERNET_MAX_URL_LENGTH];
+	WCHAR	strFileName[MAX_PATH];	// ファイル名
+	WCHAR	strIncompleteFilePath[MAX_PATH];
+	WCHAR	strFilePath[MAX_PATH];	// ファイルパス
 
-	CString strURL;
-	CString	strDomain;
-	CString strReferer;
-	CRect	rcItem;
-	CString strFileName;	// ファイル名
-	CString	strIncompleteFilePath;
-	CString strFilePath;	// ファイルパス
-	int		nImgIndex;
-	CString strText;
-
-	DWORD	dwState;
 	int		nProgress;
 	int		nProgressMax;
-	int		nOldProgress;
-	deque<pair<int, int> > deq;
 	bool	bAbort;
+	uintptr_t unique;
+	HANDLE	hMapForClose;
+	DWORD	dwThreadId;
 
 	DLItem()
-		: dwState(0)
-		, nProgress(0)
-		, nProgressMax(0)
-		, nOldProgress(0)
+		: nProgress(0)
+		, nProgressMax(0)		
 		, bAbort(false)
+		, unique(0)
+		, hMapForClose(NULL)
+		, dwThreadId(0)
 	{
-		strText.GetBufferSetLength(512);
-		strText.ReleaseBuffer(512);
+		::wcscpy_s(strURL, L"");
+		::wcscpy_s(strDomain, L"");
+		::wcscpy_s(strReferer, L"");
+		::wcscpy_s(strFileName, L"");
+		::wcscpy_s(strIncompleteFilePath, L"");
+		::wcscpy_s(strFilePath, L"");
+	}
+
+	DLItem(const DLItem& item)
+	{
+		::wcscpy_s(strURL, item.strURL);
+		::wcscpy_s(strDomain, item.strDomain);
+		::wcscpy_s(strReferer, item.strReferer);
+		::wcscpy_s(strFileName, item.strFileName);
+		::wcscpy_s(strIncompleteFilePath, item.strIncompleteFilePath);
+		::wcscpy_s(strFilePath, item.strFilePath);
+		nProgress	= item.nProgress;
+		nProgressMax= item.nProgressMax;
+		bAbort	= item.bAbort;
+		unique	= item.unique;
+		hMapForClose	= item.hMapForClose;
+		dwThreadId		= item.dwThreadId;
 	}
 };
 
+struct DLItemInfomation {
+	DLItem*	pDLItem;
+	HANDLE	hMap;
+	DWORD	dwState;
+	CRect	rcItem;
+	int		nImgIndex;
+	int		nOldProgress;
+	CString strText;
+	deque<pair<int, int> > deqProgressAndTime;
+
+	DLItemInfomation(DLItem* pItem, HANDLE hMapFile) : pDLItem(pItem), hMap(hMapFile), dwState(0), nImgIndex(0), nOldProgress(0)
+	{	}
+};
 
 
 ////////////////////////////////////////////////////
@@ -93,7 +125,7 @@ public:
 	void	SetAddDownloadedItemfunc(function<void (DLItem*)> func) { m_funcAddDownloadedItem = func; }
 
 	// Attributes
-	int		GetDownloadingCount() const { return (int)m_vecpDLItem.size(); }
+	int		GetDownloadingCount() const { return (int)m_vecDLItemInfo.size(); }
 
 	// Overrides
 	void	DoPaint(CDCHandle dc);
@@ -111,8 +143,10 @@ public:
 		MSG_WM_RBUTTONUP	( OnRButtonUp )
 		MSG_WM_ERASEBKGND	( OnEraseBkgnd )
 		MSG_WM_TIMER		( OnTimer )
+		MSG_WM_COPYDATA		( OnCopyData	)
 		MESSAGE_HANDLER_EX( WM_USER_ADDTODOWNLOADLIST , OnAddToList	)
 		MESSAGE_HANDLER_EX( WM_USER_REMOVEFROMDOWNLIST, OnRemoveFromList )
+		MESSAGE_HANDLER_EX( WM_USER_USESAVEFILEDIALOG , OnUseSaveFileDialog )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MSG_WM_MOUSEMOVE	( OnMouseMove )
 		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM		, OnRenameDLItem )
@@ -131,8 +165,10 @@ public:
 	void	OnRButtonUp(UINT nFlags, CPoint point);
 	BOOL	OnEraseBkgnd(CDCHandle dc) { return TRUE; }
 	void	OnTimer(UINT_PTR nIDEvent);
+	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	LRESULT OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	void	OnMouseMove(UINT nFlags, CPoint point);
 	void	OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -141,14 +177,13 @@ public:
 
 
 private:
-	void	_AddItemToList(DLItem* pItem);
-	void	_AddIcon(DLItem *pItem);
+	void	_AddIcon(DLItemInfomation& item);
 	void	_RefreshList();
 	int		_HitTest(CPoint pt);
 	CRect	_GetItemClientRect(int nIndex);
 
 	// Data members
-	std::vector<std::unique_ptr<DLItem> >	m_vecpDLItem;
+	std::vector<DLItemInfomation>	m_vecDLItemInfo;
 	CFont					m_Font;
 	CImageList				m_ImageList;
 	std::map<CString, int>	m_mapImgIndex;		// key:拡張子、value:Imagelistのindex

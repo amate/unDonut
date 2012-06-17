@@ -39,6 +39,14 @@ struct GlobalConfig
 
 	// CUrlSecurityOption
 	bool	bUrlSecurityValid;
+	
+	// CDownloadManager
+	bool	bUseDownloadManager;
+	// CDLOptions
+	bool	bShowDLManagerOnDL;
+	WCHAR	strDefaultDLFolder[MAX_PATH];
+	WCHAR	strImageDLFolder[MAX_PATH];
+	DWORD	dwDLImageExStyle;
 
 };
 

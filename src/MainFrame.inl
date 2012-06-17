@@ -211,6 +211,21 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
 
 	CString strFileOrURL = url;
+	if ( MtlIsExt(strFileOrURL, _T(".url")) && ::PathFileExists(strFileOrURL) ) {
+		DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
+		DWORD dwExProp2= 0x8;			//+++ 拡張プロパティを増設.
+		if (CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, strFileOrURL)) {
+			CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, dwExProp, dwExProp2);
+			DLCtrl	= ExProp.GetDLControlFlags();
+			ExStyle	= ExProp.GetExtendedStyleFlags();
+			AutoRefresh = ExProp.GetAutoRefreshFlag();
+		}
+		if (MTL::ParseInternetShortcutFile(strFileOrURL) == false) {
+			TRACEIN(_T("UseOpenFile(), .urlファイルからURLが取得できませんでした : %s"), strFileOrURL);
+			return ;
+		}
+	}
+
 	/* openFlag が D_OPENFILE_NOCREATE ならアクティブなページを移動する */
 	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlags) ) {
 		/*CChildFrame* pChild  = GetActiveChildFrame();
@@ -448,6 +463,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	CreateGlobalConfig(&m_GlobalConfigManageData);
 	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
+	OnSetDLConfigToGlobalConfig();
 
 	CFaviconManager::Init(hWndTabBar);
 
@@ -651,7 +667,7 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 		return rbi1.nIndex < rbi2.nIndex;
 	});
 	boost::for_each(vecReBarBandInfo, [this](const ReBarBandInfo& rbi) {
-		AddSimpleReBarBandCtrl(m_ReBar, rbi.hWnd, rbi.nID, nullptr, (rbi.fStyle & RBBS_BREAK) != 0, rbi.cx);
+		AddSimpleReBarBandCtrl(m_ReBar, rbi.hWnd, rbi.nID, nullptr, rbi.fStyle, rbi.cx);
 	});
 	m_ReBar.LockBands( (vecReBarBandInfo.front().fStyle & RBBS_NOGRIPPER) != 0 );
 	m_CmdBar.RefreshBandIdealSize(m_ReBar);
@@ -820,6 +836,26 @@ void	CMainFrame::Impl::_SaveBandPosition()
 
 // Message handler
 
+
+// リバーとビューの間の横線を書く
+void	CMainFrame::Impl::OnPaint(CDCHandle /*dc*/)
+{
+	//SetMsgHandled(FALSE);
+
+	// Constants
+	enum _ReBarBorderConstants {
+		s_kcxBorder = 2
+	};
+
+	CPaintDC	dc(m_hWnd);
+
+	CRect rc;
+	m_ReBar.GetClientRect(&rc);
+
+	rc.InflateRect(s_kcxBorder, s_kcxBorder);
+	dc.DrawEdge(rc, EDGE_ETCHED, BF_RECT);
+}
+
 /// フォーカスを復元する
 void	CMainFrame::Impl::OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther)
 {
@@ -924,6 +960,17 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kNewDonutLink:
+		{
+			CString strURL = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+			NewChildFrameData	data(m_ChildFrameClient);
+			data.strURL	= strURL;
+			data.bActive= true;
+			data.bLink	= true;
+			CChildFrame::AsyncCreate(data);
+		}
+		break;
+
 	case kSearchTextWithEngine:
 		{
 			CString str = (LPCWSTR)pCopyDataStruct->lpData;
@@ -950,10 +997,34 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 			std::vector<CString> vecUrl = GetMultiText((LPCWSTR)pCopyDataStruct->lpData);
 			std::vector<OpenMultiFileData> vecData;
 			std::transform(vecUrl.begin(), vecUrl.end(), std::back_inserter(vecData), [](const CString& url) {
-				return OpenMultiFileData(url);
+				return CMainFrame::OpenMultiFileData(url);
 			});
 			UserOpenMultiFile(vecData, true);
 		}
+		break;
+
+	case kFileDownload:
+		{
+			std::wstringstream ss;			
+			ss << static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+			boost::archive::text_wiarchive	ar(ss);
+			DownloadData DLdata;
+			ar >> DLdata;
+
+			if (CDLOptions::bShowWindowOnDL)
+				m_DownloadManager.OnShowDLManager(0, 0, NULL);
+
+			auto pCustomBindStatusCallback = CDownloadManager::CreateCustomBindStatusCallBack(m_hWnd, DLdata.unique, CDLOptions::strDLFolderPath);
+			pCustomBindStatusCallback->SetReferer(DLdata.strReferer.c_str());			
+			pCustomBindStatusCallback->SetOption(DLdata.strFolder.c_str(), NULL, DLdata.dwImageExStyle);
+
+			CDownloadManager::StartTheDownload(DLdata.strURL.c_str(), pCustomBindStatusCallback);
+
+		}
+		break;
+
+	case kDebugTrace:
+		TRACE(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
 		break;
 
 	default:
@@ -1115,6 +1186,16 @@ void	CMainFrame::Impl::OnUpdateUrlSecurityList()
 		::SendMessage(hWnd, WM_UPDATEURLSECURITYLIST, 0, 0);
 	});
 }
+
+/// 現在のダウンロードマネージャーの設定をGlobalConfigに設定する
+void	CMainFrame::Impl::OnSetDLConfigToGlobalConfig()
+{
+	m_GlobalConfigManageData.pGlobalConfig->bShowDLManagerOnDL	= CDLOptions::bShowWindowOnDL;
+	::wcscpy_s(m_GlobalConfigManageData.pGlobalConfig->strDefaultDLFolder, CDLOptions::strDLFolderPath);
+	::wcscpy_s(m_GlobalConfigManageData.pGlobalConfig->strImageDLFolder, CDLOptions::strImgDLFolderPath);
+	m_GlobalConfigManageData.pGlobalConfig->dwDLImageExStyle	= CDLOptions::dwImgExStyle;
+}
+
 
 void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -1583,6 +1664,27 @@ void	CMainFrame::Impl::OnOperateCommandToAllTab(UINT uNotifyCode, int nID, CWind
 	});
 }
 
+/// Donutのあるフォルダを開く
+void	CMainFrame::Impl::OnOpenDonutExeFolder(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	CString	progDir = Misc::GetExeDirectory();
+	ShellExecute(NULL, NULL, progDir, progDir, NULL, SW_SHOW);
+}
+
+/// 作者のページを開く
+void	CMainFrame::Impl::OnAuthorWebSite(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	//CString strSite = _T("http://www5.ocn.ne.jp/~minute/tab/"); //unDonut古い方
+	//CString strSite = _T("http://undonut.sakura.ne.jp/"); // unDonut新しい方
+	//CString strSite = _T("http://tekito.genin.jp/undonut+.html"); //unDonut+
+	//CString strSite = _T("http://ichounonakano.sakura.ne.jp/64/undonut/"); //unDonut+mod.	旧
+	//CString strSite = _T("http://undonut.undo.jp/"); //unDonut+mod.
+	//CString strSite = _T("http://cid-8830de058eedff85.skydrive.live.com/browse.aspx/%e5%85%ac%e9%96%8b/unDonut"); // 安堂夏.
+	CString strSite = _T("http://www31.atwiki.jp/lafe/pages/32.html");
+
+	UserOpenFile( strSite, DonutGetStdOpenFlag() );
+}
+
 
 /// メインメニューの [表示]-[ツールバー]を表示する
 LRESULT CMainFrame::Impl::OnShowToolBarMenu()
@@ -1619,6 +1721,8 @@ void	CMainFrame::Impl::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 			m_TabBar.InsertHere(false);
 			PostMessage(WM_INITPROCESSFINISHED);
 		}
+	} else {
+		m_TabBar.InsertHere(false);	// タブバーからの操作を終わらせる
 	}
 }
 
@@ -1889,8 +1993,9 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 		if ( bNoting && strMove.IsEmpty() ) {	// 右クリックメニューを出す
 			::ScreenToClient(data.hwnd, &ptLast);
 			data.lParam = MAKELONG(ptLast.x, ptLast.y);
-			::SendMessage(data.hwnd, WM_RBUTTONDOWN, data.wParam, data.lParam);
-			::SendMessage(data.hwnd, WM_RBUTTONUP, data.wParam, data.lParam);
+			DWORD_PTR dwResult = 0;
+			if (::SendMessageTimeout(data.hwnd, WM_RBUTTONDOWN, data.wParam, data.lParam, SMTO_ABORTIFHUNG, 2000, &dwResult))
+				::SendMessageTimeout(data.hwnd, WM_RBUTTONUP, data.wParam, data.lParam, SMTO_ABORTIFHUNG, 2000, &dwResult);
 		}
 		return !bNoting;
 	};

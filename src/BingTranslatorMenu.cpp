@@ -2,14 +2,15 @@
 
 #include "stdafx.h"
 #include "BingTranslatorMenu.h"
-#include <WinInet.h>
-#include "MainFrame.h"
 #include <boost/thread.hpp>
+#include <WinInet.h>
+#include "ChildFrame.h"
 #include "MtlMisc.h"
 #include "IniFile.h"
+#include "DonutDefine.h"
 
 LPCTSTR appID = _T("6CB08565F99A903FB046716AA865A256A122E24C");
-
+LPCTSTR kUserAgent = _T("Mozilla/5.0 (compatible; MSIE 9.0; Windows NT 6.1; WOW64; Trident/5.0)");
 
 typedef CWinTraits<WS_THICKFRAME | WS_SYSMENU | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW | WS_EX_TOPMOST/*WS_EX_CLIENTEDGE*/> CDicWindowTraits;
 
@@ -36,7 +37,7 @@ public:
 				HINTERNET hInternet = NULL;
 				HINTERNET hFile		= NULL;
 				try {
-					hInternet = ::InternetOpen(_T("Mozilla/5.0"), INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
+					hInternet = ::InternetOpen(kUserAgent, INTERNET_OPEN_TYPE_PRECONFIG, NULL, NULL, 0);
 					if (hInternet == NULL) 
 						throw _T("InternetOpenに失敗");
 
@@ -69,7 +70,6 @@ public:
 					strTranslated.Replace(_T("<hr />"), _T("―――――――――――――\r\n"));
 					strTranslated.Replace(_T("<span class=\"dictI\">"), _T(""));
 					strTranslated.Replace(_T("</span>"), _T(""));
-					DEBUGPUT(strTranslated);
 
 					m_strTranslated = strTranslated;
 					if (m_Edit.IsWindow()) {
@@ -84,7 +84,7 @@ public:
 						m_Edit.SetWindowText(_T(""));
 						m_Edit.AppendText(strError, TRUE);
 					}
-					DEBUGPUT(strError);
+					TRACEIN(strError);
 				}
 				if (hFile)		::InternetCloseHandle(hFile);
 				if (hInternet)	::InternetCloseHandle(hInternet);
@@ -110,7 +110,7 @@ public:
 		MONITORINFO moniInfo = { sizeof (MONITORINFO) };
 		::GetMonitorInfo(hMonitor, &moniInfo);
 
-		enum { cxMargin = 5, cyMargin = -20 };
+		enum { cxMargin = -2, cyMargin = -20 };
 
 		CRect rcWindow;
 		rcWindow.top	= rcMenu.top + cyMargin;
@@ -145,7 +145,7 @@ public:
 		m_Edit.Create(m_hWnd, 0, NULL, WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL | WS_VSCROLL);
 		m_Edit.SetFont(lf.CreateFontIndirect());
 		//m_Edit.MoveWindow(0, 0, 250, 270);
-		m_Edit.ShowWindow(TRUE);
+		m_Edit.ShowWindow(SW_SHOWNOACTIVATE);
 		m_Edit.AppendText(m_strTranslated, TRUE);
 		return 0;
 	}
@@ -188,8 +188,8 @@ private:
 // CBingTranslatorMenu
 
 // Constructor
-CBingTranslatorMenu::CBingTranslatorMenu(CMainFrame* p)
-	: m_pFrame(p)
+CBingTranslatorMenu::CBingTranslatorMenu(CChildFrame* p)
+	: m_pChildFrame(p)
 	, m_pDicWindow(new CDictionaryWindow)
 {
 	m_menu.CreatePopupMenu();
@@ -206,7 +206,7 @@ CBingTranslatorMenu::~CBingTranslatorMenu()
 void CBingTranslatorMenu::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu)
 {
 	if (menuPopup.m_hMenu == m_menu.m_hMenu) {
-		CString strSelected = m_pFrame->GetActiveSelectedText();
+		CString strSelected = m_pChildFrame->GetSelectedTextLine();
 		if (m_strSelectedText == strSelected)
 			return;
 
@@ -304,7 +304,7 @@ void CBingTranslatorMenu::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BO
 			}
 			catch (LPCTSTR strError) {
 				strError;
-				DEBUGPUT(strError);
+				TRACEIN(strError);
 			}
 
 			if (hFile)		::InternetCloseHandle(hFile);
@@ -313,6 +313,19 @@ void CBingTranslatorMenu::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BO
 		boost::thread td(funcTranslate);
 		//funcTranslate();
 		return;
+	} else {
+		int nCount = menuPopup.GetMenuItemCount();
+		for (int i = 0; i < nCount; ++i) {
+			UINT nID = menuPopup.GetMenuItemID(i);
+			if (nID == ID_BINGTRANSLATOR_MENU) {	// サブメニューとして追加する
+				m_RootMenu = menuPopup;
+				CMenuItemInfo mii;
+				mii.fMask  = MIIM_SUBMENU;
+				mii.hSubMenu = m_menu;
+				m_RootMenu.SetMenuItemInfo(i, TRUE, &mii);
+				break;
+			}
+		}
 	}
 
 	SetMsgHandled(FALSE);
@@ -320,6 +333,14 @@ void CBingTranslatorMenu::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BO
 
 void CBingTranslatorMenu::OnMenuSelect(UINT nItemID, UINT nFlags, CMenuHandle menu)
 {
+	auto funcIsCursorOnDicWindow = [this]() -> bool {
+		CPoint pt;
+		::GetCursorPos(&pt);
+		CRect rcWindow;
+		m_pDicWindow->GetWindowRect(&rcWindow);
+		return rcWindow.PtInRect(pt) != 0;
+	};
+
 	if (menu.m_hMenu == m_menu.m_hMenu) {
 		if (nItemID == ID_A_DICTIONARY) {		
 			CRect rc;
@@ -335,12 +356,16 @@ void CBingTranslatorMenu::OnMenuSelect(UINT nItemID, UINT nFlags, CMenuHandle me
 		}
 		return ;
 	} else {
-		if (m_pDicWindow->IsWindow())
-			m_pDicWindow->ShowWindow(SW_HIDE);
+		if (m_pDicWindow->IsWindow()) {
+			if (funcIsCursorOnDicWindow() == false)
+				m_pDicWindow->ShowWindow(SW_HIDE);
+		}
 	}
 	if (menu.IsNull()) {
-		if (m_pDicWindow->IsWindow())
-			m_pDicWindow->DestroyWindow();
+		if (m_pDicWindow->IsWindow()) {
+			if (funcIsCursorOnDicWindow() == false)
+				m_pDicWindow->DestroyWindow();
+		}
 	}
 	SetMsgHandled(FALSE);
 }
@@ -348,7 +373,14 @@ void CBingTranslatorMenu::OnMenuSelect(UINT nItemID, UINT nFlags, CMenuHandle me
 // BingTranslatorで翻訳する
 void CBingTranslatorMenu::OnBingTranslate(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	//m_pFrame->OpenBingTranslator(m_strSelectedText);
+	CString strUrl;
+	strUrl.Format(_T("http://www.microsofttranslator.com/?ref=JAIME&from=en&to=ja&text=%s"), m_strSelectedText);
+
+	COPYDATASTRUCT cds;
+	cds.dwData	= kNewDonutLink;
+	cds.lpData	= static_cast<LPVOID>(strUrl.GetBuffer(0));
+	cds.cbData	= ((strUrl.GetLength() + 1) * sizeof(WCHAR));
+	CWindow(m_pChildFrame->GetHwnd()).GetTopLevelWindow().SendMessage(WM_COPYDATA, NULL, (LPARAM)&cds);
 }
 
 // 翻訳結果をコピー

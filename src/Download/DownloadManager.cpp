@@ -23,11 +23,44 @@ CDownloadManager::CDownloadManager()
 	s_pThis = this;
 }
 
+
+void	CDownloadManager::SetParent(HWND hWnd)
+{
+	m_hWndParent = hWnd;
+	m_wndDownload.SetParentWindow(hWnd);
+}
+
 //--------------------------------
 /// DLManagerを使うかどうかを返す
 bool CDownloadManager::UseDownloadManager()
 {
 	return CDLControlOption::s_bUseDLManager ? true : false;
+}
+
+
+//---------------------------------------
+CCustomBindStatusCallBack*	CDownloadManager::CreateCustomBindStatusCallBack(HWND hWndMainFrame, uintptr_t unique, LPCTSTR defaultDLFolder)
+{
+	/* 共有メモリを作成 */
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
+	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(DLItem), sharedMemName);
+	ATLASSERT( hMap );
+	/* 共有メモリからビューを得る */
+	DLItem* pDLItem = static_cast<DLItem*>(::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0));
+	pDLItem->unique	= unique;
+	pDLItem->hMapForClose = hMap;
+	/* カスタムバインドコールバックを作成 */
+	CCustomBindStatusCallBack* pCustomBscb = 
+		new CCustomBindStatusCallBack(pDLItem, (HWND)::SendMessage(hWndMainFrame, WM_GETDOWNLOADINGVIEWHWND, 0, 0), defaultDLFolder);
+	return pCustomBscb;
+}
+
+/// CDonutViewからダウンロードを開始する
+void	CDownloadManager::StartTheDownload(LPCTSTR strURL, IBindStatusCallback* pcbsc)
+{
+	CString* pstrURL = new CString(strURL);
+	boost::thread trd(&_DLStart, pstrURL, pcbsc);
 }
 
 //-------------------------------
@@ -39,17 +72,15 @@ void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND h
 	if (dwDLOption & DLO_SAVEIMAGE) {
 		strDLFolder = static_cast<LPCTSTR>(CDLOptions::strImgDLFolderPath);
 		dwDLOption	|= CDLOptions::dwImgExStyle;
-		//dwDLOption	|= CDLOptions::bShowWindowOnDL ? DLO_SHOWWINDOW : 0;
 	}
 	if (dwDLOption & DLO_SHOWWINDOW || CDLOptions::bShowWindowOnDL) 
 		OnShowDLManager(0, 0, NULL);
 
-	CCustomBindStatusCallBack* pCBSCB = _CreateCustomBindStatusCallBack();
+	auto pCBSCB = CreateCustomBindStatusCallBack(m_hWndParent, ::timeGetTime(), CDLOptions::strDLFolderPath);
 	pCBSCB->SetReferer(s_strReferer);
 	s_strReferer.Empty();
 	pCBSCB->SetOption(strDLFolder, hWnd, dwDLOption);
-	CString* pstrURL = new CString(strURL);
-	boost::thread trd(boost::bind(&CDownloadManager::_DLStart, this, pstrURL, (IBindStatusCallback*)pCBSCB));
+	StartTheDownload(strURL, pCBSCB);
 
 }
 
@@ -68,7 +99,7 @@ int CDownloadManager::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	SetMsgHandled(FALSE);
 	m_wndDownload.CreateEx();
-	//m_wndDownload.ShowWindow(TRUE);
+	//m_wndDownload.ShowWindow(FALSE);
 	m_wndDownload.SetParentWindow(m_hWndParent);
 
 	return 0;
@@ -82,6 +113,11 @@ void CDownloadManager::OnDestroy()
 	if (m_wndDownload.IsWindow()) {
 		m_wndDownload.DestroyWindow();
 	}
+}
+
+HWND CDownloadManager::OnGetDownloadingViewHWND()
+{
+	return m_wndDownload.m_wndDownloadingListView.m_hWnd;
 }
 
 //-------------------------------------
@@ -167,11 +203,3 @@ void	CDownloadManager::_DLStart(CString* pstrURL, IBindStatusCallback* bscb)
 	::CoUninitialize();
 }
 
-
-//---------------------------------------
-CCustomBindStatusCallBack*	CDownloadManager::_CreateCustomBindStatusCallBack()
-{
-	DLItem* pDLItem = new DLItem;
-	CCustomBindStatusCallBack* pCustomBscb = new CCustomBindStatusCallBack(pDLItem, m_wndDownload.m_wndDownloadingListView.m_hWnd);
-	return pCustomBscb;
-}

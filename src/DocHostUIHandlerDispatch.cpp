@@ -15,6 +15,7 @@ CDocHostUIHandlerDispatch::CDocHostUIHandlerDispatch(CDonutView* pView)
 	: m_bNoIECustom(false)
 	, m_pView(pView)
 	, m_nContextMenuMode(0)
+	, m_pt(-1, -1)
 { }
 
 
@@ -107,7 +108,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		return S_FALSE;
 	}
 
-
+	m_pt = *pptPosition;
 	m_nContextMenuMode	= dwID;	//+++
 	//if (pptPosition) 					//+++
 	//	m_pt	= *pptPosition;			//+++
@@ -124,6 +125,17 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 			}
 		}
 		//m_strUrl = Donut_GetActiveStatusStr();
+	} else if (dwID == CONTEXT_MENU_IMAGE) {
+		if (pDispatchObjectHit) {
+			CComQIPtr<IHTMLImgElement>	spImage = pDispatchObjectHit;
+			ATLASSERT(spImage);
+			CComBSTR strURL;
+			HRESULT hr = spImage->get_src(&strURL);
+			if (strURL) {
+				m_strUrl = strURL;
+				goto ANCHORFINISH;
+			}
+		}
 	}
 	ANCHORFINISH:
 
@@ -199,10 +211,9 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		enum { ID_SAVEDIALOG = 2268 };	// ‘ÎÛ‚ðƒtƒ@ƒCƒ‹‚É•Û‘¶
 		if (dwID == CONTEXT_MENU_ANCHOR	
 			&& iSelection == ID_SAVEDIALOG 
-			&& CDownloadManager::UseDownloadManager()) 
+			&& m_pView->UseDownloadManager()) 
 		{	// DLManager‚É‘—‚é
-			CDownloadManager::GetInstance()->SetReferer(g_pMainWnd->GetActiveLocationURL());
-			CDownloadManager::GetInstance()->DownloadStart(m_strUrl, NULL, NULL, DLO_SHOWWINDOW);
+			m_pView->StartTheDownload(m_strUrl);
 		} else {
 			// Send selected shortcut menu item command to shell
 			LRESULT  lRes	= S_OK;
@@ -254,7 +265,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		}
 	}
 	// ‚±‚±‚Å‚¨•Ð‚Ã‚¯
-	//CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
+	CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
 
 
 //	for (int ii = 0; ii < mapCmd.GetSize(); ii++) {
@@ -263,6 +274,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 //	}
 
 	//m_nContextMenuMode = 0;	//+++
+	m_pt.SetPoint(-1, -1);
 	m_strUrl.Empty();
 
 	return S_OK;

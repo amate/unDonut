@@ -12,6 +12,8 @@
 #include "option\SearchPropertyPage.h"
 #include "option\AddressBarPropertyPage.h"
 #include "option\UrlSecurityOption.h"
+#include "Download\DownloadManager.h"
+#include "Download\DownloadOptionDialog.h"
 
 #define DONUTGLOBALCONFIGSHAREDNAME	_T("DonutGlobalConfigSharedData")
 
@@ -57,11 +59,15 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	// CSearchBarOption
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
 
-	// CAddressBarOption
+	// CAddressBarOptionｔ
 	pConfig->bReplaceSpace	= CAddressBarOption::s_bReplaceSpace;
 
 	// CUrlSecurityOption
 	pConfig->bUrlSecurityValid = CUrlSecurityOption::s_bValid;
+
+	// CDownloadManager
+	pConfig->bUseDownloadManager = CDownloadManager::UseDownloadManager();
+	// CDLOptions は メインフレームのOnCreateとDLオプション更新時に行われるでいらない
 
 }
 

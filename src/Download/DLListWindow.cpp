@@ -9,6 +9,7 @@
 #include "../HlinkDataObject.h"
 #include "DownloadOptionDialog.h"
 #include "DownloadManager.h"
+#include "../MainFrame.h"
 
 /////////////////////////////////////////////////////
 // CDLListWindow
@@ -224,13 +225,26 @@ void	CDLListWindow::OnSelChangeParallelDL(UINT uNotifyCode, int nID, CWindow wnd
 		_DLStart();
 }
 
+/// ダブルクリックされたアイテムURLを開く
+LRESULT CDLListWindow::OnListViewDoubleClick(LPNMHDR pnmh)
+{
+	LPNMLISTVIEW pnml = reinterpret_cast<LPNMLISTVIEW>(pnmh);
+	if (pnml->iItem != -1) {
+		CString strURL;
+		m_DLList.GetItemText(pnml->iItem, 0, strURL);
+		g_pMainWnd->UserOpenFile(strURL, D_OPENFILE_CREATETAB | D_OPENFILE_ACTIVATE);
+	}
+	return 0;
+}
+
 /// DLManagerから一つのファイルのDL完了通知
 LRESULT CDLListWindow::OnDLComplete(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	--m_nDownloading;
-	_DLStart();
 	if (m_DLList.GetItemCount() == 0)
 		PostMessage(WM_CLOSE);	// 終了する
+
+	--m_nDownloading;
+	_DLStart();
 
 	return 0;
 }

@@ -133,13 +133,13 @@ BEGIN
     BEGIN
         POPUP "ツールバー(&T)"
         BEGIN
-            MENUITEM "標準のボタン(&S)",                  ID_VIEW_TOOLBAR
+            MENUITEM "メニュー バー(&M)",                 ID_VIEW_COMMANDBAR
+            MENUITEM "ツール バー(&S)",                  ID_VIEW_TOOLBAR
             MENUITEM "アドレス バー(&A)",                 ID_VIEW_ADDRESSBAR
-            MENUITEM "リンク(&L)",                     ID_VIEW_LINKBAR
-            MENUITEM "タブ バー(&T)",                   ID_VIEW_TABBAR
             MENUITEM "移動ボタン(&G)",                   ID_VIEW_GOBUTTON
-            MENUITEM "メニューバー(&M)",                  ID_VIEW_COMMANDBAR
-            MENUITEM "検索バー(&F)",                    ID_VIEW_SEARCHBAR
+            MENUITEM "検索 バー(&F)",                   ID_VIEW_SEARCHBAR
+            MENUITEM "リンク バー(&L)",                  ID_VIEW_LINKBAR
+            MENUITEM "タブ バー(&T)",                   ID_VIEW_TABBAR
             MENUITEM SEPARATOR
             MENUITEM "タブの複数列表示(&M)",                ID_VIEW_TABBAR_MULTI
             MENUITEM SEPARATOR
@@ -492,14 +492,14 @@ IDR_TOOLBAR MENU
 BEGIN
     POPUP "p"
     BEGIN
-        MENUITEM "標準のボタン(&S)",                  ID_VIEW_TOOLBAR
+        MENUITEM "メニュー バー(&M)",                 ID_VIEW_COMMANDBAR
+        MENUITEM "ツール バー(&S)",                  ID_VIEW_TOOLBAR
         MENUITEM "アドレス バー(&A)",                 ID_VIEW_ADDRESSBAR
-        MENUITEM "リンク(&L)",                     ID_VIEW_LINKBAR
-        MENUITEM "タブ バー(&T)",                   ID_VIEW_TABBAR
         MENUITEM "移動ボタン(&G)",                   ID_VIEW_GOBUTTON
-        MENUITEM "メニューバー(&M)",                  ID_VIEW_COMMANDBAR
-        MENUITEM "検索バー",                        ID_VIEW_SEARCHBAR
-        MENUITEM "検索バーのボタン(&B)",                ID_VIEW_SEARCHBUTTON
+        MENUITEM "リンク バー(&L)",                  ID_VIEW_LINKBAR
+        MENUITEM "検索 バー",                       ID_VIEW_SEARCHBAR
+        MENUITEM "検索 バーのボタン(&B)",               ID_VIEW_SEARCHBUTTON
+        MENUITEM "タブ バー(&T)",                   ID_VIEW_TABBAR
         MENUITEM SEPARATOR
         MENUITEM "タブの複数列表示(&M)",                ID_VIEW_TABBAR_MULTI
         MENUITEM SEPARATOR
@@ -1825,14 +1825,14 @@ BEGIN
     CONTROL         "全てのダウンロードが終わった時に終了する",IDC_CHECK_CLOSEAFTERALLDL,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,72,125,10
     CONTROL         "DL開始前にダウンロードマネージャーを自動的に表示する",IDC_CHECK_SHOWWINDOW_ONDL,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,40,164,10
-    GROUPBOX        "画像を保存",IDC_STATIC,4,88,228,84
-    PUSHBUTTON      "...",IDC_BUTTON_IMGFOLDERSELECT,208,108,16,17
-    GROUPBOX        "既定のダウンロードフォルダ",IDC_STATIC,8,100,220,28
-    CONTROL         "上書きの確認をする",IDC_RADIO_OVERWRITEPROMPT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,141,68,10
-    CONTROL         "連番を付ける",IDC_RADIO_USEUNIQUENUMBER,"Button",BS_AUTORADIOBUTTON,12,153,48,10
-    GROUPBOX        "ファイルが既に存在する時",IDC_STATIC,8,132,84,36,WS_GROUP
+    GROUPBOX        "画像を保存",IDC_STATIC,4,128,228,44
+    PUSHBUTTON      "...",IDC_BUTTON_IMGFOLDERSELECT,208,148,16,17
+    GROUPBOX        "既定のダウンロードフォルダ",IDC_STATIC,8,140,220,28
+    CONTROL         "上書きの確認をする",IDC_RADIO_OVERWRITEPROMPT,"Button",BS_AUTORADIOBUTTON | WS_GROUP,12,97,68,10
+    CONTROL         "連番を付ける",IDC_RADIO_USEUNIQUENUMBER,"Button",BS_AUTORADIOBUTTON,12,109,48,10
+    GROUPBOX        "ファイルが既に存在する時",IDC_STATIC,8,88,84,36,WS_GROUP
     COMBOBOX        IDC_CMB_DOWNLOADFOLDER,9,15,191,80,CBS_DROPDOWN | CBS_HASSTRINGS
-    COMBOBOX        IDC_CMB_IMGDOWNLOADFOLDER,12,110,192,84,CBS_DROPDOWN | CBS_HASSTRINGS
+    COMBOBOX        IDC_CMB_IMGDOWNLOADFOLDER,12,150,192,84,CBS_DROPDOWN | CBS_HASSTRINGS
 END
 
 IDD_LINKEDITDIALOG DIALOGEX 0, 0, 230, 56
@@ -2336,6 +2336,10 @@ BEGIN
         RIGHTMARGIN, 214
         TOPMARGIN, 7
         BOTTOMMARGIN, 270
+    END
+
+    IDD_DLOPTION, DIALOG
+    BEGIN
     END
 
     IDD_LINKEDITDIALOG, DIALOG

@@ -111,13 +111,14 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 	// 背景を描画
 	memDC.FillSolidRect(rcClient, RGB(255, 255, 255));
 
-	std::size_t	size = m_vecpDLItem.size();
-	for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
-		CRect rcItem = (*it)->rcItem;
+	std::size_t	size = m_vecDLItemInfo.size();
+	for (auto it = m_vecDLItemInfo.begin(); it != m_vecDLItemInfo.end(); ++it) {
+		const DLItem& DLItem = *it->pDLItem;
+		CRect rcItem = it->rcItem;
 		rcItem.right = rcClient.right;
 
 		memDC.SetBkMode(TRANSPARENT);
-		if ((*it)->dwState & DLITEMSTATE_SELECTED) {
+		if (it->dwState & DLITEMSTATE_SELECTED) {
 			static COLORREF SelectColor = ::GetSysColor(COLOR_HIGHLIGHTTEXT);
 			memDC.SetTextColor(SelectColor);
 		} else {
@@ -125,20 +126,20 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		}
 
 		// 選択列描画
-		if ((*it)->dwState & DLITEMSTATE_SELECTED){
+		if (it->dwState & DLITEMSTATE_SELECTED){
 			memDC.FillRect(&rcItem, COLOR_HIGHLIGHT);
 		}
 
 		// アイコン描画
 		CRect rcImage = rcItem;
 		CPoint ptImg(cxImageMargin, rcImage.top + cyImageMargin);
-		m_ImageList.Draw(memDC, (*it)->nImgIndex, ptImg, ILD_NORMAL);
+		m_ImageList.Draw(memDC, it->nImgIndex, ptImg, ILD_NORMAL);
 
 		// ファイル名を描画
 		CRect rcFileName = rcItem;
 		rcFileName.left = cxFileNameMargin;
 		rcFileName.top += cyFileNameMargin;
-		memDC.DrawText((*it)->strFileName, -1, rcFileName, DT_SINGLELINE);
+		memDC.DrawText(DLItem.strFileName, -1, rcFileName, DT_SINGLELINE);
 
 		// progress
 		CRect rcProgress(cxFileNameMargin, rcItem.top + cyProgressMargin, rcItem.right - cleftProgressMargin, rcItem.top + cyProgressMargin + ProgressHeight);
@@ -151,13 +152,13 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 			CRect rcContent;
 			GetThemeBackgroundContentRect(memDC, PROGRESSBAR, 0, rcProgress, rcContent);
 
-			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
+			double Propotion = double(DLItem.nProgress) / double(DLItem.nProgressMax);
 			int nPos = (int)((double)rcContent.Width() * Propotion);
 			rcContent.right = rcContent.left + nPos;
 			DrawThemeBackground(memDC, PROGRESSBODY, 0, rcContent);
 		} else {
 			memDC.DrawEdge(rcProgress, EDGE_RAISED, BF_ADJUST | BF_MONO | BF_RECT | BF_MIDDLE);
-			double Propotion = double((*it)->nProgress) / double((*it)->nProgressMax);
+			double Propotion = double(DLItem.nProgress) / double(DLItem.nProgressMax);
 			int nPos = (int)((double)rcProgress.Width() * Propotion);
 			rcProgress.right = rcProgress.left + nPos;
 			memDC.FillSolidRect(rcProgress, RGB(0, 255, 0));
@@ -167,7 +168,7 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		CRect rcDiscribe = rcItem;
 		rcDiscribe.top += cyProgressMargin + ProgressHeight;
 		rcDiscribe.left = cxFileNameMargin;
-		memDC.DrawText((*it)->strText, -1, rcDiscribe, DT_SINGLELINE);
+		memDC.DrawText(it->strText, -1, rcDiscribe, DT_SINGLELINE);
 
 		// 停止アイコン描画
 		CPoint ptStop(rcClient.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin);
@@ -296,8 +297,8 @@ void CDownloadingListView::OnSize(UINT nType, CSize size)
 	SetMsgHandled(FALSE);
 
 	if (size != CSize(0, 0)) {
-		std::for_each(m_vecpDLItem.begin(), m_vecpDLItem.end(), [size](std::unique_ptr<DLItem>&	pItem) {
-			pItem->rcItem.right = size.cx;
+		std::for_each(m_vecDLItemInfo.begin(), m_vecDLItemInfo.end(), [size](DLItemInfomation& Item) {
+			Item.rcItem.right = size.cx;
 		});
 		CSize	scrollsize;
 		GetScrollSize(scrollsize);
@@ -315,17 +316,17 @@ void CDownloadingListView::OnLButtonDown(UINT nFlags, CPoint point)
 
 	int nIndex = _HitTest(point);
 
-	int nCount = (int)m_vecpDLItem.size();
+	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
-		DLItem& item = *m_vecpDLItem[i];
+		DLItemInfomation& item = m_vecDLItemInfo[i];
 		if (item.dwState & DLITEMSTATE_SELECTED) 
 			item.dwState &= ~DLITEMSTATE_SELECTED;
 		if (i == nIndex) {
 			CRect rcItem = _GetItemClientRect(i);
 			CRect rcStop(CPoint(rcClient.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin), CSize(cxStop, cyStop));
 			if (rcStop.PtInRect(point)) {
-				item.bAbort = true;	// DLを停止する
-				TRACEIN(_T("DLをキャンセルしました！: %s"), m_vecpDLItem[i]->strFileName);
+				m_vecDLItemInfo[i].pDLItem->bAbort = true;	// DLを停止する
+				TRACEIN(_T("DLをキャンセルしました！: %s"), m_vecDLItemInfo[i].pDLItem->strFileName);
 			} else {
 				item.dwState |= DLITEMSTATE_SELECTED;
 			}
@@ -342,9 +343,9 @@ void CDownloadingListView::OnRButtonUp(UINT nFlags, CPoint point)
 	if (nIndex == -1)
 		return;
 
-	int nCount = (int)m_vecpDLItem.size();
+	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
-		DLItem& item = *m_vecpDLItem[i];
+		DLItemInfomation& item = m_vecDLItemInfo[i];
 		if (item.dwState & DLITEMSTATE_SELECTED) 
 			item.dwState &= ~DLITEMSTATE_SELECTED;
 		if (i == nIndex) 
@@ -356,7 +357,7 @@ void CDownloadingListView::OnRButtonUp(UINT nFlags, CPoint point)
 	menu.LoadMenu(IDM_DOWNLOADINGLISTVIEW);
 	CMenu	submenu = menu.GetSubMenu(0);
 
-	m_pItemPopup = m_vecpDLItem[nIndex].get();
+	m_pItemPopup = m_vecDLItemInfo[nIndex].pDLItem;
 	CPoint pt;
 	::GetCursorPos(&pt);
 	submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
@@ -375,24 +376,25 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		}
 
 		int	nMaxTotalSecondTime = 0;
-		for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
-			DLItem& item = *(*it);
+		for (auto it = m_vecDLItemInfo.begin(); it != m_vecDLItemInfo.end(); ++it) {
+			DLItemInfomation& itemInfo = *it;
+			DLItem& DLItem = *itemInfo.pDLItem;
 
 			// (1.2 MB/sec)
 			CString strTransferRate;
-			int nProgressMargin = item.nProgress - item.nOldProgress;
-			item.nOldProgress = item.nProgress;
+			int nProgressMargin = DLItem.nProgress - itemInfo.nOldProgress;
+			itemInfo.nOldProgress = DLItem.nProgress;
 
-			if (item.deq.size() >= 10)
-				item.deq.pop_front();
-			item.deq.push_back(make_pair(nProgressMargin, (int)dwTimeMargin));
+			if (itemInfo.deqProgressAndTime.size() >= 10)
+				itemInfo.deqProgressAndTime.pop_front();
+			itemInfo.deqProgressAndTime.push_back(make_pair(nProgressMargin, (int)dwTimeMargin));
 			nProgressMargin = 0;
 			int nTotalTime = 0;
-			for (auto itq = item.deq.cbegin(); itq != item.deq.cend(); ++itq) {
+			for (auto itq = itemInfo.deqProgressAndTime.cbegin(); itq != itemInfo.deqProgressAndTime.cend(); ++itq) {
 				nProgressMargin += itq->first;
 				nTotalTime		+= itq->second;
 			}
-			TRACEIN(_T("Margin : %d   ToalTime : %d"), nProgressMargin, nTotalTime);
+
 			double dKbTransferRate = (double)nProgressMargin / (double)nTotalTime;	// kbyte / second
 			double MbTransferRate = dKbTransferRate / 1000.0;
 			if (MbTransferRate > 1) {
@@ -405,19 +407,19 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 			
 
 			// 残り 4 分
-			int nRestByte = item.nProgressMax - item.nProgress;
+			int nRestByte = DLItem.nProgressMax - DLItem.nProgress;
 			if (nRestByte <= 0) {
 				CString strDownloaded;
-				double dMByte = (double)item.nProgress / (1000.0 * 1000.0);
+				double dMByte = (double)DLItem.nProgress / (1000.0 * 1000.0);
 				if (dMByte >= 1) {
 					::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf MB ダウンロード"), dMByte);
 					strDownloaded.ReleaseBuffer();
 				} else {
-					double dKByte = (double)item.nProgress / 1000.0;
+					double dKByte = (double)DLItem.nProgress / 1000.0;
 					::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf KB ダウンロード"), dKByte);
 					strDownloaded.ReleaseBuffer();
 				}
-				item.strText.Format(_T("残り ??? 時間 ― %s%s ― %s"), strDownloaded, strTransferRate, item.strDomain);
+				itemInfo.strText.Format(_T("残り ??? 時間 ― %s%s ― %s"), strDownloaded, strTransferRate, DLItem.strDomain);
 			} else {
 				if (dKbTransferRate > 0) {
 					int nTotalSecondTime = static_cast<int>((nRestByte / 1000) / dKbTransferRate);	// 残り時間(秒)
@@ -426,37 +428,37 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 					int nhourTime	= nTotalSecondTime / (60 * 60);									// 時間
 					int nMinTime	= (nTotalSecondTime - (nhourTime * (60 * 60))) / 60;			// 分
 					int nSecondTime = nTotalSecondTime - (nhourTime * (60 * 60)) - (nMinTime * 60);	// 秒
-					item.strText = _T("残り ");
+					itemInfo.strText = _T("残り ");
 					if (nhourTime > 0) {
-						item.strText.Append(nhourTime) += _T(" 時間 ");
+						itemInfo.strText.Append(nhourTime) += _T(" 時間 ");
 					}
 					if (nMinTime > 0) {
-						item.strText.Append(nMinTime) += _T(" 分 ");
+						itemInfo.strText.Append(nMinTime) += _T(" 分 ");
 					}
-					item.strText.Append(nSecondTime) += _T(" 秒 ― ");
+					itemInfo.strText.Append(nSecondTime) += _T(" 秒 ― ");
 
 
 					// 10.5 / 288 MB
 					CString strDownloaded;
-					double dMByte = (double)item.nProgressMax / (1000.0 * 1000.0);
+					double dMByte = (double)DLItem.nProgressMax / (1000.0 * 1000.0);
 					if (dMByte >= 1) {
-						double DownloadMByte = (double)item.nProgress / (1000.0 * 1000.0);
+						double DownloadMByte = (double)DLItem.nProgress / (1000.0 * 1000.0);
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf MB"), DownloadMByte, dMByte);
 						strDownloaded.ReleaseBuffer();
 					} else {
-						double dKByte = (double)(*it)->nProgressMax / 1000.0;
-						double DownloadKByte = (double)item.nProgress / 1000.0;
+						double dKByte = (double)DLItem.nProgressMax / 1000.0;
+						double DownloadKByte = (double)DLItem.nProgress / 1000.0;
 						::swprintf(strDownloaded.GetBuffer(30), _T("%.1lf / %.1lf KB"), DownloadKByte, dKByte);
 						strDownloaded.ReleaseBuffer();
 					}
-					item.strText += strDownloaded + strTransferRate + _T(" ― ") + item.strDomain;
+					itemInfo.strText += strDownloaded + strTransferRate + _T(" ― ") + DLItem.strDomain;
 				}
 			}
 		}
 		/* タイトルバーに情報を表示する */
 		if (nMaxTotalSecondTime > 0) {
 			CString strTitle;
-			strTitle.Format(_T("DLアイテム数 %d - 全ファイルのDL終了まで残り "), (int)m_vecpDLItem.size());
+			strTitle.Format(_T("DLアイテム数 %d - 全ファイルのDL終了まで残り "), (int)m_vecDLItemInfo.size());
 			int nhourTime	= nMaxTotalSecondTime / (60 * 60);									// 時間
 			int nMinTime	= (nMaxTotalSecondTime - (nhourTime * (60 * 60))) / 60;			// 分
 			int nSecondTime = nMaxTotalSecondTime - (nhourTime * (60 * 60)) - (nMinTime * 60);	// 秒
@@ -475,13 +477,51 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 	}
 }
 
+BOOL	CDownloadingListView::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
+{
+	if (pCopyDataStruct->dwData == kDownloadingFileExists) {
+		CString strNewFilePath = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+		for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
+			if (it->pDLItem->unique == (uintptr_t)wnd.m_hWnd)
+				continue;
+			if (::_wcsicmp(it->pDLItem->strFilePath, strNewFilePath) == 0) {
+				TRACEIN(_T("ダウンロード中のファイルと保存先パスがマッチしました"));
+				return 1;
+			}
+		}
+	} else if (pCopyDataStruct->dwData == kDownloadingURLExists) {
+		CString strNewDLURL = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+		for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
+			if (it->pDLItem->unique == (uintptr_t)wnd.m_hWnd)
+				continue;
+			if (::_wcsicmp(it->pDLItem->strURL, strNewDLURL) == 0) {
+				TRACEIN(_T("ダウンロードしようとするURLとダウンロード中のURLがマッチしました"));
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 //----------------------------------------------------
 /// リストから削除する
 LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	DLItem* pItem = (DLItem*)wParam;
-	CCustomBindStatusCallBack* pbscb = (CCustomBindStatusCallBack*)lParam;
-	DWORD dwThreadId = pbscb->GetThreadId();
+	uintptr_t unique = (uintptr_t)wParam;
+	// vectorから削除する
+	DLItem* pDLItem = nullptr;
+	HANDLE hMap = NULL;
+	int nCount = (int)m_vecDLItemInfo.size();
+	for (int i = 0; i < nCount; ++i) {
+		if (m_vecDLItemInfo[i].pDLItem->unique == unique) {
+			pDLItem = m_vecDLItemInfo[i].pDLItem;
+			hMap = m_vecDLItemInfo[i].hMap;
+			m_vecDLItemInfo.erase(m_vecDLItemInfo.begin() + i);
+			break;
+		}
+	}
+	ATLASSERT( pDLItem );
+	DWORD dwThreadId = pDLItem->dwThreadId;
 	if (dwThreadId) {
 		::PostThreadMessage(dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
 	}
@@ -489,24 +529,19 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	//if (pItem->bAbort == false)
 	//	delete pbscb;
 	//pbscb->Release();
-	
-	// vectorから削除する
-	int nCount = (int)m_vecpDLItem.size();
-	for (int i = 0; i < nCount; ++i) {
-		if (m_vecpDLItem[i].get() == pItem) {
-			m_vecpDLItem[i].release();
-			m_vecpDLItem.erase(m_vecpDLItem.begin() + i);
-			break;
-		}
-	}
 
 	_RefreshList();
 
 	// DLedViewに追加
-	m_funcAddDownloadedItem(pItem);
+	m_funcAddDownloadedItem(pDLItem);
+
+	// 使ったハンドルを片付ける
+	::UnmapViewOfFile(static_cast<LPCVOID>(pDLItem));
+	::CloseHandle(hMap);
+
 
 	/* 全ファイルのDL終了 */
-	if (m_vecpDLItem.size() == 0) {
+	if (m_vecDLItemInfo.size() == 0) {
 		KillTimer(1);		// 画面更新タイマーを停止
 		m_bTimer = false;
 		GetTopLevelWindow().SetWindowText(_T("\0"));
@@ -518,6 +553,15 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	return 0;
 }
 
+//----------------------------------------------------------------------
+/// 名前を付けて保存ダイアログを使うかどうか返す
+LRESULT CDownloadingListView::OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return CDLOptions::bUseSaveFileDialog;
+}
+
+//----------------------------------------------------------------------
+/// リストに追加する
 LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (m_bTimer == false) {	
@@ -525,7 +569,21 @@ LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lPara
 		m_dwLastTime = ::timeGetTime();
 		m_bTimer = true;
 	}
-	_AddItemToList((DLItem*)wParam);
+	uintptr_t unique = (uintptr_t)wParam;
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
+	HANDLE hMap = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, sharedMemName);
+	ATLASSERT( hMap );
+	DLItem* pDLItem = static_cast<DLItem*>(::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0));
+	DLItemInfomation item(pDLItem, hMap);
+
+	// アイコンを追加
+	_AddIcon(item);
+
+	// 先頭にアイテムを追加
+	m_vecDLItemInfo.insert(m_vecDLItemInfo.begin(), item);
+
+	_RefreshList();
 	return 0;
 }
 
@@ -544,13 +602,13 @@ LRESULT CDownloadingListView::OnTooltipGetDispInfo(LPNMHDR pnmh)
 			rcFileName.top += cyFileNameMargin;
 			rcFileName.bottom	-= (ItemHeight + UnderLineHeight) - cyProgressMargin;
 			if (rcFileName.PtInRect(pt)) {
-				pntdi->lpszText = m_vecpDLItem[nIndex]->strFileName.GetBuffer(0);
+				pntdi->lpszText = m_vecDLItemInfo[nIndex].pDLItem->strFileName;
 			} else {
 				CRect	rcStop(CPoint(rcItem.right - cxStopLeftSpace, rcItem.top + cyStopTopMargin), CSize(cxStop, cyStop));
 				if (rcStop.PtInRect(pt)) {
 					::wcscpy_s(pntdi->szText, L"キャンセル");
 				} else {
-					pntdi->lpszText = m_vecpDLItem[nIndex]->strURL.GetBuffer(0);
+					pntdi->lpszText = m_vecDLItemInfo[nIndex].pDLItem->strURL;
 				}
 			}
 		} else {
@@ -612,12 +670,12 @@ void	CDownloadingListView::OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wnd
 		return;
 
 	CString strOldFilePath = m_pItemPopup->strFilePath;
-	m_pItemPopup->strFileName = dlg.GetNewFileName();
-	m_pItemPopup->strFilePath = dlg.GetNewFilePath();
+	::wcscpy_s(m_pItemPopup->strFileName, dlg.GetNewFileName());
+	::wcscpy_s(m_pItemPopup->strFilePath, dlg.GetNewFilePath());
 
-	int nCount = (int)m_vecpDLItem.size();
+	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
-		if (m_pItemPopup == m_vecpDLItem[i].get()) {	// まだDL中
+		if (m_pItemPopup == m_vecDLItemInfo[i].pDLItem) {	// まだDL中
 			InvalidateRect(_GetItemClientRect(i), FALSE);
 			m_pItemPopup = nullptr;
 			return ;
@@ -652,39 +710,24 @@ void	CDownloadingListView::OnOpenReferer(UINT uNotifyCode, int nID, CWindow wndC
 	if (m_pItemPopup == nullptr)
 		return ;
 
-	if (m_pItemPopup->strReferer.IsEmpty())
+	if (m_pItemPopup->strReferer[0] == L'\0')
 		return ;
 	DonutOpenFile(m_pItemPopup->strReferer, D_OPENFILE_ACTIVATE);
 
 	m_pItemPopup = nullptr;
 }
 
-
-
-//----------------------------------------------
-/// リストビューに追加
-void	CDownloadingListView::_AddItemToList(DLItem* pItem)
-{
-	// 先頭にアイテムを追加
-	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(pItem));
-
-	// アイコンを追加
-	_AddIcon(pItem);
-
-	_RefreshList();
-}
-
 //----------------------------------------------
 /// アイテムの左端に置くアイコンを読み込む
-void CDownloadingListView::_AddIcon(DLItem *pItem)
+void CDownloadingListView::_AddIcon(DLItemInfomation& item)
 {
-	CString strExt = Misc::GetFileExt(pItem->strFileName);
+	CString strExt = Misc::GetFileExt(item.pDLItem->strFileName);
 	if (strExt.IsEmpty()) {
-		pItem->nImgIndex = 0;
+		item.nImgIndex = 0;
 	} else {
 		auto it = m_mapImgIndex.find(strExt);
 		if (it != m_mapImgIndex.end()) {	// 見つかった
-			pItem->nImgIndex = it->second;
+			item.nImgIndex = it->second;
 		} else {							// 見つからなかった
 			SHFILEINFO sfinfo;
 			CString strFind;
@@ -699,7 +742,7 @@ void CDownloadingListView::_AddIcon(DLItem *pItem)
 			m_mapImgIndex.insert(std::pair<CString, int>(strExt, nImgIndex));
 			::DestroyIcon(sfinfo.hIcon);
 
-			pItem->nImgIndex = nImgIndex;
+			item.nImgIndex = nImgIndex;
 		}
 	}
 }
@@ -713,19 +756,19 @@ void	CDownloadingListView::_RefreshList()
 	GetClientRect(rcClient);
 
 	int cySize = 0;
-	for (auto it = m_vecpDLItem.begin(); it != m_vecpDLItem.end(); ++it) {
+	for (auto it = m_vecDLItemInfo.begin(); it != m_vecDLItemInfo.end(); ++it) {
 		// アイテムの位置を設定
-		(*it)->rcItem.top = cySize;
+		it->rcItem.top = cySize;
 		cySize += ItemHeight;
-		(*it)->rcItem.bottom = cySize;
+		it->rcItem.bottom = cySize;
 		cySize += UnderLineHeight;
 
-		(*it)->rcItem.right = rcClient.right;
+		it->rcItem.right = rcClient.right;
 	}
 
 	CSize	size;
 	size.cx	= rcClient.right;
-	size.cy	= m_vecpDLItem.size() ? cySize : 1;
+	size.cy	= m_vecDLItemInfo.size() ? cySize : 1;
 	SetScrollSize(size, TRUE, false);
 	SetScrollLine(10, 10);
 
@@ -735,7 +778,7 @@ void	CDownloadingListView::_RefreshList()
 /// ptにあるDLアイテムのインデックスを返す
 int		CDownloadingListView::_HitTest(CPoint pt)
 {
-	int nCount = (int)m_vecpDLItem.size();
+	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
 		//if (m_vecpDLItem[i]->rcItem.PtInRect(pt)) 
 		if (_GetItemClientRect(i).PtInRect(pt))
@@ -748,12 +791,12 @@ int		CDownloadingListView::_HitTest(CPoint pt)
 /// nIndexのアイテムのクライアント座標での範囲を返す
 CRect	CDownloadingListView::_GetItemClientRect(int nIndex)
 {
-	ATLASSERT(0 <= nIndex && nIndex < (int)m_vecpDLItem.size());
+	ATLASSERT(0 <= nIndex && nIndex < (int)m_vecDLItemInfo.size());
 
 	CPoint	ptOffset;
 	GetScrollOffset(ptOffset);
 
-	CRect rcItem = m_vecpDLItem[nIndex]->rcItem;
+	CRect rcItem = m_vecDLItemInfo[nIndex].rcItem;
 	rcItem.top		-= ptOffset.y;
 	rcItem.bottom	-= ptOffset.y;
 	return rcItem;

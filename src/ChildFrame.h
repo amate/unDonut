@@ -84,6 +84,8 @@ struct NavigateChildFrame {
 	DWORD	dwExStyle;
 	DWORD	dwAutoRefresh;
 
+	NavigateChildFrame() : dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0) {	}
+
 private:
 	friend class boost::serialization::access;  
 	template<class Archive>
@@ -191,6 +193,7 @@ public:
 	CComPtr<IWebBrowser2>	GetMarshalIWebBrowser();
 	CString	GetLocationURL();
 	CString GetTitle();
+	CString GetSelectedTextLine();
 
 private:
 	class Impl;

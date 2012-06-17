@@ -14,7 +14,7 @@
 
 #include "mtlbase.h"
 #include "ItemIDList.h"
-#include "DonutDefine.h"
+//#include "DonutDefine.h"
 
 #include "mtlmisc.h"
 #include "mtlwin.h"
@@ -29,6 +29,6 @@
 #include "mtlbrowser.h"
 #include "mtldragdrop.h"
 
-#include "HlinkDataObject.h"
+//#include "HlinkDataObject.h"
 
 #endif // __MTL_H__

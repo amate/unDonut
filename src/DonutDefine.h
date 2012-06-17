@@ -48,12 +48,15 @@ enum DonutOpenFileFlags {
 
 enum WmCopyDataUseage {
 	kNewDonutInstance	= 1,
+	kNewDonutLink,
 	kSetFaviconURL,
 	kSearchTextWithEngine,
 	kSetSearchText,
 	kHilightText,
 	kNavigateChildFrame,
 	kOpenMultiUrl,
+	kFileDownload,
+	kDebugTrace = 0xFFFF,
 
 };
 
@@ -754,6 +757,29 @@ enum TabCreateOption {
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
 	}
+
+
+//	HWND OnGetDownloadingViewHWND()
+#define WM_GETDOWNLOADINGVIEWHWND	(WM_USER + 135)
+#define USER_MSG_WM_GETDOWNLOADINGVIEWHWND(func)	\
+	if (uMsg == WM_GETDOWNLOADINGVIEWHWND) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = (LRESULT)func();				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	void OnSetDLConfigToGlobalConfig()
+#define WM_SETDLCONFIGTOGLOBALCONFIG	(WM_USER + 136)
+#define USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG(func)	\
+	if (uMsg == WM_SETDLCONFIGTOGLOBALCONFIG) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
 
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)

@@ -299,18 +299,20 @@ public:
 
 	// Message map
 	BEGIN_MSG_MAP_EX( Impl )
+
+		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
+		CHAIN_MSG_MAP_MEMBER( m_DownloadManager		)
+		CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
+
 		MSG_WM_CREATE	( OnCreate	)
 		MSG_WM_DESTROY	( OnDestroy )
-		
+		MSG_WM_PAINT	( OnPaint	)
 		MSG_WM_ACTIVATE ( OnActivate )
 		MSG_WM_SYSCOMMAND( OnSysCommand	)
 		MSG_WM_INITMENUPOPUP( OnInitMenuPopup	)
 		MSG_WM_COPYDATA	( OnCopyData	)
 		MESSAGE_HANDLER_EX( MYWM_NOTIFYICON , OnMyNotifyIcon  )
 		MSG_WM_MOUSEWHEEL( OnMouseWheel	)
-
-		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
-		CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
 
 		USER_MSG_WM_UIUPDATE()
 		USER_MSG_WM_BROWSERTITLECHANGE		( OnBrowserTitleChange		)
@@ -320,6 +322,7 @@ public:
 		USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
 
 		USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
+		USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG( OnSetDLConfigToGlobalConfig	)
 
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loop防止
@@ -387,6 +390,10 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_STOP_ALL			, OnOperateCommandToAllTab )
 		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH_ALL		, OnOperateCommandToAllTab )
 		COMMAND_ID_HANDLER_EX( ID_WINDOW_REFRESH_EXCEPT	, OnOperateCommandToAllTab )
+
+		// ヘルプ
+		COMMAND_ID_HANDLER_EX( ID_OPEN_EXE_DIR	, OnOpenDonutExeFolder	)
+		COMMAND_ID_HANDLER_EX( ID_JUMP_WEBSITE	, OnAuthorWebSite		)
 
 		// Special Command
 		COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
@@ -583,7 +590,7 @@ public:
 
 	int		OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void	OnDestroy();
-
+	void	OnPaint(CDCHandle /*dc*/);
 	void	OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther);
 	void	OnSysCommand(UINT nID, CPoint pt);
 	void	OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BOOL bSysMenu);
@@ -601,6 +608,7 @@ public:
 	void	OnUpdateUrlSecurityList();
 
 	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }
+	void	OnSetDLConfigToGlobalConfig();
 
 	void	OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -624,6 +632,9 @@ public:
 	void	OnTabClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnTabSwitch(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnOperateCommandToAllTab(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	void	OnOpenDonutExeFolder(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnAuthorWebSite(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnMenuRecentLast(UINT uNotifyCode, int nID, CWindow wndCtl) { 
 		OnFileRecent(0, ID_RECENTDOCUMENT_FIRST, NULL);
@@ -944,31 +955,6 @@ void CMainFrame::init_menus_infomation()
 }
 
 //-------------------------------------
-/// create command bar window
-HWND	CMainFrame::init_commandBarWindow()
-{
-	SetMenu(NULL);		// remove menu
-	HWND	hWndCmdBar = m_CmdBar.Create(m_hWnd,rcDefault,NULL,MTL_SIMPLE_CMDBAR2_PANE_STYLE,0,ATL_IDW_COMMAND_BAR);
-	ATLASSERT( ::IsWindow(hWndCmdBar) );
-
-	CIniFileI	prFont( g_szIniFileName, _T("Main") );
-	MTL::CLogFont	lf;
-	lf.InitDefault();
-	if ( lf.GetProfile(prFont) ) {
-		m_CmdBar.SetMenuLogFont(lf);
-
-		CFontHandle 	font;	//\\ SetFontもここでするように
-		MTLVERIFY( font.CreateFontIndirect(&lf) );
-		if (font.m_hFont) 
-			SetFont(font);
-	}
-
-	m_CmdBar.AttachMenu(m_MainFrameMenu);
-
-	return hWndCmdBar;
-}
-
-//-------------------------------------
 /// create toolbar
 HWND	CMainFrame::init_toolBar()
 {
@@ -993,130 +979,6 @@ HWND	CMainFrame::init_toolBar()
 	}
 
 	return hWndToolBar;
-}
-
-//-------------------------------------
-/// create addressbar
-HWND	CMainFrame::init_addressBar()
-{
-	HWND	hWndAddressBar = m_AddressBar.Create(m_hWnd, IDC_ADDRESSBAR, ID_VIEW_GO,
-												 16, 16, RGB(255, 0, 255) );
-	ATLASSERT( ::IsWindow(hWndAddressBar) );
-
-	//m_AddressBar.m_comboFlat.SetDrawStyle(CSkinOption::s_nComboStyle);
-	return hWndAddressBar;
-}
-
-//-------------------------------------
-/// create searchbar
-HWND	CMainFrame::init_searchBar()
-{
-	HWND	hWndSearchBar  = m_SearchBar.Create(m_hWnd);
-	ATLASSERT( ::IsWindow(hWndSearchBar) );
-
-	return	hWndSearchBar;
-}
-
-//-------------------------------------
-/// create tabctrl
-HWND	CMainFrame::init_tabCtrl()
-{
-	HWND	hWndMDITab = m_MDITab.Create(m_hWnd);
-	ATLASSERT( ::IsWindow(hWndMDITab) );
-
-	CFaviconManager::Init(hWndMDITab);
-
-	return hWndMDITab;
-}
-
-//------------------------------------
-/// create link bar
-HWND	CMainFrame::init_linkBar()
-{
-	//CIniFileI prLnk( g_szIniFileName, _T("LinkBar") );
-	//DWORD		dwStyle   = prLnk.GetValue( _T("ExtendedStyle") );
-	//prLnk.Close();
-
-	//m_LinkBar.SetOptionalStyle(dwStyle);
-	HWND	hWndLinkBar   = m_LinkBar.Create(m_hWnd/*, rcDefault, NULL, ATL_SIMPLE_TOOLBAR_PANE_STYLE, 0, IDC_LINKBAR*/);
-	ATLASSERT( ::IsWindow(hWndLinkBar) );
-
-	return 	hWndLinkBar;
-}
-
-//------------------------------------
-/// create rebar
-void	CMainFrame::init_rebar()
-{
-	DWORD	dwRebarStyle = ATL_SIMPLE_REBAR_STYLE | CCS_NOPARENTALIGN | CCS_NODIVIDER | RBS_DBLCLKTOGGLE;
-	{
-		CIniFileI	pr( g_szIniFileName, _T("ReBar") );
-		DWORD		dwNoBoader 		= pr.GetValue( _T("NoBoader") );
-		if (dwNoBoader)
-			dwRebarStyle &= ~RBS_BANDBORDERS;	// ボーダーを消す
-	}
-
-	CreateSimpleReBar(dwRebarStyle);
-	m_ReBar.SubclassWindow(m_hWndToolBar);
-
-	//CreateSimpleReBar(MTL_SIMPLE_REBAR_STYLE | RBS_DBLCLKTOGGLE);
-}
-
-//------------------------------------
-/// create statusbar
-void	CMainFrame::init_statusBar()
-{
-	//CreateSimpleStatusBar();
-	m_wndStatusBar.Create(m_hWnd, ATL_IDS_IDLEMESSAGE,
-							 WS_CHILD | WS_VISIBLE | WS_CLIPCHILDREN | WS_CLIPSIBLINGS | SBARS_SIZEGRIP | SBT_TOOLTIPS);
-	ATLASSERT( ::IsWindow(m_wndStatusBar) );
-	m_hWndStatusBar = m_wndStatusBar.m_hWnd;
-	//		int nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_COMBOBOX_PANE};
-	static int   nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_PRIVACY_PANE, ID_SECURE_PANE, ID_COMBOBOX_PANE };
-	m_wndStatusBar.SetPanes( nPanes, _countof(nPanes), false );
-	m_wndStatusBar.SetCommand( ID_PRIVACY_PANE, ID_PRIVACYREPORT );
-	m_wndStatusBar.SetCommand( ID_SECURE_PANE, ID_SECURITYREPORT);
-	m_wndStatusBar.SetIcon( ID_PRIVACY_PANE, 1 );				//minit
-	m_wndStatusBar.SetIcon( ID_SECURE_PANE , 0 );				//minit
-	m_wndStatusBar.SetOwnerDraw( m_wndStatusBar.IsValidBmp() );
-
-
-	enum {	//+++ IDはデフォルトの名前になっているが、交換した場合にややこしいので、第一領域、第二領域として扱う.
-		ID_PAIN_1	= ID_PROGRESS_PANE,
-		ID_PAIN_2	= ID_COMBOBOX_PANE,
-	};
-	DWORD		dwSzPain1 = 125;
-	DWORD		dwSzPain2 = 125;
-	{
-		DWORD		dwVal	  = 0;
-		CIniFileI	pr( g_szIniFileName, _T("StatusBar") );
-
-		if (pr.QueryValue( dwVal, _T("SizePain") ) == ERROR_SUCCESS) {
-			dwSzPain1 = LOWORD(dwVal);
-			dwSzPain2 = HIWORD(dwVal);
-		}
-
-		if (pr.QueryValue( dwVal, _T("SwapPain") ) == ERROR_SUCCESS)
-			g_bSwapProxy = dwVal != 0;
-	}
-
-	//+++ 位置交換の修正.
-	if (g_bSwapProxy == FALSE) {
-		g_dwProgressPainWidth = dwSzPain1;					//+++ 手抜きでプログレスペインの横幅をグローバル変数に控える.
-		m_wndStatusBar.SetPaneWidth(ID_PAIN_1, 0);			//dwSzPain1); //起動時はペインサイズが0
-		if (m_wndStatusBar.GetProxyComboBox().IsUseIE())
-			dwSzPain2 = 0;									// IEのProxyを使う場合はProxyペインサイズを0に
-		m_wndStatusBar.SetPaneWidth(ID_PAIN_2, dwSzPain2);
-	} else {	// 交換しているとき.
-		g_dwProgressPainWidth = dwSzPain2;					//+++ 手抜きでプログレスペインの横幅をグローバル変数に控える.
-		m_wndStatusBar.SetPaneWidth(ID_PAIN_2, dwSzPain2);	//+++ 交換してるときは、最初からサイズ確保.
-		if (m_wndStatusBar.GetProxyComboBox().IsUseIE())
-			dwSzPain1 = 0;									// IEのProxyを使う場合はProxyペインサイズを0に
-		m_wndStatusBar.SetPaneWidth(ID_PAIN_1, dwSzPain1);
-	}
-
-	m_wndStatusBar.SetPaneWidth(ID_SECURE_PANE	, 25);
-	m_wndStatusBar.SetPaneWidth(ID_PRIVACY_PANE , 25);
 }
 
 //---------------------------------------------
@@ -1235,34 +1097,6 @@ void CMainFrame::init_mdiClient_misc(HWND hWndCmdBar, HWND hWndToolBar)
 	m_MDITab.SetChildFrameClient(&m_ChildFrameClient);
 }
 
-//-----------------------------------
-/// メッセージフィルタとアイドルハンドラを登録
-void CMainFrame::init_message_loop()
-{
-	// message loop
-	CMessageLoop *pLoop = _Module.GetMessageLoop();
-	pLoop->AddMessageFilter(this);
-	pLoop->AddIdleHandler(this);
-}
-
-
-//--------------------------------------
-/// システムメニューに「メニューを表示]を追加
-void CMainFrame::init_sysMenu()
-{
-	HMENU		hSysMenu = ::GetSystemMenu(m_hWnd, FALSE);
-	//		::AppendMenu(hSysMenu, MF_ENABLED|MF_STRING, ID_VIEW_COMMANDBAR, _T("メニューを表示"));
-
-	TCHAR		cText[]	 = _T("メニューを表示");
-	MENUITEMINFO  menuInfo = { sizeof(MENUITEMINFO) };
-	menuInfo.fMask		= MIIM_ID | MIIM_TYPE;
-	menuInfo.fType		= MFT_STRING;
-	menuInfo.wID		= ID_VIEW_COMMANDBAR;
-	menuInfo.dwTypeData = cText;
-	menuInfo.cch		= sizeof (cText);
-	::InsertMenuItem(hSysMenu, 0, MF_BYPOSITION, &menuInfo);
-}
-
 //--------------------------------------
 /// プラグインを読み込む
 void CMainFrame::init_loadPlugins()
@@ -1283,10 +1117,6 @@ void CMainFrame::init_loadPlugins()
 // ===========================================================================
 // 終了処理
 #if 1
-CMainFrame::~CMainFrame()
-{
-	GdiplusTerm();
-}
 
 //---------------------------------------
 /// システムが終了する時
@@ -1804,39 +1634,6 @@ BOOL CMainFrame::TranslateMessageToBHO(MSG *pMsg)
 // ===========================================================================
 // スキン関係
 
-void CMainFrame::InitSkin()
-{
-	/* フォント */
-	m_MDITab.SetFont(CSkinOption::s_lfTabBar.CreateFontIndirect());
-	m_AddressBar.SetFont(CSkinOption::s_lfAddressBar.CreateFontIndirect());
-	m_SearchBar.SetFont(CSkinOption::s_lfSearchBar.CreateFontIndirect());
-	m_LinkBar.SetFont(CSkinOption::s_lfLinkBar.CreateFontIndirect());
-	m_wndStatusBar.SetProxyComboBoxFont(CSkinOption::s_lfProxyComboBox.CreateFontIndirect());
-
-	/* スキン */
-	initCurrentIcon();											//+++ アイコン
-	m_CmdBar.setMenuBarStyle(m_hWndToolBar, false); 			//+++ メニュー (FEVATWHの短名にするか否か)
-	m_CmdBar.InvalidateRect(NULL, TRUE);						//メニューバー
-	m_ReBar.RefreshSkinState(); 								//ReBar
-	m_MDITab.ReloadSkin();										//タブ
-	CToolBarOption::GetProfile();
-	m_ToolBar.ReloadSkin(); 									//ツールバー
-	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
-	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
-	//m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
-	m_ExplorerBar.ReloadSkin(); 								//エクスプローラバー
-	m_ExplorerBar.m_PanelBar.ReloadSkin();						//パネルバー
-	m_ExplorerBar.m_PluginBar.ReloadSkin(); 					//プラグインバー
-	
-	m_wndStatusBar.ReloadSkin( CSkinOption::s_nStatusStyle		//ステータスバー
-							 , CSkinOption::s_nStatusTextColor
-							 , CSkinOption::s_nStatusBackColor);
-
-	setMainFrameCaptionSw(CSkinOption::s_nMainFrameCaption);	//+++ メインフレームのキャプションの有無.
-
-
-}
-
 // [Donutのオプション]-[スキン]の[適用]が押されたとき
 HRESULT CMainFrame::OnSkinChange()
 {
@@ -1984,57 +1781,9 @@ void	CMainFrame::_AnalyzeCommandLine(const CString& strCommandLine)
 	}
 }
 
-void	CMainFrame::OpenBingTranslator(const CString& strText)
-{
-	CString strUrl;
-	strUrl.Format(_T("http://www.microsofttranslator.com/?ref=JAIME&from=en&to=ja&text=%s"), strText);
-
-	DWORD dwDLFlags = CDLControlOption::s_dwDLControlFlags & ~(DLCTL_NO_SCRIPTS | DLCTL_NO_RUNACTIVEXCTLS);
-	UserOpenFile(strUrl, D_OPENFILE_CREATETAB | D_OPENFILE_ACTIVATE, dwDLFlags);
-}
-
 // ===========================================================================
 // MainFrame_OpenFileから
 
-bool CMainFrame::OnDDEOpenFile(const CString &strFileName)
-{
-	//dmfTRACE(_T("CMainFrame::OnDDEOpenFile(%s)\n"), strFileName);
-  #if 1 //+++ トレイ状態からの復帰でのバグ対策.
-	DWORD dwOpen = 0;
-	if (CMainOption::s_bExternalNewTab) {
-		dwOpen |= D_OPENFILE_CREATETAB;
-		if (CMainOption::s_bExternalNewTabActive)
-			dwOpen |= D_OPENFILE_ACTIVATE;
-	} else {	// 既存のタブをナビゲートする
-		dwOpen |= D_OPENFILE_NOCREATE;
-		if (!CStartUpOption::s_dwActivate)
-			dwOpen |= D_OPENFILE_NOSETFOCUS;
-	}
-
-	UserOpenFile( strFileName, dwOpen );
-	if (CStartUpOption::s_dwActivate) {
-		IfTrayRestoreWindow();							//+++ トレイ状態だったら復活.
-		if (IsZoomed() == FALSE)
-			ShowWindow_Restore(true);
-		MtlSetForegroundWindow(m_hWnd);
-	}
-  #else
-	OnUserOpenFile( strFileName, DonutGetStdOpenFlag() );
-	if (CStartUpOption::s_dwActivate) {
-		//+++ OnUserOpenFile()の時点で最大化/フルスクリーンだった場合の対策でnCmdShowを渡して考慮するように変更.
-		MtlSetForegroundWindow(m_hWnd, m_OnUserOpenFile_nCmdShow);	//+++ 実はこのnCmdShowは意味が違うものを持ってきてるような気がする...があとまわし.
-	}
-  #endif
-	// UDT DGSTR ( added by dai
-	return true;
-}
-
-
-
-
-//public:
-// Message handlers
-// alternates OpenFile
 
 #if 0	//+++ url別拡張プロパティの処理を追加
 HWND CMainFrame::OnUserOpenFile(const CString& strUrl, DWORD dwOpenFlag)
@@ -2203,78 +1952,6 @@ HWND CMainFrame::UserOpenFile(CString strFileOrURL,
 		if (_OpenAboutFile(strFileOrURL))
 			return NULL;
 	}
-
-	HWND	hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
-
-	/* openFlag が D_OPENFILE_NOCREATE ならアクティブなページを移動する */
-	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlag) ) {
-		CChildFrame* pChild  = GetActiveChildFrame();
-		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
-			::PostMessage(pChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
-		} else {
-			if (dlCtrlFlag != -1)
-				pChild->SetDLCtrl(dlCtrlFlag);
-			if (extededStyleFlags != -1)
-				pChild->SetExStyle(extededStyleFlags);
-			if (AutoRefresh != 0)
-				pChild->SetAutoRefreshStyle(AutoRefresh);
-			pChild->Navigate2(strFileOrURL);
-		}
-
-		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
-			// reset focus
-			::SetFocus(NULL);
-			MtlSendCommand(hWndActive, ID_VIEW_SETFOCUS);
-		}
-		return NULL;
-	}
-
-	/* 新規ChildFrame作成 */
-	NewChildFrameData	data(m_ChildFrameClient);
-	data.strURL		= strFileOrURL;
-	data.dwDLCtrl	= dlCtrlFlag;
-	data.dwExStyle	= extededStyleFlags;
-	data.dwAutoRefresh	= AutoRefresh;
-	data.bActive	= _check_flag(openFlag, D_OPENFILE_ACTIVATE) 
-		|| m_ChildFrameClient.GetActiveChildFrameWindow() == NULL;
-	CChildFrame::AsyncCreate(data);
-	return NULL;
-#if 0	//:::
-	/* 新規ウィンドウ作成 */
-	{
-		CChildFrame* pChild = CChildFrame::NewWindow(m_hWndMDIClient, m_MDITab, m_AddressBar, false/*true*/, dlCtrlFlag, extededStyleFlags);
-		if (pChild == NULL)
-			return NULL;
-
-		if ( strFile.IsEmpty() == FALSE ) {
-			pChild->SetWaitBeforeNavigate2Flag();			//+++ 無理やり、BeforeNavigate2()が実行されるまでの間アドレスバーを更新しないようにするフラグをon... これもう不要だろうが...
-			m_OnUserOpenFile_nCmdShow = pChild->ActivateFrame(nCmdShow);	//\\ タブに追加
-
-			const SearchPostData& PostData = m_SearchBar.GetSearchPostData();
-			if (PostData.pPostData) {	// POSTする
-				pChild->Navigate2(strFile, 0, NULL, 
-					_T("Content-Type: application/x-www-form-urlencoded"), PostData.pPostData, PostData.nPostBytes);
-			} else {
-				pChild->Navigate2(strFile);
-			}
-		} else {
-			m_OnUserOpenFile_nCmdShow = pChild->ActivateFrame(nCmdShow);	//\\ タブに追加
-			TRACEIN(_T("UserOpenFile() : strFile.IsEmpty()"));
-		}
-
-		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlag) ) {
-			if (m_ChildFrameClient.GetActiveChildFrameWindow() == pChild->m_hWnd) { // a new window activated, so automatically set focus
-				// reset focus
-				::SetFocus(NULL);
-				MtlSendCommand(pChild->m_hWnd, ID_VIEW_SETFOCUS);
-			} else {
-				// It's reasonable not to touch a current focus.
-			}
-		}
-
-		return pChild->m_hWnd;
-	}
-#endif
 }
 
 
@@ -2479,39 +2156,6 @@ HWND CMainFrame::OpenExPropertyNot(CString &strUrl, DWORD dwOpenFlag)
 }
 #endif
 
-/// 最近閉じたタブを開く
-LRESULT CMainFrame::OnFileRecent(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	// get file name from the MRU list
-	if (ID_FILE_MRU_FIRST <= wID && wID <= ID_FILE_MRU_LAST)						//旧範囲IDから新範囲IDへ変換
-		wID = wID - ID_FILE_MRU_FIRST + ID_RECENTDOCUMENT_FIRST;
-
-	ChildFrameDataOnClose*	pdata = nullptr;
-	if ( m_RecentClosedTabList.GetFromList(wID, &pdata) ) {
-		NewChildFrameData	data(m_ChildFrameClient);
-		data.strURL		= pdata->strURL;
-		data.dwDLCtrl	= pdata->dwDLCtrl;
-		data.bActive	= _check_flag(DonutGetStdOpenCreateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
-		typedef vector<std::pair<CString, CString> > tlog;
-		tlog* pvecBack = new tlog(pdata->TravelLogBack);
-		tlog* pvecFore = new tlog(pdata->TravelLogFore);
-		data.funcCallAfterCreated	= [pvecBack, pvecFore, this](CChildFrame* pChild) {
-			if (CMainOption::s_bTravelLogClose) 
-				pChild->SetTravelLog(*pvecFore, *pvecBack);
-			delete pvecBack;
-			delete pvecFore;
-		};
-		m_RecentClosedTabList.RemoveFromList(wID);
-		CChildFrame::AsyncCreate(data);
-
-	} else {
-		::MessageBeep(MB_ICONERROR);
-	}
-
-	return 0;
-}
-
-
 
 //+++ メモ：複数起動無しで、別のプログラムから引数付きで起動された場合に、ここにくる。
 //+++       他の外部からの追加表示はDDE経由で行われるようで、こちらにくることはなさそう...?
@@ -2567,76 +2211,6 @@ void CMainFrame::OnNewInstance(ATOM nAtom)			// WM_NEWINSTANCE
 ////////////////////////////////////////////////////////////////////////////////
 ////新規作成
 
-//ポームページ
-void CMainFrame::OnFileNewHome(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	NewChildFrameData	data(m_ChildFrameClient);
-	data.strURL		= _T("http://www.google.co.jp/");
-	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);
-	data.funcCallAfterCreated	= [this](CChildFrame* pChild) {
-		pChild->GetIWebBrowser()->GoHome();
-		if (m_strCommandLine.IsEmpty() == FALSE)
-			this->PostMessage(WM_INITPROCESSFINISHED);
-	};
-	CChildFrame::AsyncCreate(data);
-}
-
-
-/// 現在のページ
-void CMainFrame::OnFileNewCopy(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	CChildFrame* pChild = GetActiveChildFrame();
-	if (pChild) 
-		UserOpenFile(pChild->GetLocationURL(), DonutGetStdOpenActivateFlag());
-}
-
-// オプションで指定した既定の新規タブ作成
-LRESULT CMainFrame::OnFileNew(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	if (CFileNewOption::s_dwFlags == FILENEW_BLANK) {
-		OnFileNewBlank(0, 0, 0);
-	} else if (CFileNewOption::s_dwFlags == FILENEW_COPY) {
-		if (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL)
-			OnFileNewCopy(0, 0, 0);
-		else
-			OnFileNewBlank(0, 0, 0);
-	} else if (CFileNewOption::s_dwFlags == FILENEW_HOME) {
-		OnFileNewHome(0, 0, 0);
-	} else if (CFileNewOption::s_dwFlags == FILENEW_USER) {		//+++ ユーザー指定のページを開く
-		//CIniFileI 	pr( g_szIniFileName, _T("Main") );
-		//CString		str = pr.GetStringUW( _T("File_New_UsrPage") );
-		//pr.Close();
-		CString&	str	= CFileNewOption::s_strUsr;
-		if ( !str.IsEmpty() )
-			UserOpenFile(str, DonutGetStdOpenActivateFlag());
-		else
-			OnFileNewBlank(0, 0, 0);
-	} else {
-		ATLASSERT(FALSE);
-		OnFileNewBlank(0, 0, 0);
-	}
-
-	return 0;
-}
-
-
-/// 空白ページ
-void CMainFrame::OnFileNewBlank(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	UserOpenFile( _T("about:blank"), DonutGetStdOpenActivateFlag() );
-	PostMessage(WM_COMMAND, ID_SETFOCUS_ADDRESSBAR, 0);
-}
-
-
-/// クリップボード
-void CMainFrame::OnFileNewClipBoard(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
-{
-	CString strText = MtlGetClipboardText();
-	if ( strText.IsEmpty() )
-		return;
-
-	UserOpenFile( strText, DonutGetStdOpenActivateFlag() );
-}
 
 /// TabList.xmlを開く
 LRESULT	CMainFrame::OnFileOpenTabList	(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
@@ -2655,20 +2229,6 @@ void CMainFrame::OnFileNewClipBoard2(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 
 	UserOpenFile( strText, DonutGetStdOpenFlag() );	// allow the option
 }
-
-
-/// 開く
-LRESULT CMainFrame::OnFileOpen(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	COpenURLDlg dlg;
-
-	if ( dlg.DoModal() == IDOK && !dlg.m_strEdit.IsEmpty() ) {
-		UserOpenFile( dlg.m_strEdit, DonutGetStdOpenFlag() );
-	}
-
-	return 0;
-}
-
 
 
 /// undonut の配布サイトを開く

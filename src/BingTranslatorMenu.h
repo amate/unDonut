@@ -6,7 +6,7 @@
 
 // ëOï˚êÈåæ
 class CDictionaryWindow;
-class CMainFrame;
+class CChildFrame;
 
 /////////////////////////////////////////////////////////////////////
 // CBingTranslatorMenu
@@ -14,7 +14,7 @@ class CMainFrame;
 class CBingTranslatorMenu : public CWindowImpl<CBingTranslatorMenu>
 {
 public:
-	CBingTranslatorMenu(CMainFrame* p);
+	CBingTranslatorMenu(CChildFrame* p);
 	~CBingTranslatorMenu();
 
 	CMenuHandle GetMenu() { return m_menu.m_hMenu; }
@@ -35,9 +35,10 @@ public:
 	void OnShowDicWindow(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 private:
-	CMainFrame*	m_pFrame;
+	CChildFrame*	m_pChildFrame;
 	CMenu	m_menu;
 	CString	m_strSelectedText;
 	CString m_strTranslated;
 	CDictionaryWindow*	m_pDicWindow;
+	CMenuHandle m_RootMenu;
 };

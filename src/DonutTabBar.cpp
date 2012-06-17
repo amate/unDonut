@@ -4,22 +4,25 @@
 
 #include "stdafx.h"
 #include "DonutTabBar.h"
+#include <sstream>
+#include <boost\archive\text_woarchive.hpp>
 #include "MtlProfile.h"
 #include "MtlBrowser.h"
 #include "ParseInternetShortcutFile.h"	//+++ for ParseInternetShortcutFile()
 #include "Donut.h"
-#include "option/MenuDialog.h"
-#include "option/RightClickMenuDialog.h"
-#include "option/MDITabDialog.h"
+#include "option\MenuDialog.h"
+#include "option\RightClickMenuDialog.h"
+#include "option\MDITabDialog.h"
 #include "DonutAddressBar.h"
 #include "HlinkDataObject.h"
-#include "dialog/CommandSelectDialog.h"
+#include "dialog\CommandSelectDialog.h"
 #include "DropDownButton.h"
 #include "MainFrame.h"
 #include "ChildFrame.h"
 #include "FaviconManager.h"
 #include "PluginManager.h"
 #include "ChildFrameCommandUIUpdater.h"
+
 
 ////////////////////////////////////////////////////////////////////////////
 // CTabCtrlItem : É^ÉuÇPå¬ÇÃèÓïÒ
@@ -1592,9 +1595,9 @@ bool CDonutTabBar::Impl::OnNewTabCtrlItems(
 	{
 		m_bInsertHere  = true;
 		m_nInsertIndex = nInsertIndex;
-		DonutOpenFile(strText);
-		m_nInsertIndex = -1;
-		m_bInsertHere  = false;
+		DonutOpenFile(strText, D_OPENFILE_CREATETAB | DonutGetStdOpenActivateFlag());
+		//m_nInsertIndex = -1;
+		//m_bInsertHere  = false;
 		dropEffect	   = DROPEFFECT_COPY;
 		return true;
 	}
@@ -1610,30 +1613,42 @@ bool CDonutTabBar::Impl::OnDropTabCtrlItem(int nIndex, IDataObject *pDataObject,
 	HWND	hWnd = GetTabHwnd(nIndex);
 	ATLASSERT( ::IsWindow(hWnd) );
 
+	auto funcNavigate = [this](HWND hWnd, LPCTSTR strURL) {
+		NavigateChildFrame	data;
+		data.strURL	= strURL;
+			
+		std::wstringstream ss;
+		boost::archive::text_woarchive ar(ss);
+		ar << data;
+		std::wstring serializedData = ss.str();
+
+		COPYDATASTRUCT cds = { sizeof(cds) };
+		cds.dwData	= kNavigateChildFrame;
+		cds.lpData	= (LPVOID)serializedData.data();
+		cds.cbData	= (serializedData.length() + 1) * sizeof(TCHAR);
+		::SendMessage(hWnd, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+	};
+
 	// first, get drop filename
 	CSimpleArray<CString> arrFiles;
 
 	if ( MtlGetDropFileName(pDataObject, arrFiles) ) {
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWnd);
+		CString strFile = arrFiles[0];
 
-		if (browser.m_spBrowser != NULL) {
-			CString strFile = arrFiles[0];
+		if ( !MtlIsProtocol( strFile, _T("http") )
+			&& !MtlIsProtocol( strFile, _T("https") ) )
+		{
+			if ( MtlPreOpenFile(strFile) )
+				return false;
 
-			if ( !MtlIsProtocol( strFile, _T("http") )
-			   && !MtlIsProtocol( strFile, _T("https") ) )
-			{
-				if ( MtlPreOpenFile(strFile) )
-					return false;
-
-				// handled
-			}
-
-			MTL::ParseInternetShortcutFile(strFile);
-
-			browser.Navigate2(strFile);
-			dropEffect = DROPEFFECT_COPY;
-			return false;
+			// handled
 		}
+
+		MTL::ParseInternetShortcutFile(strFile);
+
+		funcNavigate(hWnd, strFile);
+		dropEffect = DROPEFFECT_COPY;
+		return false;
 	}
 
 	// last, get text
@@ -1642,13 +1657,9 @@ bool CDonutTabBar::Impl::OnDropTabCtrlItem(int nIndex, IDataObject *pDataObject,
 	if ( MtlGetHGlobalText(pDataObject, strText)
 	   || MtlGetHGlobalText( pDataObject, strText, ::RegisterClipboardFormat(CFSTR_SHELLURL) ) )
 	{
-		CWebBrowser2 browser = DonutGetIWebBrowser2(hWnd);
-
-		if (browser.m_spBrowser != NULL) {
-			browser.Navigate2(strText);
-			dropEffect = DROPEFFECT_COPY;
-			return false;
-		}
+		funcNavigate(hWnd, strText);
+		dropEffect = DROPEFFECT_COPY;
+		return false;
 	}
 
 	dropEffect = (DROPEFFECT) -1;
@@ -1993,8 +2004,11 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 		if (hWnd) {
 			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
 			if (pChild) {
-				CString   strName = MtlGetWindowText(hWnd);
-				CString   strUrl  = pChild->GetLocationURL();
+				CString	strName = MtlGetWindowText(hWnd);
+				CString	strUrl;
+				auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(hWnd);
+				if (pChildFrameUIData)
+					strUrl = pChildFrameUIData->strLocationURL;
 				m_strTooltipText = strName + _T("\n") + strUrl;
 			}
 		}

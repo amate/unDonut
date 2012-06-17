@@ -56,6 +56,7 @@ public:
 		COMMAND_ID_HANDLER_EX( IDCANCEL			, OnDLFinish )
 		COMMAND_ID_HANDLER_EX( IDC_DLFINISH		, OnDLFinish )
 		COMMAND_HANDLER_EX( IDC_COMBO_PARALLELDL, CBN_SELCHANGE, OnSelChangeParallelDL )
+		NOTIFY_HANDLER_EX( IDC_LIST_DL, NM_DBLCLK, OnListViewDoubleClick	)
 		MESSAGE_HANDLER_EX( WM_DLCOMPLETE, OnDLComplete )
 		CHAIN_MSG_MAP( CDialogResize<CDLListWindow> )    
 	END_MSG_MAP()
@@ -66,6 +67,7 @@ public:
 	void	OnDLStart(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnDLFinish(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSelChangeParallelDL(UINT uNotifyCode, int nID, CWindow wndCtl);
+	LRESULT OnListViewDoubleClick(LPNMHDR pnmh);
 	LRESULT OnDLComplete(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 private:

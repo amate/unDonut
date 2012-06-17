@@ -398,10 +398,6 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 
 		wndMainFrame.PostMessage(WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE, 0, (LPARAM)hMap);
 	
-		//if (pData->ConstructData.funcCallAfterCreated)
-		//	pData->ConstructData.funcCallAfterCreated(pData->pChild);
-		//delete pData;
-
 		class CThreadRefManager : public CMessageFilter
 		{
 		public:
@@ -413,7 +409,7 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 				switch (pMsg->message) {
 				case WM_DECREMENTTHREADREFCOUNT:
 					--(*m_pThreadRefCount);
-					TRACEIN(_T("WM_DECREMENTTHREADREFCOUNT : %d"), *m_pThreadRefCount);
+					TRACEIN(_T("WM_DECREMENTTHREADREFCOUNT : 残り %d"), *m_pThreadRefCount);
 					if (*m_pThreadRefCount == 0) {
 						TRACEIN(_T("ChildFreameスレッドの破棄"));
 						PostQuitMessage(0);
@@ -425,12 +421,12 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 		private:
 			int*	m_pThreadRefCount;
 		};
-		//CThreadRefManager threadRefManager(&nThreadRefCount);
-		//theLoop.AddMessageFilter(&threadRefManager);
+		CThreadRefManager threadRefManager(&nThreadRefCount);
+		theLoop.AddMessageFilter(&threadRefManager);
 
 		int nRet = theLoop.Run();
 
-		//theLoop.RemoveMessageFilter(&threadRefManager);
+		theLoop.RemoveMessageFilter(&threadRefManager);
 
 		_Module.RemoveMessageLoop();
 

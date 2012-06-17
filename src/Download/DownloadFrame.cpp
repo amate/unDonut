@@ -145,6 +145,8 @@ LRESULT CDownloadFrame::OnOpenOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 {
 	CDLOptionDialog dlg;
 	if  (dlg.DoModal() == IDOK) {
+		// ê›íËÇÃçXêVÇí ím
+		::SendMessage(m_hWndParent, WM_SETDLCONFIGTOGLOBALCONFIG, 0, 0);
 		//m_wndDownloadingListView.SetDLFolder(CDLOption::strDLFolderPath);
 	}
 	return 0;

@@ -11,9 +11,9 @@
 
 void	CDownloadedListView::AddDownloadedItem(DLItem* pItem)
 {
-	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(pItem));
+	m_vecpDLItem.insert(m_vecpDLItem.begin(), std::unique_ptr<DLItem>(new DLItem(*pItem)));
 
-	InsertItem(LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM, 0, _T(""), 0, 0, pItem->bAbort ? 1 : 0,  (LPARAM)pItem);
+	InsertItem(LVIF_TEXT | LVIF_IMAGE | LVIF_PARAM, 0, _T(""), 0, 0, pItem->bAbort ? 1 : 0,  (LPARAM)m_vecpDLItem.front().get());
 
 	LVITEM	Item = { 0 };
 	Item.mask		= LVIF_TEXT;
@@ -171,7 +171,7 @@ void CDownloadedListView::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
 	int nIndex = HitTest(point, NULL);
 	if (nIndex != -1) {
-		const CString& path = ((DLItem*)GetItemData(nIndex))->strFilePath;
+		CString path = ((DLItem*)GetItemData(nIndex))->strFilePath;
 		::ShellExecute(NULL, NULL, path, NULL, NULL, SW_SHOWNORMAL);
 	}
 }
@@ -191,15 +191,18 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 		DLItem*	pItem = ((DLItem*)GetItemData(lp->iItem));
 		const CString& path = pItem->strFilePath;
 		const CString& strReferer = pItem->strReferer;
+		const CString& strURL = pItem->strURL;
 
 		CPoint pt;
 		::GetCursorPos(&pt);
 		CMenu menu;
 		menu.CreatePopupMenu();
-		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_ = 2, ID_LAST };
+		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_ = 2, ID_COPYURL_ = 3, ID_LAST };
 
 		menu.InsertMenu( 0, MF_BYPOSITION | MF_ENABLED, ID_OPEN_ITEMSAVEFOLDER, _T("保存先フォルダを開く") );
 		menu.InsertMenu( 1, MF_BYPOSITION | MF_ENABLED, ID_OPEN_REFERER_	  , _T("ダウンロードしたページを表示する") );
+		menu.InsertMenu( 2, MF_BYPOSITION | MF_ENABLED, ID_COPYURL_			  , _T("URLをクリップボードにコピー") );
+
 
 		auto funcExeCommand = [=](int commandID) -> bool {
 			if (commandID == ID_OPEN_ITEMSAVEFOLDER) {
@@ -210,6 +213,9 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 					return true;
 				DonutOpenFile(strReferer, D_OPENFILE_ACTIVATE);
 
+			} else if (commandID == ID_COPYURL_) {
+				MtlSetClipboardText(strURL, NULL);
+		
 			} else {
 				return false;
 			}
