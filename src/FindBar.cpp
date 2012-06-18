@@ -105,7 +105,6 @@ public:
 	void	OnEditLButtonDown(UINT nFlags, CPoint point);
 
 private:
-	void	_RemoveHighlight(IHTMLDocument3* pDoc3);
 	void	_HighlightKeyword(bool bNoHighlight = false, bool bEraseOld = true);
 	void	_FindKeyword(bool bFindDown);
 
@@ -367,10 +366,10 @@ void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
 		CRect rc;
 		m_ToolBar.GetRect(ID_FIND_HIGHLIGHT, &rc);
 		if (rc.PtInRect(pt)) {
-			//CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-			//if (pChild) {
-			//	::SendMessage(pChild->GetHwnd(), WM_REMOVEHILIGHT, 0, 0);
-			//}
+			HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+			if (ActiveChildFrame) {
+				::SendMessage(ActiveChildFrame, WM_REMOVEHILIGHT, 0, 0);
+			}
 		}
 	}
 }
@@ -395,11 +394,9 @@ void	CFindBar::Impl::OnTimer(UINT_PTR nIDEvent)
 /// エディットコントロールにフォーカスがある場合でもスクロールできるようにする
 LRESULT CFindBar::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-#if 0 //:::
-	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-	if (pChild) 
-		pChild->SendMessageToDescendants(uMsg, wParam, lParam);
-#endif
+	CWindow activeChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+	if (activeChildFrame) 
+		activeChildFrame.SendMessageToDescendants(uMsg, wParam, lParam);
 	return 0;
 }
 
@@ -532,39 +529,6 @@ void	CFindBar::Impl::OnEditLButtonDown(UINT nFlags, CPoint point)
 	}
 }
 
-//---------------------------------------------
-/// ハイライトを解除する
-void	CFindBar::Impl::_RemoveHighlight(IHTMLDocument3* pDoc3)
-{
-	CComQIPtr<IHTMLDocument2> spDoc2 = pDoc3;
-	_MtlForEachHTMLDocument2(spDoc2, [&](IHTMLDocument2* pDoc) {
-		CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
-		pDoc->get_selection(&spSelection);
-		if (spSelection.p)
-			spSelection->empty();
-
-		vector<CComPtr<IHTMLElement> > vecElm;
-		CComPtr<IHTMLElementCollection>	spCol;
-		CComQIPtr<IHTMLDocument3> spDoc3 = pDoc;
-		spDoc3->getElementsByTagName(CComBSTR(L"span"), &spCol);
-		ForEachHtmlElement(spCol, [&vecElm](IDispatch* pDisp) -> bool {
-			CComQIPtr<IHTMLElement>	spElm = pDisp;
-			if (spElm.p) {
-				CComBSTR strID;
-				spElm->get_id(&strID);
-				if (strID && strID == L"udfbh")
-					vecElm.push_back(spElm);
-			}
-			return true;
-		});
-		for (auto it = vecElm.rbegin(); it != vecElm.rend(); ++it) {
-			CComBSTR str;
-			(*it)->get_innerText(&str);
-			(*it)->put_outerHTML(str);
-		}
-	});
-}
-
 void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEraseOld /*= true*/)
 {
 	if (m_bPageEnd) {
@@ -575,9 +539,9 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 
 	CString	strKeyword = MtlGetWindowText(m_Edit);
 
-	//CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-	//if (pChild == nullptr)
-	//	return;
+	HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+	if (ActiveChildFrame == NULL)
+		return ;
 
 	long Flags = 0;
 	if (m_bWordUnit)
@@ -590,7 +554,14 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 		dw |= 0x1;
 	if (bEraseOld)
 		dw |= 0x2;
-	//m_nMatchCount = (int)::SendMessage(pChild->GetHwnd(), WM_HILIGHTFROMFINDBAR, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(dw, Flags));
+
+	CString strData;
+	strData.Format(_T("%d%d%s"), dw, Flags, strKeyword);
+	COPYDATASTRUCT	cds;
+	cds.dwData	= kHilightFromFindBar;
+	cds.lpData	= static_cast<LPVOID>(strData.GetBuffer(0));
+	cds.cbData	= (strData.GetLength() + 1) * sizeof(WCHAR);
+	m_nMatchCount = (int)::SendMessage(ActiveChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 
 	/* 一致件数を表示 */
 	if (strKeyword.GetLength() > 0) {
@@ -632,34 +603,34 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 	if (m_bDistinguish)
 		Flags |= 4;
 
-	//CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-	//if (pChild) {
-	//	BOOL bFind = (BOOL)::SendMessage(pChild->GetHwnd(), WM_USER_FIND_KEYWORD, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(bFindDown, Flags));
-	//	if (m_nMatchCount == 0)
-	//		return;	// 一致0ならなにもしない
+	HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+	if (ActiveChildFrame) {
+		BOOL bFind = (BOOL)::SendMessage(g_pMainWnd->GetHWND(), WM_USER_FIND_KEYWORD, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(bFindDown, Flags));
+		if (m_nMatchCount == 0)
+			return;	// 一致0ならなにもしない
 
-	//	if (bFind == FALSE) {
-	//		CString strMsg  = bFindDown ? _T(" ページの最後まで検索しました") : _T(" ページの先頭まで検索しました");
-	//		m_static.SetWindowText(strMsg);
-	//		m_bPageEnd = true;
-	//		m_static.Invalidate();
-	//		m_static.UpdateWindow();
-	//	} else {
-	//		if (m_bPageEnd) {
-	//			m_bPageEnd = false;
-	//			m_static.Invalidate();
-	//			m_static.UpdateWindow();
-	//		}
+		if (bFind == FALSE) {
+			CString strMsg  = bFindDown ? _T(" ページの最後まで検索しました") : _T(" ページの先頭まで検索しました");
+			m_static.SetWindowText(strMsg);
+			m_bPageEnd = true;
+			m_static.Invalidate();
+			m_static.UpdateWindow();
+		} else {
+			if (m_bPageEnd) {
+				m_bPageEnd = false;
+				m_static.Invalidate();
+				m_static.UpdateWindow();
+			}
 
-	//		if (m_nMatchCount > 0) {
-	//			CString strMsg;
-	//			strMsg.Format(_T(" %d 件の一致"), m_nMatchCount);
-	//			m_static.SetWindowText(strMsg);
-	//		} else {
-	//			m_static.SetWindowText(_T(" 見つかりませんでした"));
-	//		}
-	//	}
-	//}
+			if (m_nMatchCount > 0) {
+				CString strMsg;
+				strMsg.Format(_T(" %d 件の一致"), m_nMatchCount);
+				m_static.SetWindowText(strMsg);
+			} else {
+				m_static.SetWindowText(_T(" 見つかりませんでした"));
+			}
+		}
+	}
 }
 
 

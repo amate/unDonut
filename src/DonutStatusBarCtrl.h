@@ -22,7 +22,7 @@ public:
 	CDonutStatusBarCtrl();
 	~CDonutStatusBarCtrl();
 
-	const CComboBoxPrxyR& GetProxyComboBox() const { return m_cmbProxy; }
+	CComboBoxPrxyR& GetProxyComboBox() { return m_cmbProxy; }
 	void	SetProxyComboBoxFont(HFONT hFont, bool bRedraw = true);
 
 	void	SetIcon(int nIdPane, int nIndexIcon);

@@ -1789,7 +1789,7 @@ void CDonutSearchBar::Impl::_AddToolBarIcon(CString strWord)
 
 	} else {				//+++ 単語専用ボタン有り
 
-		static TBBUTTON	btns[] = {
+		TBBUTTON	btns[] = {
 			{ 0 , ID_SEARCH_WEB,		TBSTATE_ENABLED, TBSTYLE_BUTTON | TBSTYLE_AUTOSIZE },// Web
 			{ 1 , ID_SEARCHBAR_HILIGHT, hilightStat    , TBSTYLE_CHECK	| TBSTYLE_AUTOSIZE },// Hilight
 		};

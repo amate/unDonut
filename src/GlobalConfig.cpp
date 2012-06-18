@@ -37,7 +37,9 @@ void	CreateGlobalConfig(GlobalConfigManageData* pMangeData)
 void	SetGlobalConfig(GlobalConfig* pConfig)
 {
 	// CMainOption
+	pConfig->dwMainExtendedStyle	= CMainOption::s_dwMainExtendedStyle;
 	pConfig->AutoImageResizeType	= CMainOption::s_nAutoImageResizeType;
+	pConfig->bMultiProcessMode		= CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode;
 
 	// CMouseOption
 	pConfig->bUseRightDragSearch = CMouseOption::s_bUseRightDragSearch;
@@ -69,6 +71,9 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	pConfig->bUseDownloadManager = CDownloadManager::UseDownloadManager();
 	// CDLOptions は メインフレームのOnCreateとDLオプション更新時に行われるでいらない
 
+	// ProxyComboBox
+	pConfig->ProxyAddress[0] = '\0';
+	pConfig->ProxyBypass[0] = '\0';
 }
 
 void	DestroyGlobalConfig(GlobalConfigManageData* pMangeData)

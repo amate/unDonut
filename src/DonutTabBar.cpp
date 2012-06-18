@@ -1831,7 +1831,8 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 
 			CMenuHandle menu = CCustomContextMenuOption::s_menuTabItem;
 			CSimpleArray<HMENU>	arrDestroyMenu;
-			CCustomContextMenuOption::AddSubMenu(menu, GetTopLevelWindow(), arrDestroyMenu);
+			int nExtIndex = -1;
+			CCustomContextMenuOption::AddSubMenu(menu, GetTopLevelWindow(), arrDestroyMenu, nExtIndex);
 			{
 				{	// メニューの右にショートカットキーを表示しないようにする(メインフレームで設定されるのを防ぐ)
 					MENUITEMINFO menuInfo = { sizeof (MENUITEMINFO) };
@@ -1857,7 +1858,7 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 				}
 				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)GetTabHwnd(GetCurSel()));
 			}
-			CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
+			CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu, nExtIndex);
 
 		}
 	} else {

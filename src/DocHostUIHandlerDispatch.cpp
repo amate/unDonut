@@ -70,11 +70,12 @@ STDMETHODIMP CDocHostUIHandlerDispatch::TranslateAccelerator(
 	/* [in] */ DWORD			nCmdID,
 	/* [retval][out] */HRESULT* dwRetVal)
 {
-	if (CMainOption::s_bUseCustomFindBar && ::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
-		if (wParam == 0x46) {	//F
-			m_pView->GetParent().SendMessage(WM_COMMAND, ID_EDIT_FIND);
-			*dwRetVal = S_OK;
-			return S_OK;
+	if (::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
+		if (wParam == 'F') {
+			if (m_pView->GetParent().SendMessage(WM_COMMAND, ID_EDIT_FIND)) {
+				*dwRetVal = S_OK;
+				return S_OK;
+			}
 		}
 	}
 
@@ -166,6 +167,13 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		#endif
 		menu.SetMenuItemInfo(IDM_LANGUAGE, FALSE, &mii);
 	}
+	/* メニューの有効/無効を設定 */
+	_SetMenuEnable(menu, spOleCommandTarget);
+
+
+	CSimpleArray<HMENU> arrDestroyMenu;
+	int nExtIndex = -1;
+	CCustomContextMenuOption::AddSubMenu(menu, hWndTopLevel, arrDestroyMenu, nExtIndex);
 
 	{	// Insert Shortcut Menu Extensions from registry
 		VARIANT					var1;
@@ -179,12 +187,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 
 		hr = spOleCommandTarget->Exec(&CGID_ShellDocView, SHDVID_ADDMENUEXTENSIONS, 0, &var1, &var2);
 	}
-	/* メニューの有効/無効を設定 */
-	_SetMenuEnable(menu, spOleCommandTarget);
 
-
-	CSimpleArray<HMENU> arrDestroyMenu;
-	//CCustomContextMenuOption::AddSubMenu(menu, hWndTopLevel, arrDestroyMenu);
 	{
 		// 初期化前メッセージを送る
 	//	for (int ii = 0; ii < mapCmd.GetSize(); ii++) {
@@ -265,7 +268,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		}
 	}
 	// ここでお片づけ
-	CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu);
+	CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu, nExtIndex);
 
 
 //	for (int ii = 0; ii < mapCmd.GetSize(); ii++) {

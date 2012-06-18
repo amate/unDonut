@@ -56,6 +56,9 @@ enum WmCopyDataUseage {
 	kNavigateChildFrame,
 	kOpenMultiUrl,
 	kFileDownload,
+	kExecuteUserJavascript,
+	kHilightFromFindBar,
+	kOpenFindBarWithText,
 	kDebugTrace = 0xFFFF,
 
 };
@@ -506,12 +509,12 @@ enum TabCreateOption {
 
 #define WM_COMMAND_FROM_CHILDFRAME	(WM_USER + 110)
 
-// void	OnGetChildFrameData(int nID)
+// void	OnGetChildFrameData(bool bCreateData)
 #define WM_GETCHILDFRAMEDATA	(WM_USER + 111)
 #define USER_MSG_WM_GETCHILDFRAMEDATA(func)	\
 	if (uMsg == WM_GETCHILDFRAMEDATA) {	   \
 		SetMsgHandled(TRUE);		   \
-		func((int)wParam);    \
+		func(wParam != 0);    \
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
@@ -773,6 +776,17 @@ enum TabCreateOption {
 #define WM_SETDLCONFIGTOGLOBALCONFIG	(WM_USER + 136)
 #define USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG(func)	\
 	if (uMsg == WM_SETDLCONFIGTOGLOBALCONFIG) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	void OnSetProxyToChildFrame()
+#define WM_SETPROXYTOCHLDFRAME	(WM_USER + 137)
+#define USER_MSG_WM_SETPROXYTOCHLDFRAME(func)	\
+	if (uMsg == WM_SETPROXYTOCHLDFRAME) {	   \
 		SetMsgHandled(TRUE);		   \
 		func();				\
 		lResult = 0;				\

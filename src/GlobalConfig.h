@@ -9,7 +9,9 @@
 struct GlobalConfig
 {
 	//CMainOption
+	DWORD	dwMainExtendedStyle;
 	int		AutoImageResizeType;
+	bool	bMultiProcessMode;
 
 	// CMouseOption
 	bool	bUseRightDragSearch;
@@ -47,6 +49,10 @@ struct GlobalConfig
 	WCHAR	strDefaultDLFolder[MAX_PATH];
 	WCHAR	strImageDLFolder[MAX_PATH];
 	DWORD	dwDLImageExStyle;
+
+	// ProxyComboBox
+	char	ProxyAddress[512];
+	char	ProxyBypass[512];
 
 };
 

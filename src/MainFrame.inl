@@ -127,15 +127,16 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 
 void	CMainFrame::Impl::SaveAllTab()
 {
+	/* 現在開いているタブの情報を集める */
 	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
 	int	nCount = 0;
 	int nActiveIndex = -1;
 	vector<unique_ptr<ChildFrameDataOnClose> >	vecpSaveData;
 	auto CollectChildFrameData = [&](HWND hWnd) {
-		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, nCount, 0);
+		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, true, 0);
 
 		CString strSharedMemName;
-		strSharedMemName.Format(_T("%s%d"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, nCount);
+		strSharedMemName.Format(_T("%s%#x"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWnd);
 		HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, strSharedMemName);
 		ATLVERIFY( hMap );
 		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
@@ -143,7 +144,7 @@ void	CMainFrame::Impl::SaveAllTab()
 		::UnmapViewOfFile((LPVOID)sharedMemData);
 		::CloseHandle(hMap);
 
-		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, -1, 0);
+		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, false, 0);
 
 		auto pChildFrameData = new ChildFrameDataOnClose;
 		std::wstringstream ss;
@@ -158,6 +159,7 @@ void	CMainFrame::Impl::SaveAllTab()
 	};
 	m_TabBar.ForEachWindow(CollectChildFrameData);
 
+	/* TabList.xml に保存する */
 	try {
 		using boost::property_tree::wptree;
 
@@ -226,28 +228,24 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 		}
 	}
 
+	bool bJavascript = false;
+	if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
+		bJavascript = true;
+		openFlags |= D_OPENFILE_NOCREATE;
+	}
+
 	/* openFlag が D_OPENFILE_NOCREATE ならアクティブなページを移動する */
 	if ( hWndActive != NULL && _check_flag(D_OPENFILE_NOCREATE, openFlags) ) {
-		/*CChildFrame* pChild  = GetActiveChildFrame();
-		if (strFileOrURL.Left(11).CompareNoCase(_T("javascript:")) == 0) {
-			::PostMessage(pChild->GetHwnd(), WM_EXECUTEUSERJAVASCRIPT, (WPARAM)(LPCTSTR)new CString(strFileOrURL), 0);
-		} else*/ {
-			NavigateChildFrame	data;
-			data.strURL	= strFileOrURL;
-			data.dwDLCtrl	= (DLCtrl != -1)  ? DLCtrl  : CDLControlOption::s_dwDLControlFlags;
-			data.dwExStyle	= (ExStyle != -1) ? ExStyle : CDLControlOption::s_dwExtendedStyleFlags;
-			data.dwAutoRefresh	= AutoRefresh;
-			
-			std::wstringstream ss;
-			boost::archive::text_woarchive ar(ss);
-			ar << data;
-			std::wstring serializedData = ss.str();
-
-			COPYDATASTRUCT cds = { sizeof(cds) };
-			cds.dwData	= kNavigateChildFrame;
-			cds.lpData	= (LPVOID)serializedData.data();
-			cds.cbData	= (serializedData.length() + 1) * sizeof(TCHAR);
+		if (bJavascript) {
+			// Javascriptを実行する
+			COPYDATASTRUCT cds;
+			cds.dwData	= kExecuteUserJavascript;
+			cds.lpData	= static_cast<LPVOID>(strFileOrURL.GetBuffer(0));
+			cds.cbData	= (strFileOrURL.GetLength() + 1) * sizeof(WCHAR);
 			::SendMessage(hWndActive, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+
+		} else {
+			_NavigateChildFrame(hWndActive, strFileOrURL, DLCtrl, ExStyle, AutoRefresh);
 		}
 
 		if ( !_check_flag(D_OPENFILE_NOSETFOCUS, openFlags) ) {
@@ -290,6 +288,8 @@ void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& v
 		CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
 	} 
 }
+
+
 
 // Overrides
 
@@ -378,13 +378,13 @@ void CMainFrame::Impl::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 		rc.top++;
 
 	// ページ内検索バー
-	//HWND hWndFind = m_FindBar.GetHWND();
-	//if (::IsWindowVisible(hWndFind)) {
-	//	CRect rcFind;
-	//	::GetClientRect(hWndFind, &rcFind);
-	//	::SetWindowPos( hWndFind, NULL, rc.left, rc.top, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
-	//	rc.top += rcFind.bottom;
-	//}
+	HWND hWndFind = m_FindBar.GetHWND();
+	if (::IsWindowVisible(hWndFind)) {
+		CRect rcFind;
+		::GetClientRect(hWndFind, &rcFind);
+		::SetWindowPos( hWndFind, NULL, rc.left, rc.top, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
+		rc.top += rcFind.bottom;
+	}
 
 	if (m_hWndClient)
 		::SetWindowPos( m_hWndClient, NULL, rc.left, rc.top, rc.Width(), rc.Height(), SWP_NOZORDER | SWP_NOACTIVATE );
@@ -439,6 +439,11 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pLoop->AddMessageFilter(this);
 	pLoop->AddIdleHandler(this);
 
+	CreateGlobalConfig(&m_GlobalConfigManageData);
+	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
+	OnSetDLConfigToGlobalConfig();
+	m_StatusBar.GetProxyComboBox().SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
+
 	_initRebar();
 	HWND hWndCmdBar		= _initCommandBar();
 	HWND hWndToolBar	= _initToolBar();
@@ -453,6 +458,9 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	_initChildFrameClient();
 	_initExplorerBar();
 
+	m_FindBar.Create(m_hWnd);
+	m_FindBar.SetUpdateLayoutFunc(boost::bind(&CMainFrame::Impl::UpdateLayout, this, _1));
+
 	_initSkin();
 
 	_initSysMenu();
@@ -460,10 +468,6 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_ChildFrameUIState.SetMainFrameHWND(m_hWnd);
 	CmdUIAddToolBar(hWndToolBar);					// set up UI
 	CmdUIAddToolBar(m_SearchBar.GetHWndToolBar());	// set up UI
-
-	CreateGlobalConfig(&m_GlobalConfigManageData);
-	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
-	OnSetDLConfigToGlobalConfig();
 
 	CFaviconManager::Init(hWndTabBar);
 
@@ -484,8 +488,38 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
+/// ファイルをダウンロード中だが終了していいのか返す
+bool	CMainFrame::Impl::_ConfirmCloseForFileDownloading()
+{
+	int nDLCount = m_DownloadManager.GetDownloadingCount();
+	if (nDLCount > 0) {
+		CString msg;
+		msg.Format(_T("ダウンロード中のアイテムが %d個あります。\n終了しますか？"), nDLCount);
+		if (MessageBox(msg, _T("確認"), MB_ICONQUESTION | MB_OKCANCEL | MB_DEFBUTTON2) == IDCANCEL)
+			return false;
+	}
+	return true;
+}
+
+/// メインフレームのＸボタンを押したとき
+void	CMainFrame::Impl::OnClose()
+{
+	if (_ConfirmCloseForFileDownloading() == false)
+		return ;
+
+	if ( CDonutConfirmOption::OnDonutExit(m_hWnd) == false ) {
+		if (IsWindowVisible() == FALSE) {
+			_SetHideTrayIcon();
+		}
+		return;
+	}
+
+	SetMsgHandled(FALSE);
+}
+
 void	CMainFrame::Impl::OnDestroy()
 {
+	TRACEIN(_T("メインフレームの終了中..."));
 	SetMsgHandled(FALSE);
 
 	_PrivateTerm();		// 設定の保存
@@ -498,8 +532,6 @@ void	CMainFrame::Impl::OnDestroy()
 	MtlWriteProfileMainFrameState(pr, m_hWnd);
 
 	m_ReBar.UnsubclassWindow();
-
-	DestroyGlobalConfig(&m_GlobalConfigManageData);
 
 	if (CStartUpOption::s_dwFlags == CStartUpOption::STARTUP_LATEST) {
 		SaveAllTab();	// 現在表示中のタブを保存する
@@ -519,6 +551,8 @@ void	CMainFrame::Impl::OnDestroy()
 	}
 
 	CUrlSecurityOption::CloseOriginalUrlSecurityList(m_hWnd);
+
+	DestroyGlobalConfig(&m_GlobalConfigManageData);
 
 	// メッセージループからメッセージフィルタとアイドルハンドラを削除
     CMessageLoop* pLoop = _Module.GetMessageLoop();
@@ -542,6 +576,21 @@ void	CMainFrame::Impl::OnDestroy()
 	});
 }
 
+/// Windowsが終了前に呼ばれる　ファイルがダウンロード中なら中止するかどうか確認する
+BOOL	CMainFrame::Impl::OnQueryEndSession(UINT nSource, UINT uLogOff)
+{
+	if (_ConfirmCloseForFileDownloading() == false)
+		return FALSE;
+
+	return TRUE;
+}
+
+void	CMainFrame::Impl::OnEndSession(BOOL bEnding, UINT uLogOff)
+{
+	if (bEnding) {
+
+	}
+}
 
 
 void	CMainFrame::Impl::_initRebar()
@@ -1023,6 +1072,13 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kOpenFindBarWithText:
+		if (CMainOption::s_bUseCustomFindBar) {
+			m_FindBar.ShowFindBar(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
+			return 1;
+		}
+		break;
+
 	case kDebugTrace:
 		TRACE(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
 		break;
@@ -1131,6 +1187,7 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 {
 	ATLASSERT(pArgs);
 
+	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
 	//CChildFrame *pActiveChild = GetActiveChildFrame();
 	//if( pActiveChild)
 	//	pActiveChild->SaveSearchWordflg(false); //\\ 検索バーで検索したときアクティブなタブの検索文字列を保存しないようにする
@@ -1153,17 +1210,11 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 		data.searchWord	= pArgs->strSearchWord;
 	}
 
-	//if (pActiveChild && _check_flag(D_OPENFILE_NOCREATE, pArgs->dwOpenFlag)) {
-	//	// 既存のタブをナビゲート
-	//	if (data.dwDLCtrl != -1)
-	//		pActiveChild->SetMarshalDLCtrl(data.dwDLCtrl);
-	//	if (data.dwExStyle != -1)
-	//		pActiveChild->SetExStyle(data.dwExStyle);
-	//	pActiveChild->Navigate2(data.strURL);
-	//	if (data.dwAutoRefresh)
-	//		pActiveChild->SetAutoRefreshStyle(data.dwAutoRefresh);
-	//} else 
-	{
+	if (hWndActive && _check_flag(D_OPENFILE_NOCREATE, pArgs->dwOpenFlag)) {
+		// 既存のタブをナビゲート
+		_NavigateChildFrame(hWndActive, data.strURL, data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
+
+	} else {
 		// 新規タブを作成する
 		CString str = pArgs->strSearchWord;
 		//data.funcCallAfterCreated = [str, bOldSaveFlag](CChildFrame* pChild) {
@@ -1185,6 +1236,16 @@ void	CMainFrame::Impl::OnUpdateUrlSecurityList()
 	m_TabBar.ForEachWindow([](HWND hWnd) {
 		::SendMessage(hWnd, WM_UPDATEURLSECURITYLIST, 0, 0);
 	});
+}
+
+/// ChildFrameにプロクシ切替を通知する
+void	CMainFrame::Impl::OnSetProxyToChildFrame()
+{
+	if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
+		m_TabBar.ForEachWindow([](HWND hWnd) {
+			::PostMessage(hWnd, WM_SETPROXYTOCHLDFRAME, 0, 0);
+		});
+	}
 }
 
 /// 現在のダウンロードマネージャーの設定をGlobalConfigに設定する
@@ -1338,7 +1399,7 @@ LRESULT CMainFrame::Impl::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bBack, long Fl
 	std::wstring strSerializedData = ss.str();
 
 	CString strSharedMemName;
-	strSharedMemName.Format(_T("%s0x%x"), FINDKEYWORDATASHAREDMEMNAME, lpszKeyWord);
+	strSharedMemName.Format(_T("%s%#x"), FINDKEYWORDATASHAREDMEMNAME, lpszKeyWord);
 	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (static_cast<int>(strSerializedData.size()) + 1) * sizeof(WCHAR), strSharedMemName);
 	ATLASSERT( hMap );
 	LPTSTR strSharedData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
@@ -2209,4 +2270,36 @@ void CMainFrame::Impl::_DeleteTrayIcon()
 
 	//RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
 }
+
+void	CMainFrame::Impl::_NavigateChildFrame(HWND hWnd, LPCTSTR strURL, DWORD DLCtrl /*= -1*/, DWORD ExStyle /*= -1*/, DWORD AutoRefresh /*= 0*/)
+{
+	NavigateChildFrame	data;
+	data.strURL	= strURL;
+	data.dwDLCtrl	= DLCtrl;
+	data.dwExStyle	= ExStyle;
+	data.dwAutoRefresh	= AutoRefresh;
+			
+	std::wstringstream ss;
+	boost::archive::text_woarchive ar(ss);
+	ar << data;
+	std::wstring serializedData = ss.str();
+
+	COPYDATASTRUCT cds = { sizeof(cds) };
+	cds.dwData	= kNavigateChildFrame;
+	cds.lpData	= (LPVOID)serializedData.data();
+	cds.cbData	= (serializedData.length() + 1) * sizeof(TCHAR);
+	::SendMessage(hWnd, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+}
+
+
+
+
+
+
+
+
+
+
+
+
 

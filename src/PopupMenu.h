@@ -478,11 +478,14 @@ protected:
 	{
 		POINT ptOffset;
 		GetScrollOffset(ptOffset);
+		CRect rcClient;
+		GetClientRect(&rcClient);
 		int nCount = static_cast<int>(m_vecMenuItem.size());
 		for (int i = 0; i < nCount; ++i) {
 			CRect rcItem = m_vecMenuItem[i].rect;
 			rcItem.top	-= ptOffset.y;
 			rcItem.bottom	-= ptOffset.y;
+			rcItem.right	= rcClient.right;
 			if (rcItem.PtInRect(pt))
 				return i;
 		}

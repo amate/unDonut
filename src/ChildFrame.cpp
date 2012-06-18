@@ -17,12 +17,12 @@
 #include "ChildFrameCommandUIUpdater.h"
 #include "GlobalConfig.h"
 #include "option\RightClickMenuDialog.h"
+#include "option\UrlSecurityOption.h"
 //#include "option\MainOption.h"
 //#include "option\DLControlOption.h"
 //#include "option\MouseDialog.h"
 //#include "option\IgnoreURLsOption.h"
 //#include "option\CloseTitleOption.h"
-#include "option\UrlSecurityOption.h"
 //#include "option\SearchPropertyPage.h"
 //#include "option\AddressBarPropertyPage.h"
 //#include "option\UserDefinedCSSOption.h"
@@ -352,12 +352,12 @@ public:
 		USER_MSG_WM_MENU_GOBACK 	( OnMenuGoBack		)
 		USER_MSG_WM_MENU_GOFORWARD	( OnMenuGoForward	)
 		USER_MSG_WM_GETSELECTEDTEXT	( OnGetSelectedText	)
-		USER_MSG_WM_EXECUTEUSERJAVASCRIPT( OnExecuteUserJavascript )
 		USER_MSG_WM_SETPAGEBITMAP	( OnSetPageBitmap )
 		USER_MSG_WM_DRAWCHILDFRAMEPAGE( OnDrawChildFramePage )
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
 		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
+		MESSAGE_HANDLER_EX( WM_SETPROXYTOCHLDFRAME, OnSetProxyToChildFrame	)
 		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
 
 		// ファイル
@@ -365,7 +365,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_TEXT,OnEditOpenSelectedText	)	// URLテキストを開く
 
 		// 編集
-		COMMAND_ID_HANDLER_EX( ID_EDIT_FIND 			, OnEditFind				)
+		COMMAND_ID_HANDLER	 ( ID_EDIT_FIND 			, OnEditFind				)
 		COMMAND_ID_HANDLER_EX( ID_EDIT_FIND_MAX 		, OnEditFindMax 			)
 		COMMAND_ID_HANDLER_EX( ID_TITLE_COPY			, OnTitleCopy				)
 		COMMAND_ID_HANDLER_EX( ID_URL_COPY				, OnUrlCopy 				)
@@ -391,7 +391,6 @@ public:
 		// 検索バーから
 		USER_MSG_WM_CHILDFRAMEFINDKEYWORD	( OnFindKeyWord 	)
 		// 独自ページ内検索バーから
-		USER_MSG_WM_HILIGHTFROMFINDBAR( OnHilightFromFindBar )
 		USER_MSG_WM_REMOVEHILIGHT( OnRemoveHilight )
 
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_MENU			, OnHtmlZoomMenu			)
@@ -427,22 +426,22 @@ public:
 	void	OnSetFocus(CWindow wndOld);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
-	void	OnGetChildFrameData(int nID);
+	void	OnGetChildFrameData(bool bCreateData);
 
 	LRESULT OnMenuGoBack(HMENU hMenu)	 { MenuChgGoBack(hMenu);	return 0; }
 	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
 	void	OnGetSelectedText(LPCTSTR* ppStr);
-	void	OnExecuteUserJavascript(CString* pstrScriptText);
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
 	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
+	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	// 編集
-	void	OnEditFind(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
+	LRESULT OnEditFind(WORD wNotifyCode, WORD wID, HWND hWndCtl, BOOL& bHandled);
 	void	OnEditFindMax(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/) { _OnEditFindMax(0, 0, NULL); }
 	void	OnTitleCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
 	void	OnUrlCopy(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/);
@@ -468,7 +467,6 @@ public:
 	LRESULT OnHilight(const CString& strKeyWord);
 	int		OnFindKeyWord(HANDLE handle);
 	// 独自ページ内検索バーから
-	int		OnHilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 	void	OnRemoveHilight();
 
 	void	OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -490,6 +488,8 @@ private:
 	void	_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord);
 	BOOL 	_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags = 0);
 	void	_SearchWebWithEngine(const CString& strText, const CString& strEngine);
+	void	_ExecuteUserJavascript(const CString& strScriptText);
+	int		_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 
 	// Data members
 	CChildFrame*	m_pParentChild;

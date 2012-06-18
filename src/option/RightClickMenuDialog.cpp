@@ -1,11 +1,12 @@
 // RightClickMenuDialog.cpp
 
 #include "stdafx.h"
+#include "RightClickMenuDialog.h"
+#include <MsHtmcid.h>
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../ToolTipManager.h"
 #include "MainOption.h"
-#include "RightClickMenuDialog.h"
 #include "DonutSearchBar.h"
 
 ///////////////////////////////////////////////////////////
@@ -44,6 +45,17 @@ void	CCustomContextMenuOption::GetDefaultContextMenu(CMenu& rMenu, DWORD dwID)
 		ATLASSERT(rMenu);
 
 		::FreeLibrary(hDll);
+	}
+
+	int nCount = rMenu.GetMenuItemCount();
+	for (int i = 0; i < nCount; ++i) {
+		UINT nID = rMenu.GetMenuItemID(i);
+		if (nID == IDM_MENUEXT_PLACEHOLDER) {
+			CMenuItemInfo mii;
+			mii.fMask	= MIIM_STRING;
+			mii.dwTypeData	= _T("拡張メニュー挿入位置");
+			rMenu.SetMenuItemInfo(i, TRUE, &mii);
+		}
 	}
 #if 0
 	/* 文字列が設定されていないメニュー項目を削除する */
@@ -126,15 +138,20 @@ void	CCustomContextMenuOption::SetContextMenuFromID(HMENU hMenu, DWORD dwID)
 
 // dwCmdを見てサブメニューを挿入します
 // メニューを表示し終わったらロードしたメニューは削除すること
-void	CCustomContextMenuOption::AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, CSimpleArray<HMENU>& arrDestroyMenu)
+void	CCustomContextMenuOption::AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, CSimpleArray<HMENU>& arrDestroyMenu, int& nExtIndex)
 {
-	for (int i = 0; i < menu.GetMenuItemCount(); ++i) {
+	int nCount = menu.GetMenuItemCount();
+	for (int i = 0; i < nCount; ++i) {
 		MENUITEMINFO mii  = { sizeof (MENUITEMINFO) };
 		mii.fMask  = MIIM_SUBMENU;
 
 		DWORD	dwID	= 0;
 		DWORD	dwCmd	= menu.GetMenuItemID(i);
 		switch (dwCmd) {
+		case IDM_MENUEXT_PLACEHOLDER:
+			nExtIndex = i;
+			continue;
+#if 0
 		case ID_FAVORITES_DROPDOWN:
 			mii.hSubMenu = (HMENU) ::SendMessage(hWndTopLevel, WM_MENU_GET_FAV	  , 0, 0);
 			break;
@@ -154,7 +171,7 @@ void	CCustomContextMenuOption::AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, C
 		case ID_BINGTRANSLATOR_MENU:
 			mii.hSubMenu = (HMENU) ::SendMessage(hWndTopLevel, WM_MENU_GET_BINGTRANSLATE, 0, 0);
 			break;
-
+#endif
 		case ID_DLCTL_CHG_MULTI:	dwID = IDR_MULTIMEDIA;		break;	// マルチメディア
 		case ID_DLCTL_CHG_SECU: 	dwID = IDR_SECURITY;		break;	// セキュリティ
 		case ID_VIEW_FONT_SIZE: 	dwID = IDR_VIEW_FONT_SIZE;	break;	// フォントサイズ
@@ -180,7 +197,7 @@ void	CCustomContextMenuOption::AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, C
 }
 
 // お片づけ
-void	CCustomContextMenuOption::RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMENU>& arrDestroyMenu)
+void	CCustomContextMenuOption::RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMENU>& arrDestroyMenu, int nExtIndex)
 {
 	for (int ii = 0; ii < arrDestroyMenu.GetSize(); ii++) {
 		::DestroyMenu(arrDestroyMenu[ii]);
@@ -204,6 +221,29 @@ void	CCustomContextMenuOption::RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMEN
 		mii.fMask		|= MIIM_STRING;
 		mii.dwTypeData	= strText.GetBuffer(0);
 		menu.InsertMenuItem(i, TRUE, &mii);
+	}
+	/* 拡張メニューを削除する */
+	std::vector<int> vecExtIndex;
+	for (int i = 0; i < nMenuItemCount; ++i) {
+		UINT nID = menu.GetMenuItemID(i);
+		if (IDM_MENUEXT_FIRST__ <= nID && nID <= IDM_MENUEXT_LAST__) {
+			vecExtIndex.push_back(i);
+		}
+	}
+	for (auto it = vecExtIndex.rbegin(); it != vecExtIndex.rend(); ++it) {
+		menu.DeleteMenu(*it, MF_BYPOSITION);
+	}
+	if (vecExtIndex.size() > 0) {	// 罫線が残ってるなら削除
+		if (menu.GetMenuItemID(vecExtIndex.front() - 1) == 0) {
+			menu.DeleteMenu(vecExtIndex.front() - 1, MF_BYPOSITION);
+		}
+	}
+	if (nExtIndex != -1) {
+		CMenuItemInfo mii;
+		mii.fMask	= MIIM_STRING | MIIM_ID;
+		mii.dwTypeData	= _T("拡張メニュー挿入位置");
+		mii.wID		= IDM_MENUEXT_PLACEHOLDER;
+		menu.InsertMenuItem(nExtIndex, TRUE, &mii);
 	}
 }
 

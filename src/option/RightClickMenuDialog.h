@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../XmlFile.h"
+#include "../resource.h"
 
 #define CONTEXT_MENU_HOLDLEFTBUTTON		(123)
 #define CONTEXT_MENU_TABITEM			(130)
@@ -36,8 +37,8 @@ public:
 	static HMENU	GetContextMenuFromID(DWORD dwID);
 	static void		SetContextMenuFromID(HMENU hMenu, DWORD dwID);
 
-	static void		AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, CSimpleArray<HMENU>& arrDestroyMenu);
-	static void		RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMENU>& arrDestroyMenu);
+	static void		AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, CSimpleArray<HMENU>& arrDestroyMenu, int& nExtIndex);
+	static void		RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMENU>& arrDestroyMenu, int nExtIndex);
 	static void		ResetMenu();	// for CRightClickPropertyPage
 };
 

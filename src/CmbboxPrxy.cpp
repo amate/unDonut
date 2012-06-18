@@ -8,12 +8,7 @@
 #include "DonutPFunc.h"
 #include "MtlUser.h"
 #include "option/ProxyDialog.h"
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include "GlobalConfig.h"
 
 
 
@@ -101,6 +96,10 @@ void CComboBoxPrxyR::ChangeProxy(int nIndex)
   #endif
 
 	UrlMkSetSessionOption(INTERNET_OPTION_PROXY, &proxyinfo, sizeof (proxyinfo), 0);
+
+	::strcpy_s(m_pGlobalConfig->ProxyAddress, proxyinfo.lpszProxy ? proxyinfo.lpszProxy : "");
+	::strcpy_s(m_pGlobalConfig->ProxyBypass , proxyinfo.lpszProxyBypass ? proxyinfo.lpszProxyBypass : "");
+	GetTopLevelWindow().PostMessage(WM_SETPROXYTOCHLDFRAME);
 
 	// プロキシファイルパス
 	CString 	strFile = _GetFilePath( _T("Proxy.ini") );

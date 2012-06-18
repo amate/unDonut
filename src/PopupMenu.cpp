@@ -262,7 +262,14 @@ BOOL CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
 			s_pRecentClosedTabList->RemoveFromList(m_vecMenuItem[m_nHotIndex].nID);
 			m_vecMenuItem.clear();
 			_initMenuItem();
+
+			CPoint pt;
+			::GetCursorPos(&pt);
+			ScreenToClient(&pt);
+			int nIndex = _HitTest(pt);
 			m_nHotIndex = -1;
+			_HotItem(nIndex);
+
 			Invalidate(FALSE);
 		}
 	}

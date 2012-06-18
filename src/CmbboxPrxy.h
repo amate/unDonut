@@ -2,30 +2,25 @@
  *	@file	CmbboxPrxy.h
  *	@brief	コンボボックス：プロキシ
  */
-#ifndef __CMBBOXPRXY_H__
-#define __CMBBOXPRXY_H__
 
-#if _MSC_VER > 1000
 #pragma once
-#endif // _MSC_VER > 1000
+
 #include <time.h>
+#include "FlatComboBox.h"
+
+
+// 前方宣言
+struct GlobalConfig;
 
 /*
 	CComboBoxPrxy
  */
-
-
-#include "FlatComboBox.h"
-
-//CComboBoxPrxy ReWrite ver
-class CComboBoxPrxyR : public CFlatComboBox {
-private:
-
-	UINT_PTR	m_nIDEvent;
-	bool		m_bUseIE;
-
+class CComboBoxPrxyR : public CFlatComboBox 
+{
 public:
 	CComboBoxPrxyR();
+
+	void	SetGlobalConfig(GlobalConfig* p) { m_pGlobalConfig = p; }
 
 	BEGIN_MSG_MAP(CComboBoxPrxyR)
 		MESSAGE_HANDLER(WM_RBUTTONDOWN, OnRButtonDown)
@@ -54,6 +49,11 @@ private:
 
 	// バイパスを得る
 	CString GetBypass();
+
+	// Data members
+	GlobalConfig*	m_pGlobalConfig;
+	UINT_PTR	m_nIDEvent;
+	bool		m_bUseIE;
 };
 
-#endif
+
