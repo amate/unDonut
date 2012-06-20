@@ -112,6 +112,10 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 {
 	bool bTopWindow = IsPageIWebBrowser(pDisp);
 
+	/* 新しく開いたリンクにフォーカスが映ってしまうバグ修正 */
+	if (m_bNowActive == false && IsChild(GetFocus()))
+		GetTopLevelWindow().PostMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
+
 	// mailto: 無効
 	if (m_view.GetExStyle() & DVS_EX_BLOCK_MAILTO) {
 		if (strURL.Left(7).CompareNoCase( _T("mailto:") ) == 0) {
@@ -697,8 +701,9 @@ BOOL CChildFrame::Impl::OnXButtonUp(WORD wKeys, WORD wButton)
 
 BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 {
-	if (m_bNowActive == false)
+	if (m_bNowActive == false) {
 		return FALSE;
+	}
 
 	// 自動リサイズのトグル
 	if (   m_bImagePage 
