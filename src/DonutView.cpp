@@ -35,7 +35,6 @@ enum {
 
 CDonutView::CDonutView(CChildFrameUIStateChange& UI)
 	: m_UIChange(UI)
-	, m_nDDCommand(0)
    #if _ATL_VER >= 0x700
 	, m_ExternalUIDispatch(this)
    #endif
@@ -129,7 +128,7 @@ void CDonutView::SetIeMenuNoCstm(int nStatus)
 
 
 //ドラッグドロップ時の操作を制御するかIEコンポに任せるか
-void CDonutView::SetOperateDragDrop(BOOL bOn, int nCommand)
+void CDonutView::SetOperateDragDrop(BOOL bOn)
 {
 	CComPtr<IAxWinHostWindow> spAxWindow;
 	HRESULT hr = QueryHost(&spAxWindow);
@@ -148,7 +147,6 @@ void CDonutView::SetOperateDragDrop(BOOL bOn, int nCommand)
 	} else {
 		m_bUseCustomDropTarget = false;
 	}
-	m_nDDCommand = nCommand;
 }
 
 bool CDonutView::UseDownloadManager() const
@@ -298,7 +296,11 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 			if (   MtlGetHGlobalText(pDataObj, strText)
 				|| MtlGetHGlobalText(pDataObj, strText, CF_SHELLURLW) )
 			{
-				::SendMessage(GetTopLevelParent(), WM_COMMAND_DIRECT, m_nDDCommand, (LPARAM) (LPCTSTR) strText);
+				COPYDATASTRUCT cds;
+				cds.dwData	= kCommandDirect;
+				cds.lpData	= static_cast<LPVOID>(strText.GetBuffer(0));
+				cds.cbData	= (strText.GetLength() + 1) * sizeof(WCHAR);
+				GetTopLevelParent().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 				*pdwEffect = DROPEFFECT_NONE;
 			}
 		}
@@ -547,7 +549,7 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 		SetIeMenuNoCstm(m_pGlobalConfig->bNoCustomIEMenu);
 		if (m_pGlobalConfig->nDragDropCommandID)
-			SetOperateDragDrop(TRUE, m_pGlobalConfig->nDragDropCommandID);
+			SetOperateDragDrop(TRUE);
 
 	  #if 1	//+++
 		if (m_dwExStyle == -1)
@@ -595,7 +597,7 @@ void CDonutView::OnDestroy()
 	}
 
 	if (m_bUseCustomDropTarget)
-		SetOperateDragDrop(FALSE, 0);
+		SetOperateDragDrop(FALSE);
 
 	KillTimer(AutoRefreshTimerID);
 

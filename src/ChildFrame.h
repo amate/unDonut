@@ -185,7 +185,6 @@ public:
 	void	SetDLCtrl(DWORD dwDLCtrl);
 	void	SetMarshalDLCtrl(DWORD dwDLCtrl);
 	void	SetAutoRefreshStyle(DWORD dwAutoRefresh);
-	void	SaveSearchWordflg(bool bSave);
 	void	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
 	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back);
 

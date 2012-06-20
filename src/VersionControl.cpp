@@ -80,6 +80,9 @@ void	CVersionControl::_1to2()
 		OLD_EMS_DEL_NOASK				= 0x00000010L,
 		OLD_EMS_ORDER_FAVORITES 		= 0x00010000L,
 		OLD_EMS_USER_DEFINED_FOLDER		= 0x00040000L,
+
+		EMS_IE_ORDER				= 0x00000002L,	
+		EMS_USER_DEFINED_FOLDER		= 0x00000100L,
 	};
 	CIniFileIO	pr(g_szIniFileName, _T("FavoritesMenu"));
 	DWORD	dwStyle = pr.GetValue(_T("Style"));

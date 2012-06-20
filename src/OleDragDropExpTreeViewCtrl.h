@@ -10,6 +10,7 @@
 #include "HLinkDataObject.h"
 #include "FavoriteOrder.h"
 
+#if 0
 
 template <class T>
 class COleDragDrogExplorerTreeViewCtrlImpl
@@ -612,4 +613,6 @@ class COleDragDrogExplorerTreeViewCtrl : public COleDragDrogExplorerTreeViewCtrl
 public:
 	DECLARE_WND_SUPERCLASS( _T("MTL_DragDropExpTreeViewCtrl"), GetWndClassName() )
 };
+
+#endif
 

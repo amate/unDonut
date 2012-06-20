@@ -1283,8 +1283,14 @@
     <ClCompile Include="Download\DownloadingListView.cpp" />
     <ClCompile Include="Download\DownloadManager.cpp" />
     <ClCompile Include="FavoriteOrder.cpp" />
-    <ClCompile Include="FavoritesMenu.cpp" />
-    <ClCompile Include="FavTreeViewCtrl.cpp" />
+    <ClCompile Include="FavoritesMenu.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="FavTreeViewCtrl.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="FindBar.cpp" />
     <ClCompile Include="GdiplusUtil.cpp" />
     <ClCompile Include="GlobalConfig.cpp" />

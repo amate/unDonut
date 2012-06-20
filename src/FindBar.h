@@ -16,6 +16,7 @@ public:
 	void	SetUpdateLayoutFunc(function<void (BOOL)> func);
 
 	HWND	GetHWND();
+	bool	FindBarBottom();
 	void	ShowFindBar(const CString& strKeyword);
 
 private:

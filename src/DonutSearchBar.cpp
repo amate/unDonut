@@ -14,7 +14,6 @@
 #include "Donut.h"
 #include "ParseInternetShortcutFile.h"
 
-
 #define ENGINENAME_FOR_NO_SEARCH_INI	_T("search.ini‚ª–³‚¢‚Ì‚ÅGoogle‚Ì‚İ")
 
 /// s_nMinimumLengthˆÈ‰º‚Ì•¶š—ñ‚ğíœ‚·‚é
@@ -239,6 +238,11 @@ private:
 	void	_SaveHistory();
 
 	// Constants
+	enum ControlID {
+		IDC_CMB_KEYWORD	= 1000,
+		IDC_CMB_ENGIN	= 1001,
+	};
+
 	enum ECharEncode {
 		ENCODE_NONE 			=	0,
 		ENCODE_SHIFT_JIS		=	1,

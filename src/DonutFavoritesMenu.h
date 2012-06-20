@@ -10,24 +10,13 @@
 #include "IniFile.h"
 #include "MtlWeb.h"
 
-inline CString DonutGetFavoritesFolder()
-{
-	if (CFavoritesMenuOption::s_bUserFolder) {
-		CString strDir = Misc::GetFullPath_ForExe( CFavoritesMenuOption::GetUserDirectory() );
-		if ( strDir.IsEmpty() == FALSE ) {
-			return strDir;
-		}
-	}
-	CString 	strStdDir;
-	MtlGetFavoritesFolder(strStdDir);
-	return strStdDir;
-}
 
 inline CString DonutGetFavoriteGroupFolder()
 {
 	return Misc::GetExeDirectory() + _T("FavoriteGroup\\");
 }
 
+#if 0
 
 /////////////////////////////////////////////////////////////////////////
 // CDonutFavoritesMenu
@@ -168,3 +157,4 @@ private:
 
 };
 
+#endif

@@ -262,15 +262,12 @@ struct _Mtl_Function_CloseAll {
 
 
 
-#define WM_USER_IS_SELECTED_TAB 	(WM_USER + 42)
-
 struct _Mtl_Function_CloseAllExcept {
 	HWND _hWndExcept;
 	_Mtl_Function_CloseAllExcept(HWND hWndExcept) : _hWndExcept(hWndExcept) { }
 	void operator ()(HWND hWnd)
 	{
 		if (hWnd != _hWndExcept) {
-			//			BOOL bSelected = (BOOL)::SendMessage(hWnd, WM_USER_IS_SELECTED_TAB, (WPARAM)hWnd, 0);
 			::SendMessage(hWnd, WM_CLOSE, 0, 0);
 		}
 	}

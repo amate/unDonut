@@ -32,6 +32,9 @@ struct GlobalConfig
 
 	// CSearchBarOption
 	bool	bScrollCenter;
+	bool	bSaveSearchWord;
+	bool	bSaveSearchWordOrg;
+	HWND	SearchEditHWND;
 	
 	// SerachBar
 	bool	bHilightSwitch;

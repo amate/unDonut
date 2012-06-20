@@ -18,7 +18,7 @@ public:
 		: CExplorerMenu( nInsertPointMenuItemID, _T("(‚È‚µ)") )
 		, __m_pPanelBar(__pPanelBar)
 	{
-		SetStyle(EMS_DRAW_ICON);
+//		SetStyle(EMS_DRAW_ICON);
 	}
 
 

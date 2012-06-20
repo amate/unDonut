@@ -186,19 +186,19 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 		::UpdateWindow(m_hWndChildFrame);
 	}
 #endif
-	SetRedraw(FALSE);
+	//SetRedraw(FALSE);
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
 		::SendMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
-		::ShowWindow/*Async*/(m_hWndChildFrame, FALSE);
+		::ShowWindowAsync(m_hWndChildFrame, FALSE);
 	}
 	
 	if (hWndChildFrame) {
-		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
-		//::ShowWindow(hWndChildFrame, TRUE);
+		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
 		RECT rcClient;
 		GetClientRect(&rcClient);
-		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | SWP_SHOWWINDOW | SWP_NOREDRAW);
+		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
+		::ShowWindowAsync(hWndChildFrame, TRUE);
 		//::RedrawWindow(hWndChildFrame, NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW*/ | RDW_ALLCHILDREN);
 		//::BringWindowToTop(hWndChildFrame);
 	} else {
@@ -207,8 +207,8 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 
 	m_hWndChildFrame = hWndChildFrame;
 		
-	SetRedraw(TRUE);
-	RedrawWindow(NULL, NULL, RDW_FRAME | RDW_ERASE | RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+	//SetRedraw(TRUE);
+	//RedrawWindow(NULL, NULL, RDW_FRAME | RDW_ERASE | RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 
@@ -302,6 +302,7 @@ public:
 	// Message map
 	BEGIN_MSG_MAP_EX( Impl )
 
+		CHAIN_MSG_MAP_MEMBER( m_MainOption			)
 		CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
 		CHAIN_MSG_MAP_MEMBER( m_DownloadManager		)
 		CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
@@ -406,6 +407,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
 
 		USER_MSG_WM_SHOW_TOOLBARMENU( OnShowToolBarMenu )
+		USER_MSG_WM_SHOW_BAND_TEXT_CHANGE( OnShowBandTextChange	)
 
 		// CChildFrameから
 		USER_MSG_WM_TABCREATE				( OnTabCreate	)	
@@ -435,6 +437,7 @@ public:
 	// UpdateUI map
 #pragma region UI map
 	BEGIN_UPDATE_COMMAND_UI_MAP( Impl )
+		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_MainOption		)
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ChildFrameUIState )
 
 		bool bActiveChild = (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL);
@@ -489,9 +492,9 @@ public:
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_MDITAB 		) )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR_MULTI, CTabBarOption::s_bMultiLine )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TOOLBAR_LOCK,  _IsRebarBandLocked()					)
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_CLIPBOARDBAR,  m_ExplorerBar.IsClipboardBarVisible()	)
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PANELBAR, 	 m_ExplorerBar.IsPanelBarVisible()		)
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PLUGINBAR,	 m_ExplorerBar.IsPluginBarVisible() 	)
+//		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_CLIPBOARDBAR,  m_ExplorerBar.IsClipboardBarVisible()	)
+//		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PANELBAR, 	 m_ExplorerBar.IsPanelBarVisible()		)
+//		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_PLUGINBAR,	 m_ExplorerBar.IsPluginBarVisible() 	)
 		UPDATE_COMMAND_UI_SETCHECK_FLAG ( ID_EXPLORERBAR_AUTOSHOW, MAIN_EXPLORER_AUTOSHOW, CMainOption::s_dwExplorerBarStyle )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_PRIVACYREPORT, 	bActiveChild							)
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_STATUS_BAR,	::IsWindowVisible(m_hWndStatusBar)		)
@@ -572,14 +575,6 @@ public:
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_TITLE_CLOSE	, CCloseTitlesOption::s_bValid )
 		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_DOUBLE_CLOSE	, CIgnoredURLsOption::s_bValid && CCloseTitlesOption::s_bValid )
 
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_BLOCK, _CheckCookies(ID_URLACTION_COOKIES_BLOCK) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_HI	, _CheckCookies(ID_URLACTION_COOKIES_HI   ) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_MIDHI, _CheckCookies(ID_URLACTION_COOKIES_MIDHI) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_MID	, _CheckCookies(ID_URLACTION_COOKIES_MID  ) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_LOW	, _CheckCookies(ID_URLACTION_COOKIES_LOW  ) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_ALL	, _CheckCookies(ID_URLACTION_COOKIES_ALL  ) )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_URLACTION_COOKIES_CSTM , _CheckCookies(ID_URLACTION_COOKIES_CSTM ) )
-
 		UPDATE_COMMAND_UI_POPUP_ENABLE_IF( ID_STYLESHEET_BASE	, bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_CSS_DROPDOWN		, bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_VIEW_UP			, bActiveChild )
@@ -652,6 +647,7 @@ public:
 	}
 
 	LRESULT OnShowToolBarMenu();
+	void	OnShowBandTextChange(bool bShow);
 
 	void	OnTabCreate(HWND hWndChildFrame, DWORD dwOption);
 	void	OnTabDestory(HWND hWndChildFrame);	
@@ -693,7 +689,6 @@ private:
 	bool	_IsClipboardAvailable() { return ::IsClipboardFormatAvailable(MTL_CF_TEXT) == TRUE; }
 	int		_GetRecentCount() { return m_RecentClosedTabList.GetRecentCount(); }
 	bool	_IsRebarBandLocked();
-	bool	_CheckCookies(UINT nID);
 	void	_UpdateProgressUI(CCmdUI *pCmdUI) {
 		CProgressBarCtrl progressbar = pCmdUI->m_wndOther;
 		progressbar.ShowWindow(SW_HIDE);
@@ -719,11 +714,12 @@ private:
 
 	CSplitterWindow		m_SplitterWindow;
 	CChildFrameClient	m_ChildFrameClient;		// ChildFrameの親ウィンドウ
-	CDonutExplorerBar	m_ExplorerBar;
+//	CDonutExplorerBar	m_ExplorerBar;
 
 	CRecentClosedTabList	m_RecentClosedTabList;
 	CDownloadManager		m_DownloadManager;
 
+	CMainOption			m_MainOption;
 	CChildFrameCommandUIUpdater	m_ChildFrameUIState;
 	GlobalConfigManageData		m_GlobalConfigManageData;
 	CFaviconManager		m_FaviconManager;

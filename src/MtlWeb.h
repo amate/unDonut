@@ -582,11 +582,11 @@ private:
 
 			if (pr.QueryString(szRetString, szBuff, &dwCount) == ERROR_SUCCESS) {
 				strURL = szRetString + strKeyWord;
-				DonutOpenFile( strURL, DonutGetStdOpenCreateFlag() );
+				DonutOpenFile( strURL, DonutGetStdOpenActivateFlag() );
 			} else {
 				if (nItem == 0) {
 					strURL = szGoogleCode + strKeyWord;
-					DonutOpenFile( strURL, DonutGetStdOpenCreateFlag() );
+					DonutOpenFile( strURL, DonutGetStdOpenActivateFlag() );
 				}
 
 				break;

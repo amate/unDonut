@@ -869,7 +869,7 @@ bool	CDonutTabBar::Impl::SetCurSel(int nIndex, bool bClicked/* = false*/, bool b
 	}
 
 	// new selected item
-	if ( m_vecpItem[nIndex]->ModifyState(TISS_HOT | TISS_PRESSED | TISS_MSELECTED, TISS_SELECTED) )
+	if ( m_vecpItem[nIndex]->ModifyState(TISS_HOT | TISS_PRESSED | TISS_MSELECTED | TISS_INACTIVE, TISS_SELECTED) )
 		InvalidateRect(m_vecpItem[nIndex]->rcItem);
 
 	_ScrollOpposite(nIndex, bClicked);

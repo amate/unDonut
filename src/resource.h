@@ -39,6 +39,7 @@
 #define IDD_PROPPAGE_MAIN               204
 #define IDB_FAVBAR_HOT                  205
 #define IDD_PROPPAGE_EXPMENU            206
+#define IDD_PROPPAGE_FAVORITEMENU       206
 #define IDD_PROPPAGE_IGNOREDURLS        207
 #define IDD_PROPPAGE_STARTUP            208
 #define IDD_PROPPAGE_FILENEW            209
@@ -91,7 +92,6 @@
 #define IDB_SEARCHBUTTON_DIS            260
 #define IDR_PANEL_TYPE                  264
 #define IDR_SCRIPT                      265
-#define IDD_SEARCHBAR_FORM              266
 #define IDD_PROPPAGE_PLUGIN             267
 #define IDD_PROPPAGE_DETERRENT          268
 #define IDR_SPECIAL                     269
@@ -360,7 +360,6 @@
 #define IDC_SETBTN_RX1                  1201
 #define IDC_CHK_TITLE                   1201
 #define IDC_SETBTN_RX2                  1202
-#define IDC_CMB_KEYWORD                 1203
 #define IDC_CHECK_ADDLINKACTIVERIGHT    1204
 #define IDC_BTN_ADD3                    1205
 #define IDC_BTN_DEL3                    1206
@@ -427,7 +426,6 @@
 #define IDC_EDIT_EXSEARCH_BACKURL       1270
 #define IDC_EDIT_EXSEARCH_BACKKEYWORD   1271
 #define IDC_CHECK_EXSEARCH_ADDRESSBAR   1272
-#define IDC_CMB_ENGIN                   1273
 #define IDC_CHECK_ENG_CHG_GO            1274
 #define IDC_CHECK_DROP_GO               1275
 #define IDC_CHECK_SCROLLCENTER          1276
@@ -591,6 +589,9 @@
 #define IDC_EDIT_MAXTEXTWIDTH           1440
 #define IDC_COMBO_BROWSREOPERATINGMODE  1441
 #define IDC_BUTTON_MATCHTEST            1442
+#define IDC_BUTTON_LINKIMPORTFORMFOLDER 1443
+#define IDC_BUTTON2                     1444
+#define IDC_BUTTON_LINKEXPORTTOFOLDER   1444
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -978,7 +979,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        328
 #define _APS_NEXT_COMMAND_VALUE         33228
-#define _APS_NEXT_CONTROL_VALUE         1443
+#define _APS_NEXT_CONTROL_VALUE         1444
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

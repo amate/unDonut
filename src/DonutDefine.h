@@ -59,6 +59,7 @@ enum WmCopyDataUseage {
 	kExecuteUserJavascript,
 	kHilightFromFindBar,
 	kOpenFindBarWithText,
+	kCommandDirect,
 	kDebugTrace = 0xFFFF,
 
 };
@@ -112,6 +113,32 @@ extern	class CMainFrame *		g_pMainWnd;
 			return TRUE;											  \
 	}
 // ENDE
+
+
+// WM_USER_GO's lParam flags
+#define WM_USER_GET_IWEBBROWSER 	(WM_USER + 30)
+#define MSG_WM_USER_GET_IWEBBROWSER()	   \
+	if (uMsg == WM_USER_GET_IWEBBROWSER) { \
+		SetMsgHandled(TRUE);			   \
+		lResult = (LRESULT) m_spBrowser.p; \
+		if ( IsMsgHandled() )			   \
+			return TRUE;				   \
+	}
+
+
+// void	OnShowBandTextChange(bool bShow)
+#define WM_SHOW_BAND_TEXT_CHANGE	(WM_USER + 41)
+#define USER_MSG_WM_SHOW_BAND_TEXT_CHANGE(func)  \
+	if (uMsg == WM_SHOW_BAND_TEXT_CHANGE) { \
+		SetMsgHandled(TRUE);			 \
+		lResult = 0;					 \
+		func( wParam != 0 );			 \
+		if ( IsMsgHandled() )			 \
+			return TRUE;				 \
+	}
+
+
+#define WM_USER_SIZE_CHG_EX 		(WM_USER + 44)
 
 // UH
 #define WM_MENU_GOBACK	(WM_USER + 50)

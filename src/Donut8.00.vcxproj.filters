@@ -492,7 +492,7 @@
       <Filter>boost\detail</Filter>
     </ClCompile>
     <ClCompile Include="PopupMenu.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Window</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -976,11 +976,11 @@
     <ClInclude Include="DonutCommandBar.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="PopupMenu.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="BeginMsgMap_decl.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupMenu.h">
+      <Filter>Source Files\Window</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

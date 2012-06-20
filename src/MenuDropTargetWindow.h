@@ -9,6 +9,8 @@
 #include "Donut.h"
 #include "ParseInternetShortcutFile.h"
 
+#if 0
+
 template <class T>
 class ATL_NO_VTABLE 	CMenuDropTargetWindowImpl
 	: public CWindowImpl<T>
@@ -594,3 +596,4 @@ public:
 	DECLARE_WND_SUPERCLASS( _T("Donut_MenuDDTarget"), GetWndClassName() )
 };
 
+#endif

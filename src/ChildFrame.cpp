@@ -293,7 +293,6 @@ public:
 	void	SetDLCtrl(DWORD dwDLCtrl) { m_view.PutDLControlFlags(dwDLCtrl); }
 	void	SetMarshalDLCtrl(DWORD dwDLCtrl) { m_dwMarshalDLCtrlFlags = dwDLCtrl; }
 	void	SetAutoRefreshStyle(DWORD dwAutoRefresh) { m_view.SetAutoRefreshStyle(dwAutoRefresh); }
-	void	SaveSearchWordflg(bool bSave) { m_bSaveSearchWordflg = bSave; }
 	void 	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
 	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back) {
 		m_TravelLogFore = fore; m_TravelLogBack = back;
@@ -501,7 +500,6 @@ private:
 	CBingTranslatorMenu			m_BingTranslatorMenu;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
-	bool	m_bSaveSearchWordflg;
 	CString	m_strSearchWord;
 	CComBSTR	m_strBookmark;
 	int 		m_nPainBookmark;
@@ -632,11 +630,6 @@ void	CChildFrame::SetMarshalDLCtrl(DWORD dwDLCtrl)
 void	CChildFrame::SetAutoRefreshStyle(DWORD dwAutoRefresh)
 {
 	pImpl->SetAutoRefreshStyle(dwAutoRefresh);
-}
-
-void	CChildFrame::SaveSearchWordflg(bool bSave)
-{
-	pImpl->SaveSearchWordflg(bSave);
 }
 
 void	CChildFrame::SetSearchWordAutoHilight(const CString& str, bool bAutoHilight)

@@ -678,16 +678,20 @@ void	CLinkPopupMenu::OpenMultiLink(LinkFolderPtr pFolder)
 {
 	std::vector<CMainFrame::OpenMultiFileData> vecData;
 	vecData.reserve(pFolder->size());
-	std::transform(pFolder->cbegin(), pFolder->cend(), std::back_inserter(vecData), 
-		[](const std::unique_ptr<LinkItem>& pItem) -> CMainFrame::OpenMultiFileData {
+	std::for_each(pFolder->cbegin(), pFolder->cend(),
+		[&vecData](const std::unique_ptr<LinkItem>& pItem) {
 			const LinkItem& item = *pItem;
-			if (item.bExPropEnable == false)
-				return CMainFrame::OpenMultiFileData(item.strUrl);
+			if (item.pFolder)
+				return ;
+			if (item.bExPropEnable == false) {
+				vecData.push_back(CMainFrame::OpenMultiFileData(item.strUrl));
+				return ;
+			}
 			
 			CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, 
 				CDLControlOption::s_dwExtendedStyleFlags, 0, 
 				item.dwExProp.get(), item.dwExPropOpt.get());
-			return CMainFrame::OpenMultiFileData(item.strUrl, ExProp.GetDLControlFlags(), ExProp.GetExtendedStyleFlags(), ExProp.GetAutoRefreshFlag());		
+			vecData.push_back(CMainFrame::OpenMultiFileData(item.strUrl, ExProp.GetDLControlFlags(), ExProp.GetExtendedStyleFlags(), ExProp.GetAutoRefreshFlag()));		
 	});
 	g_pMainWnd->UserOpenMultiFile(vecData);
 }

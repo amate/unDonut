@@ -18,19 +18,20 @@ class CFindBar::Impl :
 	public CTrackMouseLeave<Impl>,
 	public CMessageFilter
 {
+	friend class CFindBar;
 public:
 	DECLARE_WND_CLASS(_T("DonutFindBar"))
 
 	// Constants
 	enum {
-		BarSize = 25,
+		BarSize = 26,
 
 		cxBarClose	= 5,
 		cyBarClose	= 4,
 		CloseWidth	= 17,
 		CloseHeight = 16,
 
-		cyOffset = 1,
+		cyOffset = 2,
 
 		cxBarEdit = cxBarClose + CloseWidth + cxBarClose,
 		EditWidth = 200,
@@ -119,6 +120,7 @@ private:
 	bool	m_bWordUnit;
 	bool	m_bDistinguish;
 	bool	m_bAutoHighlight;
+	bool	m_bFindBarBottom;
 
 	bool	m_bNoHit;
 	int		m_nMatchCount;
@@ -139,6 +141,7 @@ CFindBar::Impl::Impl()
 	, m_bWordUnit(false)
 	, m_bDistinguish(false)
 	, m_bAutoHighlight(false)
+	, m_bFindBarBottom(false)
 	, m_bNoHit(false)
 	, m_nMatchCount(0)
 	, m_bPageEnd(false)
@@ -192,6 +195,7 @@ HWND	CFindBar::Impl::Create(HWND hWndParent)
 	m_bWordUnit = pr.GetValue(_T("WordUnit")) != 0;
 	m_bDistinguish	= pr.GetValue(_T("Distinguish")) != 0;
 	m_bAutoHighlight	= pr.GetValue(_T("AutoHighlight")) != 0;
+	m_bFindBarBottom	= pr.GetValue(_T("FindBarBottom")) != 0;
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
@@ -228,9 +232,9 @@ void	CFindBar::Impl::CloseFindBar()
 	ShowWindow(FALSE);
 	m_funcUpdateLayout(FALSE);
 
-//	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-//	if (pChild) 
-//		::SendMessage(pChild->GetHwnd(), WM_COMMAND, ID_VIEW_SETFOCUS, 0);
+	HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+	if (ActiveChildFrame) 
+		::SetFocus(ActiveChildFrame);
 }
 
 
@@ -242,13 +246,16 @@ void	CFindBar::Impl::DoPaint(CDCHandle dc)
 	GetClientRect(&rc);
 	dc.FillSolidRect(&rc, ::GetSysColor(COLOR_BTNFACE));
 
-	// 下にラインを引く
+	// ラインを引く
 	static COLORREF BorderColor = ::GetSysColor(COLOR_BTNSHADOW);
 	HPEN hPen = ::CreatePen(PS_SOLID, 1, BorderColor);
 	HPEN hOldPen = dc.SelectPen(hPen);
-	--rc.bottom;
-	dc.MoveTo(CPoint(rc.left, rc.bottom));
-	dc.LineTo(rc.right, rc.bottom);
+	int YPos = 0;
+	if (m_bFindBarBottom == false) {
+		YPos = rc.bottom - 1;
+	}
+	dc.MoveTo(CPoint(rc.left, YPos));
+	dc.LineTo(rc.right, YPos);
 	dc.SelectPen(hOldPen);
 	::DeleteObject(hPen);
 
@@ -406,17 +413,30 @@ LRESULT CFindBar::Impl::OnDropDownOption(LPNMHDR pnmh)
 		ID_WORDUNIT = 1,
 		ID_DISTINC	= 2,
 		ID_AUTOHIGHLIGHT = 3,
+		ID_FINDBARBOTTOM = 4,
 	};
 	CMenu	menu;
 	menu.CreatePopupMenu();
 	menu.AppendMenu(m_bWordUnit		 ? MFS_CHECKED : 0, (UINT_PTR)ID_WORDUNIT		, _T("単語単位で探す(&W)"));
 	menu.AppendMenu(m_bDistinguish	 ? MFS_CHECKED : 0, (UINT_PTR)ID_DISTINC		, _T("大文字と小文字を区別する(&C)"));
 	menu.AppendMenu(m_bAutoHighlight ? MFS_CHECKED : 0, (UINT_PTR)ID_AUTOHIGHLIGHT	, _T("見つかったすべての項目を強調表示する(&H)"));
+	menu.AppendMenu(MF_SEPARATOR);
+	menu.AppendMenu(m_bFindBarBottom ? MFS_CHECKED : 0, (UINT_PTR)ID_FINDBARBOTTOM	, _T("ページ内検索バーをブラウザの下に表示する(&B)"));
+
 
 	RECT rc;
 	m_ToolBar.GetRect(ID_FIND_OPTION, &rc);
 	m_ToolBar.ClientToScreen(&rc);
-	int nRet = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_RETURNCMD, rc.left, rc.bottom, m_hWnd);
+	DWORD dwFlags = TPM_LEFTALIGN | TPM_RETURNCMD;
+	CPoint	ptPopup;
+	if (m_bFindBarBottom) {
+		dwFlags |= TPM_BOTTOMALIGN;
+		ptPopup.SetPoint(rc.left, rc.top);
+	} else {
+		dwFlags |= TPM_TOPALIGN;
+		ptPopup.SetPoint(rc.left, rc.bottom);
+	}
+	int nRet = menu.TrackPopupMenu(dwFlags, ptPopup.x, ptPopup.y, m_hWnd);
 
 
 	CIniFileO	pr(g_szIniFileName, _T("FindBar"));
@@ -430,6 +450,10 @@ LRESULT CFindBar::Impl::OnDropDownOption(LPNMHDR pnmh)
 	case ID_AUTOHIGHLIGHT:	m_bAutoHighlight = !m_bAutoHighlight;	
 		pr.SetValue(m_bAutoHighlight, _T("AutoHighlight"));
 		break;
+	case ID_FINDBARBOTTOM:	m_bFindBarBottom = !m_bFindBarBottom;
+		pr.SetValue(m_bFindBarBottom, _T("FindBarBottom"));
+		m_funcUpdateLayout(FALSE);
+		return 0;
 	};
 	if (nRet != 0) {
 		if (m_bAutoHighlight)
@@ -663,6 +687,11 @@ void	CFindBar::SetUpdateLayoutFunc(function<void (BOOL)> func)
 HWND	CFindBar::GetHWND()
 {
 	return pImpl->m_hWnd;
+}
+
+bool	CFindBar::FindBarBottom()
+{
+	return pImpl->m_bFindBarBottom;
 }
 
 void	CFindBar::ShowFindBar(const CString& strKeyword)

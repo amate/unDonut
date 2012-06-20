@@ -19,6 +19,7 @@
 
 //GetUrlCacheEntryInfo
 
+#if 0
 
 class CFavoritesTreeViewCtrl : public COleDragDrogExplorerTreeViewCtrlImpl<CFavoritesTreeViewCtrl> 
 {
@@ -671,3 +672,5 @@ private:
 	LRESULT 	OnFavoriteGroupOrganize(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
   #endif
 };
+
+#endif

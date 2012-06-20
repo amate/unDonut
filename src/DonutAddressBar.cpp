@@ -305,7 +305,7 @@ void	CDonutAddressBar::Impl::ShowGoButton(bool bShow)
 		m_wndGo.ShowWindow(SW_HIDE);
 
 	// テキストの表示非表示の変更をメインフレーム通知
-	GetTopLevelWindow().SendMessage(WM_USER_SHOW_TEXT_CHG, s_bTextVisible);
+	GetTopLevelWindow().SendMessage(WM_SHOW_BAND_TEXT_CHANGE, s_bTextVisible);
 
 	// generate WM_WINDOWPOSCHANGING, no other way
 	CRect rect;
@@ -774,7 +774,7 @@ LRESULT CDonutAddressBar::Impl::OnCbnEditChange(UINT uNotifyCode, int nID, CWind
 	//if (strUrl == strText)
 	//	return 0;
 
-	_SetEditIconIndex(0);
+	//_SetEditIconIndex(0);
 	return 0;
 }
 

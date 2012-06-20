@@ -31,6 +31,9 @@ void	CreateGlobalConfig(GlobalConfigManageData* pMangeData)
 	ATLASSERT( pMangeData->pGlobalConfig );
 
 	pMangeData->pGlobalConfig->bHilightSwitch	= false;
+	// ProxyComboBox
+	pMangeData->pGlobalConfig->ProxyAddress[0] = '\0';
+	pMangeData->pGlobalConfig->ProxyBypass[0] = '\0';
 
 }
 
@@ -60,6 +63,8 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 
 	// CSearchBarOption
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
+	pConfig->bSaveSearchWord	= CSearchBarOption::s_bSaveSearchWord;
+	pConfig->bSaveSearchWordOrg = CSearchBarOption::s_bSaveSearchWord;
 
 	// CAddressBarOptionｔ
 	pConfig->bReplaceSpace	= CAddressBarOption::s_bReplaceSpace;
@@ -70,10 +75,6 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	// CDownloadManager
 	pConfig->bUseDownloadManager = CDownloadManager::UseDownloadManager();
 	// CDLOptions は メインフレームのOnCreateとDLオプション更新時に行われるでいらない
-
-	// ProxyComboBox
-	pConfig->ProxyAddress[0] = '\0';
-	pConfig->ProxyBypass[0] = '\0';
 }
 
 void	DestroyGlobalConfig(GlobalConfigManageData* pMangeData)

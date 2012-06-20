@@ -268,29 +268,12 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "選択切替(&R)",                    ID_DLCTL_CHG_SECU
         END
-        POPUP "クッキー(&C)"
-        BEGIN
-            MENUITEM "選択切替(&T)",                    ID_URLACTION_COOKIES_CHG
-            MENUITEM SEPARATOR
-            MENUITEM "クッキー(&C)",                    ID_URLACTION_COOKIES
-            MENUITEM "セッションごとのクッキー(&S)",            ID_URLACTION_COOKIES_SESSION
-        END
-        POPUP "クッキー(IE6)(&I)"
-        BEGIN
-            MENUITEM "すべての Cookie をブロック(&B)",       ID_URLACTION_COOKIES_BLOCK
-            MENUITEM "高(&H)",                       ID_URLACTION_COOKIES_HI
-            MENUITEM "中-高(&U)",                     ID_URLACTION_COOKIES_MIDHI
-            MENUITEM "中(&M)",                       ID_URLACTION_COOKIES_MID
-            MENUITEM "低(&L)",                       ID_URLACTION_COOKIES_LOW
-            MENUITEM "すべての Cookie を受け入れる(&A)",      ID_URLACTION_COOKIES_ALL
-            MENUITEM SEPARATOR
-            MENUITEM "カスタム",                        ID_URLACTION_COOKIES_CSTM, INACTIVE
-        END
         MENUITEM SEPARATOR
         MENUITEM "ナビゲートロック(&L)",                ID_DOCHOSTUI_OPENNEWWIN
         MENUITEM "メッセージ・フィルタ(&F)",              ID_MESSAGE_FILTER
         MENUITEM "マウス・ジェスチャー(&G)",              ID_MOUSE_GESTURE
         MENUITEM "mailto:無効(&I)",               ID_BLOCK_MAILTO
+        MENUITEM SEPARATOR
         POPUP "スタイルシート(&X)"
         BEGIN
             MENUITEM "標準(&D)",                      ID_STYLESHEET_BASE
@@ -1016,37 +999,14 @@ BEGIN
     LTEXT           "ブラウザビューの動作モード(※再起動後の有効)",IDC_STATIC,16,176,144,12,SS_CENTERIMAGE
 END
 
-IDD_PROPPAGE_EXPMENU DIALOGEX 0, 0, 280, 256
+IDD_PROPPAGE_FAVORITEMENU DIALOGEX 0, 0, 280, 256
 STYLE DS_SETFONT | WS_CHILD | WS_DISABLED | WS_CAPTION
 CAPTION "お気に入りメニュー"
 FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
 BEGIN
-    CONTROL         "「これらをすべて開く」という項目を追加する(&D)",IDC_CHECK_EXPMENU_ADDITIONAL,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,8,149,8
-    CONTROL         "「この位置にお気に入り追加」という項目を追加する(&F)",IDC_CHECK_EXPMENU_ADDITIONAL2,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,20,171,8
-    CONTROL         "IEの順番で並べる(&O)",IDC_CHECK_FAVMENU_ORDER,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,32,77,8
-    LTEXT           "メニューの最大文字数(&T):",IDC_STATIC,8,47,76,8
-    EDITTEXT        IDC_EDIT_EXPMENU_ITEMTEXTMAX,89,44,36,12,ES_AUTOHSCROLL
-    LTEXT           "(1-255)",IDC_STATIC,128,47,25,8
-    LTEXT           "各段の最大項目数(&R):",IDC_STATIC,18,62,66,8
-    EDITTEXT        IDC_EDIT_EXPMENU_BREAKCOUNTMAX,89,59,36,12,ES_AUTOHSCROLL
-    LTEXT           "(2-5000)",IDC_STATIC,128,62,26,8
-    LTEXT           "この値が小さいと表示されなくなることがあるらしいのでご注意下さい。",IDC_STATIC,23,76,149,18
-    CONTROL         "アイコンを表示する",IDC_CHECK_DRAW_ICON,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,104,68,8
-    LTEXT           "(",IDC_STATIC,84,104,8,8
-    LTEXT           ")",IDC_STATIC,148,104,8,8
-    CONTROL         "間隔を詰める",IDC_CHECK_SPACE_MIN,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,93,104,51,8
-    CONTROL         "ユーザー定義のフォルダを使用する(&U)",IDC_CHECK_FAVMENU_USER,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,140,124,8
-    EDITTEXT        IDC_EDIT_FAVMENU_USER,18,155,132,12,ES_AUTOHSCROLL
-    PUSHBUTTON      "...",IDC_BUTTON_FAVMENU_USER,156,155,16,12,BS_FLAT
-    LTEXT           "--- * 以下の機能は実験的に搭載されています * ---",IDC_STATIC,9,176,195,10
-    CONTROL         "お気に入りの順番をドラッグして並べかえできるようにする",IDC_CHECK_MENUORDER,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,191,179,8
-    LTEXT           "「IEの順番で並べる」をONかつ\n「ユーザー定義のフォルダを使用する」をOFFにする必要があります。",IDC_STATIC,20,203,204,17
-    CONTROL         "「並び順を初期化する」という項目を追加する",IDC_CHECK_RESETORDER,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,225,196,8
-    LTEXT           "追加されたコマンドを実行するとIEの並び順も初期化されます",IDC_STATIC,20,237,183,14
-    CONTROL         "Faviconを表示する",IDC_CHECK_DRAW_FAVICON,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,120,64,8
-    GROUPBOX        "",IDC_STATIC,4,96,164,36
+    GROUPBOX        "",IDC_STATIC,8,40,232,48
+    PUSHBUTTON      "フォルダからリンクをインポート",IDC_BUTTON_LINKIMPORTFORMFOLDER,16,52,100,28
+    PUSHBUTTON      "フォルダへリンクをエクスポート",IDC_BUTTON_LINKEXPORTTOFOLDER,132,52,100,28
 END
 
 IDD_PROPPAGE_STARTUP DIALOGEX 0, 0, 280, 256
@@ -1435,14 +1395,6 @@ BEGIN
     LTEXT           "",IDC_STC01,8,54,187,12,SS_CENTERIMAGE | SS_SUNKEN
     GROUPBOX        "",IDC_STATIC,3,3,198,69,BS_FLAT
     LTEXT           "カテゴリ",IDC_STATIC,8,12,24,8
-END
-
-IDD_SEARCHBAR_FORM DIALOGEX 0, 0, 91, 16
-STYLE DS_SETFONT | WS_CHILD | WS_CLIPCHILDREN
-FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
-BEGIN
-    COMBOBOX        IDC_CMB_KEYWORD,0,2,36,397,CBS_DROPDOWN | CBS_AUTOHSCROLL | WS_VSCROLL | WS_TABSTOP
-    COMBOBOX        IDC_CMB_ENGIN,36,2,52,397,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
 END
 
 IDD_PROPPAGE_PLUGIN DIALOGEX 0, 0, 280, 256
@@ -1982,7 +1934,7 @@ BEGIN
         BOTTOMMARGIN, 293
     END
 
-    IDD_PROPPAGE_EXPMENU, DIALOG
+    IDD_PROPPAGE_FAVORITEMENU, DIALOG
     BEGIN
         LEFTMARGIN, 6
         RIGHTMARGIN, 247
@@ -2178,11 +2130,6 @@ BEGIN
         HORZGUIDE, 30
         HORZGUIDE, 47
         HORZGUIDE, 60
-    END
-
-    IDD_SEARCHBAR_FORM, DIALOG
-    BEGIN
-        BOTTOMMARGIN, 15
     END
 
     IDD_PROPPAGE_PLUGIN, DIALOG

@@ -1522,6 +1522,8 @@ void	CDonutLinkBarCtrl::Impl::_DrawItem(CDCHandle dc, const LinkItem& item)
 	rcText.left	+= kLeftTextPadding;//+= kRightLeftPadding;
 	rcText.right-= kRightTextMargin;
 
+	static bool s_bVistaLater = _CheckOsVersion_VistaLater() != 0;
+
 	auto funcDrawIcon = [&, this]() {
 		POINT ptIcon;
 		ptIcon.x	= rcItem.left + kLeftIconMargin;
@@ -1541,8 +1543,8 @@ void	CDonutLinkBarCtrl::Impl::_DrawItem(CDCHandle dc, const LinkItem& item)
 		icon.DrawIconEx(dc, ptIcon, CSize(kcxIcon, kcyIcon));
 	};
 	if (IsThemeNull() == false) {
-		funcDrawIcon();
-
+		if (s_bVistaLater)
+			funcDrawIcon();
 		int nState = TS_NORMAL;
 		if (item.state == item.kItemHot)
 			nState = TS_HOT;
@@ -1551,6 +1553,8 @@ void	CDonutLinkBarCtrl::Impl::_DrawItem(CDCHandle dc, const LinkItem& item)
 
 		DrawThemeBackground(dc, TP_BUTTON, nState, &rcItem);
 
+		if (s_bVistaLater == false)
+			funcDrawIcon();
 		//DrawThemeText(dc, TP_BUTTON, nState, item.strName, item.strName.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS, 0, &rcText);
 	} else {
 		CRect rcEdge = item.rcItem;

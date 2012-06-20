@@ -4,7 +4,7 @@
 
 CMainFrame::Impl::Impl() : 
 	CDDEMessageHandler<Impl>(_T("Donut")),
-	m_ExplorerBar(m_SplitterWindow),
+//	m_ExplorerBar(m_SplitterWindow),
 	m_hWndRestoreFocus(NULL),
 	m_bFullScreen(false)
 {
@@ -283,6 +283,8 @@ void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& v
 	if (m_deqNewChildFrameData.size() > 0) {
 		if (bLink)	// kNowDonutInstanceからなら逆転
 			std::reverse(m_deqNewChildFrameData.begin(), m_deqNewChildFrameData.end());
+		if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
+			m_deqNewChildFrameData.back()->bActive = true;
 		//m_TabBar.InsertHere(true);
 		//m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
 		CChildFrame::AsyncCreate(*m_deqNewChildFrameData[0]);
@@ -379,11 +381,17 @@ void CMainFrame::Impl::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 
 	// ページ内検索バー
 	HWND hWndFind = m_FindBar.GetHWND();
-	if (::IsWindowVisible(hWndFind)) {
+	if (::IsWindowVisible(hWndFind)) {			
 		CRect rcFind;
 		::GetClientRect(hWndFind, &rcFind);
-		::SetWindowPos( hWndFind, NULL, rc.left, rc.top, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
-		rc.top += rcFind.bottom;
+		if (m_FindBar.FindBarBottom()) {
+			rc.bottom -= rcFind.bottom;
+			::SetWindowPos( hWndFind, NULL, rc.left, rc.bottom, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
+
+		} else {
+			::SetWindowPos( hWndFind, NULL, rc.left, rc.top, rc.right, rcFind.bottom, SWP_NOZORDER | SWP_NOACTIVATE );
+			rc.top += rcFind.bottom;
+		}
 	}
 
 	if (m_hWndClient)
@@ -452,6 +460,8 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	HWND hWndTabBar		= _initTabBar();
 	HWND hWndLinkBar	= _initLinkBar();
 	_initBandPosition(hWndCmdBar, hWndToolBar, hWndAddressBar, hWndSearchBar, hWndLinkBar, hWndTabBar);
+
+	m_GlobalConfigManageData.pGlobalConfig->SearchEditHWND	= m_SearchBar.GetEditCtrl();
 
 	_initStatusBar();
 	_initSplitterWindow();
@@ -721,6 +731,8 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 	m_ReBar.LockBands( (vecReBarBandInfo.front().fStyle & RBBS_NOGRIPPER) != 0 );
 	m_CmdBar.RefreshBandIdealSize(m_ReBar);
 	m_AddressBar.InitReBarBandInfo(m_ReBar);
+
+	OnShowBandTextChange(CAddressBarOption::s_bTextVisible);
 }
 
 void	CMainFrame::Impl::_initStatusBar()
@@ -799,9 +811,11 @@ void	CMainFrame::Impl::_initChildFrameClient()
 
 void	CMainFrame::Impl::_initExplorerBar()
 {
-	m_ExplorerBar.Create(m_hWndClient);
-	ATLASSERT( m_ExplorerBar.IsWindow() );
-	m_ExplorerBar.Init(m_ChildFrameClient);
+//	m_ExplorerBar.Create(m_hWndClient);
+//	ATLASSERT( m_ExplorerBar.IsWindow() );
+//	m_ExplorerBar.Init(m_ChildFrameClient);	// スプリットバーの状態も設定される
+	m_SplitterWindow.SetSplitterPanes(NULL, m_ChildFrameClient);
+	m_SplitterWindow.SetSinglePaneMode(SPLIT_PANE_RIGHT);
 }
 
 void	CMainFrame::Impl::_initSkin()
@@ -840,9 +854,9 @@ void	CMainFrame::Impl::_initSkin()
 	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
 	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
 	//m_LinkBar.InvalidateRect(NULL, TRUE);						//リンクバー
-	m_ExplorerBar.ReloadSkin(); 								//エクスプローラバー
-	m_ExplorerBar.m_PanelBar.ReloadSkin();						//パネルバー
-	m_ExplorerBar.m_PluginBar.ReloadSkin(); 					//プラグインバー
+//	m_ExplorerBar.ReloadSkin(); 								//エクスプローラバー
+//	m_ExplorerBar.m_PanelBar.ReloadSkin();						//パネルバー
+//	m_ExplorerBar.m_PluginBar.ReloadSkin(); 					//プラグインバー
 	
 	m_StatusBar.ReloadSkin( CSkinOption::s_nStatusStyle		//ステータスバー
 							 , CSkinOption::s_nStatusTextColor
@@ -1079,6 +1093,25 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kCommandDirect:
+		{
+			CString str = (LPCWSTR)pCopyDataStruct->lpData;
+			if (str.Find( _T("tp://") ) != -1
+				|| str.Find( _T("https://") ) != -1
+				|| str.Find( _T("file://") ) != -1) {
+				Misc::StrToNormalUrl(str);		//+++
+				UserOpenFile(str, D_OPENFILE_CREATETAB | DonutGetStdOpenActivateFlag());
+			} else {
+				if (CMouseOption::s_nDragDropCommandID == ID_SEARCH_DIRECT) {				// 即検索
+					m_SearchBar.SearchWeb(str);
+
+				} else if (CMouseOption::s_nDragDropCommandID == ID_OPENLINK_DIRECT) {	// リンクを開く
+					SendMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, ID_EDIT_OPEN_SELECTED_REF, 0);
+				}
+			}
+		}
+		break;
+
 	case kDebugTrace:
 		TRACE(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
 		break;
@@ -1191,9 +1224,6 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 	//CChildFrame *pActiveChild = GetActiveChildFrame();
 	//if( pActiveChild)
 	//	pActiveChild->SaveSearchWordflg(false); //\\ 検索バーで検索したときアクティブなタブの検索文字列を保存しないようにする
-	
-	bool bOldSaveFlag = CSearchBarOption::s_bSaveSearchWord;	// 検索バーの文字列が消える件に一応の対処
-	CSearchBarOption::s_bSaveSearchWord = false;				// 本当はこんなことしちゃダメ
 
 	NewChildFrameData	data(m_ChildFrameClient);
 	data.strURL		= pArgs->strUrl;
@@ -1212,9 +1242,17 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 
 	if (hWndActive && _check_flag(D_OPENFILE_NOCREATE, pArgs->dwOpenFlag)) {
 		// 既存のタブをナビゲート
+		COPYDATASTRUCT cds;
+		cds.dwData	= kSetSearchText;
+		cds.lpData	= static_cast<LPVOID>(data.searchWord.GetBuffer(0));
+		cds.cbData	= (data.searchWord.GetLength() + 1) * sizeof(WCHAR);
+		::SendMessage(hWndActive, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 		_NavigateChildFrame(hWndActive, data.strURL, data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
 
 	} else {
+		// 検索バーの文字列が消える件に一応の対処
+		m_GlobalConfigManageData.pGlobalConfig->bSaveSearchWord = false;
+
 		// 新規タブを作成する
 		CString str = pArgs->strSearchWord;
 		//data.funcCallAfterCreated = [str, bOldSaveFlag](CChildFrame* pChild) {
@@ -1316,7 +1354,7 @@ void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 	case ID_FILE_OPEN_TABLIST:
 		{
 			CString strPath = Misc::GetExeDirectory() + _T("TabList.xml");
-			UserOpenFile( strPath, DonutGetStdOpenCreateFlag() );
+			UserOpenFile( strPath, DonutGetStdOpenActivateFlag() );
 		}
 		break;
 
@@ -1342,7 +1380,7 @@ void	CMainFrame::Impl::OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl)
 	NewChildFrameData	data(m_ChildFrameClient);
 	data.strURL		= pdata->strURL;
 	data.dwDLCtrl	= pdata->dwDLCtrl;
-	data.bActive	= _check_flag(DonutGetStdOpenCreateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
+	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
 	data.TravelLogBack = pdata->TravelLogBack;
 	data.TravelLogFore = pdata->TravelLogFore;
 	m_RecentClosedTabList.RemoveFromList(nID);
@@ -1501,7 +1539,7 @@ void	CMainFrame::Impl::OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 		return ;
 
 	bool bOldShell = _check_flag(MAIN_EX_ADDFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
-	MtlAddFavorite(pUIData->strLocationURL, pUIData->strTitle, bOldShell, DonutGetFavoritesFolder(), m_hWnd);
+	//MtlAddFavorite(pUIData->strLocationURL, pUIData->strTitle, bOldShell, DonutGetFavoritesFolder(), m_hWnd);
 
 	SendMessage(WM_REFRESH_EXPBAR);
 }
@@ -1509,7 +1547,7 @@ void	CMainFrame::Impl::OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 void	CMainFrame::Impl::OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	bool bOldShell = _check_flag(MAIN_EX_ORGFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
-	MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
+	//MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
 }
 
 /// タスクトレイに退避
@@ -1635,7 +1673,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CAccelerManager accelManager(m_hAccel);
 	m_hAccel = accelManager.LoadAccelaratorState(m_hAccel);
 
-	RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
+	//RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 }
 
 
@@ -1757,6 +1795,40 @@ LRESULT CMainFrame::Impl::OnShowToolBarMenu()
 	if ( submenu.IsMenu() )
 		submenu.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd);
 	return 0;
+}
+
+
+/// リバーのバンドの左端にテキストを設定する
+void	CMainFrame::Impl::OnShowBandTextChange(bool bShow)
+{
+	ATLASSERT(m_ReBar.IsWindow());
+
+	REBARBANDINFO rbBand = { sizeof (REBARBANDINFO) };
+	int nCount = m_ReBar.GetBandCount();
+	for (int ii = 0; ii < nCount; ii++) {
+		rbBand.fMask = RBBIM_ID;
+		m_ReBar.GetBandInfo(ii, &rbBand);
+		if (rbBand.wID != IDC_LINKBAR && rbBand.wID != IDC_SEARCHBAR && rbBand.wID != IDC_ADDRESSBAR)
+			continue;
+
+		if (bShow) {
+			switch (rbBand.wID) {
+			case IDC_ADDRESSBAR:
+				rbBand.lpText = _T("アドレス");
+				break;
+
+			case IDC_LINKBAR:
+				rbBand.lpText = _T("リンク");
+				break;
+
+			case IDC_SEARCHBAR:
+				rbBand.lpText = _T("検索");
+				break;
+			}
+		}
+		rbBand.fMask = RBBIM_TEXT;
+		m_ReBar.SetBandInfo(ii, &rbBand);
+	}
 }
 
 
@@ -2079,70 +2151,6 @@ bool	CMainFrame::Impl::_IsRebarBandLocked()
 		return false;
 
 	return (rbbi.fStyle & RBBS_NOGRIPPER) != 0;
-}
-
-
-bool	CMainFrame::Impl::_CheckCookies(UINT nID)
-{
-	HINSTANCE	hInstDLL = LoadLibrary(_T("wininet.dll"));
-	if (hInstDLL == NULL)
-		return false;
-	typedef DWORD (WINAPI* fpPrivacyGetZonePreferenceW)(DWORD, DWORD, LPDWORD, LPWSTR, LPDWORD);
-	fpPrivacyGetZonePreferenceW PrivacyGetZonePreferenceW = 
-		(DWORD (WINAPI*)(DWORD,DWORD,LPDWORD,LPWSTR, LPDWORD))GetProcAddress(hInstDLL,"PrivacyGetZonePreferenceW");
-	if (PrivacyGetZonePreferenceW == NULL) {
-		FreeLibrary(hInstDLL);
-		return false;
-	}
-
-	DWORD	dwCookie1 = 0;
-	DWORD	dwCookie2 = 0;
-	DWORD	BufLen	  = 0;
-	DWORD	ret;
-	ret = PrivacyGetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_FIRST_PARTY, &dwCookie1, NULL, &BufLen);
-	ret = PrivacyGetZonePreferenceW(URLZONE_INTERNET, PRIVACY_TYPE_THIRD_PARTY, &dwCookie2, NULL, &BufLen);
-
-	bool bSts = false;
-	switch (nID) {
-	case ID_URLACTION_COOKIES_BLOCK:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_NO_COOKIES)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_HI:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_HIGH)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_MIDHI:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_MEDIUM_HIGH)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_MID:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_MEDIUM)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_LOW:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_MEDIUM_LOW)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_ALL:
-		if (dwCookie1 == dwCookie2 && dwCookie1 == PRIVACY_TEMPLATE_LOW)
-			bSts = true;
-		break;
-
-	case ID_URLACTION_COOKIES_CSTM:
-		if (dwCookie1 == PRIVACY_TEMPLATE_ADVANCED)
-			bSts = true;
-		if (dwCookie2 == PRIVACY_TEMPLATE_ADVANCED)
-			bSts = true;
-		break;
-	}
-	FreeLibrary(hInstDLL);
-	return bSts;
 }
 
 

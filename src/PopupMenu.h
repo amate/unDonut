@@ -839,6 +839,10 @@ public:
 	static void	LoadFavoriteBookmark();
 	static void JoinSaveBookmarkThread();
 
+	// ƒIƒvƒVƒ‡ƒ“‚©‚çŒÄ‚Î‚ê‚é
+	static void LinkImportFromFolder(LPCTSTR folder);
+	static void LinkExportToFolder(LPCTSTR folder, bool bOverWrite);
+
 	// Overrides
 	virtual void	DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent) override;
 	virtual void	DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClientItem, HWND hWndParent, int nInheritIndex) override;

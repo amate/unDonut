@@ -65,7 +65,7 @@ public:
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか
-	void	SetOperateDragDrop(BOOL bOn, int nCommand);
+	void	SetOperateDragDrop(BOOL bOn);
 
 	bool	UseDownloadManager() const;	// for DocHostUIHandlerDispatch
 	void	StartTheDownload(LPCTSTR strURL, bool bSaveImage = false);
@@ -197,7 +197,6 @@ private:
 	CDocHostUIHandlerDispatch	m_ExternalUIDispatch;
 	//CAmbientDispatch			m_ExternalAmbientDispatch;
 
-	int 						m_nDDCommand;
 	bool						m_bUseCustomDropTarget;
 	bool						m_bDragAccept;
 	bool						m_bExternalDrag;

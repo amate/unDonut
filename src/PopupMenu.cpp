@@ -19,19 +19,6 @@
 
 using namespace boost::property_tree;
 
-inline CString DonutGetFavoritesFolder()
-{
-	if (CFavoritesMenuOption::s_bUserFolder) {
-		CString strDir = Misc::GetFullPath_ForExe( CFavoritesMenuOption::GetUserDirectory() );
-		if ( strDir.IsEmpty() == FALSE ) {
-			return strDir;
-		}
-	}
-	CString 	strStdDir;
-	MtlGetFavoritesFolder(strStdDir);
-	return strStdDir;
-}
-
 HWND	IBasePopupMenu::s_hWndCommandBar = NULL;
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -535,57 +522,32 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
 	CString FavoriteBookmarkFilePath = Misc::GetExeDirectory() + _T("FavoriteBookmark.xml");
 	if (::PathFileExists(FavoriteBookmarkFilePath) == FALSE) {
-		CString strFavoriteFolder = DonutGetFavoritesFolder();
-		if (::PathIsDirectory(strFavoriteFolder) == FALSE)
-			return ;
-
-		// 以前のリンクフォルダを削除する
-		//_ClearLinkBookmark();
-
-		std::function<void (LPCTSTR, bool, LinkFolderPtr)> funcAddLink;
-		funcAddLink = [&](LPCTSTR strPath, bool bDirectory, LinkFolderPtr pFolder) {
-			unique_ptr<LinkItem> pItem(new LinkItem);
-			if (bDirectory) {
-				CString strDirPath = strPath;
-				::PathRemoveBackslash(strDirPath.GetBuffer(MAX_PATH));
-				strDirPath.ReleaseBuffer();
-				pItem->strName = Misc::GetFileBaseName(strDirPath);
-				pItem->pFolder	= new LinkFolder;
-				MtlForEachObject_OldShell(strPath, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, pItem->pFolder));
-			} else {
-				if (Misc::GetFileExt(strPath).CompareNoCase(_T("url")) != 0)
-					return ;
-
-				pItem->strName	= Misc::GetFileBaseNoExt(strPath);
-				pItem->strUrl	= MtlGetInternetShortcutUrl(strPath);
-				pItem->icon		= CreateIconFromIDList(CItemIDList(strPath));
-				DWORD dwExProp = 0;
-				DWORD dwExPropOpt = 0;
-				if (CExProperty::CheckExPropertyFlag(dwExProp, dwExPropOpt, strPath)) {
-					pItem->bExPropEnable = true;
-					pItem->dwExProp	= dwExProp;
-					pItem->dwExPropOpt	= dwExPropOpt;
-				}			
+		/* 設定やお気に入りフォルダから s_BookmarkList を構築する */
+		bool bUserFolder = false;
+		enum { EMS_USER_DEFINED_FOLDER		= 0x00000100L };
+		CIniFileIO	pr( g_szIniFileName, _T("FavoritesMenu") );
+		if (pr.GetValue(_T("Style")) & EMS_USER_DEFINED_FOLDER) {
+			CString userFolder = pr.GetStringUW(_T("UserFolder"));
+			if (userFolder.GetLength() > 0) {
+				CString strDir = Misc::GetFullPath_ForExe(userFolder);
+				LinkImportFromFolder(strDir);
+				pr.DeleteValue(_T("Style"));
+				pr.DeleteValue(_T("UserFolder"));
+				pr.DeleteValue(_T("Max_Text_Length"));
+				pr.DeleteValue(_T("Max_Break_Count"));
+				bUserFolder = true;
 			}
-			pFolder->push_back(std::move(pItem));
-		};
-		MtlForEachObject_OldShell(strFavoriteFolder, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, &s_BookmarkList));
-
-		// 名前順で並び替え
-		CLinkPopupMenu::SortByName(&s_BookmarkList);
-
-		//unique_ptr<LinkItem> pItem(new LinkItem);
-		//LinkFolderPtr	pFolder = new LinkFolder;
-		//pItem->pFolder	= pFolder;
-		//pItem->strName = _T("ChevronFolder");
-		//m_BookmarkList.push_back(std::move(pItem));
-
-		_SaveFavoriteBookmark();
-
-		//Refresh();
+		}
+		if (bUserFolder == false) {
+			CString favoritesFolder;
+			if (MtlGetFavoritesFolder(favoritesFolder))
+				LinkImportFromFolder(favoritesFolder);
+		}
 
 		return ;
 	}
+
+	/* FavoriteBookmark.xml から s_BookmarkList を構築する */
 	boost::thread td([]() {
 		s_bBookmarkLoading = true;
 		CString FavoriteBookmarkFilePath = Misc::GetExeDirectory() + _T("FavoriteBookmark.xml");
@@ -613,6 +575,88 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 		}
 		s_bBookmarkLoading = false;
 	});
+}
+
+void	CRootFavoritePopupMenu::LinkImportFromFolder(LPCTSTR folder)
+{
+	ATLASSERT( ::PathIsDirectory(folder) );
+
+	s_BookmarkList.clear();
+
+	std::function<void (LPCTSTR, bool, LinkFolderPtr)> funcAddLink;
+	funcAddLink = [&](LPCTSTR strPath, bool bDirectory, LinkFolderPtr pFolder) {
+		unique_ptr<LinkItem> pItem(new LinkItem);
+		if (bDirectory) {
+			CString strDirPath = strPath;
+			::PathRemoveBackslash(strDirPath.GetBuffer(MAX_PATH));
+			strDirPath.ReleaseBuffer();
+			pItem->strName = Misc::GetFileBaseName(strDirPath);
+			pItem->pFolder	= new LinkFolder;
+			MtlForEachObject_OldShell(strPath, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, pItem->pFolder));
+		} else {
+			if (Misc::GetFileExt(strPath).CompareNoCase(_T("url")) != 0)
+				return ;
+
+			pItem->strName	= Misc::GetFileBaseNoExt(strPath);
+			pItem->strUrl	= MtlGetInternetShortcutUrl(strPath);
+			pItem->icon		= CreateIconFromIDList(CItemIDList(strPath));
+			DWORD dwExProp = 0;
+			DWORD dwExPropOpt = 0;
+			if (CExProperty::CheckExPropertyFlag(dwExProp, dwExPropOpt, strPath)) {
+				pItem->bExPropEnable = true;
+				pItem->dwExProp	= dwExProp;
+				pItem->dwExPropOpt	= dwExPropOpt;
+			}			
+		}
+		pFolder->push_back(std::move(pItem));
+	};
+	MtlForEachObject_OldShell(folder, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, &s_BookmarkList));
+
+	// 名前順で並び替え
+	CLinkPopupMenu::SortByName(&s_BookmarkList);
+
+	_SaveFavoriteBookmark();
+}
+
+void	CRootFavoritePopupMenu::LinkExportToFolder(LPCTSTR folder, bool bOverWrite)
+{
+	CString strBaseFolder = folder;
+	MtlMakeSureTrailingBackSlash(strBaseFolder);
+
+	std::function<void (LPCTSTR, LinkFolderPtr)>	funcAddLinkFile;
+	funcAddLinkFile = [&](LPCTSTR folder, LinkFolderPtr pFolder) {
+		for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
+			LinkItem& item = *it->get();
+			if (item.pFolder) {
+				CString strNewFolder = folder;
+				strNewFolder += item.strName;
+				MtlMakeSureTrailingBackSlash(strNewFolder);
+				CreateDirectory(strNewFolder, NULL);
+				funcAddLinkFile(strNewFolder, item.pFolder);
+
+			} else {
+				CString LinkFilePath = folder;
+				LinkFilePath += item.strName + _T(".url");
+				if (bOverWrite == false) {
+					int i = 0;
+					while (::PathFileExists(LinkFilePath)) {
+						LinkFilePath.Format(_T("%s%s(%d).url"), folder, item.strName, i);
+						++i;
+					}
+				}
+				if (MtlCreateInternetShortcutFile(LinkFilePath, item.strUrl)) {
+					if (item.bExPropEnable) {
+						CIniFileO	pr(LinkFilePath, DONUT_SECTION);
+						pr.SetValue(true, EXPROP_KEY_ENABLED);
+						pr.SetValue(item.dwExProp.get(), EXPROP_KEY);
+						pr.SetValue(item.dwExPropOpt.get(), EXPROP_OPTION);
+					}
+				}
+
+			}
+		}
+	};
+	funcAddLinkFile(strBaseFolder, &s_BookmarkList);
 }
 
 void CRootFavoritePopupMenu::JoinSaveBookmarkThread()

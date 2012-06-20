@@ -10,7 +10,6 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_view(m_UIChange),
 	m_BingTranslatorMenu(pChild),
 	m_bNowActive(false),
-	m_bSaveSearchWordflg(false),
 	m_nPainBookmark(0),
 	m_bNowHilight(false),
 	m_bAutoHilight(false),
@@ -979,6 +978,10 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kSetSearchText:
+		m_strSearchWord = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+		break;
+
 	default:
 		SetMsgHandled(FALSE);
 	}
@@ -1016,10 +1019,19 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 		if (MtlIsApplicationActive(m_hWnd) && m_view.IsWindow())
 			m_view.SetFocus();
 
-		//if (CSearchBarOption::s_bSaveSearchWord) {
+		if (m_pGlobalConfig->bSaveSearchWord) {
+			CString str;
+			str.Format(_T("%d%s"), m_bNowHilight, m_strSearchWord);
+			COPYDATASTRUCT cds;
+			cds.dwData	= kSetSearchText;
+			cds.lpData	= static_cast<LPVOID>(str.GetBuffer(0));
+			cds.cbData	= (str.GetLength() + 1) * sizeof(WCHAR);
+			GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 		//	//CDonutSearchBar::GetInstance()->SetSearchStr(m_strSearchWord); //\\ 保存しておいた文字列を検索バーに戻す
 		//	//CDonutSearchBar::GetInstance()->ForceSetHilightBtnOn(m_bNowHilight);
-		//}
+		} else {
+			m_pGlobalConfig->bSaveSearchWord = m_pGlobalConfig->bSaveSearchWordOrg;
+		}
 
 	} else if (hWndDeact == m_hWnd) {
 		m_bNowActive = false;
@@ -1030,11 +1042,9 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			hr = spIOleInPlaceObject->UIDeactivate(); // IEのUIを無効化
 		}
 
-		if( m_bSaveSearchWordflg ){	//\\ 現在、検索バーにある文字列を取っておく
-			//CDonutSearchBar::GetInstance()->GetEditCtrl().GetWindowText(m_strSearchWord.GetBuffer(1024), 1024);
-			//m_strSearchWord.ReleaseBuffer();
-		} else {
-			m_bSaveSearchWordflg = true;
+		if(m_pGlobalConfig->bSaveSearchWord){	//\\ 現在、検索バーにある文字列を取っておく
+			::SendMessage(m_pGlobalConfig->SearchEditHWND, WM_GETTEXT, 1024, (LPARAM)m_strSearchWord.GetBuffer(1024));
+			m_strSearchWord.ReleaseBuffer();
 		}
 #if 0
 		{

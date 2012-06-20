@@ -37,7 +37,7 @@ private:
 	CSplitterWindow &	m_wndSplit;
 
 public:
-	CDonutFavoritesBar	m_FavBar;
+//	CDonutFavoritesBar	m_FavBar;
 	CDonutClipboardBar	m_ClipBar;
 	CDonutPanelBar		m_PanelBar;
 	CPluginBar			m_PluginBar;
@@ -94,7 +94,8 @@ public:
 		_GetProfile(hWndMDIClient);
 	}
 
-	void	RefreshFavBar() { if (m_FavBar.IsWindow()) m_FavBar.SendMessage(ID_VIEW_REFRESH_FAVBAR); }
+	void	RefreshFavBar() { //if (m_FavBar.IsWindow()) m_FavBar.SendMessage(ID_VIEW_REFRESH_FAVBAR); 
+	}
 
 	void UpdateLayout()
 	{
@@ -132,12 +133,12 @@ public:
 		}
 
 		//お気に入りツリーのサイズ変更
-		if (m_FavBar) {
-			CRect rect;
-			m_FavBar.m_wndReBar.GetRect(0, &rect);
-			//ボーダー分 + タブ分(-20)だけずらす
-			m_FavBar.m_view.MoveWindow(1, rect.bottom + 3, cxWidth - 3, cyHeight - rect.bottom - 5 - 20);
-		}
+		//if (m_FavBar) {
+		//	CRect rect;
+		//	m_FavBar.m_wndReBar.GetRect(0, &rect);
+		//	//ボーダー分 + タブ分(-20)だけずらす
+		//	m_FavBar.m_view.MoveWindow(1, rect.bottom + 3, cxWidth - 3, cyHeight - rect.bottom - 5 - 20);
+		//}
 
 		baseClass::UpdateLayout(cxWidth, cyHeight);
 	}
@@ -168,9 +169,9 @@ public:
 
 		USER_MSG_WM_OPEN_EXPFAVMENU( OnOpenFavExpMenu )
 
-		if ( m_FavBar.IsWindow() ) {
-			CHAIN_MSG_MAP_MEMBER(m_FavBar)
-		}
+//		if ( m_FavBar.IsWindow() ) {
+//			CHAIN_MSG_MAP_MEMBER(m_FavBar)
+//		}
 		//CDockingChildBase hasn't FORWARD_NOTIFICATIONS, then I removed ALT_MSG_MAP. (minit)
 		//ALT_MSG_MAP(1) // As CPaneContainer has FORWARD_NOTIFICATIONS, you have to separate a map.
 	END_MSG_MAP()
@@ -179,8 +180,8 @@ public:
 	void ReloadSkin()
 	{
 		_ReplaceImageList(GetSkinPath(), m_imgs);
-		m_FavBar.ReloadSkin();
-		m_FavBar.m_view.ReloadSkin();
+//		m_FavBar.ReloadSkin();
+//		m_FavBar.m_view.ReloadSkin();
 
 		InvalidateRect(NULL, TRUE);
 	}
@@ -314,20 +315,20 @@ private:
 
 	LRESULT OnViewFavExpBar(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 	{
-		if ( !IsWindowVisible() ) {
-			UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
-			ShowBar(DEB_EX_FAVBAR);
-		} else if ( !IsFavBarVisible() ) {
-			if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES) != ETV_EX_FAVORITES )
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
+		//if ( !IsWindowVisible() ) {
+		//	UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else if ( !IsFavBarVisible() ) {
+		//	if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES) != ETV_EX_FAVORITES )
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
 
-			ShowBar(DEB_EX_FAVBAR);
-		} else {
-			if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES)
-				HideBar();
-			else
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
-		}
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else {
+		//	if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES)
+		//		HideBar();
+		//	else
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
+		//}
 
 		return 0;
 	}
@@ -335,20 +336,20 @@ private:
 
 	LRESULT OnViewFavExpBarHist(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 	{
-		if ( !IsWindowVisible() ) {
-			UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
-			ShowBar(DEB_EX_FAVBAR);
-		} else if ( !IsFavBarVisible() ) {
-			if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != ETV_EX_HISTORY )
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
+		//if ( !IsWindowVisible() ) {
+		//	UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else if ( !IsFavBarVisible() ) {
+		//	if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != ETV_EX_HISTORY )
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
 
-			ShowBar(DEB_EX_FAVBAR);
-		} else {
-			if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY)
-				HideBar();
-			else
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
-		}
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else {
+		//	if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY)
+		//		HideBar();
+		//	else
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
+		//}
 
 		return 0;
 	}
@@ -356,20 +357,20 @@ private:
 
 	LRESULT OnViewFavExpBarGroup(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 	{
-		if ( !IsWindowVisible() ) {
-			UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
-			ShowBar(DEB_EX_FAVBAR);
-		} else if ( !IsFavBarVisible() ) {
-			if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP) != ETV_EX_FAVORITEGROUP )
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
+		//if ( !IsWindowVisible() ) {
+		//	UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else if ( !IsFavBarVisible() ) {
+		//	if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP) != ETV_EX_FAVORITEGROUP )
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
 
-			ShowBar(DEB_EX_FAVBAR);
-		} else {
-			if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP)
-				HideBar();
-			else
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
-		}
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else {
+		//	if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP)
+		//		HideBar();
+		//	else
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
+		//}
 
 		return 0;
 	}
@@ -377,20 +378,20 @@ private:
 
 	LRESULT OnViewFavExpBarUser(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 	{
-		if ( !IsWindowVisible() ) {
-			UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
-			ShowBar(DEB_EX_FAVBAR);
-		} else if ( !IsFavBarVisible() ) {
-			if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED) != ETV_EX_USERDEFINED )
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
+		//if ( !IsWindowVisible() ) {
+		//	UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else if ( !IsFavBarVisible() ) {
+		//	if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED) != ETV_EX_USERDEFINED )
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
 
-			ShowBar(DEB_EX_FAVBAR);
-		} else {
-			if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED)
-				HideBar();
-			else
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
-		}
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else {
+		//	if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED)
+		//		HideBar();
+		//	else
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_USER);
+		//}
 
 		return 0;
 	}
@@ -398,20 +399,20 @@ private:
 
 	LRESULT OnViewFavExpBarScript(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
 	{
-		if ( !IsWindowVisible() ) {
-			UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
-			ShowBar(DEB_EX_FAVBAR);
-		} else if ( !IsFavBarVisible() ) {
-			if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT) != ETV_EX_SCRIPT )
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
+		//if ( !IsWindowVisible() ) {
+		//	UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else if ( !IsFavBarVisible() ) {
+		//	if ( (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT) != ETV_EX_SCRIPT )
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
 
-			ShowBar(DEB_EX_FAVBAR);
-		} else {
-			if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT)
-				HideBar();
-			else
-				UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
-		}
+		//	ShowBar(DEB_EX_FAVBAR);
+		//} else {
+		//	if (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT)
+		//		HideBar();
+		//	else
+		//		UpSendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
+		//}
 
 		return 0;
 	}
@@ -506,11 +507,11 @@ private:
 public:
 	BYTE PreTranslateMessage(MSG *pMsg)
 	{
-		if		( IsFavBarVisible() 	  ) return m_FavBar.PreTranslateMessage(pMsg);
+/*		if		( IsFavBarVisible() 	  ) return m_FavBar.PreTranslateMessage(pMsg);
 		else if ( IsClipboardBarVisible() ) return m_ClipBar.PreTranslateMessage(pMsg);
 		else if ( IsPanelBarVisible()	  ) return m_PanelBar.PreTranslateMessage(pMsg);
 		else if ( IsPluginBarVisible()	  ) return m_PluginBar.PreTranslateMessage(pMsg);
-		else								return _MTL_TRANSLATE_PASS;
+		else*/								return _MTL_TRANSLATE_PASS;
 	}
 
 
@@ -551,15 +552,15 @@ public:
 		_SwitchClient(dwExStyle);
 		m_dwExStyle = dwExStyle;
 
-		if (dwExStyle & DEB_EX_FAVBAR) {						// && !bNotSetTitle)
-			DWORD dwViewExStyle = m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle;
-			if		(dwViewExStyle & ETV_EX_FAVORITES	 )	SetTitle( _T("お気に入り") );
-			else if (dwViewExStyle & ETV_EX_HISTORY 	 )	SetTitle( _T("履歴") );
-			else if (dwViewExStyle & ETV_EX_FAVORITEGROUP)	SetTitle( _T("お気に入りグループ") );
-			else if (dwViewExStyle & ETV_EX_USERDEFINED  )	SetTitle( _T("ユーザー定義") );
-			else if (dwViewExStyle & ETV_EX_MYCOMPUTER	 )	SetTitle( _T("デスクトップ") );
-			else if (dwViewExStyle & ETV_EX_SCRIPT		 )	SetTitle( _T("スクリプト") );
-		}
+		//if (dwExStyle & DEB_EX_FAVBAR) {						// && !bNotSetTitle)
+		//	DWORD dwViewExStyle = m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle;
+		//	if		(dwViewExStyle & ETV_EX_FAVORITES	 )	SetTitle( _T("お気に入り") );
+		//	else if (dwViewExStyle & ETV_EX_HISTORY 	 )	SetTitle( _T("履歴") );
+		//	else if (dwViewExStyle & ETV_EX_FAVORITEGROUP)	SetTitle( _T("お気に入りグループ") );
+		//	else if (dwViewExStyle & ETV_EX_USERDEFINED  )	SetTitle( _T("ユーザー定義") );
+		//	else if (dwViewExStyle & ETV_EX_MYCOMPUTER	 )	SetTitle( _T("デスクトップ") );
+		//	else if (dwViewExStyle & ETV_EX_SCRIPT		 )	SetTitle( _T("スクリプト") );
+		//}
 
 		//if(!IsWindowVisible())
 		//	baseClass::Show();
@@ -587,59 +588,59 @@ public:
   #if 1 //+++ mainfrm.hより移動& 隠れている場合に、次回表示時にRefreshされるようにフラグon
 	void RefreshExpBar(int nType)
 	{
-		if ( ::IsWindow(m_FavBar.m_hWnd) ) {
-			if ( nType == 0) {
-				if ( IsFavBarVisibleNormal() )
-					m_FavBar.m_view.RefreshRootTree();
-				else
-					m_bRemakeFavBarList = true; 	//+++ 隠れている場合なら、次回表示時にRefresh
-			} else if ( nType == 1 ) {
-				if ( IsFavBarVisibleGroup() )
-					m_FavBar.m_view.RefreshRootTree();
-				//else
-				//	m_bRemakeFavBarList = true;
-			}
-		}
+		//if ( ::IsWindow(m_FavBar.m_hWnd) ) {
+		//	if ( nType == 0) {
+		//		if ( IsFavBarVisibleNormal() )
+		//			m_FavBar.m_view.RefreshRootTree();
+		//		else
+		//			m_bRemakeFavBarList = true; 	//+++ 隠れている場合なら、次回表示時にRefresh
+		//	} else if ( nType == 1 ) {
+		//		if ( IsFavBarVisibleGroup() )
+		//			m_FavBar.m_view.RefreshRootTree();
+		//		//else
+		//		//	m_bRemakeFavBarList = true;
+		//	}
+		//}
 	}
   #endif
 
 private:
 	void _SwitchClient(DWORD dwStyle)
 	{
-		_HideOtherBars();
-		if		  ( _check_flag(DEB_EX_FAVBAR  , dwStyle) ) {	// お気に入りバー
-			if (m_bRemakeFavBarList) {							//+++ リクエストがあったら再生成する.
-				m_FavBar.m_view.RefreshRootTree();
-				m_bRemakeFavBarList = false;
-			}
-			m_FavBar.ShowWindow(SW_SHOW);
-			SetClient(m_FavBar.m_hWnd);
-			SetTitle( MtlGetWindowText(m_FavBar.m_hWnd) );
+		//_HideOtherBars();
+		//if		  ( _check_flag(DEB_EX_FAVBAR  , dwStyle) ) {	// お気に入りバー
+		//	if (m_bRemakeFavBarList) {							//+++ リクエストがあったら再生成する.
+		//		m_FavBar.m_view.RefreshRootTree();
+		//		m_bRemakeFavBarList = false;
+		//	}
+		//	m_FavBar.ShowWindow(SW_SHOW);
+		//	SetClient(m_FavBar.m_hWnd);
+		//	SetTitle( MtlGetWindowText(m_FavBar.m_hWnd) );
 
-		} else if ( _check_flag(DEB_EX_CLPBAR  , dwStyle) ) {	// クリップバー
-			m_ClipBar.ShowWindow(SW_SHOW);
-			SetClient(m_ClipBar.m_hWnd);
-			SetTitle( MtlGetWindowText(m_ClipBar.m_hWnd) );
+		//} else if ( _check_flag(DEB_EX_CLPBAR  , dwStyle) ) {	// クリップバー
+		//	m_ClipBar.ShowWindow(SW_SHOW);
+		//	SetClient(m_ClipBar.m_hWnd);
+		//	SetTitle( MtlGetWindowText(m_ClipBar.m_hWnd) );
 
-		} else if ( _check_flag(DEB_EX_PANELBAR, dwStyle) ) {	// パネルバー
-			m_PanelBar.ShowWindow(SW_SHOW);
-			SetClient(m_PanelBar.m_hWnd);
-			SetTitle( MtlGetWindowText(m_PanelBar.m_hWnd) );
+		//} else if ( _check_flag(DEB_EX_PANELBAR, dwStyle) ) {	// パネルバー
+		//	m_PanelBar.ShowWindow(SW_SHOW);
+		//	SetClient(m_PanelBar.m_hWnd);
+		//	SetTitle( MtlGetWindowText(m_PanelBar.m_hWnd) );
 
-		} else if ( _check_flag(DEB_EX_PLUGINBAR, dwStyle) ) {	// プラグインバー
-			m_PluginBar.ShowWindow(SW_SHOW);
-			SetClient(m_PluginBar.m_hWnd);
-			SetTitle( MtlGetWindowText(m_PluginBar.m_hWnd) );
-		}
+		//} else if ( _check_flag(DEB_EX_PLUGINBAR, dwStyle) ) {	// プラグインバー
+		//	m_PluginBar.ShowWindow(SW_SHOW);
+		//	SetClient(m_PluginBar.m_hWnd);
+		//	SetTitle( MtlGetWindowText(m_PluginBar.m_hWnd) );
+		//}
 	}
 
 
 	void _HideOtherBars()
 	{
-		if (m_FavBar.m_hWnd    != NULL) 	m_FavBar.ShowWindow(SW_HIDE);
-		if (m_ClipBar.m_hWnd   != NULL) 	m_ClipBar.ShowWindow(SW_HIDE);
-		if (m_PanelBar.m_hWnd  != NULL) 	m_PanelBar.ShowWindow(SW_HIDE);
-		if (m_PluginBar.m_hWnd != NULL) 	m_PluginBar.ShowWindow(SW_HIDE);
+		//if (m_FavBar.m_hWnd    != NULL) 	m_FavBar.ShowWindow(SW_HIDE);
+		//if (m_ClipBar.m_hWnd   != NULL) 	m_ClipBar.ShowWindow(SW_HIDE);
+		//if (m_PanelBar.m_hWnd  != NULL) 	m_PanelBar.ShowWindow(SW_HIDE);
+		//if (m_PluginBar.m_hWnd != NULL) 	m_PluginBar.ShowWindow(SW_HIDE);
 	}
 
 
@@ -647,12 +648,12 @@ private:
 	{
 		// お気に入りツリー, (履歴の場合もあり)
 		if ( _check_flag(DEB_EX_FAVBAR, dwExStyle) ) {			// on demand
-			if (!m_FavBar.m_hWnd) {
-				m_FavBar.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0);
-				m_FavBar.SetWindowText( _T("お気に入り") );
-				m_FavBar.InitToolBar( ID_FAVORITE_ADD, ID_FAVORITE_ORGANIZE, ID_FAVORITE_PLACEMENT, IDB_FAVBAR, IDB_FAVBAR_HOT,
-									 16, 16, RGB(255, 0, 255) );
-			}
+			//if (!m_FavBar.m_hWnd) {
+			//	m_FavBar.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, 0);
+			//	m_FavBar.SetWindowText( _T("お気に入り") );
+			//	m_FavBar.InitToolBar( ID_FAVORITE_ADD, ID_FAVORITE_ORGANIZE, ID_FAVORITE_PLACEMENT, IDB_FAVBAR, IDB_FAVBAR_HOT,
+			//						 16, 16, RGB(255, 0, 255) );
+			//}
 		}
 
 		// クリップボード
@@ -717,7 +718,7 @@ public:
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_PLUGINBAR		, IsPluginBarVisible()		)
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_EXPLORERBAR			, IsWindowVisible() 		)	// IsFavBarVisible())
 		UPDATE_COMMAND_UI_SETCHECK_IF_PASS( ID_VIEW_EXPLORERBAR_TAB, !m_bHideTab )
-		CHAIN_UPDATE_COMMAND_UI_MEMBER(m_FavBar)
+//		CHAIN_UPDATE_COMMAND_UI_MEMBER(m_FavBar)
 	END_UPDATE_COMMAND_UI_MAP()
 
 
@@ -779,7 +780,8 @@ public:
 		if (!IsWindowVisible() || IsFavBarVisible() == false)
 			return false;
 		_CreateOnDemandBar(m_dwExStyle);
-		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES) != 0;
+//		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES) != 0;
+		return true;
 	}
 
 
@@ -789,7 +791,8 @@ private:
 		if (!IsWindowVisible() || IsFavBarVisible() == false)
 			return false;
 		_CreateOnDemandBar(m_dwExStyle);
-		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT) != 0;
+//		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_SCRIPT) != 0;
+		return true;
 	}
 
 
@@ -798,7 +801,8 @@ private:
 		if (!IsWindowVisible() || IsFavBarVisible() == false)
 			return false;
 		_CreateOnDemandBar(m_dwExStyle);
-		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != 0;
+//		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != 0;
+		return true;
 	}
 
 
@@ -808,7 +812,8 @@ public:
 		if (!IsWindowVisible() || IsFavBarVisible() == false)
 			return false;
 		_CreateOnDemandBar(m_dwExStyle);
-		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP) != 0;
+//		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP) != 0;
+		return true;
 	}
 
 
@@ -818,7 +823,8 @@ private:
 		if (!IsWindowVisible() || IsFavBarVisible() == false)
 			return false;
 		_CreateOnDemandBar(m_dwExStyle);
-		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED) != 0;
+//		return (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_USERDEFINED) != 0;
+		return true;
 	}
 
 

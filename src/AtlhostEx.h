@@ -1829,8 +1829,8 @@ GetClientRect(&rect);
 			wndParent.Detach ();
 		}
 		// Do the actual move.
-		MoveWindow( &rect);
-
+		//MoveWindow( &rect);	//\\+ window.resizeTo ‚È‚Ç‚Ì‚Æ‚«‚ÉŒÄ‚Î‚ê‚éH@–³‹‚·‚éˆ—
+		
 		return S_OK;
 	}
 

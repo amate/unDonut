@@ -147,7 +147,8 @@ void CDonutCommandBar::Impl::OnTrackMouseLeave()
 	if (CLinkPopupMenu::s_bNowShowRClickMenu)
 		return ;
 
-	_HotItem(-1);
+	if (s_pSubMenu == nullptr)
+		_HotItem(-1);
 
 	if (m_ChevronState != ChvPressed)
 		_ChevronStateChange(ChvNormal);
