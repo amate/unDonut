@@ -561,7 +561,7 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 	} else if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
 
 		CSharedMemoryHandle sharedMem;
-		sharedMem.Serialize(data, nullptr, false);
+		sharedMem.Serialize(data, nullptr, true);
 		CString commandline;
 		commandline.Format(_T("-NewProcessSharedMemoryData=%d"), sharedMem.Handle());
 
