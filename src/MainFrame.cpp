@@ -10,11 +10,10 @@
 #include <deque>
 #include <sstream>
 #include <boost\range\algorithm.hpp>
-#include <boost\archive\text_wiarchive.hpp>
-#include <boost\archive\text_woarchive.hpp>
 #include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include "SharedMemoryUtil.h"
 //--------- MainFrame.h‚©‚ç ------------
 
 #include "MtlProfile.h"		// MTL::CLogFont

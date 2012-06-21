@@ -1528,6 +1528,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
     <ClInclude Include="SearchHistoryDialog.h" />
+    <ClInclude Include="SharedMemoryUtil.h" />
     <ClInclude Include="ShellFileDialog.h" />
     <ClInclude Include="SimpleTree.h" />
     <ClInclude Include="stdafx.h" />

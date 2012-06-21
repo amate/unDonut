@@ -12,6 +12,7 @@
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/list.hpp>
+#include "../SharedMemoryUtil.h"
 
 struct UrlSecurityData
 {
@@ -52,6 +53,7 @@ public:
 	static void Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL);
 
 private:
+	static CSharedMemory	s_sharedMem;
 	static std::list<UrlSecurityData>	s_UrlSecurityList;
 };
 

@@ -822,6 +822,18 @@ enum TabCreateOption {
 	}
 
 
+//	void OnAccelTableChange()
+#define WM_ACCELTABLECHANGE	(WM_USER + 138)
+#define USER_MSG_WM_ACCELTABLECHANGE(func)	\
+	if (uMsg == WM_ACCELTABLECHANGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)

@@ -6,9 +6,7 @@
 #include "stdafx.h"
 #include "ChildFrame.h"
 #include <regex>
-#include <sstream>
-#include <boost\archive\text_woarchive.hpp>
-#include <boost\archive\text_wiarchive.hpp>
+#include "SharedMemoryUtil.h"
 #include "MtlBrowser.h"
 #include "MtlWin.h"
 #include "ExStyle.h"
@@ -18,6 +16,7 @@
 #include "GlobalConfig.h"
 #include "option\RightClickMenuDialog.h"
 #include "option\UrlSecurityOption.h"
+#include "option\KeyBoardDialog.h"
 //#include "option\MainOption.h"
 //#include "option\DLControlOption.h"
 //#include "option\MouseDialog.h"
@@ -356,6 +355,7 @@ public:
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
 		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
+		USER_MSG_WM_ACCELTABLECHANGE	( OnAccelTableChange	)
 		MESSAGE_HANDLER_EX( WM_SETPROXYTOCHLDFRAME, OnSetProxyToChildFrame	)
 		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
 
@@ -433,6 +433,7 @@ public:
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
 	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
+	void	OnAccelTableChange() { m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow()); }
 	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// ファイル
@@ -497,6 +498,7 @@ private:
 	GlobalConfigManageData		m_GlobalConfigManageData;
 	GlobalConfig*				m_pGlobalConfig;
 	CUrlSecurityForChildFrame	m_UrlSecurity;
+	CAcceleratorOption			m_AcceleratorOption;
 	CBingTranslatorMenu			m_BingTranslatorMenu;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
@@ -558,21 +560,12 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 
 	} else if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
 
-		std::wstringstream ss;
-		boost::archive::text_woarchive ar(ss);
-		ar << data;
-		std::wstring serializedData = ss.str();
-
-		SECURITY_ATTRIBUTES	security_attributes = { sizeof(SECURITY_ATTRIBUTES) };
-		security_attributes.bInheritHandle = TRUE;
-		HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), NULL);
-		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-		::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-		::UnmapViewOfFile((LPVOID)sharedMemData);
-
+		CSharedMemoryHandle sharedMem;
+		sharedMem.Serialize(data, nullptr, false);
 		CString commandline;
-		commandline.Format(_T("-NewProcessSharedMemoryData=%d"), hMap);
+		commandline.Format(_T("-NewProcessSharedMemoryData=%d"), sharedMem.Handle());
 
+		/* 子プロセス作成 */
 		STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
 		PROCESS_INFORMATION	processInfo = { 0 };
 		ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));

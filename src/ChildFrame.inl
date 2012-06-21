@@ -351,6 +351,7 @@ void	CChildFrame::Impl::OnCommandStateChange(long Command, bool bEnable)
 		m_UIChange.SetNavigateForward(bEnable);
 }
 
+
 void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 {
 #if 1
@@ -387,7 +388,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	data.strURL	= bstrUrl;
 	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
 	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
-	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
+	if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
 		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
 		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
 	}
@@ -396,9 +397,9 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	data.bLink	= true;
 	CString strSearchWord = m_strSearchWord;
 	bool	bNowHilight	= m_bNowHilight;
-	data.funcCallAfterCreated	= [strSearchWord, bNowHilight](CChildFrame* pChild) {
-		pChild->SetSearchWordAutoHilight(strSearchWord, bNowHilight);
-	};
+	//data.funcCallAfterCreated	= [strSearchWord, bNowHilight](CChildFrame* pChild) {
+	//	pChild->SetSearchWordAutoHilight(strSearchWord, bNowHilight);
+	//};
 	CChildFrame::AsyncCreate(data);
 #endif
 }
@@ -454,19 +455,14 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 	data.lParam	= pMsg->lParam;
 	data.bCursorOnSelectedText	= m_pGlobalConfig->bUseRightDragSearch && _CursorOnSelectedText();
 	data.strSelectedTextLine	= GetSelectedTextLine();
-	std::wstringstream ss;
-	boost::archive::text_woarchive	ar(ss);
-	ar << data;
-	std::wstring serializedData = ss.str();
 
 	CString strSharedMemName;
 	strSharedMemName.Format(_T("%s0x%x"), MOUSEGESTUREDATASHAREDMEMNAME, m_hWnd);
-	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), strSharedMemName);
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-	::UnmapViewOfFile((LPVOID)sharedMemData);
+	CSharedMemoryHandle	sharedMem;
+	sharedMem.Serialize(data, strSharedMemName);
 
-	GetTopLevelWindow().PostMessage(WM_MOUSEGESTURE, (WPARAM)m_hWnd, (LPARAM)hMap);
+	GetTopLevelWindow().SetCapture();
+	GetTopLevelWindow().PostMessage(WM_MOUSEGESTURE, (WPARAM)m_hWnd, (LPARAM)sharedMem.Handle());
 	return TRUE;
 #if 0
 	SetCapture();
@@ -745,10 +741,41 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		if (GetCapture() == wndMainFrame) {
 			wndMainFrame.PostMessage(pMsg->message, pMsg->wParam, pMsg->lParam);
 			return TRUE;
+		} else {
+			UINT nFlags = (UINT)LOWORD(pMsg->wParam);
+			int	 zDelta = (short)HIWORD(pMsg->wParam);
+			if (nFlags == MK_CONTROL) {		// 文字サイズ変更
+				CComVariant	vEmpty;
+				CComVariant vZoomSize;
+				m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vEmpty, &vZoomSize); 
+				if ( zDelta > 0 ){	
+					vZoomSize.lVal += 1;
+				} else {
+					vZoomSize.lVal -= 1;
+				}
+				m_spBrowser->ExecWB(OLECMDID_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoomSize, &vEmpty);
+			} else if (::GetKeyState(VK_MENU) < 0) {	// 拡大/縮小
+				if ( zDelta > 0 ){	
+					OnHtmlZoom(0, ID_HTMLZOOM_ADD, NULL);
+				} else {
+					OnHtmlZoom(0, ID_HTMLZOOM_SUB, NULL);
+				}
+			} else {
+				HWND hWndChild = NULL;
+				HWND hWndTemp = m_view;
+				do {
+					hWndChild = hWndTemp;
+					hWndTemp = ::GetWindow(hWndChild, GW_CHILD);
+				} while (hWndTemp);
+				::SendMessage(hWndChild, pMsg->message, pMsg->wParam, pMsg->lParam);
+			}
+			return TRUE;
 		}
 	}
 
 	// アクセラレータキー
+	if (m_AcceleratorOption.TranslateAccelerator(m_hWnd, pMsg))
+		return TRUE;
 	//if (g_pMainWnd->m_hAccel != NULL && ::TranslateAccelerator(m_hWnd, g_pMainWnd->m_hAccel, pMsg))
 	//		return TRUE;
 	return m_view.PreTranslateMessage(pMsg);
@@ -860,6 +887,8 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_UrlSecurity.SetMainFrameHWND(GetTopLevelWindow());
 	m_UrlSecurity.ReloadList();
 
+	m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow());
+
 	if (CCustomContextMenuOption::s_menuDefault.IsNull())
 		CCustomContextMenuOption::GetProfile();
 
@@ -917,19 +946,12 @@ void	CChildFrame::Impl::OnClose()
 	ChildFrameDataOnClose	ClosedTabData;
 	_CollectDataOnClose(ClosedTabData);
 
-	std::wstringstream ss;
-	boost::archive::text_woarchive ar(ss);
-	ar << ClosedTabData;
-
-	std::wstring serializedData = ss.str();
 	CString strSharedMemName;
-	strSharedMemName.Format(_T("%s0x%x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, m_hWnd);
-	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)), strSharedMemName);
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-	::UnmapViewOfFile((LPVOID)sharedMemData);
+	strSharedMemName.Format(_T("%s%#x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, m_hWnd);
+	CSharedMemory sharedMem;
+	sharedMem.Serialize(ClosedTabData, strSharedMemName);
+
 	wndMain.SendMessage(WM_ADDRECENTCLOSEDTAB, (WPARAM)m_hWnd);
-	::CloseHandle(hMap);
 
 	wndMain.SendMessage(WM_TABDESTROY, (WPARAM)m_hWnd);
 }
@@ -1081,17 +1103,12 @@ void	CChildFrame::Impl::OnGetChildFrameData(bool bCreateData)
 		ChildFrameDataOnClose	ClosedTabData;
 		_CollectDataOnClose(ClosedTabData);
 
-		std::wstringstream ss;
-		boost::archive::text_woarchive ar(ss);
-		ar << ClosedTabData;
-
-		std::wstring serializedData = ss.str();
 		CString strSharedMemName;
 		strSharedMemName.Format(_T("%s%#x"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, m_hWnd);
-		m_hMapChildFrameData = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)), strSharedMemName);
-		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(m_hMapChildFrameData, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-		::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-		::UnmapViewOfFile((LPVOID)sharedMemData);
+		CSharedMemoryHandle sharedMem;
+		sharedMem.Serialize(ClosedTabData, strSharedMemName);
+
+		m_hMapChildFrameData = sharedMem.Handle();
 	}
 }
 
@@ -1188,18 +1205,12 @@ int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
 	if (!m_spBrowser)
 		return 0;
 
+	FindKeywordData	findKeywordData;
+
 	CString strSharedMemName;
 	strSharedMemName.Format(_T("%s%#x"), FINDKEYWORDATASHAREDMEMNAME, handle);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, strSharedMemName);
-	ATLASSERT( hMap );
-	LPTSTR strSharedData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	std::wstringstream	ss;
-	ss << strSharedData;
-	::UnmapViewOfFile(static_cast<LPVOID>(strSharedData));
-	::CloseHandle(hMap);
-	boost::archive::text_wiarchive	ar(ss);
-	FindKeywordData	findKeywordData;
-	ar >> findKeywordData;
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(findKeywordData, strSharedMemName);
 
 	CComPtr<IDispatch>	spDisp;
 	HRESULT hr = m_spBrowser->get_Document(&spDisp);

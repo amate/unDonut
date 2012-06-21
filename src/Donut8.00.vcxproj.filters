@@ -982,6 +982,9 @@
     <ClInclude Include="PopupMenu.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
+    <ClInclude Include="SharedMemoryUtil.h">
+      <Filter>Source Files\Base</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

@@ -58,7 +58,6 @@ public:
 };
 
 
-
 /*
 	CAccelerManager
 	アクセラレータテーブルと個別のアクセラレータに関するメソッドを有する
@@ -72,6 +71,7 @@ public:
 	あとは各種関数を呼び出します。
  */
 class CAccelerManager {
+	friend class CAcceleratorOption;
 private:
 	//メンバ変数
 	HACCEL		m_hAccel;									//アクセラレータテーブルのハンドル

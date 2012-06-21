@@ -135,23 +135,14 @@ void	CMainFrame::Impl::SaveAllTab()
 	auto CollectChildFrameData = [&](HWND hWnd) {
 		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, true, 0);
 
+		auto pChildFrameData = new ChildFrameDataOnClose;
 		CString strSharedMemName;
 		strSharedMemName.Format(_T("%s%#x"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWnd);
-		HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, strSharedMemName);
-		ATLVERIFY( hMap );
-		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-		std::wstring serializedData = sharedMemData;
-		::UnmapViewOfFile((LPVOID)sharedMemData);
-		::CloseHandle(hMap);
+		CSharedMemory sharedMem;
+		sharedMem.Deserialize(*pChildFrameData, strSharedMemName);
 
 		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, false, 0);
 
-		auto pChildFrameData = new ChildFrameDataOnClose;
-		std::wstringstream ss;
-		ss << serializedData;
-		boost::archive::text_wiarchive ar(ss);
-		ar >> *pChildFrameData;
-		
 		vecpSaveData.push_back(unique_ptr<ChildFrameDataOnClose>(std::move(pChildFrameData)));
 		if (hWnd == hWndActive)
 			nActiveIndex = nCount;
@@ -400,7 +391,7 @@ void CMainFrame::Impl::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 
 BOOL CMainFrame::Impl::PreTranslateMessage(MSG* pMsg)
 {
-	return FALSE;
+	return CFrameWindowImpl<CMainFrame::Impl>::PreTranslateMessage(pMsg);
 }
 
 BOOL CMainFrame::Impl::OnIdle()
@@ -447,11 +438,13 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	pLoop->AddMessageFilter(this);
 	pLoop->AddIdleHandler(this);
 
+	/* GlobalConfig作成 */
 	CreateGlobalConfig(&m_GlobalConfigManageData);
 	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 	OnSetDLConfigToGlobalConfig();
 	m_StatusBar.GetProxyComboBox().SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 
+	/* 各種バンドウィンドウ作成 */
 	_initRebar();
 	HWND hWndCmdBar		= _initCommandBar();
 	HWND hWndToolBar	= _initToolBar();
@@ -475,6 +468,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	_initSysMenu();
 
+	/* UI 更新を設定 */
 	m_ChildFrameUIState.SetMainFrameHWND(m_hWnd);
 	CmdUIAddToolBar(hWndToolBar);					// set up UI
 	CmdUIAddToolBar(m_SearchBar.GetHWndToolBar());	// set up UI
@@ -491,6 +485,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_RecentClosedTabList.UpdateMenu();
 
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
+	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
 
 	RegisterDragDrop();
 
@@ -561,6 +556,7 @@ void	CMainFrame::Impl::OnDestroy()
 	}
 
 	CUrlSecurityOption::CloseOriginalUrlSecurityList(m_hWnd);
+	CAcceleratorOption::DestroyOriginAccelerator(m_hWnd, m_hAccel);
 
 	DestroyGlobalConfig(&m_GlobalConfigManageData);
 
@@ -1431,22 +1427,13 @@ LRESULT CMainFrame::Impl::OnFindKeyWord(LPCTSTR lpszKeyWord, BOOL bBack, long Fl
 		return 0;
 
 	FindKeywordData	findKeywordData = { lpszKeyWord, bBack != 0, Flags };
-	std::wstringstream	ss;
-	boost::archive::text_woarchive	ar(ss);
-	ar << findKeywordData;
-	std::wstring strSerializedData = ss.str();
 
 	CString strSharedMemName;
 	strSharedMemName.Format(_T("%s%#x"), FINDKEYWORDATASHAREDMEMNAME, lpszKeyWord);
-	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, NULL, PAGE_READWRITE, 0, (static_cast<int>(strSerializedData.size()) + 1) * sizeof(WCHAR), strSharedMemName);
-	ATLASSERT( hMap );
-	LPTSTR strSharedData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	::wcscpy_s(strSharedData, strSerializedData.size() + 1, strSerializedData.c_str());
-	::UnmapViewOfFile(static_cast<LPVOID>(strSharedData));
+	CSharedMemory sharedMem;
+	sharedMem.Serialize(findKeywordData, strSharedMemName);
 
 	LRESULT lRet = ::SendMessage(hWndActive, WM_CHILDFRAMEFINDKEYWORD, (WPARAM)lpszKeyWord, 0);
-
-	::CloseHandle(hMap);
 	return lRet;
 }
 
@@ -1670,10 +1657,13 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	//m_cmbBox.ResetProxyList();
 
 	// キーの呼出
-	CAccelerManager accelManager(m_hAccel);
-	m_hAccel = accelManager.LoadAccelaratorState(m_hAccel);
+	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
+	m_TabBar.ForEachWindow([](HWND hWnd) {
+		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
+	});
 
 	//RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
+	SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
 }
 
 
@@ -1866,19 +1856,11 @@ void	CMainFrame::Impl::OnTabDestory(HWND hWndChildFrame)
 
 void	CMainFrame::Impl::OnAddRecentClosedTab(HWND hWndChildFrame)
 {
-	CString strSharedMemName;
-	strSharedMemName.Format(_T("%s0x%x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWndChildFrame);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, strSharedMemName);
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	std::wstring serializedData = sharedMemData;
-	::UnmapViewOfFile((LPVOID)sharedMemData);
-	::CloseHandle(hMap);
-
 	ChildFrameDataOnClose*	pClosedTabData = new ChildFrameDataOnClose;
-	std::wstringstream ss;
-	ss << serializedData;
-	boost::archive::text_wiarchive ar(ss);
-	ar >> *pClosedTabData;
+	CString strSharedMemName;
+	strSharedMemName.Format(_T("%s%#x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWndChildFrame);
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(*pClosedTabData, strSharedMemName);
 
 	m_RecentClosedTabList.AddToList(pClosedTabData);
 }
@@ -1911,23 +1893,13 @@ static int PointDistance(const CPoint& pt1, const CPoint& pt2)
 
 void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 {
+	MouseGestureData	data;
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s0x%x"), MOUSEGESTUREDATASHAREDMEMNAME, hWndChildFrame);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
-	if (hMap == NULL)
-		return ;
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(data, sharedMemName);
 
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	std::wstring serializedData = sharedMemData;
-	::UnmapViewOfFile((LPVOID)sharedMemData);
-	::CloseHandle(hMap);
 	::PostMessage(hWndChildFrame, WM_CLOSEHANDLEFORSHAREDMEM, (WPARAM)hMapForClose, 0);
-
-	MouseGestureData	data;
-	std::wstringstream ss;
-	ss << serializedData;
-	boost::archive::text_wiarchive ar(ss);
-	ar >> data;
 
 	CString StatusText;
 	auto funcSetStatusText = [&StatusText, this](LPCTSTR text) {

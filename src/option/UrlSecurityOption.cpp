@@ -49,6 +49,7 @@ using boost::regex_match;
 #endif
 
 
+CSharedMemory				CUrlSecurityOption::s_sharedMem;
 std::list<UrlSecurityData>	CUrlSecurityOption::s_UrlSecurityList;
 bool 						CUrlSecurityOption::s_bValid			= true;
 
@@ -128,35 +129,18 @@ void CUrlSecurityOption::WriteProfile()
 
 void CUrlSecurityOption::UpdateOriginalUrlSecurityList(HWND hWndMainFrame)
 {
+	s_sharedMem.CloseHandle();
+
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
-	if (hMap) {
-		::CloseHandle(hMap);
-	}
-
-	std::wstringstream ss;
-	boost::archive::text_woarchive ar(ss);
-	ar << s_UrlSecurityList;
-	std::wstring serializedData = ss.str();
-
-	hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, static_cast<DWORD>(serializedData.size() + sizeof(WCHAR)) * sizeof(WCHAR), sharedMemName);
-	ATLASSERT( hMap );
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-	::wcscpy_s(sharedMemData, serializedData.size() + sizeof(WCHAR), serializedData.c_str());
-	::UnmapViewOfFile((LPVOID)sharedMemData);
+	s_sharedMem.Serialize(s_UrlSecurityList, sharedMemName);
 
 	::SendMessage(hWndMainFrame, WM_UPDATEURLSECURITYLIST, 0, 0);
 }
 
 void CUrlSecurityOption::CloseOriginalUrlSecurityList(HWND hWndMainFrame)
 {
-	CString sharedMemName;
-	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
-	if (hMap) {
-		::CloseHandle(hMap);
-	}
+	s_sharedMem.CloseHandle();
 }
 
 
@@ -234,15 +218,8 @@ void	CUrlSecurityForChildFrame::ReloadList()
 {
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, m_hWndMainFrame);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
-	ATLASSERT( hMap );
-	LPTSTR shardMemData = static_cast<LPTSTR>(::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0));
-	std::wstringstream ss;
-	ss << shardMemData;
-	::UnmapViewOfFile(shardMemData);
-	::CloseHandle(hMap);
-	boost::archive::text_wiarchive	ar(ss);
-	ar >> m_UrlSecurityList;
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(m_UrlSecurityList, sharedMemName);
 }
 
 

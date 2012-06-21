@@ -5,9 +5,7 @@
 
 #include "stdafx.h"
 #include "MultiThreadManager.h"
-#include <sstream>
-#include <boost\archive\text_wiarchive.hpp>
-
+#include "SharedMemoryUtil.h"
 #include "MainFrame.h"
 #include "ChildFrame.h"
 #include "Donut.h"
@@ -350,16 +348,11 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 		return true;
 	}
 
-	LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
-	std::wstring serializedData = sharedMemData;
-	::UnmapViewOfFile((LPVOID)sharedMemData);
-	::CloseHandle(hMap);
-
 	NewChildFrameData	NewChildData(NULL);
-	std::wstringstream ss;
-	ss << serializedData;
-	boost::archive::text_wiarchive ar(ss);
-	ar >> NewChildData;
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(NewChildData, hMap);
+	sharedMem.CloseHandle();
+
 	{
 		_Module.Init(NULL, hInstance);
 

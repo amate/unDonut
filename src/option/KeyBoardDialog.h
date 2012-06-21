@@ -6,8 +6,35 @@
 
 #include "../resource.h"
 #include "../AccelManager.h"
+#include "../SharedMemoryUtil.h"
 
 
+class CAcceleratorOption
+{
+public:
+	CAcceleratorOption() : m_hAccel(NULL) { }
+	~CAcceleratorOption()
+	{
+		if (m_hAccel)
+			::DestroyAcceleratorTable(m_hAccel);
+	}
+
+	// for MainFrame
+	static HACCEL CreateOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
+	static void	  DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
+
+	// for ChildFrame
+	void	ReloadAccelerator(HWND hWndMainFrame);
+
+	bool	TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg);
+
+private:
+	// for ChildFrame
+	HACCEL	m_hAccel;
+
+	// for MainFrame
+	static CSharedMemory s_sharedMem;
+};
 
 class CKeyBoardPropertyPage
 	: public CPropertyPageImpl<CKeyBoardPropertyPage>

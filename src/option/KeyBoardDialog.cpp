@@ -8,17 +8,72 @@
 #include "../MtlBase.h"
 #include "../DonutPFunc.h"
 #include "../ToolTipManager.h"
-#include "MainOption.h"			//+++
+#include "MainOption.h"
+
+/////////////////////////////////////////////////////////////////
+// CAcceleratorOption
+
+#define ACCELERATORSHAREDMEMNAME _T("DonutAcceleratorSharedMemName")
+
+CSharedMemory CAcceleratorOption::s_sharedMem;
 
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+/// アクセラレータテーブルを読み込んでChildFrameのために共有メモリに書き込んでおく
+HACCEL CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel)
+{
+	CAccelerManager accel(hAccel);
+	hAccel = accel.LoadAccelaratorState(hAccel);
+
+	s_sharedMem.CloseHandle();
+
+	if (accel.m_nAccelSize == 0)
+		return hAccel;
+
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), ACCELERATORSHAREDMEMNAME, hWndMainFrame);
+	DWORD size = (sizeof(ACCEL) * accel.m_nAccelSize) + sizeof(int);
+	void* pView = s_sharedMem.CreateSharedMemory(sharedMemName, size);
+	int* pAccelSize = reinterpret_cast<int*>(pView);
+	*pAccelSize = accel.m_nAccelSize;
+	pView = static_cast<void*>(reinterpret_cast<int*>(pView) + 1);
+	ATLVERIFY(::memcpy_s(pView, size - sizeof(int), accel.m_lpAccel, size - sizeof(int)) == 0);
+
+	return hAccel;
+}
+
+void	CAcceleratorOption::DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel)
+{
+	s_sharedMem.CloseHandle();
+	::DestroyAcceleratorTable(hAccel);
+}
+
+void	CAcceleratorOption::ReloadAccelerator(HWND hWndMainFrame)
+{
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), ACCELERATORSHAREDMEMNAME, hWndMainFrame);
+	CSharedMemory sharedMem;
+	void* pView = sharedMem.OpenSharedMemory(sharedMemName, true);
+	if (pView == nullptr)
+		return ;
+
+	int AccelSize = *reinterpret_cast<int*>(pView);
+	LPACCEL lpAccel = reinterpret_cast<LPACCEL>(reinterpret_cast<int*>(pView) + 1);
+	m_hAccel = ::CreateAcceleratorTable(lpAccel, AccelSize);
+	ATLASSERT( m_hAccel );
+}
 
 
+bool	CAcceleratorOption::TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg)
+{
+	if (m_hAccel == NULL)
+		return false;
 
+	return ::TranslateAccelerator(hWndChildFrame, m_hAccel, lpMsg) != 0;
+}
+
+	
+	/////////////////////////////////////////////////////////////////
+// CKeyBoardPropertyPage
 
 CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL hAccel, HMENU hMenu)
 {

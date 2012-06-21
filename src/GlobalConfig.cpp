@@ -80,7 +80,9 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 void	DestroyGlobalConfig(GlobalConfigManageData* pMangeData)
 {
 	::UnmapViewOfFile(pMangeData->pGlobalConfig);
+	pMangeData->pGlobalConfig = nullptr;
 	::CloseHandle(pMangeData->hMap);
+	pMangeData->hMap = NULL;
 }
 
 // ChildFrame‚ªŽæ“¾/•Ô‹p‚·‚é
