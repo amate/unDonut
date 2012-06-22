@@ -25,7 +25,8 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_bNowNavigate(false),
 	m_bClosing(false),
 	m_pPageBitmap(nullptr),
-	m_hMapChildFrameData(NULL)
+	m_hMapChildFrameData(NULL),
+	m_dwThreadIdFromNewWindow(0)
 {	}
 
 
@@ -354,7 +355,7 @@ void	CChildFrame::Impl::OnCommandStateChange(long Command, bool bEnable)
 
 void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 {
-#if 1
+#if 0
 	m_bExecutedNewWindow = true;
 
 	CChildFrame*	pChild = new CChildFrame;
@@ -375,6 +376,72 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 	pChild->pImpl->SetSearchWordAutoHilight(m_strSearchWord, m_bNowHilight);
 
 	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TAB_LINK);
+#endif
+#if 1
+	//bCancel	= true;
+	m_bExecutedNewWindow = true;
+
+	NewChildFrameData	data(GetParent());
+	data.strURL	= _T("");
+	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
+	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
+	if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
+		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
+		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
+	}
+	data.dwDLCtrl	= dwDLCtrl;
+	data.dwExStyle	= dwExStyle;
+	data.bLink	= true;
+
+	CChildFrame*	pChild = new CChildFrame;
+	pChild->SetSearchWordAutoHilight(m_strSearchWord, m_bNowHilight);
+	pChild->pImpl->m_dwThreadIdFromNewWindow = ::GetCurrentThreadId();
+
+	class CThreadObserver : public CMessageFilter
+	{
+	public:
+		CThreadObserver(IDispatch** ppDisp, CChildFrame* pChild, NewChildFrameData& data) 
+			: m_ppDisp(ppDisp)
+			, m_pChild(pChild)
+			, m_data(data)
+		{	}
+
+		virtual BOOL PreTranslateMessage(MSG* pMsg)
+		{
+			switch (pMsg->message) {
+			case WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2:
+				{
+					MultiThreadManager::ExecuteChildFrameThread(m_pChild, &m_data);
+					return TRUE;
+				}
+
+			case WM_GETMARSHALIDISPATCHINTERFACE:
+				{
+					IStream* pStream = (IStream*)pMsg->wParam;
+					IDispatch* pDisp;
+					ATLVERIFY(::CoGetInterfaceAndReleaseStream(pStream, IID_IDispatch, (void**)&pDisp) == S_OK);
+					*m_ppDisp = pDisp;
+					PostQuitMessage(0);
+					return TRUE;
+				}				
+			}
+			return FALSE;
+		}
+	private:
+		IDispatch**	m_ppDisp;
+		CChildFrame*	m_pChild;
+		NewChildFrameData& m_data;
+	};
+
+	CMessageLoop loop;
+	CThreadObserver threadObserver(ppDisp, pChild, data);
+	loop.AddMessageFilter(&threadObserver);
+	
+	PostThreadMessage(::GetCurrentThreadId(), WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2, 0, 0);
+	int nRet = loop.Run();
+
+	loop.RemoveMessageFilter(&threadObserver);
+	//CChildFrame::AsyncCreate(data);
 #endif
 }
 
@@ -760,14 +827,12 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 				} else {
 					OnHtmlZoom(0, ID_HTMLZOOM_SUB, NULL);
 				}
-			} else {
-				HWND hWndChild = NULL;
-				HWND hWndTemp = m_view;
-				do {
-					hWndChild = hWndTemp;
-					hWndTemp = ::GetWindow(hWndChild, GW_CHILD);
-				} while (hWndTemp);
-				::SendMessage(hWndChild, pMsg->message, pMsg->wParam, pMsg->lParam);
+			} else {	// カーソル下の自分のウィンドウにホイールスクロールを通知する
+				CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+				HWND hWndFound = WindowFromPoint(pt);
+				if (hWndFound && IsChild(hWndFound)) {
+					::SendMessage(hWndFound, pMsg->message, pMsg->wParam, pMsg->lParam);
+				}
 			}
 			return TRUE;
 		}
@@ -901,6 +966,14 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_view.QueryControl(IID_IWebBrowser2, (void **)&m_spBrowser);
 
 	WebBrowserEvents2Advise();
+
+	if (m_dwThreadIdFromNewWindow) {
+		IDispatch* pDisp;
+		ATLVERIFY(m_spBrowser->get_Application(&pDisp) == S_OK);
+		IStream* pStream;
+		ATLVERIFY(::CoMarshalInterThreadInterfaceInStream(IID_IDispatch, pDisp, &pStream) == S_OK);
+		::PostThreadMessage(m_dwThreadIdFromNewWindow, WM_GETMARSHALIDISPATCHINTERFACE, (WPARAM)pStream, 0);
+	}
 
 	SetRegisterAsBrowser(true);
 	SetVisible(true);

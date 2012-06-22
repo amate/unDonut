@@ -528,6 +528,8 @@ private:
 	//CBitmap	m_bmpPage;
 	HBITMAP*	m_pPageBitmap;
 	HANDLE	m_hMapChildFrameData;
+
+	DWORD	m_dwThreadIdFromNewWindow;
 };
 
 #include "ChildFrame.inl"

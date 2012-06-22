@@ -846,5 +846,8 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
+#define WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2	(WM_APP + 202)
+#define WM_GETMARSHALIDISPATCHINTERFACE				(WM_APP + 203)
+
 
 #endif // __DONUTDEFINE_H__
