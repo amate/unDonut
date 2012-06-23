@@ -59,7 +59,7 @@ void	CDonutLinkBarCtrl::Impl::LinkImportFromFolder(LPCTSTR folder)
 			strDirPath.ReleaseBuffer();
 			pItem->strName = Misc::GetFileBaseName(strDirPath);
 			pItem->pFolder	= new LinkFolder;
-			MtlForEachObject_OldShell(strPath, boost::bind(funcAddLink, _1, _2, pItem->pFolder));
+			MtlForEachObject_OldShell(strPath, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, pItem->pFolder));
 		} else {
 			if (Misc::GetFileExt(strPath).CompareNoCase(_T("url")) != 0)
 				return ;
@@ -76,7 +76,7 @@ void	CDonutLinkBarCtrl::Impl::LinkImportFromFolder(LPCTSTR folder)
 		}
 		pFolder->push_back(std::move(pItem));
 	};
-	MtlForEachObject_OldShell(folder, boost::bind(funcAddLink, _1, _2, &m_BookmarkList));
+	MtlForEachObject_OldShell(folder, std::bind(funcAddLink, std::placeholders::_1, std::placeholders::_2, &m_BookmarkList));
 
 	// ñºëOèáÇ≈ï¿Ç—ë÷Ç¶
 	CLinkPopupMenu::SortByName(&m_BookmarkList);

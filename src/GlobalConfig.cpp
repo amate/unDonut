@@ -37,6 +37,7 @@ void	CreateGlobalConfig(GlobalConfigManageData* pMangeData)
 
 }
 
+
 void	SetGlobalConfig(GlobalConfig* pConfig)
 {
 	// CMainOption

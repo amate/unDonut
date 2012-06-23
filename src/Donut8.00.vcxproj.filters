@@ -221,9 +221,6 @@
     <ClCompile Include="Misc.cpp">
       <Filter>Source Files\Base</Filter>
     </ClCompile>
-    <ClCompile Include="XmlFile.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
     <ClCompile Include="IniFile.cpp">
       <Filter>Source Files\Base</Filter>
     </ClCompile>
@@ -858,9 +855,6 @@
     </ClInclude>
     <ClInclude Include="SearchHistoryDialog.h">
       <Filter>Source Files\dialog</Filter>
-    </ClInclude>
-    <ClInclude Include="XmlFile.h">
-      <Filter>Source Files\Base</Filter>
     </ClInclude>
     <ClInclude Include="IniFile.h">
       <Filter>Source Files\Base</Filter>

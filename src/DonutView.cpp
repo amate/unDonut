@@ -276,6 +276,16 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
 
 	if (m_bDragAccept && m_bUseCustomDropTarget) {
+		if (MTL::MtlIsDataAvailable(pDataObj, CF_SHELLURLW)) {	// タブなどから
+			CString strURL;
+			MtlGetHGlobalText(pDataObj, strURL, CF_SHELLURLW);
+			if (strURL.GetLength() > 0) {
+				MTL::ParseInternetShortcutFile(strURL);	// ファイルパス->URL
+				Navigate2(strURL);
+			}
+			return DROPEFFECT_LINK;
+		}
+
 		CSimpleArray<CString>	arrFiles;
 		if ( MtlGetDropFileName(pDataObj, arrFiles) ) {	// ファイルがDropされた
 			DWORD  df   = DonutGetStdOpenFlag();

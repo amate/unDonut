@@ -5,7 +5,7 @@
 #include "stdafx.h"
 #include "FaviconManager.h"
 #include "Misc.h"
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/thread.hpp>
 using boost::thread;
 #include "GdiplusUtil.h"
@@ -22,6 +22,7 @@ using std::unordered_map;
 HWND	CFaviconManager::s_hWndTabBar = NULL;
 unordered_map<std::wstring, CIcon>	CFaviconManager::s_mapIcon;	// key:faviconÇÃURL íl:icon
 CCriticalSection	CFaviconManager::s_cs;
+
 
 //--------------------------
 /// èâä˙âª
@@ -77,10 +78,11 @@ HICON	CFaviconManager::GetFaviconFromURL(LPCTSTR url)
 			file.Read((LPVOID)htmlContent.get(), kMaxReadSize, dwReadSize);
 			htmlContent[dwReadSize] = '\0';
 
-			boost::regex	rx("<link (?:(?<rel>rel=[\"']?(?:shortcut icon|icon)[\"']?) (?<href>href=[\"']?(?<url>[^ \"]+)[\"']?)|(?<href>href=[\"']?(?<url>[^ \"]+)[\"']?) (?<rel>rel=[\"']?(?:shortcut icon|icon)[\"']?))[^>]+>", boost::regex::icase);
-			boost::cmatch	result;
-			if (boost::regex_search(htmlContent.get(), result, rx)) {
-				CString strhref = result["url"].str().c_str();
+			std::regex	rx1("<link[ ]+rel=[\"']?(?:shortcut icon|icon)[\"']?[ ]+href=[\"']?([^ \"]+)[\"']?[^>]*>", std::regex::icase);
+			std::regex	rx2("<link[ ]+href=[\"']?([^ \"]+)[\"']?[ ]+rel=[\"']?(?:shortcut icon|icon)[\"']?[^>]*>", std::regex::icase);
+			std::cmatch	result;
+			if (std::regex_search(htmlContent.get(), result, rx1) || std::regex_search(htmlContent.get(), result, rx2)) {
+				CString strhref = result[1].str().c_str();
 				DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
 				::UrlCombine(url, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
 				strFaviconURL.ReleaseBuffer();

@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include "../XmlFile.h"
 #include "../resource.h"
 
 #define CONTEXT_MENU_HOLDLEFTBUTTON		(123)
@@ -24,10 +23,6 @@ public:
 	static CMenu	s_menuHoldLeftButton;
 
 	static CMenu	s_menuTabItem;
-
-private:
-	static void		_ReadAllMenuItem(LPCWSTR strElement, CMenu& rMenu, CXmlFileRead& xmlRead);
-	static void		_WriteAllMenuItem(LPCTSTR strElement, const CMenu& rMenu, CXmlFileWrite& xmlWrite);
 
 public:
 	static void		GetProfile();

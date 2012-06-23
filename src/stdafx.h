@@ -83,8 +83,8 @@
 #include <deque>
 #include <stack>
 #include <algorithm>
-//#include <functional>
-#include <boost/function.hpp>
+#include <functional>
+//#include <boost/function.hpp>
 #include <utility>
 #include <iterator>
 #include <map>
@@ -94,8 +94,8 @@ using std::vector;
 using std::deque;
 using std::pair;
 using std::make_pair;
-using boost::function;
-//using namespace std::placeholders;
+//using boost::function;
+using std::function;
 using std::unique_ptr;
 
 
@@ -259,12 +259,6 @@ extern TCHAR			g_szIniFileName[MAX_PATH];		//設定ファイル
 #include <tlogstg.h>
 #include <urlhist.h>
 
-
-// XML用
-//+++ 使うのはMSXML2の範囲?のようだし、xp64,vista64 には msxml3.dllがでデフォで入っているようなので、3にしてみる.
-//#import "msxml4.dll" named_guids	//raw_interfaces_only
-#import "msxml3.dll" named_guids	//raw_interfaces_only
-using namespace MSXML2;
 
 // Debug用
 #include "dialog/DebugWindow.h"

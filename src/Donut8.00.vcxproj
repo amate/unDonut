@@ -1436,7 +1436,6 @@
     <ClCompile Include="option\ToolBarDialog.cpp" />
     <ClCompile Include="option\UrlSecurityOption.cpp" />
     <ClCompile Include="VersionControl.cpp" />
-    <ClCompile Include="XmlFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\wtl80\include\atlsplit.h" />
@@ -1601,7 +1600,6 @@
     <ClInclude Include="..\wtl80\include\atltheme.h" />
     <ClInclude Include="..\wtl80\include\atluser.h" />
     <ClInclude Include="..\wtl80\include\atlwinx.h" />
-    <ClInclude Include="XmlFile.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl" />

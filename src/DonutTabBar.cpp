@@ -1884,11 +1884,11 @@ void	CDonutTabBar::Impl::OnLButtonDblClk(UINT nFlags, CPoint point)
 			if (s_dwExStyle & MTB_EX_DOUBLECLICKCLOSE)
 				::PostMessage(hWndChild, WM_CLOSE, 0, 0);
 			else if (s_dwExStyle & MTB_EX_DOUBLECLICKREFRESH)
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_VIEW_REFRESH, 0);
 			else if (s_dwExStyle & MTB_EX_DOUBLECLICKNLOCK)								// UDT DGSTR
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_DOCHOSTUI_OPENNEWWIN, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_DOCHOSTUI_OPENNEWWIN, 0);
 			else if ( (s_dwExStyle & MTB_EX_DOUBLECLICKCOMMAND) && s_DClickCommand ) 	//minit
-				::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) s_DClickCommand, 0);
+				::PostMessage(GetTopLevelParent(), WM_COMMAND, s_DClickCommand, 0);
 		}
 	} else {
 		int nIndex = _HitTest(point);
@@ -1898,11 +1898,11 @@ void	CDonutTabBar::Impl::OnLButtonDblClk(UINT nFlags, CPoint point)
 			if (s_dwExStyle & MTB_EX_DOUBLECLICKCLOSE)
 				::PostMessage(hWndChild, WM_CLOSE, 0, 0);
 			else if (s_dwExStyle & MTB_EX_DOUBLECLICKREFRESH)
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_VIEW_REFRESH, 0);
 			else if (s_dwExStyle & MTB_EX_DOUBLECLICKNLOCK)								// UDT DGSTR
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_DOCHOSTUI_OPENNEWWIN, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_DOCHOSTUI_OPENNEWWIN, 0);
 			else if ( (s_dwExStyle & MTB_EX_DOUBLECLICKCOMMAND) && s_DClickCommand ) 	//minit
-				::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) s_DClickCommand, 0);
+				::PostMessage(GetTopLevelParent(), WM_COMMAND, s_DClickCommand, 0);
 		}
 	}
 }
@@ -1929,9 +1929,9 @@ void	CDonutTabBar::Impl::OnMButtonUp(UINT nFlags, CPoint point)
 			if (s_dwExStyle & MTB_EX_XCLICKCLOSE)
 				::PostMessage(hWndChild, WM_CLOSE, 0, 0);
 			else if (s_dwExStyle & MTB_EX_XCLICKREFRESH)
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_VIEW_REFRESH, 0);
 			else if (s_dwExStyle & MTB_EX_XCLICKNLOCK)									// UDT DGSTR
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_DOCHOSTUI_OPENNEWWIN, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_DOCHOSTUI_OPENNEWWIN, 0);
 			else if ( (s_dwExStyle & MTB_EX_XCLICKCOMMAND) && s_MClickCommand )			//minit
 				::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) s_MClickCommand, 0);
 		}
@@ -1944,11 +1944,11 @@ void	CDonutTabBar::Impl::OnMButtonUp(UINT nFlags, CPoint point)
 			if (s_dwExStyle & MTB_EX_XCLICKCLOSE)
 				::PostMessage(hWndChild, WM_CLOSE, 0, 0);
 			else if (s_dwExStyle & MTB_EX_XCLICKREFRESH)
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_VIEW_REFRESH, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_VIEW_REFRESH, 0);
 			else if (s_dwExStyle & MTB_EX_XCLICKNLOCK)									// UDT DGSTR
-				::PostMessage(hWndChild, WM_COMMAND, (WPARAM) ID_DOCHOSTUI_OPENNEWWIN, 0);
+				::PostMessage(hWndChild, WM_COMMAND, ID_DOCHOSTUI_OPENNEWWIN, 0);
 			else if ( (s_dwExStyle & MTB_EX_XCLICKCOMMAND) && s_MClickCommand )			//minit
-				::PostMessage(GetTopLevelParent(), WM_COMMAND, (WPARAM) s_MClickCommand, 0);
+				::PostMessage(GetTopLevelParent(), WM_COMMAND, s_MClickCommand, 0);
 		}
 	}
 }

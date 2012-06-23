@@ -38,7 +38,7 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_wndSplitter.SetSplitterPane(SPLIT_PANE_BOTTOM, m_wndDownloadedListView);
 
-	m_wndDownloadingListView.SetAddDownloadedItemfunc(boost::bind(&CDownloadedListView::AddDownloadedItem, &m_wndDownloadedListView, _1));
+	m_wndDownloadingListView.SetAddDownloadedItemfunc(std::bind(&CDownloadedListView::AddDownloadedItem, &m_wndDownloadedListView, std::placeholders::_1));
 
 #if 0
 	// コマンドバー ウィンドウの作成

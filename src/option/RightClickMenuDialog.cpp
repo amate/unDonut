@@ -3,11 +3,56 @@
 #include "stdafx.h"
 #include "RightClickMenuDialog.h"
 #include <MsHtmcid.h>
+#include <codecvt>
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../ToolTipManager.h"
 #include "MainOption.h"
 #include "DonutSearchBar.h"
+
+using boost::property_tree::wptree;
+using namespace boost::property_tree::xml_parser;
+
+namespace {
+
+void	ReadAllMenuItem(CMenuHandle submenu, wptree& ptMenu)
+{
+	for (auto itItem = ptMenu.begin(); itItem != ptMenu.end(); ++itItem) {
+		CString name = itItem->second.get<std::wstring>(L"<xmlattr>.name").c_str();
+		int		command = itItem->second.get<int>(L"<xmlattr>.command");
+		if (command == 0) {
+			submenu.AppendMenu(MF_SEPARATOR);
+		} else {
+			name.Replace(_T("&amp;"), _T("&"));
+			submenu.AppendMenu(MF_STRING, command, name);
+		}
+	}
+}
+
+void	WriteAllMenuItem(const CMenu& rMenu, wptree& ptMenu)
+{
+	int nCount = rMenu.GetMenuItemCount();
+	for (int i = 0; i < nCount; ++i) {
+		CString strName;
+		UINT	uCmdID = rMenu.GetMenuItemID(i);
+		if (uCmdID == 0) {
+			strName = g_cSeparater;
+		} else {
+			rMenu.GetMenuString(i, strName, MF_BYPOSITION);
+			if (strName.Left(5) == _T("エンコード") && uCmdID == -1) {
+				uCmdID = IDM_LANGUAGE;
+			}
+		}
+		strName.Replace(_T("&"), _T("&amp;"));
+		wptree& ptItem = ptMenu.add(L"item", L"");
+		ptItem.add(L"<xmlattr>.name", (LPCTSTR)strName);
+		ptItem.add(L"<xmlattr>.command", uCmdID);
+	}
+}
+
+};	// namespace
 
 ///////////////////////////////////////////////////////////
 // CCustomContextMenuOption
@@ -273,55 +318,6 @@ void	CCustomContextMenuOption::ResetMenu()
 	}
 }
 
-void	CCustomContextMenuOption::_ReadAllMenuItem(LPCWSTR strElement, CMenu& rMenu, CXmlFileRead& xmlRead)
-{
-	ATLASSERT(rMenu.m_hMenu == NULL);
-
-	rMenu.CreatePopupMenu();
-	ATLASSERT(rMenu.m_hMenu);
-
-	CString strName;
-	UINT	uCmdID = 0;
-	
-	CString strItem;
-	while (xmlRead.GetInternalElement(strElement, strItem)) {
-		if (strItem == L"item" && xmlRead.MoveToFirstAttribute() && xmlRead.GetLocalName() == L"name") {
-			strName = xmlRead.GetValue();
-			if (xmlRead.MoveToNextAttribute() && xmlRead.GetLocalName() == L"command") {
-				uCmdID = _ttoi(xmlRead.GetValue());
-				
-				if (uCmdID == 0) {
-					rMenu.AppendMenu(MF_SEPARATOR, (UINT_PTR)0, _T(""));
-				} else {
-					rMenu.AppendMenu(0, uCmdID, strName);
-				}
-			}
-		}
-	}
-}
-
-void	CCustomContextMenuOption::_WriteAllMenuItem(LPCTSTR strElement,const CMenu& rMenu, CXmlFileWrite& xmlWrite)
-{
-	xmlWrite.WriteStartElement(strElement);
-	for (int i = 0; i < rMenu.GetMenuItemCount(); ++i) {
-		xmlWrite.WriteStartElement(L"item");
-		CString strName;
-		UINT	uCmdID = rMenu.GetMenuItemID(i);
-		if (uCmdID == 0) {
-			strName = g_cSeparater;
-		} else {
-			rMenu.GetMenuString(i, strName, MF_BYPOSITION);
-			if (strName.Left(5) == _T("エンコード") && uCmdID == -1) {
-				uCmdID = IDM_LANGUAGE;
-			}
-		}
-		
-		xmlWrite.WriteAttributeString(L"name"	, strName);
-		xmlWrite.WriteAttributeValue(L"command"	, uCmdID);
-		xmlWrite.WriteFullEndElement();
-	}
-	xmlWrite.WriteFullEndElement();	// </strElement>
-}
 
 
 // iniファイルから設定を読み込む
@@ -329,36 +325,39 @@ void	CCustomContextMenuOption::GetProfile()
 {
 	try {
 		CString strPath = _GetFilePath(_T("Menu.xml"));
-		if (::PathFileExists(strPath)) {
-			CXmlFileRead xmlRead(strPath);
+		std::wifstream	filestream(strPath);
+		if (!filestream)
+			throw _T("ファイルを開けません");
 
-			XmlNodeType	nodeType;
-			while (xmlRead.Read(&nodeType) == S_OK) {
-				switch (nodeType) {
-				case XmlNodeType_Element:
-					CMenu*	pMenu = NULL;
-					CString strLocalName = xmlRead.GetLocalName();
-					if (strLocalName == L"CONTEXT_MENU_DEFAULT") {
-						pMenu = &s_menuDefault;
-					} else if (strLocalName == L"CONTEXT_MENU_IMAGE") {
-						pMenu = &s_menuImage;
-					} else if (strLocalName == L"CONTEXT_MENU_TEXTSELECT") {
-						pMenu = &s_menuTextSelect;
-					} else if (strLocalName == L"CONTEXT_MENU_ANCHOR") {
-						pMenu = &s_menuAnchor;
-					} else if (strLocalName == L"CONTEXT_MENU_HOLDLEFTBUTTON") {
-						pMenu = &s_menuHoldLeftButton;
-					} else if (strLocalName == L"CONTEXT_MENU_TABITEM") {
-						pMenu = &s_menuTabItem;
-					} else {
-						continue;
-					}
-					_ReadAllMenuItem(strLocalName, *pMenu, xmlRead);
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+		
+		using boost::property_tree::wptree;
+		wptree pt;
+		boost::property_tree::read_xml(filestream, pt);
+		if (auto opRoot = pt.get_child_optional(L"CustomContextMenu")) {
+			for (auto itMenu = opRoot->begin(); itMenu != opRoot->end(); ++itMenu) {
+				CMenu* psubmenu;
+				if (itMenu->first == L"CONTEXT_MENU_DEFAULT") {
+					psubmenu = &s_menuDefault;
+				} else if (itMenu->first == L"CONTEXT_MENU_IMAGE") {
+					psubmenu = &s_menuImage;
+				} else if (itMenu->first == L"CONTEXT_MENU_TEXTSELECT") {
+					psubmenu = &s_menuTextSelect;
+				} else if (itMenu->first == L"CONTEXT_MENU_ANCHOR") {
+					psubmenu = &s_menuAnchor;
+				} else if (itMenu->first == L"CONTEXT_MENU_HOLDLEFTBUTTON") {
+					psubmenu = &s_menuHoldLeftButton;
+				} else if (itMenu->first == L"CONTEXT_MENU_TABITEM") {
+					psubmenu = &s_menuTabItem;
+				} else {
+					continue;
 				}
+				psubmenu->CreatePopupMenu();
+				ReadAllMenuItem(psubmenu->m_hMenu, itMenu->second);
 			}
 		}
-	} catch (LPCTSTR strError) {
-		MessageBox(NULL, strError, NULL, NULL);
+	} catch (...) {
+		MessageBox(NULL, _T("カスタムポップアップメニューの復元に失敗"), NULL, NULL);
 	}
 
 	/* ファイルが無かったり、エレメントが存在しないとき */
@@ -390,18 +389,25 @@ void	CCustomContextMenuOption::WriteProfile()
 {
 	try {
 		CString strPath = _GetFilePath(_T("Menu.xml"));
-		CXmlFileWrite xmlWrite(strPath);
+		std::wofstream	filestream(strPath);
+		if (!filestream)
+			throw _T("ファイルを開けません");
 
-		xmlWrite.WriteStartElement(L"CustomContextMenu");
-		_WriteAllMenuItem(L"CONTEXT_MENU_DEFAULT"	, s_menuDefault		, xmlWrite);
-		_WriteAllMenuItem(L"CONTEXT_MENU_IMAGE"		, s_menuImage		, xmlWrite);
-		_WriteAllMenuItem(L"CONTEXT_MENU_TEXTSELECT", s_menuTextSelect	, xmlWrite);
-		_WriteAllMenuItem(L"CONTEXT_MENU_ANCHOR"	, s_menuAnchor		, xmlWrite);
-		_WriteAllMenuItem(L"CONTEXT_MENU_HOLDLEFTBUTTON", s_menuHoldLeftButton, xmlWrite);
-		_WriteAllMenuItem(L"CONTEXT_MENU_TABITEM"	, s_menuTabItem		, xmlWrite);
-		xmlWrite.WriteFullEndElement();	// </CustomContextMenu>
-	} catch (LPCTSTR str) {
-		MessageBox(NULL, str, NULL, NULL);
+		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+		
+		wptree pt;
+		wptree& ptCustomContextMenu = pt.add(L"CustomContextMenu", L"");
+
+		WriteAllMenuItem(s_menuDefault		, ptCustomContextMenu.add(L"CONTEXT_MENU_DEFAULT", L""));
+		WriteAllMenuItem(s_menuImage		, ptCustomContextMenu.add(L"CONTEXT_MENU_IMAGE", L""));
+		WriteAllMenuItem(s_menuTextSelect	, ptCustomContextMenu.add(L"CONTEXT_MENU_TEXTSELECT", L""));
+		WriteAllMenuItem(s_menuAnchor		, ptCustomContextMenu.add(L"CONTEXT_MENU_ANCHOR", L""));
+		WriteAllMenuItem(s_menuHoldLeftButton, ptCustomContextMenu.add(L"CONTEXT_MENU_HOLDLEFTBUTTON", L""));
+		WriteAllMenuItem(s_menuTabItem		, ptCustomContextMenu.add(L"CONTEXT_MENU_TABITEM", L""));
+
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
+	} catch (...) {
+		MessageBox(NULL, _T("カスタムコンテキストメニューの設定保存に失敗"), NULL, NULL);
 	}
 }
 

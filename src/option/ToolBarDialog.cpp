@@ -5,11 +5,15 @@
 
 #include "stdafx.h"
 #include "ToolBarDialog.h"
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
-#include "../XmlFile.h"
 #include "../ToolTipManager.h"
 #include "../MtlWin.h"
+
+using boost::property_tree::wptree;
+using namespace boost::property_tree::xml_parser;
 
 using namespace MTL;
 
@@ -131,56 +135,45 @@ void CToolBarOption::GetProfile()
 	CString strToolbarShowButtonPath = _GetSkinDir() + _T("ToolbarShowButton.xml");
 	if (::PathFileExists(strToolbarxmlPath)) {
 		try {
-		CXmlFileRead2 xmlRead(strToolbarxmlPath);
-		XmlNodeType 	nodeType;
-		while (xmlRead.Read(&nodeType)) {
-			if (nodeType == XmlNodeType_Element
-				&& xmlRead.GetLocalName() == _T("DonutToolBar")) 
-			{
-				CString strElement;
-				while (xmlRead.GetInternalElement(_T("DonutToolBar"), strElement)) {
-					if (strElement == _T("item")) {
-						STD_TBBUTTON tbbtn;
-						xmlRead.MoveToFirstAttribute();
-						tbbtn.idCommand = xmlRead.GetValuei();
-						xmlRead.MoveToNextAttribute();
-						tbbtn.fsStyle = xmlRead.GetValuei();
-						s_vecTBbtns.push_back(tbbtn);
-					}
+			std::wifstream filestream(strToolbarxmlPath);
+			if (!filestream)
+				throw _T("Toolbar.xmlファイルが開けません");
+
+			wptree pt;
+			boost::property_tree::read_xml(filestream, pt);
+			if (auto opRoot = pt.get_child_optional(L"DonutToolBar")) {
+				for (auto it = opRoot->begin(); it != opRoot->end(); ++it) {
+					STD_TBBUTTON tbbtn;
+					tbbtn.idCommand = it->second.get<int>(L"<xmlattr>.command");
+					tbbtn.fsStyle	= it->second.get<DWORD>(L"<xmlattr>.style");
+					s_vecTBbtns.push_back(tbbtn);
 				}
 			}
-		}
-		
-		bSucceeded = true;
+			bSucceeded = true;
 
-		} catch (LPCTSTR strError) {
-			MessageBox(NULL, strError, NULL, NULL);
+		} catch (...) {
+			MessageBox(NULL, _T("DonutToolBar.xmlからツールバーの設定を復元できません"), NULL, NULL);
 		}
 	}
 	if (::PathFileExists(strToolbarShowButtonPath) && bSucceeded) {
 		try {
-		CXmlFileRead2	xmlReadShowBtn(strToolbarShowButtonPath);
-		XmlNodeType	nodeType;
-		while (xmlReadShowBtn.Read(&nodeType)) {
-			if (nodeType == XmlNodeType_Element
-				&& xmlReadShowBtn.GetLocalName() == _T("ToolBarShowButton")) 
-			{
-				xmlReadShowBtn.MoveToFirstAttribute();
-				if (xmlReadShowBtn.GetLocalName() == _T("ToolbarStyle"))
-					s_dwToolbarStyle = _wtol(xmlReadShowBtn.GetValue());
-				else
-					s_dwToolbarStyle = STD_TBSTYLE_DEFAULT;
-				CString Element;
-				while (xmlReadShowBtn.GetInternalElement(_T("ToolBarShowButton"), Element)) {
-					if (Element == _T("button")) {
-						xmlReadShowBtn.MoveToFirstAttribute();
-						s_vecShowBtn.push_back(xmlReadShowBtn.GetValuei());
-					}
+			std::wifstream filestream(strToolbarShowButtonPath);
+			if (!filestream)
+				throw _T("ToolbarShowButton.xmlファイルが開けません");
+
+			wptree pt;
+			boost::property_tree::read_xml(filestream, pt);
+			if (auto opRoot = pt.get_child_optional(L"ToolBarShowButton")) {
+				s_dwToolbarStyle = opRoot->get<DWORD>(L"<xmlattr>.ToolbarStyle");
+				auto it = std::next(opRoot->begin());
+				for (; it != opRoot->end(); ++it) {
+					int nIndex = it->second.get<int>(L"<xmlattr>.index");
+					s_vecShowBtn.push_back(nIndex);
 				}
+				
 			}
-		}
-		} catch (LPCTSTR strError) {
-			MessageBox(NULL, strError, NULL, NULL);
+		} catch (...) {
+			MessageBox(NULL, _T("ToolBarShowButton.xmlから表示ボタンの設定を復元できません"), NULL, NULL);
 		}
 	} else if (::PathFileExists(strToolbarShowButtonPath) == FALSE && bSucceeded) {	// ToolBarShowButton.xmlのみなかった
 		SetDefaultToolBarButton(true);	// デフォルトを使用
@@ -238,17 +231,22 @@ void CToolBarOption::WriteProfileToolbar()
 	if (::PathIsDirectory(SkinDir) == FALSE)
 		::SHCreateDirectory(NULL, SkinDir);
 	try {
-		CXmlFileWrite	xmlWrite(strToolbarxmlPath);
-		xmlWrite.WriteStartElement(L"DonutToolBar");
+		std::wofstream	filestream(strToolbarxmlPath);
+		if (!filestream)
+			throw _T("ファイルを開けません");
+		
+		using boost::property_tree::wptree;
+		wptree pt;
+		wptree& ptDonutToolBar = pt.add(L"DonutToolBar", L"");
 		for (auto it = s_vecTBbtns.cbegin(); it != s_vecTBbtns.cend(); ++it) {
-			xmlWrite.WriteStartElement(L"item");
-			xmlWrite.WriteAttributeValue(L"command", it->idCommand);
-			xmlWrite.WriteAttributeValue(L"style", it->fsStyle);
-			xmlWrite.WriteFullEndElement();
+			wptree& ptItem = ptDonutToolBar.add(L"item", L"");
+			ptItem.add(L"<xmlattr>.command", it->idCommand);
+			ptItem.add(L"<xmlattr>.style", it->fsStyle);
 		}
-		xmlWrite.WriteFullEndElement();
-	} catch (LPCTSTR strError) {
-		MessageBox(NULL, strError, NULL, NULL);
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("Shift_JIS")));
+
+	} catch (...) {
+		MessageBox(NULL, _T("ツールバーの設定保存に失敗"), NULL, NULL);
 	}
 	
 }
@@ -260,17 +258,21 @@ void CToolBarOption::WriteProfileToolbarShowButton()
 	CString strToolbarShowButtonPath = _GetSkinDir() + _T("ToolbarShowButton.xml");
 
 	try {
-		CXmlFileWrite	xmlWrite(strToolbarShowButtonPath);
-		xmlWrite.WriteStartElement(L"ToolBarShowButton");
-		xmlWrite.WriteAttributeValue(L"ToolbarStyle", s_dwToolbarStyle);
+		std::wofstream	filestream(strToolbarShowButtonPath);
+		if (!filestream)
+			throw _T("ファイルを開けません");
+		
+		wptree pt;
+		wptree& ptToolBarShowButton = pt.add(L"ToolBarShowButton", L"");
+		ptToolBarShowButton.add(L"<xmlattr>.ToolbarStyle", s_dwToolbarStyle);
 		for (auto it = s_vecShowBtn.cbegin(); it != s_vecShowBtn.cend(); ++it) {
-			xmlWrite.WriteStartElement(L"button");
-			xmlWrite.WriteAttributeValue(L"index", *it);
-			xmlWrite.WriteFullEndElement();
+			wptree& ptButton = ptToolBarShowButton.add(L"button", L"");
+			ptButton.add(L"<xmlattr>.index", *it);
 		}
-		xmlWrite.WriteFullEndElement();
-	} catch (LPCTSTR strError) {
-		MessageBox(NULL, strError, NULL, NULL);
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("Shift_JIS")));
+
+	} catch (...) {
+		MessageBox(NULL, _T("現在表示中のツールバーの状態を保存できませんでした"), NULL, NULL);
 	}
 }
 

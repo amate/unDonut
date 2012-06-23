@@ -1257,7 +1257,7 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 		//	if (CSearchBarOption::s_bAutoHilight)
 		//		pChild->SetSearchWordAutoHilight(str, true);
 		//};
-		data.bActive	= !_check_flag(CMainOption::s_dwMainExtendedStyle, MAIN_EX_NOACTIVATE);
+		data.bActive = true;
 		CChildFrame::AsyncCreate(data);
 	}
 

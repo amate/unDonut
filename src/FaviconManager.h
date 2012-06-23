@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include <string>
 #include <unordered_map>
 #include <atlsync.h>
 
@@ -23,7 +24,7 @@
 /////////////////////////////////////////////////
 /// Favicon‚ğŠÇ—‚·‚é 
 
-class CFaviconManager : CWindowImpl<CFaviconManager>
+class CFaviconManager : public CWindowImpl<CFaviconManager>
 {
 public:
 	static void	Init(HWND hWndTabBar);

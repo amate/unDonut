@@ -18,7 +18,7 @@ bool	CTabBarOption::s_bWheel			= false;
 bool	CTabBarOption::s_bUseFixedSize	= false;
 bool	CTabBarOption::s_bAnchorColor	= true;
 bool	CTabBarOption::s_bAddLinkRight	= true;
-CSize	CTabBarOption::s_FixedSize( 70, 25 );
+CSize	CTabBarOption::s_FixedSize( 150, 23 );
 int		CTabBarOption::s_nMaxTextLength		= 30;
 int		CTabBarOption::s_nTabSeparatorWidth	= 10;
 bool	CTabBarOption::s_bFirefoxLike		= false;
@@ -74,9 +74,9 @@ void CTabBarOption::GetProfile()
 	else if (s_dwExStyle & MTB_EX_XCLICKCOMMAND	)	m_nRadioMClick = 5; 		// minit
 	else											m_nRadioMClick = 0;
 
-	if		(s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) m_nRadioOnClose = 1;
-	else if (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE ) m_nRadioOnClose = 2;
-	else											  m_nRadioOnClose = 0;
+	if		(s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) m_nRadioOnClose = 0;
+	else if (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE ) m_nRadioOnClose = 1;
+	else											  m_nRadioOnClose = 1;
 
 	if		(s_dwExStyle & MTB_EX_ADDLEFT 		)	m_nAddPos = 1;
 	else if (s_dwExStyle & MTB_EX_ADDRIGHTACTIVE)	m_nAddPos = 2;
@@ -119,29 +119,41 @@ void CTabBarOption::WriteProfile()
 	if (s_bShowFavicon		)	s_dwExStyle |= MTB_EX_SHOWFAVICON;
 	if (s_bCenterAlign		)	s_dwExStyle |= MTB_EX_CENTERALIGN;
 
+	bool bCommand = false;
 	switch (m_nRadioRightClick) {
 	case 1: s_dwExStyle |= MTB_EX_RIGHTCLICKCLOSE;		break;
 	case 2: s_dwExStyle |= MTB_EX_RIGHTCLICKREFRESH;	break;
 	case 4: s_dwExStyle |= MTB_EX_RIGHTCLICKCOMMAND;	break;	// minit
+	default: bCommand = true;
 	}
+	if (bCommand == false)
+		s_RClickCommand = 0;
 
+	bCommand = false;
 	switch (m_nRadioDoubleClick) {
 	case 1: s_dwExStyle |= MTB_EX_DOUBLECLICKCLOSE; 	break;
 	case 2: s_dwExStyle |= MTB_EX_DOUBLECLICKREFRESH;	break;
 	case 3: s_dwExStyle |= MTB_EX_DOUBLECLICKNLOCK; 	break;	// UDT DGSTR
 	case 5: s_dwExStyle |= MTB_EX_DOUBLECLICKCOMMAND;	break;	// minit
+	default: bCommand = true;
 	}
+	if (bCommand == false)
+		s_DClickCommand = 0;
 
+	bCommand = false;
 	switch (m_nRadioMClick) {
 	case 1: s_dwExStyle |= MTB_EX_XCLICKCLOSE;			break;
 	case 2: s_dwExStyle |= MTB_EX_XCLICKREFRESH;		break;
 	case 3: s_dwExStyle |= MTB_EX_XCLICKNLOCK;			break;	// UDT DGSTR
 	case 5: s_dwExStyle |= MTB_EX_XCLICKCOMMAND;		break;	// minit
+	default: bCommand = true;
 	}
+	if (bCommand == false)
+		s_MClickCommand = 0;
 
 	switch (m_nRadioOnClose) {
-	case 1: s_dwExStyle |= MTB_EX_RIGHTACTIVEONCLOSE;	break;
-	case 2: s_dwExStyle |= MTB_EX_LEFTACTIVEONCLOSE;	break;
+	case 0: s_dwExStyle |= MTB_EX_RIGHTACTIVEONCLOSE;	break;
+	case 1: s_dwExStyle |= MTB_EX_LEFTACTIVEONCLOSE;	break;
 	}
 
 	switch (m_nAddPos) {
@@ -292,29 +304,29 @@ void CMDITabPropertyPage::CmbUpdate()
 {
 	CComboBox cmbR	 = GetDlgItem(IDC_COMBO_MDITAB_RIGHTCLICK);
 	CComboBox cmbD	 = GetDlgItem(IDC_COMBO_MDITAB_DOUBLECLICK);
-	CComboBox cmbX	 = GetDlgItem(IDC_COMBO_MDITAB_MCLICK);
+	CComboBox cmbM	 = GetDlgItem(IDC_COMBO_MDITAB_MCLICK);
 
 	CString   strCmd = _T("ƒRƒ}ƒ“ƒh ...");
 
 	cmbR.AddString(strCmd);
 	cmbD.AddString(strCmd);
-	cmbX.AddString(strCmd);
+	cmbM.AddString(strCmd);
 
 	CString   strDesc;
 
 	if (s_RClickCommand) {
 		CToolTipManager::LoadToolTipText(s_RClickCommand, strDesc);
-		cmbR.AddString(strDesc);
-	}
-
-	if (s_MClickCommand) {
-		CToolTipManager::LoadToolTipText(s_MClickCommand, strDesc);
-		cmbX.AddString(strDesc);
+		cmbR.SetCurSel(cmbR.AddString(strDesc));
 	}
 
 	if (s_DClickCommand) {
 		CToolTipManager::LoadToolTipText(s_DClickCommand, strDesc);
-		cmbD.AddString(strDesc);
+		cmbD.SetCurSel(cmbD.AddString(strDesc));
+	}
+
+	if (s_MClickCommand) {
+		CToolTipManager::LoadToolTipText(s_MClickCommand, strDesc);
+		cmbM.SetCurSel(cmbM.AddString(strDesc));
 	}
 }
 

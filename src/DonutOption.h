@@ -7,6 +7,7 @@
 #ifndef __PROPERTY_SHEET_H_
 #define __PROPERTY_SHEET_H_
 
+#include "resource.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // CTreeViewPropertySheet : Donut‚ÌƒIƒvƒVƒ‡ƒ“

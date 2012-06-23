@@ -14,7 +14,7 @@
 
 #include "stdafx.h"
 #include "MtlWeb.h"
-#include <boost/regex.hpp>
+#include <regex>
 #include "DonutPFunc.h"
 #include  "IniFile.h"
 
@@ -1009,11 +1009,11 @@ bool __MtlSkipChar(const CString &str, int &nIndex, TCHAR ch)
 
 void _MtlCreateHrefUrlArray(CSimpleArray<CString> &arrUrl, const CString &strHtmlText)
 {
-	boost::wregex	rx(L"<A[^>]+href=(?:\"|'|)([^\"' ]+)(?:\"|'|)[^>]+>");
-	boost::wsmatch	result;
+	std::wregex	rx(L"<A[^>]+href=(?:\"|'|)([^\"' ]+)(?:\"|'|)[^>]+>");
+	std::wsmatch	result;
 	std::wstring strtemp = (LPCTSTR)strHtmlText;
 	auto itbegin = strtemp.cbegin();
-	while (boost::regex_search(itbegin, strtemp.cend(), result, rx)) {
+	while (std::regex_search(itbegin, strtemp.cend(), result, rx)) {
 		CString strUrl = result.str(1).c_str();
 		if (strUrl.IsEmpty() == FALSE && strUrl[0] != _T('#'))
 			arrUrl.Add(strUrl);

@@ -81,7 +81,6 @@
 //--------------------------------------
 
 //#include <boost\scope_exit.hpp>
-//#include "XmlFile.h"
 //#include "DialogKiller.h"
 //#include "dialog/DebugWindow.h"
 //#include "PropertySheet.h"

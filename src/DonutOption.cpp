@@ -1,8 +1,10 @@
 // DonutOption.cpp
 
 #include "stdafx.h"
-#include "resource.h"
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
 #include "DonutOption.h"
+#include "resource.h"
 #include "IniFile.h"
 #include "DonutPFunc.h"
 
@@ -272,6 +274,57 @@ void CTreeViewPropertySheet::_MoveChild(HWND hWnd)
 
 void CTreeViewPropertySheet::_SetToolTip(int nIndex)
 {
+	CString optionXmlPath = _GetFilePath( _T("help\\Option.xml") );
+	using boost::property_tree::wptree;
+
+	PAGEINFO* ppi = m_aryPage[nIndex];
+
+	std::wifstream	filestream(optionXmlPath);
+	if (!filestream) 
+		return ;
+	filestream.imbue(std::locale(""));
+
+	try {
+		TIMERSTART();
+		wptree	pt;
+		boost::property_tree::read_xml(filestream, pt);
+
+		// Option.xmlから目的のダイアログを見つける
+		if (auto ptOption = pt.get_child_optional(L"option")) {
+			for (auto itDialog = ptOption->begin(); itDialog != ptOption->end(); ++itDialog) {
+				if (itDialog->first != L"dialog")
+					continue;			
+				std::wstring dialogDiscription = itDialog->second.get<std::wstring>(L"<xmlattr>.description");
+				if (dialogDiscription == ppi->title) {
+					auto& ptItems = itDialog->second;
+					for (auto itChild = ptItems.begin(); itChild != ptItems.end(); ++itChild) {
+						if (itChild->first != L"item")
+							continue;
+						int CtrlID = itChild->second.get<int>(L"<xmlattr>.id");
+						HWND hWndCtrl = ::GetDlgItem(ppi->hWnd, CtrlID);
+						if (hWndCtrl == NULL)
+							continue;
+						CString strTipText = itChild->second.get_value<std::wstring>().c_str();
+						strTipText.TrimLeft(_T("\r\n"));
+						strTipText.Replace(_T("\t"), _T(""));
+						//チップテキストを付与
+						CToolInfo		ti(TTF_SUBCLASS | TTF_TRACK, hWndCtrl, 0, NULL, strTipText.GetBuffer(0));
+						if ( m_bUseTheme == false) 
+							ti.cbSize = sizeof(TOOLINFO) - sizeof(void*);
+						m_ToolTip.AddTool(ti);
+					}
+					_ShowToolTip();
+					TIMERSTOP(_T("オプションにツールチップ設定成功"));
+					return;
+				}
+			}
+		}
+	} catch (...) {
+		TRACEIN(_T("Donutのオプションにツールチップを設定できませんでした"));
+	}
+	TIMERSTOP(_T("オプションにツールチップ設定失敗"));
+
+#if 0
 	#if _ATL_VER >= 0x700
 	//Option.xmlをロード
 	CComPtr<MSXML2::IXMLDOMDocument2> Doc;
@@ -339,6 +392,7 @@ void CTreeViewPropertySheet::_SetToolTip(int nIndex)
 		}
 	}
 	#endif
+#endif
 }
 
 void CTreeViewPropertySheet::_ShowToolTip()
