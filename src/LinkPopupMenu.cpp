@@ -16,6 +16,7 @@
 #include "MainFrame.h"
 #include "ExStyle.h"
 #include "option\LinkBarPropertyPage.h"
+#include "option\FavoriteMenuDialog.h"
 
 //////////////////////////////////////////////////////
 // CLinkItemDataObject
@@ -623,6 +624,9 @@ CLinkPopupMenu::CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex /*= -1*/
 	WTL::CLogFont	lf;
 	lf.SetMenuFont();
 	m_font = lf.CreateFontIndirect();
+
+	enum { kNormalItemHeight = 22, kPackItemHeight = 14 };
+	kItemHeight = CFavoritesMenuOption::s_bPackItem ? kPackItemHeight : kNormalItemHeight;
 }
 
 HWND	CLinkPopupMenu::SetLinkBarHWND(HWND hWnd)

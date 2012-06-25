@@ -187,12 +187,12 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 	//SetRedraw(FALSE);
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
-		::SendMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
 		::ShowWindowAsync(m_hWndChildFrame, FALSE);
 	}
 	
 	if (hWndChildFrame) {
-		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
+		::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
 		RECT rcClient;
 		GetClientRect(&rcClient);
 		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
@@ -318,6 +318,7 @@ public:
 		MESSAGE_HANDLER_EX( MYWM_NOTIFYICON , OnMyNotifyIcon  )
 		MSG_WM_MOUSEWHEEL( OnMouseWheel	)
 
+		USER_MSG_WM_INITPROCESSFINISHED		( OnInitProcessFinished )
 		USER_MSG_WM_UIUPDATE()
 		USER_MSG_WM_BROWSERTITLECHANGE		( OnBrowserTitleChange		)
 		USER_MSG_WM_BROWSERLOCATIONCHANGE	( OnBrowserLocationChange	)
@@ -601,6 +602,7 @@ public:
 	LRESULT OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 
+	void	OnInitProcessFinished();
 	void	OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
 	void	OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon);
 
@@ -681,6 +683,7 @@ private:
 	void	_SetHideTrayIcon();
 	void	_DeleteTrayIcon();
 
+	void	_NewDonutInstance(const CString& strURL);
 	void	_NavigateChildFrame(HWND hWnd, LPCTSTR strURL, DWORD DLCtrl = -1, DWORD ExStyle = -1, DWORD AutoRefresh = 0);
 
 	// for updateUI

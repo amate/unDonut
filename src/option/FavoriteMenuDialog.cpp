@@ -10,16 +10,21 @@
 ////////////////////////////////////////////////////////////////////////
 // CFavoritesMenuOption
 
+bool	CFavoritesMenuOption::s_bPackItem	= false;
+
+
 // iniÇ©ÇÁê›íËÇì«Ç›çûÇﬁ
 void CFavoritesMenuOption::GetProfile()
 {
-
-
+	CIniFileI	pr( g_szIniFileName, _T("FavoritesMenu") );
+	s_bPackItem = pr.GetValue(_T("PackItem"), s_bPackItem) != 0;
 }
 
 // iniÇ÷ê›íËÇï€ë∂Ç∑ÇÈ
 void CFavoritesMenuOption::WriteProfile()
 {
+	CIniFileIO	pr( g_szIniFileName, _T("FavoritesMenu") );
+	pr.SetValue(s_bPackItem, _T("PackItem"));
 }
 
 
@@ -60,7 +65,7 @@ BOOL CDonutFavoritesMenuPropertyPage::OnKillActive()
 BOOL CDonutFavoritesMenuPropertyPage::OnApply()
 {
 	if ( DoDataExchange(DDX_SAVE) ) {
-
+		WriteProfile();
 		return TRUE;
 	} else {
 		return FALSE;

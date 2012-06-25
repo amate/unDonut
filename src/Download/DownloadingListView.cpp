@@ -9,6 +9,7 @@
 #include "../MtlCom.h"
 #include "../HlinkDataObject.h"
 #include "../DonutPFunc.h"
+#include "../SharedMemoryUtil.h"
 #include "DLListWindow.h"
 #include "../MainFrame.h"
 
@@ -520,7 +521,16 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 			break;
 		}
 	}
+
+	// リストには追加されていないアイテム
+	CSharedMemory sharedMem;
+	if (pDLItem == nullptr) {
+		CString sharedMemName;
+		sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);		
+		pDLItem = static_cast<DLItem*>(sharedMem.OpenSharedMemory(sharedMemName, false));
+	}
 	ATLASSERT( pDLItem );
+	TRACEIN(_T("OnRemoveFromList() : ダウンロード終了 「%s」"), pDLItem->strFileName);
 	DWORD dwThreadId = pDLItem->dwThreadId;
 	if (dwThreadId) {
 		::PostThreadMessage(dwThreadId, WM_DECREMENTTHREADREFCOUNT, 0, 0);
@@ -569,13 +579,16 @@ LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lPara
 		m_dwLastTime = ::timeGetTime();
 		m_bTimer = true;
 	}
+
 	uintptr_t unique = (uintptr_t)wParam;
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
-	HANDLE hMap = ::OpenFileMapping(FILE_MAP_ALL_ACCESS, FALSE, sharedMemName);
-	ATLASSERT( hMap );
-	DLItem* pDLItem = static_cast<DLItem*>(::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0));
-	DLItemInfomation item(pDLItem, hMap);
+	CSharedMemoryHandle sharedMem;
+	DLItem* pDLItem = static_cast<DLItem*>(sharedMem.OpenSharedMemory(sharedMemName, false));
+	ATLASSERT( pDLItem );
+	DLItemInfomation item(pDLItem, sharedMem.Handle());
+
+	TRACEIN(_T("OnAddToList() : ダウンロード開始 「%s」"), pDLItem->strFileName);
 
 	// アイコンを追加
 	_AddIcon(item);

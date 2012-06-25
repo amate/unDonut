@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "MultiThreadManager.h"
+#include <boost\thread.hpp>
 #include "SharedMemoryUtil.h"
 #include "MainFrame.h"
 #include "ChildFrame.h"
@@ -153,10 +154,7 @@ DWORD WINAPI CMultiThreadManager::RunMainThread(LPVOID lpData)
 
 		_Module.Lock();
 
-		if (CStartUpOption::s_dwParam) 
-			CStartUpOption::StartUp(wndMain);
-		if (pData->lpstrCmdLine && pData->lpstrCmdLine[0] != _T('\0'))
-			CommandLineArg(wndMain, pData->lpstrCmdLine);
+		CStartUpOption::StartUp(wndMain);
 
 		//wndMain.SetAutoBackUp();		//自動更新するなら、開始.
 
@@ -188,6 +186,7 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 
 	int	nThreadRefCount = 0;
 	pData->pChild->SetThreadRefCount(&nThreadRefCount);
+	pData->pChild->SetThreadIdFromNewWindow2(pData->ConstructData.dwThreadIdFromNewWindow);
 
 	CWindow wnd = pData->pChild->CreateEx(pData->ConstructData.hWndParent);
 	NewChildFrameData& NewChildData = pData->ConstructData;
@@ -316,6 +315,161 @@ void CMultiThreadManager::RemoveThread(DWORD dwIndex)
 }
 
 
+////////////////////////////////////////////////////////////////////
+/// 子プロセスのスレッドを管理する
+
+class CChildProcessThreadManager
+{
+public:
+	enum { WM_NEWCHILDFRAMETHREAD = WM_APP + 300 };
+
+	CChildProcessThreadManager() : m_dwChildProcessThreadId(0)
+	{	}
+
+	void	init() { m_dwChildProcessThreadId = ::GetCurrentThreadId(); }
+
+	/// スレッドの追加の全スレッドの終了待機をする
+	void	ObserveChildProcessThread()
+	{
+		MSG msg;
+		DWORD dwRet;
+		while (m_dwCount > 0) {
+			dwRet = ::MsgWaitForMultipleObjects(m_dwCount, m_arrThreadHandles, FALSE, INFINITE, QS_ALLINPUT);
+
+			if (dwRet == 0xFFFFFFFF) {
+				::MessageBox(NULL, _T("エラー: オブジェクトのイベント待ち受けに失敗しました！"), _T("Multi"), MB_OK);
+
+			} else if(dwRet >= WAIT_OBJECT_0 && dwRet <= (WAIT_OBJECT_0 + m_dwCount - 1)) {
+				// スレッドが終了したので待ち配列から削除する
+				_RemoveThread(dwRet - WAIT_OBJECT_0);
+
+			} else if(dwRet == (WAIT_OBJECT_0 + m_dwCount)) {
+				if(::PeekMessage(&msg, (HWND)-1, 0, 0, PM_REMOVE)) {
+					if(msg.message == WM_NEWCHILDFRAMETHREAD)
+						_AddThread((NewChildFrameData*)msg.wParam);
+				}
+			} else {
+				::MessageBeep((UINT)-1);
+			}
+		}
+	}
+
+	void	AddFirstChildThread(const NewChildFrameData& NewChildData)
+	{
+		_AddThread(new NewChildFrameData(NewChildData));
+	}
+
+	void	AddChildThread(const NewChildFrameData& NewChildData)
+	{
+		ATLASSERT( m_dwChildProcessThreadId );
+		::PostThreadMessage(m_dwChildProcessThreadId, WM_NEWCHILDFRAMETHREAD, (WPARAM)new NewChildFrameData(NewChildData), 0);
+	}
+
+private:
+
+	void _AddThread(NewChildFrameData* pData)
+	{
+		if (m_dwCount == (MAXIMUM_WAIT_OBJECTS - 1)) {
+			MessageBox(NULL, _T("これ以上スレッドを作成できません"), _T("エラー"), MB_ICONERROR);
+			return ;
+		}
+		TRACEIN(_T("_AddThread() m_dwCount(%d)"), m_dwCount);
+		DWORD dwThreadID = 0;
+		HANDLE hThread = ::CreateThread(NULL, 0, _ChildThreadMessageLoop, (LPVOID)pData, 0, &dwThreadID);
+		m_arrThreadHandles[m_dwCount] = hThread;
+		++m_dwCount;	
+	}
+
+	void _RemoveThread(DWORD dwIndex)
+	{
+		TRACEIN(_T("_RemoveThread(%d)"), dwIndex);
+		::CloseHandle(m_arrThreadHandles[dwIndex]);
+		if(dwIndex != (m_dwCount - 1))
+			m_arrThreadHandles[dwIndex] = m_arrThreadHandles[m_dwCount - 1];
+		m_dwCount--;
+	}
+
+
+	static DWORD WINAPI _ChildThreadMessageLoop(LPVOID pData)
+	{
+		NewChildFrameData* pNewChildData = (NewChildFrameData*)pData;
+		NewChildFrameData& NewChildData = *pNewChildData;
+
+		::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+		::OleInitialize(NULL);
+
+		CMessageLoop theLoop;
+		_Module.AddMessageLoop(&theLoop);
+
+		CChildFrame* pChild = new CChildFrame;
+		int	nThreadRefCount = 0;
+		pChild->SetThreadRefCount(&nThreadRefCount);
+		pChild->SetThreadIdFromNewWindow2(NewChildData.dwThreadIdFromNewWindow);
+		
+		// ChildFrameウィンドウ作成
+		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);
+		pChild->SetDLCtrl(NewChildData.dwDLCtrl);
+		pChild->SetExStyle(NewChildData.dwExStyle);
+		pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
+		pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
+		pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
+		if (NewChildData.strURL.GetLength() > 0)
+			pChild->Navigate2(NewChildData.strURL);
+
+		// タブに追加
+		DWORD dwOption = 0;
+		if (NewChildData.bActive)
+			dwOption |= TAB_ACTIVE;
+		if (NewChildData.bLink)
+			dwOption |= TAB_LINK;
+		CWindow wndMainFrame = wnd.GetTopLevelWindow();
+		wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+	
+		delete pNewChildData;
+
+		class CThreadRefManager : public CMessageFilter
+		{
+		public:
+			CThreadRefManager(int* pCount) : m_pThreadRefCount(pCount)
+			{	}
+
+			virtual BOOL PreTranslateMessage(MSG* pMsg)
+			{
+				switch (pMsg->message) {
+				case WM_DECREMENTTHREADREFCOUNT:
+					--(*m_pThreadRefCount);
+					TRACEIN(_T("WM_DECREMENTTHREADREFCOUNT : 残り %d"), *m_pThreadRefCount);
+					if (*m_pThreadRefCount == 0) {
+						TRACEIN(_T("ChildFreameスレッドの破棄"));
+						PostQuitMessage(0);
+					}
+					return TRUE;
+				}
+				return FALSE;
+			}
+		private:
+			int*	m_pThreadRefCount;
+		};
+		CThreadRefManager threadRefManager(&nThreadRefCount);
+		theLoop.AddMessageFilter(&threadRefManager);
+
+		int nRet = theLoop.Run();
+
+		theLoop.RemoveMessageFilter(&threadRefManager);
+
+		_Module.RemoveMessageLoop();
+
+		::CoUninitialize();
+		::OleUninitialize();
+		return 0;
+	}
+
+	// Data members
+	DWORD m_dwChildProcessThreadId;
+	DWORD m_dwCount;
+	HANDLE m_arrThreadHandles[MAXIMUM_WAIT_OBJECTS - 1];
+
+} g_child_process_thread_manager;
 
 
 ////////////////////////////////////////////////////////////////////
@@ -354,84 +508,45 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 	sharedMem.Deserialize(NewChildData, hMap);
 	sharedMem.CloseHandle();
 
-	{
-		_Module.Init(NULL, hInstance);
+	_Module.Init(NULL, hInstance);
 
-		::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-		::OleInitialize(NULL);
+	//::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
+	//::OleInitialize(NULL);
 
-		// ActiveXコントロールをホストするための準備
-		AtlAxWinInit();
+	// ActiveXコントロールをホストするための準備
+	AtlAxWinInit();
 
-		HANDLE hJob = ::OpenJobObject(JOB_OBJECT_ASSIGN_PROCESS, FALSE, MAINFRAMEJOBOBJECTNAME);
-		AssignProcessToJobObject(hJob, GetCurrentProcess());
-		::CloseHandle(hJob);
+	HANDLE hJob = ::OpenJobObject(JOB_OBJECT_ASSIGN_PROCESS, FALSE, MAINFRAMEJOBOBJECTNAME);
+	AssignProcessToJobObject(hJob, GetCurrentProcess());
+	::CloseHandle(hJob);
 
-		CMessageLoop theLoop;
-		_Module.AddMessageLoop(&theLoop);
+	// 強制的にメッセージキューを作らせる
+	MSG msg;
+	::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
 
-		CChildFrame* pChild = new CChildFrame;
-		int	nThreadRefCount = 0;
-		pChild->SetThreadRefCount(&nThreadRefCount);
-		
-		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);
-		pChild->SetDLCtrl(NewChildData.dwDLCtrl);
-		pChild->SetExStyle(NewChildData.dwExStyle);
-		pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
-		pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
-		pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
-		pChild->Navigate2(NewChildData.strURL);
+	g_child_process_thread_manager.init();
+	g_child_process_thread_manager.AddFirstChildThread(NewChildData);
 
-		DWORD dwOption = 0;
-		if (NewChildData.bActive)
-			dwOption |= TAB_ACTIVE;
-		if (NewChildData.bLink)
-			dwOption |= TAB_LINK;
-		CWindow wndMainFrame = wnd.GetTopLevelWindow();
-		wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+	g_child_process_thread_manager.ObserveChildProcessThread();
 
-		wndMainFrame.PostMessage(WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE, 0, (LPARAM)hMap);
-	
-		class CThreadRefManager : public CMessageFilter
-		{
-		public:
-			CThreadRefManager(int* pCount) : m_pThreadRefCount(pCount)
-			{	}
+	//::CoUninitialize();
+	//::OleUninitialize();
 
-			virtual BOOL PreTranslateMessage(MSG* pMsg)
-			{
-				switch (pMsg->message) {
-				case WM_DECREMENTTHREADREFCOUNT:
-					--(*m_pThreadRefCount);
-					TRACEIN(_T("WM_DECREMENTTHREADREFCOUNT : 残り %d"), *m_pThreadRefCount);
-					if (*m_pThreadRefCount == 0) {
-						TRACEIN(_T("ChildFreameスレッドの破棄"));
-						PostQuitMessage(0);
-					}
-					return TRUE;
-				}
-				return FALSE;
-			}
-		private:
-			int*	m_pThreadRefCount;
-		};
-		CThreadRefManager threadRefManager(&nThreadRefCount);
-		theLoop.AddMessageFilter(&threadRefManager);
+	_Module.Term();
 
-		int nRet = theLoop.Run();
+	TRACEIN(_T("RunChildProcessMessageLoop() 終了..."));
 
-		theLoop.RemoveMessageFilter(&threadRefManager);
-
-		_Module.RemoveMessageLoop();
-
-		::CoUninitialize();
-		::OleUninitialize();
-
-		_Module.Term();
-	}
 	return true;
 }
 
+/// マルチプロセスモードでの子スレッド作成
+void	AddChildThread(NewChildFrameData* pData)
+{
+	g_child_process_thread_manager.AddChildThread(*pData);
+}
+
+
+/// マルチスレッドモードでの子スレッド作成
 void	ExecuteChildFrameThread(CChildFrame* pChild, NewChildFrameData* pData)
 {
 	g_MultiThreadManager.AddChildFrameThread(pChild, pData);

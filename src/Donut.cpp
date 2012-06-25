@@ -315,22 +315,6 @@ static bool	HaveEnvFiles()
 	return false;
 }
 
-void CommandLineArg(CMainFrame& wndMain, LPTSTR lpstrCmdLine)
-{
-	CString 	 strCmdLine = lpstrCmdLine;
-	if (strCmdLine.CompareNoCase( _T("/dde") ) != 0) {	
-		// it's not from dde. (if dde, do nothing.)
-
-		if (  (strCmdLine[0] == '-' || strCmdLine[0] == '/') 
-			&& strCmdLine.Mid(1,4).CompareNoCase(_T("tray")) == 0)	//+++ -trayオプションをスキップ
-			return;
-
-	//	wndMain.SetCommandLine(lpstrCmdLine);
-	}
-}
-
-
-
 
 static HRESULT CreateComponentCategory(CATID catid, WCHAR *catDescription)
 {

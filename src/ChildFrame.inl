@@ -392,18 +392,17 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 	data.dwDLCtrl	= dwDLCtrl;
 	data.dwExStyle	= dwExStyle;
 	data.bLink	= true;
-
-	CChildFrame*	pChild = new CChildFrame;
-	pChild->SetSearchWordAutoHilight(m_strSearchWord, m_bNowHilight);
-	pChild->pImpl->m_dwThreadIdFromNewWindow = ::GetCurrentThreadId();
+	data.searchWord	= m_strSearchWord;
+	data.bAutoHilight= m_bNowHilight;
+	data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
 
 	class CThreadObserver : public CMessageFilter
 	{
 	public:
-		CThreadObserver(IDispatch** ppDisp, CChildFrame* pChild, NewChildFrameData& data) 
+		CThreadObserver(IDispatch** ppDisp, NewChildFrameData& data, bool bMode) 
 			: m_ppDisp(ppDisp)
-			, m_pChild(pChild)
 			, m_data(data)
+			, m_bMultiProcessMode(bMode)
 		{	}
 
 		virtual BOOL PreTranslateMessage(MSG* pMsg)
@@ -411,7 +410,10 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 			switch (pMsg->message) {
 			case WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2:
 				{
-					MultiThreadManager::ExecuteChildFrameThread(m_pChild, &m_data);
+					if (m_bMultiProcessMode)
+						MultiThreadManager::AddChildThread(&m_data);
+					else
+						MultiThreadManager::ExecuteChildFrameThread(new CChildFrame, &m_data);
 					return TRUE;
 				}
 
@@ -429,12 +431,12 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 		}
 	private:
 		IDispatch**	m_ppDisp;
-		CChildFrame*	m_pChild;
 		NewChildFrameData& m_data;
+		bool	m_bMultiProcessMode;
 	};
 
 	CMessageLoop loop;
-	CThreadObserver threadObserver(ppDisp, pChild, data);
+	CThreadObserver threadObserver(ppDisp, data, m_pGlobalConfig->bMultiProcessMode);
 	loop.AddMessageFilter(&threadObserver);
 	
 	PostThreadMessage(::GetCurrentThreadId(), WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2, 0, 0);
@@ -1237,6 +1239,33 @@ LRESULT CChildFrame::Impl::OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPAR
 	UrlMkSetSessionOption(INTERNET_OPTION_PROXY, &proxyinfo, sizeof (proxyinfo), 0);
 	return 0;
 }
+
+
+LRESULT CChildFrame::Impl::OnDefaultRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam) 
+{
+	//CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	//ClientToScreen(&pt);
+	CPoint pt;
+	GetCursorPos(&pt);
+	HWND hWndFound = WindowFromPoint(pt);
+	if (hWndFound && IsChild(hWndFound)) {
+		return ::SendMessage(hWndFound, WM_RBUTTONDOWN, wParam, lParam);
+	}
+	return SendMessage(WM_RBUTTONDOWN, wParam, lParam);
+}
+LRESULT CChildFrame::Impl::OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam) 
+{
+	//CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	//ClientToScreen(&pt);
+	CPoint pt;
+	GetCursorPos(&pt);
+	HWND hWndFound = WindowFromPoint(pt);
+	if (hWndFound && IsChild(hWndFound)) {
+		return ::SendMessage(hWndFound, WM_RBUTTONUP, wParam, lParam);
+	}
+	return SendMessage(WM_RBUTTONUP, wParam, lParam);
+}
+
 
 
 /// ƒtƒ@ƒCƒ‹‚ð•Â‚¶‚é

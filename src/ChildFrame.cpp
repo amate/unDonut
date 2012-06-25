@@ -358,6 +358,8 @@ public:
 		USER_MSG_WM_ACCELTABLECHANGE	( OnAccelTableChange	)
 		MESSAGE_HANDLER_EX( WM_SETPROXYTOCHLDFRAME, OnSetProxyToChildFrame	)
 		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
+		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONDOWN	, OnDefaultRButtonDown	)
+		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONUP		, OnDefaultRButtonUp	)
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -435,6 +437,8 @@ public:
 	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
 	void	OnAccelTableChange() { m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow()); }
 	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnDefaultRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -635,6 +639,11 @@ void	CChildFrame::SetSearchWordAutoHilight(const CString& str, bool bAutoHilight
 void	CChildFrame::SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back)
 {
 	pImpl->SetTravelLog(fore, back);
+}
+
+void	CChildFrame::SetThreadIdFromNewWindow2(DWORD dwThreadId)
+{
+	pImpl->m_dwThreadIdFromNewWindow = dwThreadId;
 }
 
 

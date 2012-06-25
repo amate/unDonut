@@ -12,6 +12,8 @@
 
 struct CFavoritesMenuOption 
 {
+	static bool	s_bPackItem;	// ƒAƒCƒeƒ€‚ÌŠÔŠu‚ð‹l‚ß‚é
+
 	static void		GetProfile();
 	static void		WriteProfile();
 };
@@ -40,6 +42,7 @@ public:
 
 	// DDX map
 	BEGIN_DDX_MAP( CDonutFavoritesMenuPropertyPage )
+		DDX_CHECK( IDC_CHECK_PACK_ITEM	, s_bPackItem	)
 	END_DDX_MAP()
 
 	// Message map and handlers

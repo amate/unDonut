@@ -58,9 +58,11 @@ struct NewChildFrameData {
 	bool	bAutoHilight;
 	CString searchWord;
 
+	DWORD	dwThreadIdFromNewWindow;
+
 	NewChildFrameData(HWND Parent) : 
 		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), 
-		bActive(false), bLink(false), bAutoHilight(false)
+		bActive(false), bLink(false), bAutoHilight(false), dwThreadIdFromNewWindow(0)
 	{	}
 
 private:
@@ -69,7 +71,7 @@ private:
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar & strURL & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefresh;
-		ar & bActive & bLink & bAutoHilight & searchWord;
+		ar & bActive & bLink & bAutoHilight & searchWord & dwThreadIdFromNewWindow;
 #ifdef WIN64
 		ar & reinterpret_cast<__int64&>(hWndParent);
 #else
@@ -187,6 +189,7 @@ public:
 	void	SetAutoRefreshStyle(DWORD dwAutoRefresh);
 	void	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
 	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back);
+	void	SetThreadIdFromNewWindow2(DWORD dwThreadId);
 
 	CComPtr<IWebBrowser2>	GetIWebBrowser();
 	CComPtr<IWebBrowser2>	GetMarshalIWebBrowser();

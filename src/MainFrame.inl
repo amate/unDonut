@@ -1004,18 +1004,7 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 	case kNewDonutInstance:
 		{
 			CString strURL = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
-			std::vector<CString> vecUrl;
-			PerseUrls(strURL, vecUrl);
-			if (vecUrl.size() == 1) {
-				OnDDEOpenFile(strURL);
-			} else if (vecUrl.size() > 1) {
-				for (auto it = vecUrl.cbegin(); it !=  vecUrl.cend(); ++it) {
-					std::unique_ptr<NewChildFrameData>	item(new NewChildFrameData(m_ChildFrameClient));
-					item->strURL	= *it;
-					m_deqNewChildFrameData.push_back(std::move(item));
-				}
-				OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
-			}
+			_NewDonutInstance(strURL);
 		}
 		break;
 
@@ -1190,6 +1179,22 @@ BOOL	CMainFrame::Impl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 	SetMsgHandled(FALSE);
 	return 1;
 }
+
+/// コマンドラインを実行する
+void	CMainFrame::Impl::OnInitProcessFinished()
+{
+	static bool s_bInit = false;
+	if (s_bInit == false) {
+		CString commandLine = ::GetCommandLine();
+		int nSpace = commandLine.Find(_T(' '));
+		if (nSpace != -1) {
+			commandLine = commandLine.Mid(nSpace + 1);
+		}
+		_NewDonutInstance(commandLine);
+		s_bInit = true;
+	}
+}
+
 
 void	CMainFrame::Impl::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
 {
@@ -2099,8 +2104,8 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 			::ScreenToClient(data.hwnd, &ptLast);
 			data.lParam = MAKELONG(ptLast.x, ptLast.y);
 			DWORD_PTR dwResult = 0;
-			if (::SendMessageTimeout(data.hwnd, WM_RBUTTONDOWN, data.wParam, data.lParam, SMTO_ABORTIFHUNG, 2000, &dwResult))
-				::SendMessageTimeout(data.hwnd, WM_RBUTTONUP, data.wParam, data.lParam, SMTO_ABORTIFHUNG, 2000, &dwResult);
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONDOWN, data.wParam, data.lParam);
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONUP, data.wParam, data.lParam);
 		}
 		return !bNoting;
 	};
@@ -2250,6 +2255,24 @@ void CMainFrame::Impl::_DeleteTrayIcon()
 
 	//RtlSetMinProcWorkingSetSize();		//+++ ( メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等 )
 }
+
+
+void	CMainFrame::Impl::_NewDonutInstance(const CString& strURL)
+{
+	std::vector<CString> vecUrl;
+	PerseUrls(strURL, vecUrl);
+	if (vecUrl.size() == 1) {
+		OnDDEOpenFile(vecUrl.front());
+	} else if (vecUrl.size() > 1) {
+		for (auto it = vecUrl.cbegin(); it !=  vecUrl.cend(); ++it) {
+			std::unique_ptr<NewChildFrameData>	item(new NewChildFrameData(m_ChildFrameClient));
+			item->strURL	= *it;
+			m_deqNewChildFrameData.push_back(std::move(item));
+		}
+		OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
+	}
+}
+
 
 void	CMainFrame::Impl::_NavigateChildFrame(HWND hWnd, LPCTSTR strURL, DWORD DLCtrl /*= -1*/, DWORD ExStyle /*= -1*/, DWORD AutoRefresh /*= 0*/)
 {

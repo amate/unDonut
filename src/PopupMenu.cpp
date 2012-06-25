@@ -338,7 +338,7 @@ void CRecentClosedTabPopupMenu::_initMenuItem()
 		s_pRecentClosedTabList->GetFromList(ID_RECENTDOCUMENT_FIRST + i, &pItem);
 
 		CString url = pItem->strURL;
-		::PathCompactPath(dc, url.GetBuffer(url.GetLength()), kMaxMenuTextWidth);
+		::PathCompactPath(dc, url.GetBuffer(INTERNET_MAX_URL_LENGTH), kMaxMenuTextWidth);
 		url.ReleaseBuffer();
 		int nSrash = url.ReverseFind(_T('\\'));
 		if (nSrash != -1)

@@ -56,9 +56,7 @@ inline bool GetDonutURLList(IDataObject* pDataObject, std::vector<CString>&	vecU
 	STGMEDIUM stgmedium = { 0 };
 	if ( SUCCEEDED(pDataObject->GetData(&formatetc, &stgmedium)) ) {
 		if (stgmedium.hGlobal) {
-			CString sharedMemName;
-			sharedMemName.Format(_T("%s%#x"), DONUTURLLISTSHAREDMEMNAME, stgmedium.hGlobal);
-			HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
+			HANDLE hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, DONUTURLLISTSHAREDMEMNAME);
 			LPVOID lpOrg = ::MapViewOfFile(hMap, FILE_MAP_READ, 0, 0, 0);
 			HANDLE* pMapForClose = reinterpret_cast<HANDLE*>(lpOrg);
 			HANDLE hMapForClose = *pMapForClose;
@@ -290,12 +288,10 @@ private:
 		for (int i = 0; i < nCount; ++i) {
 			dwSize += ((m_arrNameAndUrl[i].second.GetLength() + 1) * sizeof(WCHAR));
 		}
-		dwSize += sizeof(WCHAR) + sizeof(HANDLE);
+		dwSize += (sizeof(WCHAR) * 2) + sizeof(HANDLE);
 
 		HGLOBAL hMem = static_cast<HGLOBAL>(m_arrNameAndUrl[0].second.GetBuffer(0));
-		CString sharedMemName;
-		sharedMemName.Format(_T("%s%#x"), DONUTURLLISTSHAREDMEMNAME, hMem);
-		HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, dwSize, sharedMemName);
+		HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, dwSize, DONUTURLLISTSHAREDMEMNAME);
 		ATLASSERT( hMap );
 		LPVOID lpMapOrg = static_cast<LPVOID>(::MapViewOfFile(hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0));
 		HANDLE* pMap = reinterpret_cast<HANDLE*>(lpMapOrg);

@@ -181,7 +181,7 @@ public:
 	enum {
 		kBoundMargin = 2,
 		kBoundBorder = 1,
-		kItemHeight = 22, 
+		//kItemHeight = 14,//22, 
 		kIconWidth	= 26,
 		kVerticalLineWidth = 2,
 		kTextMargin	= 4,
@@ -203,6 +203,7 @@ public:
 
 		kDragInsertHitWidthOnFolder = 3,
 	};
+	int	kItemHeight;
 
 	// Constructor
 	CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex = -1);

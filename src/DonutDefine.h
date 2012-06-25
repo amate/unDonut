@@ -833,6 +833,9 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
+#define WM_DEFAULTRBUTTONDOWN	(WM_USER + 139)
+#define WM_DEFAULTRBUTTONUP		(WM_USER + 140)
+
 
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)

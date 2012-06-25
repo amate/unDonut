@@ -995,8 +995,13 @@ bool	GetDonutTempPath(CString& strTempPath)
 void	OpenFolderAndSelectItem(const CString& strPath)
 {
 	LPITEMIDLIST	pidlFolder = ::ILCreateFromPath(strPath);
-	if (pidlFolder == nullptr)
+	if (pidlFolder == nullptr) {	// ÉtÉ@ÉCÉãÇ™è¡Ç≥ÇÍÇΩ
+		CString folder = strPath;
+		::PathRemoveFileSpec(folder.GetBuffer(MAX_PATH));
+		folder.ReleaseBuffer();
+		::ShellExecute(NULL, NULL, folder, NULL, NULL, SW_NORMAL);
 		return ;
+	}
 	LPITEMIDLIST	pidlChild = ::ILClone(::ILFindLastID(pidlFolder));
 	::ILRemoveLastID(pidlFolder);
 

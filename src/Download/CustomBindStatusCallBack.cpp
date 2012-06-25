@@ -240,9 +240,6 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 		if (m_spStream == NULL && pstgmed->tymed == TYMED_ISTREAM) {
 			m_spStream = pstgmed->pstm;	
 
-			/* DLリストに追加 */
-			::PostMessage(m_hWndDLing, WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem->unique, 0);
-
 			// ファイル名を取得する
 			if (_GetFileName() == false) {
 				// キャンセルされたので帰る
@@ -266,6 +263,9 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 				Cancel();
 				return E_ABORT;
 			}
+
+			/* DLリストに追加 */
+			::SendMessage(m_hWndDLing, WM_USER_ADDTODOWNLOADLIST, (WPARAM)m_pDLItem->unique, 0);
 		}
 	}
 
@@ -557,7 +557,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 			if (m_dwDLOption & DLO_OVERWRITEPROMPT) {
 				CString strMessage;
 				strMessage.Format(_T("%s は既に存在します。\n上書きしますか？\n"), (LPCTSTR)m_pDLItem->strFileName);;
-				if (MessageBox(NULL, strMessage, _T("確認"), MB_OKCANCEL | MB_ICONWARNING) == IDCANCEL) {
+				if (MessageBox(m_hWndDLing, strMessage, _T("確認"), MB_OKCANCEL | MB_ICONWARNING) == IDCANCEL) {
 					return false;
 				}
 			} else if (m_dwDLOption & DLO_USEUNIQUENUMBER) {

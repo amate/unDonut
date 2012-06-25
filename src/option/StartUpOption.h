@@ -106,11 +106,11 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 
 	switch (s_dwFlags) {
 	case STARTUP_NOINITWIN:
-//		__frame.PostMessage(WM_INITPROCESSFINISHED);
+		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
 		break;
 
 	case STARTUP_GOHOME:
-//		__frame.OnFileNewHome(0, 0, NULL);
+		::PostMessage(__frame.GetHWND(), WM_COMMAND, ID_FILE_NEW_HOME, 0);
 		break;
 
 	case STARTUP_LATEST:

@@ -276,27 +276,31 @@ STDMETHODIMP CDonutView::Drop(IDataObject *pDataObj, DWORD grfKeyState, POINTL p
 	m_spDropTargetHelper->Drop(pDataObj, (LPPOINT)&pt, *pdwEffect);
 
 	if (m_bDragAccept && m_bUseCustomDropTarget) {
-		if (MTL::MtlIsDataAvailable(pDataObj, CF_SHELLURLW)) {	// タブなどから
-			CString strURL;
-			MtlGetHGlobalText(pDataObj, strURL, CF_SHELLURLW);
-			if (strURL.GetLength() > 0) {
-				MTL::ParseInternetShortcutFile(strURL);	// ファイルパス->URL
-				Navigate2(strURL);
+		std::vector<CString> vecUrl;
+		if (GetDonutURLList(pDataObj, vecUrl)) {	// タブから
+			for (auto it = vecUrl.begin(); it != vecUrl.end(); ++it) {
+				COPYDATASTRUCT cds = { 0 };
+				cds.dwData	= kNewDonutInstance;
+				cds.lpData	= static_cast<LPVOID>((*it).GetBuffer(0));
+				cds.cbData	= ((*it).GetLength() + 1) * sizeof(TCHAR);
+				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 			}
-			return DROPEFFECT_LINK;
+			return DROPEFFECT_NONE;
 		}
 
 		CSimpleArray<CString>	arrFiles;
 		if ( MtlGetDropFileName(pDataObj, arrFiles) ) {	// ファイルがDropされた
-			DWORD  df   = DonutGetStdOpenFlag();
 			int  size = arrFiles.GetSize();
 			//if (size == 1)
 			//	df |= D_OPENFILE_NOCREATE;
 			for (int i = 0; i < size; ++i) {
+				MTL::ParseInternetShortcutFile(arrFiles[i]);	// ファイルパス->URL
+				CString url;
+				url.Format(_T("\"%s\""), arrFiles[i]);
 				COPYDATASTRUCT cds = { 0 };
 				cds.dwData	= kNewDonutInstance;
-				cds.lpData	= static_cast<LPVOID>(arrFiles[i].GetBuffer(0));
-				cds.cbData	= (arrFiles[i].GetLength() + 1) * sizeof(TCHAR);
+				cds.lpData	= static_cast<LPVOID>(url.GetBuffer(0));
+				cds.cbData	= (url.GetLength() + 1) * sizeof(TCHAR);
 				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 				//DonutOpenFile(arrFiles[i], df);
 			}

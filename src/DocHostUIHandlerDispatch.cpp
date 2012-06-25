@@ -114,6 +114,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 	//if (pptPosition) 					//+++
 	//	m_pt	= *pptPosition;			//+++
 	
+	CString imageAnchorUrl;
 	if (dwID == CONTEXT_MENU_ANCHOR) {
 		if (pDispatchObjectHit) {
 			CComQIPtr<IHTMLAnchorElement>	spAnchor = pDispatchObjectHit;
@@ -122,7 +123,6 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 			HRESULT hr = spAnchor->get_href(&strURL);
 			if (strURL) {
 				m_strUrl = strURL;
-				goto ANCHORFINISH;
 			}
 		}
 		//m_strUrl = Donut_GetActiveStatusStr();
@@ -132,13 +132,21 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 			ATLASSERT(spImage);
 			CComBSTR strURL;
 			HRESULT hr = spImage->get_src(&strURL);
-			if (strURL) {
+			if (strURL) 
 				m_strUrl = strURL;
-				goto ANCHORFINISH;
+			
+			CComQIPtr<IHTMLElement> spElmImage = spImage;
+			CComPtr<IHTMLElement> spParentElement;
+			spElmImage->get_parentElement(&spParentElement);
+			CComQIPtr<IHTMLAnchorElement> spAnchor = spParentElement;
+			if (spAnchor) {
+				CComBSTR strURL2;
+				spAnchor->get_href(&strURL2);
+				if (strURL2)
+					imageAnchorUrl = strURL2;
 			}
 		}
 	}
-	ANCHORFINISH:
 
 
 	enum {
@@ -212,16 +220,15 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 		int iSelection = menu.TrackPopupMenu(dwMenuStyle, pptPosition->x, pptPosition->y, m_pView->m_hWnd);//hWndTarget);//hWndTopLevel);
 
 		enum { ID_SAVEDIALOG = 2268 };	// 対象をファイルに保存
-		if (dwID == CONTEXT_MENU_ANCHOR	
-			&& iSelection == ID_SAVEDIALOG 
-			&& m_pView->UseDownloadManager()) 
+		if (iSelection == ID_SAVEDIALOG && 
+			m_pView->UseDownloadManager() ) 
 		{	// DLManagerに送る
-			m_pView->StartTheDownload(m_strUrl);
+			m_pView->StartTheDownload(imageAnchorUrl.IsEmpty() ? m_strUrl : imageAnchorUrl);
 		} else {
 			// Send selected shortcut menu item command to shell
 			LRESULT  lRes	= S_OK;
 			if (iSelection != 0) {
-				lRes = ::SendMessage(hWndTarget, WM_COMMAND, iSelection, NULL);
+				lRes = ::PostMessage(hWndTarget, WM_COMMAND, iSelection, NULL);
 			}
 
 			{	// MainFrameにメッセージを送信するかどうか
