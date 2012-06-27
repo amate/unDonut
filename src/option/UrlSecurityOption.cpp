@@ -66,7 +66,7 @@ void CUrlSecurityOption::GetProfile()
 
 	//+++ ファイルより読み込む
 	std::list<CString>	urls;
-	::FileReadString(_GetFilePath( _T("UrlEntry.ini") ), urls);
+	::FileReadString(GetConfigFilePath( _T("UrlEntry.ini") ), urls);
 
 	//+++ ファイルから読み込んだデータを分解する
 	s_UrlSecurityList.clear();
@@ -123,7 +123,7 @@ void CUrlSecurityOption::WriteProfile()
 	  #endif
 	}
 
-	FileWriteString( _GetFilePath( _T("UrlEntry.ini") ), urls );
+	FileWriteString( GetConfigFilePath( _T("UrlEntry.ini") ), urls );
 }
 
 

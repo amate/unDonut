@@ -79,7 +79,7 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 #if 1
 	// 位置を復元する
-	CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
+	CString strIniFile = GetConfigFilePath(_T("Download.ini"));
 	CIniFileI	pr(strIniFile, _T("Main"));
 	CRect rcWindow;
 	rcWindow.top	= pr.GetValue(_T("top"), -1);
@@ -114,7 +114,7 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 /// ウィンドウ破棄されるとき : ウィンドウの位置サイズを保存する
 void	CDownloadFrame::OnDestroy()
 {
-	CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
+	CString strIniFile = GetConfigFilePath(_T("Download.ini"));
 	CIniFileO pr(strIniFile, _T("Main"));
 
 	// 位置を保存する

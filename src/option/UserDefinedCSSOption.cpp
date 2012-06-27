@@ -42,7 +42,7 @@ void	CUserDefinedCSSOption::LoadUserCSSConfig()
 		using boost::property_tree::wptree;
 		using namespace boost::property_tree::xml_parser;
 
-		CString strUserDefinedCSSConfig = Misc::GetFullPath_ForExe(_T("UserDefinedCSSConfig.xml"));
+		CString strUserDefinedCSSConfig = GetConfigFilePath(_T("UserDefinedCSSConfig.xml"));
 
 		FILE* fp = nullptr;
 		if (_wfopen_s(&fp, strUserDefinedCSSConfig, L"r, ccs=UTF-8") != 0) {
@@ -90,7 +90,7 @@ void CUserDefinedCSSOption::SaveUserCSSConfig()
 			ptItem.put(L"<xmlattr>.url", (LPCTSTR)data.strUrl);
 			ptItem.put(L"<xmlattr>.csspath", (LPCTSTR)data.strCSSPath.Mid(strCssDir.GetLength()));
 		}
-		CString strUserDefinedCSSConfig = Misc::GetFullPath_ForExe(_T("UserDefinedCSSConfig.xml"));
+		CString strUserDefinedCSSConfig = GetConfigFilePath(_T("UserDefinedCSSConfig.xml"));
 		std::wstringstream	strstream;
 		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
 

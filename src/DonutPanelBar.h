@@ -382,7 +382,7 @@ public:
 	{
 #if 0
 		if ( pMsg->message == WM_MBUTTONDOWN && ::IsChild(m_hWnd, pMsg->hwnd) ) {
-			CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+			CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 			DWORD		dwLinkOpenBtnM = pr.GetValue(_T("LinkOpenBtnM"), 0);
 			pr.Close();
 			if (dwLinkOpenBtnM) {

@@ -481,7 +481,7 @@ void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)
 
 BOOL	CChildFrame::Impl::OnMButtonHook(MSG* pMsg)
 {
-	CIniFileI	 pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+	CIniFileI	 pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 	DWORD	dwLinkOpenBtnM = pr.GetValue(_T("LinkOpenBtnM"), 0);
 	if (dwLinkOpenBtnM == 0)	// ボタンが設定されていなかったら、終わり.
 		return FALSE;
@@ -631,7 +631,7 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 					strLastMark = strMark1;	
 
 					CString strCmdName;
-					CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+					CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 					DWORD	dwCommand = pr.GetValue(strMove);
 					if (dwCommand) {
 						// 合致するコマンドがあれば表示
@@ -721,7 +721,7 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 
 		m_UIChange.SetStatusText(_T(""));
 
-		CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+		CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 		DWORD dwCommand = pr.GetValue(strMove);
 		if (dwCommand) {
 			::SendMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
@@ -748,7 +748,7 @@ BOOL CChildFrame::Impl::OnXButtonUp(WORD wKeys, WORD wButton)
 	case XBUTTON2: strKey = _T("Side2"); break;
 	}
 
-	CIniFileI pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+	CIniFileI pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 	DWORD	dwCommand = pr.GetValue(strKey);
 	if (dwCommand == 0)
 		return FALSE;

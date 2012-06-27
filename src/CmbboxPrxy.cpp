@@ -102,7 +102,7 @@ void CComboBoxPrxyR::ChangeProxy(int nIndex)
 	GetTopLevelWindow().PostMessage(WM_SETPROXYTOCHLDFRAME);
 
 	// プロキシファイルパス
-	CString 	strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	CIniFileO	pr( strFile, _T("PROXY") );
 	pr.SetValue( (DWORD) nIndex, _T("TARGET") );
@@ -154,7 +154,7 @@ LRESULT CComboBoxPrxyR::OnRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam, B
 void CComboBoxPrxyR::SetProxy()
 {
 	// プロキシファイルパス
-	CString 	strFile  = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile  = GetConfigFilePath( _T("Proxy.ini") );
 
 	// プロキシ番号
 	DWORD		dwIndex = 0;
@@ -180,7 +180,7 @@ void CComboBoxPrxyR::ResetProxyList()
 	AddString(_T(""));
 
 	// プロキシファイルパス
-	CString 	strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	CIniFileI	pr( strFile, _T("PROXY") );
 
@@ -211,7 +211,7 @@ void CComboBoxPrxyR::ResetProxyList()
 void CComboBoxPrxyR::ResetTimer()
 {
 	// プロキシファイルパス
-	CString 	strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// ランダム
@@ -250,7 +250,7 @@ void CComboBoxPrxyR::ResetTimer()
 bool CComboBoxPrxyR::UseIE()
 {
 	// プロキシファイルパス
-	CString 	strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// ローカル
@@ -269,7 +269,7 @@ bool CComboBoxPrxyR::UseIE()
 CString CComboBoxPrxyR::GetBypass()
 {
 	// プロキシファイルパス
-	CString 		strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 		strFile = GetConfigFilePath( _T("Proxy.ini") );
 	CString 		strBypass;
 
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv

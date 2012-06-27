@@ -292,7 +292,7 @@ void	CCustomContextMenuOption::RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMEN
 	}
 }
 
-// サブメニューを削除しておかないとMenu.xmlに登録できないので
+// サブメニューを削除しておかないとCustomContextMenu.xmlに登録できないので
 void	CCustomContextMenuOption::ResetMenu()
 {
 	HMENU	arrMenu[] = {
@@ -323,41 +323,40 @@ void	CCustomContextMenuOption::ResetMenu()
 // iniファイルから設定を読み込む
 void	CCustomContextMenuOption::GetProfile()
 {
-	try {
-		CString strPath = _GetFilePath(_T("Menu.xml"));
-		std::wifstream	filestream(strPath);
-		if (!filestream)
-			throw _T("ファイルを開けません");
-
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+	CString strPath = GetConfigFilePath(_T("CustomContextMenu.xml"));
+	std::wifstream	filestream(strPath);
+	if (filestream) {
+		try {
+			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 		
-		using boost::property_tree::wptree;
-		wptree pt;
-		boost::property_tree::read_xml(filestream, pt);
-		if (auto opRoot = pt.get_child_optional(L"CustomContextMenu")) {
-			for (auto itMenu = opRoot->begin(); itMenu != opRoot->end(); ++itMenu) {
-				CMenu* psubmenu;
-				if (itMenu->first == L"CONTEXT_MENU_DEFAULT") {
-					psubmenu = &s_menuDefault;
-				} else if (itMenu->first == L"CONTEXT_MENU_IMAGE") {
-					psubmenu = &s_menuImage;
-				} else if (itMenu->first == L"CONTEXT_MENU_TEXTSELECT") {
-					psubmenu = &s_menuTextSelect;
-				} else if (itMenu->first == L"CONTEXT_MENU_ANCHOR") {
-					psubmenu = &s_menuAnchor;
-				} else if (itMenu->first == L"CONTEXT_MENU_HOLDLEFTBUTTON") {
-					psubmenu = &s_menuHoldLeftButton;
-				} else if (itMenu->first == L"CONTEXT_MENU_TABITEM") {
-					psubmenu = &s_menuTabItem;
-				} else {
-					continue;
+			using boost::property_tree::wptree;
+			wptree pt;
+			boost::property_tree::read_xml(filestream, pt);
+			if (auto opRoot = pt.get_child_optional(L"CustomContextMenu")) {
+				for (auto itMenu = opRoot->begin(); itMenu != opRoot->end(); ++itMenu) {
+					CMenu* psubmenu;
+					if (itMenu->first == L"CONTEXT_MENU_DEFAULT") {
+						psubmenu = &s_menuDefault;
+					} else if (itMenu->first == L"CONTEXT_MENU_IMAGE") {
+						psubmenu = &s_menuImage;
+					} else if (itMenu->first == L"CONTEXT_MENU_TEXTSELECT") {
+						psubmenu = &s_menuTextSelect;
+					} else if (itMenu->first == L"CONTEXT_MENU_ANCHOR") {
+						psubmenu = &s_menuAnchor;
+					} else if (itMenu->first == L"CONTEXT_MENU_HOLDLEFTBUTTON") {
+						psubmenu = &s_menuHoldLeftButton;
+					} else if (itMenu->first == L"CONTEXT_MENU_TABITEM") {
+						psubmenu = &s_menuTabItem;
+					} else {
+						continue;
+					}
+					psubmenu->CreatePopupMenu();
+					ReadAllMenuItem(psubmenu->m_hMenu, itMenu->second);
 				}
-				psubmenu->CreatePopupMenu();
-				ReadAllMenuItem(psubmenu->m_hMenu, itMenu->second);
 			}
+		} catch (...) {
+			MessageBox(NULL, _T("カスタムポップアップメニューの復元に失敗"), NULL, NULL);
 		}
-	} catch (...) {
-		MessageBox(NULL, _T("カスタムポップアップメニューの復元に失敗"), NULL, NULL);
 	}
 
 	/* ファイルが無かったり、エレメントが存在しないとき */
@@ -388,7 +387,7 @@ void	CCustomContextMenuOption::GetProfile()
 void	CCustomContextMenuOption::WriteProfile()
 {
 	try {
-		CString strPath = _GetFilePath(_T("Menu.xml"));
+		CString strPath = GetConfigFilePath(_T("CustomContextMenu.xml"));
 		std::wofstream	filestream(strPath);
 		if (!filestream)
 			throw _T("ファイルを開けません");

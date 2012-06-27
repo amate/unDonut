@@ -64,7 +64,7 @@ private:
 		return AtlCompactPathFixed(lpstrOut, lpstrIn, cchLen);
 	}
 	 
-	CString _GetRecentCloseFile() { return _GetFilePath("RecentClosedTab.xml"); }
+	CString _GetRecentCloseFile() { return GetConfigFilePath("RecentClosedTab.xml"); }
 
 
 	// Data members
@@ -366,11 +366,14 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 		}
 		using namespace boost::property_tree::xml_parser;
 
-		std::wofstream filestream(_GetRecentCloseFile());
+		std::wofstream filestream(_GetRecentCloseFile() + _T(".temp"));
 		if (!filestream)
 			return FALSE;
 		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+		filestream.close();
+
+		::MoveFileEx(_GetRecentCloseFile() + _T(".temp"), _GetRecentCloseFile(), MOVEFILE_REPLACE_EXISTING);
 
 	} catch (...) {
 		ATLTRACE(_T("CRecentClosedTabList::Impl::WriteToXmlFile で例外発生!\n"));

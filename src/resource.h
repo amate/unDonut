@@ -3,6 +3,7 @@
 // Donut.rc ‚ÅŽg—p
 //
 #define ID_GETFAVICONFROMFILE           3
+#define ID_GETFAVICONFROMURL            4
 #define IDD_ABOUTBOX                    100
 #define IDD_FORM_TOOLBAR                101
 #define ID_DONUTVIEW                    102
@@ -934,6 +935,9 @@
 #define ID_ID_SORTBYNAME                33225
 #define ID_33226                        33226
 #define ID_VIEW_ROOT                    33227
+#define ID_Menu33228                    33228
+#define ID_UNDOMENUITEM                 33229
+#define ID_33230                        33230
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -978,7 +982,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        328
-#define _APS_NEXT_COMMAND_VALUE         33228
+#define _APS_NEXT_COMMAND_VALUE         33231
 #define _APS_NEXT_CONTROL_VALUE         1444
 #define _APS_NEXT_SYMED_VALUE           130
 #endif

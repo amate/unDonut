@@ -520,7 +520,7 @@ bool							CRootFavoritePopupMenu::s_bCancel = false;
 
 void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
-	CString FavoriteBookmarkFilePath = Misc::GetExeDirectory() + _T("FavoriteBookmark.xml");
+	CString FavoriteBookmarkFilePath = GetConfigFilePath(_T("FavoriteBookmark.xml"));
 	if (::PathFileExists(FavoriteBookmarkFilePath) == FALSE) {
 		/* 設定やお気に入りフォルダから s_BookmarkList を構築する */
 		bool bUserFolder = false;
@@ -550,7 +550,7 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 	/* FavoriteBookmark.xml から s_BookmarkList を構築する */
 	boost::thread td([]() {
 		s_bBookmarkLoading = true;
-		CString FavoriteBookmarkFilePath = Misc::GetExeDirectory() + _T("FavoriteBookmark.xml");
+		CString FavoriteBookmarkFilePath = GetConfigFilePath(_T("FavoriteBookmark.xml"));
 		try {
 			std::wifstream	filestream(FavoriteBookmarkFilePath);
 			if (!filestream) {
@@ -818,6 +818,28 @@ void CRootFavoritePopupMenu::OnDestroy()
 	}
 }
 
+LRESULT CRootFavoritePopupMenu::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CPoint pt(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+	HWND hWnd = ::WindowFromPoint(pt);
+	if (hWnd) {
+		bool bChildWnd = false;
+		if (m_pLinkSubMenu->m_hWnd == hWnd) {
+			bChildWnd = true;
+		} else {
+			CString className;
+			GetClassName(hWnd, className.GetBuffer(128), 128);
+			className.ReleaseBuffer();
+			if (className == _T("DonutBasePopupMenu") || className == _T("DonutLinkPopupMenu"))
+				bChildWnd = true;
+		}
+		if (bChildWnd) {
+			::SendMessage(hWnd, WM_MOUSEWHEEL, wParam, lParam);
+		}
+	}
+	return 0;
+}
+
 LRESULT CRootFavoritePopupMenu::OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	::SendMessage(s_hWndCommandBar, WM_CLOSEBASESUBMENU, 0, 0);
@@ -835,6 +857,7 @@ LRESULT CRootFavoritePopupMenu::OnSaveLinkBookmark(UINT uMsg, WPARAM wParam, LPA
 	s_bSaveBookmark = true;	
 	return 0;
 }
+
 
 void	CRootFavoritePopupMenu::_SaveFavoriteBookmark()
 {
@@ -860,8 +883,8 @@ void	CRootFavoritePopupMenu::_SaveFavoriteBookmark()
 		for (;;) {
 			if (s_csBookmarkLock.TryEnter()) {
 				DWORD dwTime = ::timeGetTime();
-				CString LinkBookmarkFilePath = Misc::GetExeDirectory() + _T("FavoriteBookmark.xml");
-				CString tempPath = Misc::GetExeDirectory() + _T("FavoriteBookmark.temp.xml");
+				CString LinkBookmarkFilePath = GetConfigFilePath(_T("FavoriteBookmark.xml"));
+				CString tempPath = GetConfigFilePath(_T("FavoriteBookmark.temp.xml"));
 				try {
 					std::wofstream	filestream(tempPath);
 					if (!filestream) {

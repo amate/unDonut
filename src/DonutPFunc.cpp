@@ -155,6 +155,38 @@ BOOL _CheckOsVersion_VistaLater()
 
 
 //---------------------------
+
+/// iniファイルパスを初期化する
+void	InitDonutConfigFilePath(LPTSTR iniFilePath, int sizeInWord)
+{
+	::GetModuleFileName(NULL, iniFilePath, sizeInWord);
+
+	::PathRemoveExtension(iniFilePath);
+	CString appenExeFilePath;
+	appenExeFilePath.Format(_T("%s.ini"), ::PathFindFileName(iniFilePath));
+
+	CString oldIniFilePath;
+	oldIniFilePath.Format(_T("%s.ini"), iniFilePath);
+
+	::PathRemoveFileSpec(iniFilePath);
+	::PathAppend(iniFilePath, _T("Config"));
+	if (::PathIsDirectory(iniFilePath) == FALSE)
+		::SHCreateDirectory(NULL, iniFilePath);
+
+	::PathAppend(iniFilePath, appenExeFilePath);
+
+	if (::PathFileExists(oldIniFilePath)) 
+		::MoveFileEx(oldIniFilePath, iniFilePath, MOVEFILE_REPLACE_EXISTING);
+}
+
+/// filenameをConfigフォルダ以下のパスにして返す
+CString GetConfigFilePath(const CString& filename)
+{
+	CString filepath;
+	filepath.Format(_T("%sConfig\\%s"), Misc::GetExeDirectory(), filename);
+	return filepath;
+}
+
 /// 設定されたスキンフォルダのパスを返す(最後に'\\'がつく)
 CString _GetSkinDir()
 {

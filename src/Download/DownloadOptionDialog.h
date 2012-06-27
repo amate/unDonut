@@ -49,7 +49,7 @@ struct CDLOptions
 
 	static void	LoadProfile()
 	{
-		s_DLIniFilePath = Misc::GetFullPath_ForExe(_T("Download.ini"));
+		s_DLIniFilePath = GetConfigFilePath(_T("Download.ini"));
 		CIniFileI	pr(s_DLIniFilePath, _T("Main"));
 		strDLFolderPath		= pr.GetString(_T("DLFolder"), Misc::GetExeDirectory());
 		bUseSaveFileDialog	= pr.GetValue(_T("UseSaveFileDialog"), bUseSaveFileDialog) != 0;

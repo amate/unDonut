@@ -61,11 +61,12 @@ extern const UINT	g_uDropDownWholeCommandID[] = {
 extern const int	g_uDropDownCommandCount 	 = sizeof (g_uDropDownCommandID 	) / sizeof (UINT);
 extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandID) / sizeof (UINT);
 
-
+// グローバル変数
 CServerAppModule	_Module;
 CMainFrame*			g_pMainWnd		= NULL;
 CAPI*				g_pAPI			= NULL;
 bool				g_bSefShutDown	= false;
+CString				g_commandline;
 
 
 BEGIN_OBJECT_MAP(ObjectMap)
@@ -307,7 +308,7 @@ static bool	HaveEnvFiles()
 		return true;	// unDonut.ini が生成されていたら、とりあえずokとしとく.
 	}
 
-	if (   ::PathFileExists( Misc::GetFullPath_ForExe(_T("MouseEdit.ini")))
+	if (   ::PathFileExists( GetConfigFilePath(_T("MouseEdit.ini")))
 		&& ::PathFileExists( Misc::GetFullPath_ForExe(_T("search\\search.ini")) )) {
 		return true;
 	}
@@ -486,7 +487,7 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	Misc::setHeapAllocLowFlagmentationMode();	//+++
 
 	// 設定ファイルのフルパスを取得する
-	MtlIniFileNameInit(g_szIniFileName, MAX_PATH);
+	InitDonutConfigFilePath(g_szIniFileName, MAX_PATH);
 
 	if (MultiThreadManager::RunChildProcessMessageLoop(hInstance)) 
 		return 0;
@@ -496,6 +497,7 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 		return 0;
 
 	g_pMainWnd	 = NULL;
+	g_commandline= lpstrCmdLine;
 	//	HRESULT hRes = ::CoInitialize(NULL);
 	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 //	ATLASSERT( SUCCEEDED(hRes) );

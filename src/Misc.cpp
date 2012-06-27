@@ -1086,22 +1086,17 @@ void	StrToNormalUrl(CString& strUrl)
 //+++	strFileを .bak をつけたファイルに変名. 古い .bak があればそれは削除.
 void	MoveToBackupFile(const CString& strFileName)
 {
-	CString 	strBakName = strFileName + ".bak";
-	if (::PathFileExists(strBakName))
-		::DeleteFile(strBakName);					// 古いバックアップファイルを削除.
+	CString 	strBakName = strFileName + _T(".bak");
 	if (::PathFileExists(strFileName))
-		::MoveFile(strFileName, strBakName);		// 既存のファイルをバックアップファイルにする.
+		::MoveFileEx(strFileName, strBakName, MOVEFILE_REPLACE_EXISTING);		// 既存のファイルをバックアップファイルにする.
 }
 
 //	strFileを .bak をつけたファイルにコピー. 古い .bak があればそれは削除.
 void	CopyToBackupFile(const CString& strFileName)
 {
-	CString 	strBakName = strFileName + ".bak";
-	if (::PathFileExists(strFileName)) {
+	CString 	strBakName = strFileName + _T(".bak");
+	if (::PathFileExists(strFileName)) 
 		::CopyFile(strFileName, strBakName, FALSE);		// 既存のファイルをバックアップファイルにする.
-	} else {
-		ATLASSERT(FALSE);
-	}
 }
 
 

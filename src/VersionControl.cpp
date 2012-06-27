@@ -16,9 +16,10 @@ void	CVersionControl::Run()
 
 	// ファイルが存在しなければ各GetProfileに任せる
 	if (::PathFileExists(g_szIniFileName)) {
-		Misc::CopyToBackupFile(g_szIniFileName);
-
 		DWORD dwVersion = pr.GetValue(_T("IniVersion"), 0);
+		if (dwVersion != LATESTVERSION)
+			Misc::CopyToBackupFile(g_szIniFileName);
+
 		switch (dwVersion) {
 		case 0:	_0to1();
 		case 1: _1to2();
@@ -27,6 +28,7 @@ void	CVersionControl::Run()
 		case 4: _4to5();
 		case 5: _5to6();
 		case 6: _6to7();
+		case 7: _7to8();
 			break;
 		}
 	}
@@ -150,7 +152,29 @@ void	CVersionControl::_6to7()
 	pr.SetValue(dwExStyle, _T("Extended_Style"));
 }
 
-
+/// 設定ファイルを全部 Configフォルダ以下に移動させる
+void	CVersionControl::_7to8()
+{
+	auto funcMoveFileToConfigFolder = [](LPCTSTR configfile) {
+		::MoveFileEx(_GetFilePath(configfile), GetConfigFilePath(configfile), MOVEFILE_REPLACE_EXISTING);
+	};
+	funcMoveFileToConfigFolder(_T("CloseTitle.ini"));
+	funcMoveFileToConfigFolder(_T("CloseURL.ini"));
+	funcMoveFileToConfigFolder(_T("Download.ini"));
+	funcMoveFileToConfigFolder(_T("FavoriteBookmark.xml"));
+	funcMoveFileToConfigFolder(_T("LinkBookmark.xml"));
+	funcMoveFileToConfigFolder(_T("KeyBoard.ini"));
+	::MoveFileEx(_GetFilePath(_T("Menu.xml")), GetConfigFilePath(_T("CustomContextMenu.xml")), MOVEFILE_REPLACE_EXISTING);
+	funcMoveFileToConfigFolder(_T("MouseEdit.ini"));
+	funcMoveFileToConfigFolder(_T("Proxy.ini"));
+	funcMoveFileToConfigFolder(_T("RecentClosedTab.xml"));
+	funcMoveFileToConfigFolder(_T("TabList.bak.xml"));
+	funcMoveFileToConfigFolder(_T("TabList.xml"));
+	funcMoveFileToConfigFolder(_T("UrlEntry.ini"));
+	funcMoveFileToConfigFolder(_T("WordHistory.ini"));
+	funcMoveFileToConfigFolder(_T("UserDefinedCSSConfig.xml"));
+	funcMoveFileToConfigFolder(_T("UserDefinedJavascriptConfig.xml"));
+}
 
 
 

@@ -17,6 +17,7 @@
 #include "ExStyle.h"
 #include "option\LinkBarPropertyPage.h"
 #include "option\FavoriteMenuDialog.h"
+#include "ChildFrameCommandUIUpdater.h"
 
 //////////////////////////////////////////////////////
 // CLinkItemDataObject
@@ -535,7 +536,8 @@ public:
 		MSG_WM_INITDIALOG( OnInitDialog )
 		COMMAND_ID_HANDLER_EX( IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX( IDCANCEL, OnCancel )
-		COMMAND_ID_HANDLER_EX( ID_GETFAVICONFROMFILE, OnGetFaviconFromFile )		
+		COMMAND_ID_HANDLER_EX( ID_GETFAVICONFROMFILE, OnGetFaviconFromFile )
+		COMMAND_ID_HANDLER_EX( ID_GETFAVICONFROMURL , OnGetFaviconFromURL	)
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
@@ -594,6 +596,19 @@ public:
 		}
 	}
 
+	void OnGetFaviconFromURL(UINT uNotifyCode, int nID, CWindow wndCtl)
+	{
+		CString url	 = MtlGetWindowText(GetDlgItem(IDC_EDIT_URL));
+		CWaitCursor wait_cursor;
+		HICON hIcon = CFaviconManager::GetFaviconFromURL(url);
+		if (hIcon) {
+			SetIcon(hIcon, FALSE);
+			m_rLinkItem.icon = hIcon;
+			m_bUseCustomIcon = true;
+		}
+	}
+
+
 
 private:
 	LinkItem&	m_rLinkItem;
@@ -613,6 +628,8 @@ bool	CLinkPopupMenu::s_bNoCloseBaseSubMenu	= false;
 CIcon	CLinkPopupMenu::s_iconFolder;
 CIcon	CLinkPopupMenu::s_iconLink;
 
+std::pair<LinkFolderPtr, unique_ptr<LinkItem> > CLinkPopupMenu::s_TrashItem = make_pair(nullptr, unique_ptr<LinkItem>());
+
 
 CLinkPopupMenu::CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex /*= -1*/) : 
 	m_pFolder(pFolder), 
@@ -625,7 +642,7 @@ CLinkPopupMenu::CLinkPopupMenu(LinkFolderPtr pFolder, int nInheritIndex /*= -1*/
 	lf.SetMenuFont();
 	m_font = lf.CreateFontIndirect();
 
-	enum { kNormalItemHeight = 22, kPackItemHeight = 14 };
+	enum { kNormalItemHeight = 22, kPackItemHeight = 15 };
 	kItemHeight = CFavoritesMenuOption::s_bPackItem ? kPackItemHeight : kNormalItemHeight;
 }
 
@@ -715,6 +732,10 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 		nPos = 0;
 	CMenu	menu =  menuRoot.GetSubMenu(nPos);
 
+	UINT nFlags = MF_BYCOMMAND;
+	nFlags |= s_TrashItem.first != nullptr ? MF_ENABLED : MF_GRAYED;
+	menu.EnableMenuItem(ID_UNDOMENUITEM, nFlags);
+
 	CPoint pt;
 	::GetCursorPos(&pt);
 	int nCmd = menu.TrackPopupMenu(TPM_RETURNCMD, pt.x, pt.y, hwnd);
@@ -738,22 +759,44 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 	case ID_DELETELINKITEM:
 		for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
 			if (it->get() == pLinkItem) {
-				if (pLinkItem->pFolder) {
-					std::function<void (LinkFolderPtr)>	funcDelFolder;
-					funcDelFolder	= [&funcDelFolder] (LinkFolderPtr pFolder) {
-						for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
-							if (it->get()->pFolder) {
-								funcDelFolder(it->get()->pFolder);
-								delete it->get()->pFolder;
-							}
-						}
-					};
-					funcDelFolder(pLinkItem->pFolder);
-				}
+				s_TrashItem = make_pair(pFolder, std::move(*it));
 				pFolder->erase(it);
 				SaveLinkBookmark();
 				break;
 			}
+		}
+		break;
+
+	case ID_UNDOMENUITEM:
+		{
+			LinkFolderPtr pRootFolder = reinterpret_cast<LinkFolderPtr>(::SendMessage(s_wndLinkBar, WM_GETROOTLINKFOLDERPTR, 0, 0));
+			ATLASSERT( pRootFolder );
+			LinkFolderPtr& pRootTrashFolder = CLinkPopupMenu::s_TrashItem.first;
+			unique_ptr<LinkItem>& pTrashItem = CLinkPopupMenu::s_TrashItem.second;
+			auto funcDoUndo = [&](LinkFolderPtr pFolderItem) -> bool {
+				if (pFolder == pRootTrashFolder) {
+					if (pFolderItem->size() > 0 && pFolderItem->back()->strName == _T("ChevronFolder")) {
+						pFolderItem->insert(pFolderItem->begin() + (pFolderItem->size() - 1), std::move(pTrashItem));
+					} else {
+						pFolderItem->push_back(std::move(pTrashItem));
+					}
+					pRootTrashFolder = nullptr;
+					return true;
+				}
+				return false;
+			};
+			function<void (LinkFolderPtr)> funcUndoMenuItem;
+			funcUndoMenuItem = [&](LinkFolderPtr pFolderItem) {
+				for (auto it = pFolderItem->cbegin(); it != pFolderItem->cend(); ++it) {
+					if ((*it)->pFolder) {
+						if (funcDoUndo((*it)->pFolder))
+							return ;
+						funcUndoMenuItem((*it)->pFolder);
+					}
+				}
+			};
+			if (funcDoUndo(pRootFolder) == false)
+				funcUndoMenuItem(pRootFolder);
 		}
 		break;
 
@@ -774,23 +817,26 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 
 	case ID_ADDLINK:
 		{
-			//unique_ptr<LinkItem>	pItem(new LinkItem);
-			//CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-			//if (pChild) {
-			//	pItem->strName= pChild->GetTitle();
-			//	pItem->strUrl = pChild->GetLocationURL();
-			//}
-			//CLinkEditDialog	dlg(*pItem, pFolder, hwnd);
-			//if (dlg.DoModal(hwnd) == IDOK) {
-			//	if (pLinkItem && pLinkItem->pFolder)
-			//		pFolder = pLinkItem->pFolder;
-			//	if (pFolder->size() > 0 && pFolder->back()->strName == _T("ChevronFolder")) {
-			//		pFolder->insert(pFolder->begin() + (pFolder->size() - 1), std::move(pItem));
-			//	} else {
-			//		pFolder->push_back(std::move(pItem));
-			//	}
-			//	SaveLinkBookmark();
-			//}
+			unique_ptr<LinkItem>	pItem(new LinkItem);
+			auto pUIData = CChildFrameCommandUIUpdater::GetActiveChildFrameUIData();
+			if (pUIData) {
+				pItem->strName	= pUIData->strTitle;
+				pItem->strUrl	= pUIData->strLocationURL;
+			} else {
+				pItem->strName	= _T("新しいリンク");
+				pItem->strUrl	= _T("about:blank");
+			}
+			CLinkEditDialog	dlg(*pItem, pFolder, hwnd);
+			if (dlg.DoModal(hwnd) == IDOK) {
+				if (pLinkItem && pLinkItem->pFolder)
+					pFolder = pLinkItem->pFolder;
+				if (pFolder->size() > 0 && pFolder->back()->strName == _T("ChevronFolder")) {
+					pFolder->insert(pFolder->begin() + (pFolder->size() - 1), std::move(pItem));
+				} else {
+					pFolder->push_back(std::move(pItem));
+				}
+				SaveLinkBookmark();
+			}
 		}
 		break;
 
@@ -891,6 +937,16 @@ void	CLinkPopupMenu::GetFaviconToLinkItem(const CString& url, LinkFolderPtr pFol
 	boost::thread td([=]() {
 		HICON hIcon = CFaviconManager::GetFaviconFromURL(url2);
 		if (hIcon) {
+			if (pFolder2->size() > 0 &&	pFolder2->back()->strName == _T("ChevronFolder")) {
+				for (auto it = pFolder2->back()->pFolder->begin(); it != pFolder2->back()->pFolder->end(); ++it) {
+					if (it->get() == pItem2) {
+						pItem2->icon = hIcon;
+						::InvalidateRect(hwnd2, NULL, FALSE);
+						SaveLinkBookmark();
+						break;
+					}
+				}
+			}
 			for (auto it = pFolder2->begin(); it != pFolder2->end(); ++it) {
 				if (it->get() == pItem2) {
 					pItem2->icon = hIcon;
@@ -911,8 +967,9 @@ void CLinkPopupMenu::DoPaint(CDCHandle dc)
 
 	CRect rcClient;
 	GetClientRect(rcClient);
-	rcClient.bottom	+= ptOffset.y;
-
+	//rcClient.bottom	+= ptOffset.y;
+	rcClient.MoveToY(ptOffset.y);
+	
 	CMemoryDC	memDC(dc, rcClient);
 
 	HFONT hFontPrev = memDC.SelectFont(m_font);
@@ -1333,13 +1390,13 @@ int CLinkPopupMenu::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	OpenThemeData(VSCLASS_MENU);
 
+	_InitTooltip();
+
 	enum { kBorderMargin = 2 };
 	SetScrollSize(ComputeWindowWidth() - kBorderMargin, ComputeWindowHeight() - kBorderMargin);
     SetScrollLine(1, kItemHeight);
 
-	_InitTooltip();
-
-	_UpdateItemPosition();
+	_UpdateItemPosition(true);
 
 	ATLVERIFY(SUCCEEDED(RegisterDragDrop()));
 
@@ -1459,10 +1516,11 @@ void CLinkPopupMenu::OnRButtonUp(UINT nFlags, CPoint point)
 	} else {
 		CLinkPopupMenu::ShowRClickMenuAndExecCommand(m_pFolder, nullptr, m_hWnd);
 	}
-	//if (nCount != (int)m_pFolder->size())
-	//	_CloseBaseSubMenu();
-	//else
+	if (nCount != static_cast<int>(m_pFolder->size()))
 		_UpdateItemPosition();
+	else
+		Invalidate(FALSE);
+	::SetFocus(s_wndLinkBar);	// ホイール通知してもらうため
 }
 
 void CLinkPopupMenu::OnMButtonDown(UINT nFlags, CPoint point)
@@ -1525,7 +1583,7 @@ void	CLinkPopupMenu::_InitTooltip()
 }
 
 
-void	CLinkPopupMenu::_UpdateItemPosition()
+void	CLinkPopupMenu::_UpdateItemPosition(bool bFirst /*= false*/)
 {
 	CRect rcClient;
 	GetClientRect(&rcClient);
@@ -1539,6 +1597,41 @@ void	CLinkPopupMenu::_UpdateItemPosition()
 		nTop	+= kItemHeight;
 
 		item.ModifyState(item.kItemNormal);
+	}
+
+	if (bFirst == false) {
+		bool bScrollBarExist = false;
+		CSize scroll_size;
+		GetScrollSize(scroll_size);
+		if (rcClient.bottom < scroll_size.cy)
+			bScrollBarExist = true;
+
+		enum { kBorderMargin = 2 };	
+		int nScrollHeight = ComputeWindowHeight();
+
+		//SetScrollSize(scroll_size.cx, nScrollHeight - kBorderMargin, true, false);
+		//SetScrollLine(1, kItemHeight);
+
+		if ((GetStyle() & WS_CHILD) == 0) {
+			CRect rcWindow;
+			GetWindowRect(&rcWindow);
+			CRect rcWork = Misc::GetMonitorWorkArea(m_hWnd);
+			rcWindow.bottom	= rcWindow.top + nScrollHeight;// + 28;
+			if (rcWork.bottom < rcWindow.bottom) {	// 下にはみ出る
+				rcWindow.bottom	= rcWork.bottom;
+				if (bScrollBarExist == false)	// 初めてスクロールバーができるので
+					rcWork.right	+= ::GetSystemMetrics(SM_CXVSCROLL);
+			}
+			SetWindowPos(NULL, 0, 0, rcWindow.Width(), rcWindow.Height(), SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW);
+		}
+		CPoint ptOffset;
+		GetScrollOffset(ptOffset);
+
+		m_sizeClient.cy = nScrollHeight - kBorderMargin;
+		SetScrollSize(scroll_size.cx, nScrollHeight - kBorderMargin, false, false);
+		SetScrollLine(1, kItemHeight);
+
+		SetScrollOffset(ptOffset, FALSE);
 	}
 
 	Invalidate(FALSE);

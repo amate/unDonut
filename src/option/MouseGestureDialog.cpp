@@ -24,7 +24,7 @@ using namespace MTL;
 CMouseGesturePropertyPage::CMouseGesturePropertyPage(HMENU hMenu)
 {
 	m_hMenu   = hMenu;
-	m_strPath = _GetFilePath( _T("MouseEdit.ini") );
+	m_strPath = GetConfigFilePath( _T("MouseEdit.ini") );
 }
 
 

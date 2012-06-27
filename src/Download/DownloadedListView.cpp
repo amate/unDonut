@@ -122,7 +122,7 @@ int CDownloadedListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	}
 
 	// ê›íËÇì«Ç›çûÇﬁ
-	CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
+	CString strIniFile = GetConfigFilePath(_T("Download.ini"));
 	CIniFileI pr(strIniFile, _T("DownloadedListView"));
 	for (int i = 0; i < nCount; ++i) {
 		CString strWidth = _T("ColumnWidth");
@@ -145,7 +145,7 @@ int CDownloadedListView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 void CDownloadedListView::OnDestroy()
 {
 	// ê›íËÇï€ë∂Ç∑ÇÈ
-	CString strIniFile = Misc::GetFullPath_ForExe(_T("Download.ini"));
+	CString strIniFile = GetConfigFilePath(_T("Download.ini"));
 	CIniFileO pr(strIniFile, _T("DownloadedListView"));
 	
 	int nColumnCount = GetColumnCount();

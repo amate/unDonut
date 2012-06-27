@@ -49,8 +49,15 @@ BOOL	_CheckOsVersion_XPLater();
 BOOL	_CheckOsVersion_VistaLater();
 
 //----------------------------------------
+
+/// iniファイルパスを初期化する
+void	InitDonutConfigFilePath(LPTSTR iniFilePath, int sizeInWord);
+
+/// filenameをConfigフォルダ以下のパスにして返す
+CString GetConfigFilePath(const CString& filename);
+
 /// undonut.exeと同じディレクトリに strFile があるものとしてフルパスを返す.
-__inline CString _GetFilePath(const CString& strFile) { return Misc::GetExeDirectory() + strFile; }
+inline CString _GetFilePath(const CString& strFile) { return Misc::GetExeDirectory() + strFile; }
 
 //----------------------------------------
 /// 設定されたスキンフォルダのパスを返す(最後に'\\'がつく)

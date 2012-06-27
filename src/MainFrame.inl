@@ -40,7 +40,7 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 
 	CString	TabList;
 	if (strFilePath == NULL) {
-		TabList = Misc::GetExeDirectory() + _T("TabList.xml");
+		TabList = GetConfigFilePath(_T("TabList.xml"));
 	} else {
 		TabList = strFilePath;
 	}
@@ -177,13 +177,14 @@ void	CMainFrame::Impl::SaveAllTab()
 		}
 		using namespace boost::property_tree::xml_parser;
 
-		CString strTempTabList = Misc::GetExeDirectory() + _T("TabList.temp.xml");
+		CString strTempTabList = GetConfigFilePath(_T("TabList.temp.xml"));
 		std::wofstream filestream(strTempTabList);
 		if (!filestream)
 			throw "error";
 		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
-		CString	TabList = Misc::GetExeDirectory() + _T("TabList.xml");
+		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+
+		CString	TabList = GetConfigFilePath(_T("TabList.xml"));
 		if (::PathFileExists(TabList)) {
 			CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.xml");
 			::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
@@ -1185,12 +1186,8 @@ void	CMainFrame::Impl::OnInitProcessFinished()
 {
 	static bool s_bInit = false;
 	if (s_bInit == false) {
-		CString commandLine = ::GetCommandLine();
-		int nSpace = commandLine.Find(_T(' '));
-		if (nSpace != -1) {
-			commandLine = commandLine.Mid(nSpace + 1);
-		}
-		_NewDonutInstance(commandLine);
+		extern CString g_commandline;	// Donut.cppにある
+		_NewDonutInstance(g_commandline);
 		s_bInit = true;
 	}
 }
@@ -1354,7 +1351,7 @@ void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 	case ID_FILE_OPEN_TABLIST:
 		{
-			CString strPath = Misc::GetExeDirectory() + _T("TabList.xml");
+			CString strPath = GetConfigFilePath(_T("TabList.xml"));
 			UserOpenFile( strPath, DonutGetStdOpenActivateFlag() );
 		}
 		break;
@@ -1887,7 +1884,7 @@ static DWORD GetMouseButtonCommand(const MSG& msg)
 		break;
 	}
 
-	CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+	CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 	return pr.GetValue(strKey, 0);;
 }
 
@@ -2016,7 +2013,7 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 						strLastMark = strMark1;	
 
 						CString strCmdName;
-						CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+						CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 						DWORD	dwCommand = pr.GetValue(strMove);
 						if (dwCommand) {
 							// 合致するコマンドがあれば表示
@@ -2091,7 +2088,7 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 
 			funcSetStatusText(_T(""));
 
-			CIniFileI	pr( _GetFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+			CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
 			DWORD dwCommand = pr.GetValue(strMove);
 			if (dwCommand) {
 				::SendMessage(m_hWnd, WM_COMMAND, dwCommand, 0);

@@ -103,7 +103,7 @@ public:
 			rcWindow.MoveToX(rcWork.right - nWidth);
 		}
 
-		Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+		Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER | WS_CLIPCHILDREN , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
 		ShowWindow(SW_SHOWNOACTIVATE);
 	}
 
@@ -137,7 +137,7 @@ public:
 			rcWindow.MoveToX(rcClientItem.left - nWidth);	// îΩëŒë§Ç…èoÇ∑
 		}
 
-		Create(hWndParent, rcWindow, nullptr, WS_POPUP | WS_BORDER, WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST);
+		Create(hWndParent, rcWindow, nullptr, WS_POPUP | WS_BORDER | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST);
 		ShowWindow(SW_SHOWNOACTIVATE);
 	}
 
@@ -849,16 +849,22 @@ public:
 
 	BEGIN_MSG_MAP( CRootFavoritePopupMenu )
 		MSG_WM_DESTROY	( OnDestroy	)
+		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel	)
 		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseBaseSubMenu )
 		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
 		MESSAGE_HANDLER_EX( WM_SAVELINKBOOKMARK, OnSaveLinkBookmark	)
+		MESSAGE_HANDLER_EX( WM_GETROOTLINKFOLDERPTR	, OnGetRootLinkFolderPtr	)
 		CHAIN_MSG_MAP( CBasePopupMenuImpl<CRootFavoritePopupMenu> )
 	END_MSG_MAP()
 
 	void OnDestroy();
+	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnSaveLinkBookmark(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnGetRootLinkFolderPtr(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		return reinterpret_cast<LRESULT>(&s_BookmarkList);
+	}
 	
 private:
 	static void	_SaveFavoriteBookmark();

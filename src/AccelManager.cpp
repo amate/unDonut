@@ -272,7 +272,7 @@ HACCEL CAccelerManager::AddAccelerator(ACCEL *lpAccel)
 ///+++ メモ:KeyBoard.iniよりキー定義を読み込む
 HACCEL CAccelerManager::LoadAccelaratorState(HACCEL hAccel)
 {
-	CIniFileI	pr( _GetFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
+	CIniFileI	pr( GetConfigFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
 
 	DWORD		dwMax = 0;
 	pr.QueryValue( (DWORD) dwMax, _T("MAX") );
@@ -314,7 +314,7 @@ HACCEL CAccelerManager::LoadAccelaratorState(HACCEL hAccel)
 ///+++ メモ:キー定義をKeyBoard.iniへ書き出す.
 BOOL CAccelerManager::SaveAccelaratorState()
 {
-	CIniFileO	pr( _GetFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
+	CIniFileO	pr( GetConfigFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
 
 	pr.SetValue( (DWORD) m_nAccelSize, _T("MAX") );
 

@@ -34,7 +34,7 @@ int		CMouseOption::s_nDragDropCommandID = ID_SEARCH_DIRECT;
 
 void	CMouseOption::GetProfile()
 {
-	CString strPath = _GetFilePath( _T("MouseEdit.ini") );
+	CString strPath = GetConfigFilePath( _T("MouseEdit.ini") );
 	CIniFileI	pr(strPath, _T("RightDrag"));
 	s_bUseRightDragSearch	= pr.GetValue(_T("UseRightDragSearch"), s_bUseRightDragSearch) != 0;
 	s_bUseRect				= pr.GetValue(_T("UseRect"), s_bUseRect) != 0;
@@ -52,7 +52,7 @@ void	CMouseOption::GetProfile()
 
 void	CMouseOption::WriteProfile()
 {
-	CString strPath = _GetFilePath( _T("MouseEdit.ini") );
+	CString strPath = GetConfigFilePath( _T("MouseEdit.ini") );
 	CIniFileO	pr(strPath, _T("RightDrag"));
 
 	pr.SetValue(s_bUseRightDragSearch, _T("UseRightDragSearch"));
@@ -76,7 +76,7 @@ void	CMouseOption::WriteProfile()
 CMousePropertyPage::CMousePropertyPage(HMENU hMenu, HMENU hSearchEngineMenu)
 {
 	m_hMenu   = hMenu;
-	m_strPath = _GetFilePath( _T("MouseEdit.ini") );
+	m_strPath = GetConfigFilePath( _T("MouseEdit.ini") );
 
 	m_menuSearchEngine = hSearchEngineMenu;
 }

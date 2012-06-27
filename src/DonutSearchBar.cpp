@@ -1924,7 +1924,7 @@ void CDonutSearchBar::Impl::_threadInitComboBox()
 
 		CComboBox	cmb = m_cmbKeyword;
 	
-		CIniFileI	pr( _GetFilePath( _T("WordHistory.ini") ), _T("SEARCH_HISTORY") );
+		CIniFileI	pr( GetConfigFilePath( _T("WordHistory.ini") ), _T("SEARCH_HISTORY") );
 		int	nHistoryCnt = pr.GetValuei(_T("HistorySaveCnt"));
 
 		for (int ii = 0; ii < nHistoryCnt; ii++) {
@@ -2148,7 +2148,7 @@ void CDonutSearchBar::Impl::_SaveHistory()
 			nItemCount = s_nHistorySaveCnt;
 		}
 
-		CString 	strFileName = _GetFilePath( _T("WordHistory.ini") );
+		CString 	strFileName = GetConfigFilePath( _T("WordHistory.ini") );
 		CIniFileO	pr(strFileName, _T("SEARCH_HISTORY"));
 		pr.DeleteSection();
 		pr.SetValue( nItemCount, _T("HistorySaveCnt") );

@@ -99,7 +99,9 @@ public:
 		MSG_WM_MBUTTONDOWN( OnMButtonDown )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseBaseSubMenu )
+		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
 		MESSAGE_HANDLER_EX( WM_SAVELINKBOOKMARK, OnSaveLinkBookmark )
+		MESSAGE_HANDLER_EX( WM_GETROOTLINKFOLDERPTR	, OnGetRootLinkFolderPtr	)
 		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
 		CHAIN_MSG_MAP( CThemeImpl<Impl> )
 		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
@@ -115,9 +117,15 @@ public:
 	 void OnMButtonDown(UINT nFlags, CPoint point);
 	 LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	 LRESULT OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	 LRESULT OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		 return s_pSubMenu->SendMessage(WM_UPDATESUBMENUITEMPOS);
+	 }
 	 LRESULT OnSaveLinkBookmark(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		 _SaveLinkBookmark();
 		 return 0;
+	 }
+	 LRESULT OnGetRootLinkFolderPtr(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		 return reinterpret_cast<LRESULT>(&m_BookmarkList);
 	 }
 
 private:

@@ -83,6 +83,7 @@ void	_AddLinkItem(LinkFolderPtr pFolder, boost::property_tree::wptree pt);
 #define WM_CLOSEBASESUBMENU		(WM_APP + 1)
 #define WM_SAVELINKBOOKMARK		(WM_APP + 2)
 #define WM_UPDATESUBMENUITEMPOS	(WM_APP + 3)
+#define WM_GETROOTLINKFOLDERPTR	(WM_APP + 4)
 
 /////////////////////////////////////////////////////////////
 // CLinkItemDataObject
@@ -228,6 +229,8 @@ public:
 	static CIcon	s_iconFolder;
 	static CIcon	s_iconLink;
 
+	static std::pair<LinkFolderPtr, unique_ptr<LinkItem> > s_TrashItem;
+
 	// Overrides
 	virtual void OnFinalMessage(HWND /*hWnd*/) { delete this; }
 	virtual BOOL PreTranslateMessage(MSG* pMsg)
@@ -291,7 +294,7 @@ public:
 
 private:
 	void	_InitTooltip();
-	void	_UpdateItemPosition();
+	void	_UpdateItemPosition(bool bFirst = false);
 	bool	_IsValidIndex(int nIndex) const;
 	CRect	_GetClientItemRect(const CRect& rcItem);
 	boost::optional<int>	_HitTest(const CPoint& point);

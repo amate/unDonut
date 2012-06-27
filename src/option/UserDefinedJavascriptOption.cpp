@@ -232,7 +232,7 @@ void CUserDefinedJsOption::SaveUserJsConfig()
 			ptItem.put(L"<xmlattr>.url", (LPCTSTR)data.strUrl);
 			ptItem.put(L"<xmlattr>.jspath", (LPCTSTR)data.strJsPath.Mid(strJsDir.GetLength()));
 		}
-		CString strUserDefinedJsConfig = Misc::GetFullPath_ForExe(_T("UserDefinedJavascriptConfig.xml"));
+		CString strUserDefinedJsConfig = GetConfigFilePath(_T("UserDefinedJavascriptConfig.xml"));
 		std::wstringstream	strstream;
 		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
 

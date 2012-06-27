@@ -5,6 +5,7 @@
 #include "stdafx.h"
 #include "FaviconManager.h"
 #include "Misc.h"
+#include <fstream>
 #include <regex>
 #include <boost/thread.hpp>
 using boost::thread;
@@ -70,13 +71,12 @@ HICON	CFaviconManager::GetFaviconFromURL(LPCTSTR url)
 	CString strHtmlPath;
 	if (SUCCEEDED(::URLDownloadToCacheFile(NULL, url, strHtmlPath.GetBuffer(MAX_PATH), MAX_PATH, 0, NULL))) {
 		strHtmlPath.ReleaseBuffer();
-		CAtlFile	file;
-		if (SUCCEEDED(file.Create(strHtmlPath, GENERIC_READ, 0, OPEN_EXISTING))) {
-			enum { kMaxReadSize = 2000 };
+		std::ifstream filestream(strHtmlPath);
+		if (filestream) {
+			enum { kMaxReadSize = 3000 };
 			unique_ptr<char[]>	htmlContent(new char[kMaxReadSize + 1]);
-			DWORD	dwReadSize = 0;
-			file.Read((LPVOID)htmlContent.get(), kMaxReadSize, dwReadSize);
-			htmlContent[dwReadSize] = '\0';
+			filestream.read(htmlContent.get(), kMaxReadSize);
+			htmlContent[static_cast<size_t>(filestream.gcount())] = '\0';
 
 			std::regex	rx1("<link[ ]+rel=[\"']?(?:shortcut icon|icon)[\"']?[ ]+href=[\"']?([^ \"]+)[\"']?[^>]*>", std::regex::icase);
 			std::regex	rx2("<link[ ]+href=[\"']?([^ \"]+)[\"']?[ ]+rel=[\"']?(?:shortcut icon|icon)[\"']?[^>]*>", std::regex::icase);

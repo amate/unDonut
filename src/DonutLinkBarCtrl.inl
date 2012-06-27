@@ -783,11 +783,10 @@ void CDonutLinkBarCtrl::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 	auto value = _HitTest(point);
 	if (value && value.get() != (m_BookmarkList.size() - 1)) {
 		CLinkPopupMenu::ShowRClickMenuAndExecCommand(&m_BookmarkList, m_BookmarkList[value.get()].get(), m_hWnd);
-		_UpdateItemPosition();
 	} else {	// ItemNone
-		CLinkPopupMenu::ShowRClickMenuAndExecCommand(&m_BookmarkList, nullptr, m_hWnd);
-		Refresh();
-	}	
+		CLinkPopupMenu::ShowRClickMenuAndExecCommand(&m_BookmarkList, nullptr, m_hWnd);	
+	}
+	Refresh();
 }
 
 void CDonutLinkBarCtrl::Impl::OnMButtonDown(UINT nFlags, CPoint point)
@@ -1049,7 +1048,7 @@ void	_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
 
 void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 {
-	CString LinkBookmarkFilePath = Misc::GetExeDirectory() + _T("LinkBookmark.xml");
+	CString LinkBookmarkFilePath = GetConfigFilePath(_T("LinkBookmark.xml"));
 
 	if (::PathFileExists(LinkBookmarkFilePath) == FALSE) {
 		CString LinkFolder;
@@ -1101,8 +1100,8 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 	boost::thread	td([this]() {
 		for (;;) {
 			if (s_cs.TryEnter()) {
-				CString LinkBookmarkFilePath = Misc::GetExeDirectory() + _T("LinkBookmark.xml");
-				CString tempPath = Misc::GetExeDirectory() + _T("LinkBookmark.temp.xml");
+				CString LinkBookmarkFilePath = GetConfigFilePath(_T("LinkBookmark.xml"));
+				CString tempPath = GetConfigFilePath(_T("LinkBookmark.temp.xml"));
 				try {
 					std::wofstream	filestream(tempPath);
 					if (!filestream) {

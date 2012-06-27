@@ -181,7 +181,6 @@ public:
 	CSize		m_szGoIcon;
 	bool		m_bDragFromItself;
 	int 		m_cxDefaultHeader;
-	CItemIDList m_idlHtml;			// used to draw .url icon faster
 	bool		m_bDragAccept;
 	CString		m_strToolTip;
 	CImageList	m_FaviconImage;
@@ -206,12 +205,10 @@ CDonutAddressBar::Impl::Impl() :
 	m_bDragAccept(false),
 	m_nEditFaviconIndex(0),
 	m_bNowSetWindowText(false)
-{
-	m_idlHtml = MtlGetHtmlFileIDList();
-}
+{	}
 
 CDonutAddressBar::Impl::~Impl()
-{ }
+{	}
 
 
 HWND CDonutAddressBar::Impl::Create(
@@ -738,26 +735,6 @@ LRESULT	CDonutAddressBar::Impl::OnCbenGetDispInfo(LPNMHDR lpnmhdr)
 		item.iSelectedImage	= 0;
 	}
 	return 0;
-#if 0
-	CItemIDList idl = str;
-	if ( idl.IsNull() ) {		// invalid idl
-		int iImage = MtlGetSystemIconIndex(m_idlHtml);
-
-		item.iImage 		= iImage;
-		item.iSelectedImage = iImage;
-		return 0;
-	}
-
-	if (item.mask & CBEIF_IMAGE) {
-		item.iImage = MtlGetNormalIconIndex(idl, m_idlHtml);
-	}
-
-	if (item.mask & CBEIF_SELECTEDIMAGE) {
-		item.iSelectedImage = MtlGetSelectedIconIndex(idl, true, m_idlHtml);
-	}
-
-	return 0;
-#endif
 }
 
 

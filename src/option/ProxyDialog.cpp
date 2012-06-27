@@ -78,7 +78,7 @@ BOOL CProxyPropertyPage::OnApply()
 
 void CProxyPropertyPage::_SetData()
 {
-	CString 	strFile = _GetFilePath( _T("Proxy.ini") );
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// プロキシ
@@ -167,18 +167,7 @@ void CProxyPropertyPage::_SetData()
 
 void CProxyPropertyPage::_GetData()
 {
-	CString 	strFile;
-
-	strFile = _GetFilePath( _T("Proxy.ini") );
-
-  #if 1 	//+++ メモ: r13test10に対し undonut+ で増えた処理...
-   #if 1	//+++ 念のためバックアップファイルにする.
-	Misc::MoveToBackupFile(strFile);
-   #else
-	if (GetFileAttributes(strFile) != 0xFFFFFFFF)	//Proxy.iniが存在していれば削除
-		DeleteFile(strFile);
-   #endif
-  #endif
+	CString 	strFile = GetConfigFilePath( _T("Proxy.ini") );
 
 	//vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv
 	// プロキシ
