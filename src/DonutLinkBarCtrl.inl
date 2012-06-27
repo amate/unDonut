@@ -1270,7 +1270,7 @@ bool	CDonutLinkBarCtrl::Impl::_DoPopupSubMenu(int nIndex, bool bPressItem /*= tr
 		rcWindow.MoveToX(rcWork.right - nWidth);
 	}
 
-	s_pSubMenu->Create(GetDesktopWindow(), rcWindow, NULL, /*WS_VISIBLE | */WS_POPUP | WS_BORDER /*| WS_THICKFRAME*/, WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+	s_pSubMenu->Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER, WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE | WS_EX_TOPMOST);
 	s_pSubMenu->ShowWindow(SW_SHOWNOACTIVATE);
 
 	ATLVERIFY(s_hHook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, _Module.GetModuleInstance(), 0));

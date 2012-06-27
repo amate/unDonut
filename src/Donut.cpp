@@ -159,6 +159,8 @@ void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 {
 	// ŒŸõƒo[‚ğg‚Á‚ÄŒŸõ‚·‚é
 	CString str = lpszCommandline;
+	if (str.Find(_T("/dde")) != -1)
+		return ;
 	if (str.Left(13) == _T("SearchEngine:")) {
 		vecUrls.push_back(str);
 		return ;
