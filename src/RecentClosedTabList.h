@@ -27,9 +27,6 @@ public:
 	~CRecentClosedTabList();
 
 	// Attributes
-	HMENU GetMenuHandle() const;
-	void  SetMenuHandle(HMENU hMenu);
-
 	int  GetMaxEntries() const;
 	void SetMaxEntries(int nMaxEntries);
 
@@ -51,10 +48,6 @@ public:
 	BOOL WriteToXmlFile();
 
 	void DeleteRecentClosedTabFile();
-
-	// Implementation
-	BOOL UpdateMenu();
-	void ResetMenu();
 	
 private:
 	class Impl;

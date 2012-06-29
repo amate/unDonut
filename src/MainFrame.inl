@@ -445,6 +445,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	OnSetDLConfigToGlobalConfig();
 	m_StatusBar.GetProxyComboBox().SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 
+	TIMERSTART();
 	/* 各種バンドウィンドウ作成 */
 	_initRebar();
 	HWND hWndCmdBar		= _initCommandBar();
@@ -454,19 +455,26 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	HWND hWndTabBar		= _initTabBar();
 	HWND hWndLinkBar	= _initLinkBar();
 	_initBandPosition(hWndCmdBar, hWndToolBar, hWndAddressBar, hWndSearchBar, hWndLinkBar, hWndTabBar);
-
+	TIMERSTOP(_T("各種バンド作成"));
+	
 	m_GlobalConfigManageData.pGlobalConfig->SearchEditHWND	= m_SearchBar.GetEditCtrl();
+
+	TIMERSTART();
 
 	_initStatusBar();
 	_initSplitterWindow();
 	_initChildFrameClient();
 	_initExplorerBar();
 
+	TIMERSTOP(_T("misc"));
+
 	m_FindBar.Create(m_hWnd);
 	m_FindBar.SetUpdateLayoutFunc(boost::bind(&CMainFrame::Impl::UpdateLayout, this, _1));
-
+	
+	TIMERSTART();
 	_initSkin();
-
+	TIMERSTOP(_T("initSkin"));
+	TIMERSTART();
 	_initSysMenu();
 
 	/* UI 更新を設定 */
@@ -479,11 +487,9 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_DownloadManager.SetParent(m_hWnd);
 
 	// 最近閉じたタブのメニューの設定やオプションの設定を行う
-	m_RecentClosedTabList.SetMenuHandle(CMenuHandle(m_CmdBar.m_hMenu).GetSubMenu(0).GetSubMenu(kPosMRU));
 	m_RecentClosedTabList.SetMaxEntries(CMainOption::s_nMaxRecentClosedTabCount);
 	m_RecentClosedTabList.SetMenuType(CMainOption::s_RecentClosedTabMenuType);
 	m_RecentClosedTabList.ReadFromXmlFile();
-	m_RecentClosedTabList.UpdateMenu();
 
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
 	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
@@ -619,13 +625,8 @@ HWND	CMainFrame::Impl::_initCommandBar()
 	SetMenu(NULL);		// remove menu
 
 	HWND	hWndCmdBar = m_CommandBar.Create(m_ReBar);
-	m_CmdBar.Create(m_hWnd, rcDefault, NULL, MTL_SIMPLE_CMDBAR2_PANE_STYLE, 0, ATL_IDW_COMMAND_BAR);
 	ATLASSERT( ::IsWindow(hWndCmdBar) );
-	m_CmdBar.ShowWindow(FALSE);
 
-	CMenuHandle menu;
-	menu.LoadMenu(IDR_MAINFRAME);
-	m_CmdBar.AttachMenu(menu);		//\\---
 	m_CommandBar.SetRecentClosedTabList(&m_RecentClosedTabList);	// 最近閉じたタブ ポップアップメニュー用
 
 	return hWndCmdBar;
@@ -635,13 +636,6 @@ HWND	CMainFrame::Impl::_initToolBar()
 {
 	HWND hWndToolBar = m_ToolBar.Create(m_hWnd);
 	ATLASSERT( ::IsWindow(hWndToolBar) );
-
-	if (m_CmdBar.m_fontMenu.m_hFont) {	// コマンドバーのフォント設定と同じに
-		LOGFONT lf;
-		m_CmdBar.m_fontMenu.GetLogFont(&lf);
-		CFontHandle font;
-		m_ToolBar.SetFont(font.CreateFontIndirect(&lf));
-	}
 
 	return hWndToolBar;
 }
@@ -726,7 +720,6 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 		AddSimpleReBarBandCtrl(m_ReBar, rbi.hWnd, rbi.nID, nullptr, rbi.fStyle, rbi.cx);
 	});
 	m_ReBar.LockBands( (vecReBarBandInfo.front().fStyle & RBBS_NOGRIPPER) != 0 );
-	m_CmdBar.RefreshBandIdealSize(m_ReBar);
 	m_AddressBar.InitReBarBandInfo(m_ReBar);
 
 	OnShowBandTextChange(CAddressBarOption::s_bTextVisible);
@@ -842,11 +835,8 @@ void	CMainFrame::Impl::_initSkin()
 
 	/* スキン */
 	//initCurrentIcon();											//+++ アイコン
-	m_CmdBar.setMenuBarStyle(m_hWndToolBar, false); 			//+++ メニュー (FEVATWHの短名にするか否か)
-	m_CmdBar.InvalidateRect(NULL, TRUE);						//メニューバー
 	m_ReBar.RefreshSkinState(); 								//ReBar
 	m_TabBar.ReloadSkin();										//タブ
-	CToolBarOption::GetProfile();
 	m_ToolBar.ReloadSkin(); 									//ツールバー
 	m_AddressBar.ReloadSkin(CSkinOption::s_nComboStyle);		//アドレスバー
 	m_SearchBar.ReloadSkin(CSkinOption::s_nComboStyle); 		//検索バー
@@ -1527,6 +1517,9 @@ void	CMainFrame::Impl::OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if (pUIData == nullptr)
 		return ;
 
+	CFavoriteEditDialog dlg(true);
+	dlg.SetNameURLFavicon(pUIData->strTitle, pUIData->strLocationURL, CFaviconManager::GetFavicon(pUIData->strFaviconURL));
+	dlg.DoModal(m_hWnd);
 	bool bOldShell = _check_flag(MAIN_EX_ADDFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
 	//MtlAddFavorite(pUIData->strLocationURL, pUIData->strTitle, bOldShell, DonutGetFavoritesFolder(), m_hWnd);
 
@@ -1535,7 +1528,9 @@ void	CMainFrame::Impl::OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 void	CMainFrame::Impl::OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	bool bOldShell = _check_flag(MAIN_EX_ORGFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
+	CFavoriteEditDialog dlg(false);
+	dlg.DoModal(m_hWnd);
+	//bool bOldShell = _check_flag(MAIN_EX_ORGFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
 	//MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
 }
 
@@ -1597,7 +1592,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);
 	CSearchPropertyPage 			pageSearch;
-	CMenuPropertyPage				pageMenu(menu.m_hMenu, m_CmdBar);
+	CMenuPropertyPage				pageMenu(menu.m_hMenu);
 	CRightClickPropertyPage			pageRightMenu(menu);
 	CExplorerPropertyPage			pageExplorer;
 	CDestroyPropertyPage			pageDestroy;
@@ -1783,7 +1778,10 @@ LRESULT CMainFrame::Impl::OnShowToolBarMenu()
 	CPoint pt;
 	::GetCursorPos(&pt);	
 	
-	CMenuHandle submenu = CMenuHandle(m_CmdBar.m_hMenu).GetSubMenu(2).GetSubMenu(0);
+	CMenu main_menu;
+	main_menu.LoadMenu(IDR_MAINFRAME);
+	enum { kShowPos = 2, kToolbarPos = 0 };
+	CMenuHandle submenu = main_menu.GetSubMenu(kShowPos).GetSubMenu(kToolbarPos);
 	if ( submenu.IsMenu() )
 		submenu.TrackPopupMenu(TPM_LEFTALIGN | TPM_TOPALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON, pt.x, pt.y, m_hWnd);
 	return 0;
@@ -2109,9 +2107,9 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 
 	funcRButtonHook();
 
-	HWND hWndActiveChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
-	if (hWndActiveChildFrame)
-		::SetFocus(hWndActiveChildFrame);
+	//HWND hWndActiveChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
+	//if (hWndActiveChildFrame)
+	//	::SetFocus(hWndActiveChildFrame);
 }
 
 

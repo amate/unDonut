@@ -1235,7 +1235,6 @@ LRESULT CChildFrame::Impl::OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPAR
 		proxyinfo.lpszProxy 	  = NULL;
 		proxyinfo.lpszProxyBypass = NULL;
 	}
-	TRACEIN(_T("OnSetProxyToChildFrame : %s"), proxyinfo.lpszProxy ? CString(proxyinfo.lpszProxy) : L"‚È‚µ");
 	UrlMkSetSessionOption(INTERNET_OPTION_PROXY, &proxyinfo, sizeof (proxyinfo), 0);
 	return 0;
 }

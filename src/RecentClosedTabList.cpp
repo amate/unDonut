@@ -8,6 +8,7 @@
 #include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include <boost\thread.hpp>
 #include "MtlMisc.h"
 #include "ChildFrame.h"
 #include "option\MainOption.h"
@@ -21,13 +22,11 @@ class CRecentClosedTabList::Impl
 	};
 
 public:
-	// Constructor
+	// Constructor/Destructor
 	Impl();
+	~Impl();
 
 	// Attributes
-	HMENU GetMenuHandle() const { return m_hMenu; }
-	void  SetMenuHandle(HMENU hMenu);
-
 	int  GetMaxEntries() const { return m_nMaxEntries; }
 	void SetMaxEntries(int nMaxEntries);
 
@@ -37,7 +36,7 @@ public:
 	int  GetMenuType() const { return m_nMenuType; }
 	void SetMenuType(int nMode) { m_nMenuType = nMode; }
 
-	int  GetRecentCount() const { return (int)m_vecpClosedTabData.size(); }
+	int  GetRecentCount() const { return m_bLoading ? 0 : (int)m_vecpClosedTabData.size(); }
 
 	// Operations
 	BOOL AddToList(ChildFrameDataOnClose* pClosedTabData);
@@ -49,11 +48,6 @@ public:
 	BOOL WriteToXmlFile();
 
 	void DeleteRecentClosedTabFile();
-
-	// Implementation
-	BOOL UpdateMenu();
-	void ResetMenu();
-
 
 private:
 
@@ -69,18 +63,15 @@ private:
 
 	// Data members
 	vector<unique_ptr<ChildFrameDataOnClose> >	m_vecpClosedTabData;	// beginが最も最後に閉じたタブ
-
-	int 					m_nMaxEntries;		// default is 4
-	HMENU					m_hMenu;
-
-	TCHAR					m_szNoEntries[INTERNET_MAX_PATH_LENGTH];
-
-	int 					m_cchMaxItemLen;
-
-	int 					m_nMinID;
-	int 					m_nMaxID;
-
-	int 					m_nMenuType;
+	int 	m_nMaxEntries;		// default is 4
+	TCHAR	m_szNoEntries[INTERNET_MAX_PATH_LENGTH];
+	int 	m_cchMaxItemLen;
+	int 	m_nMinID;
+	int 	m_nMaxID;
+	int 	m_nMenuType;
+	bool	m_bLoading;
+	boost::thread m_thrdLoading;
+	CCriticalSection	m_csLoading;
 };
 
 
@@ -88,10 +79,10 @@ private:
 
 // Constructor
 CRecentClosedTabList::Impl::Impl()
-	: m_hMenu(NULL)
-	, m_nMaxEntries(4)
+	: m_nMaxEntries(4)
 	, m_cchMaxItemLen(100)
 	, m_nMenuType(RECENTDOC_MENUTYPE_URL)
+	, m_bLoading(false)
 {
 	m_nMinID = ID_RECENTDOCUMENT_FIRST;
 	m_nMaxID = ID_RECENTDOCUMENT_LAST;
@@ -99,15 +90,11 @@ CRecentClosedTabList::Impl::Impl()
 	ATLASSERT(INTERNET_MAX_PATH_LENGTH > m_cchMaxItemLen_Min);
 }
 
-void  CRecentClosedTabList::Impl::SetMenuHandle(HMENU hMenu)
+CRecentClosedTabList::Impl::~Impl()
 {
-	ATLASSERT( hMenu == NULL || ::IsMenu(hMenu) );
-	m_hMenu = hMenu;
-
-	if ( m_hMenu == NULL || (::GetMenuString(m_hMenu, m_nMinID, m_szNoEntries, INTERNET_MAX_PATH_LENGTH, MF_BYCOMMAND) == 0) )
-		_tcscpy_s( m_szNoEntries, _T("(empty)") );
+	if (m_thrdLoading.joinable())
+		m_thrdLoading.join();
 }
-
 
 void CRecentClosedTabList::Impl::SetMaxEntries(int nMaxEntries)
 {
@@ -139,7 +126,6 @@ void CRecentClosedTabList::Impl::SetMaxItemLength(int cchMaxLen)
 	}
 
 	m_cchMaxItemLen = cchMaxLen;
-	UpdateMenu();
 }
 
 
@@ -147,18 +133,18 @@ void CRecentClosedTabList::Impl::SetMaxItemLength(int cchMaxLen)
 // Oparation
 BOOL CRecentClosedTabList::Impl::AddToList(ChildFrameDataOnClose* pClosedTabData)
 {
+	CCritSecLock	lock(m_csLoading);
 	while ((int)m_vecpClosedTabData.size() > m_nMaxEntries)
 		m_vecpClosedTabData.erase(m_vecpClosedTabData.begin() + m_nMaxEntries - 1);
 
 	m_vecpClosedTabData.insert(m_vecpClosedTabData.begin(), unique_ptr<ChildFrameDataOnClose>(std::move(pClosedTabData)));
-
-	UpdateMenu();
 
 	return TRUE;
 }
 
 BOOL CRecentClosedTabList::Impl::GetFromList(int nItemID, ChildFrameDataOnClose** ppClosedTabData)
 {
+	CCritSecLock	lock(m_csLoading);
 	int nIndex = nItemID - m_nMinID;
 	if ( nIndex < 0 || nIndex >= (int)m_vecpClosedTabData.size() )
 		return FALSE;
@@ -169,121 +155,11 @@ BOOL CRecentClosedTabList::Impl::GetFromList(int nItemID, ChildFrameDataOnClose*
 
 BOOL CRecentClosedTabList::Impl::RemoveFromList(int nItemID)
 {
+	CCritSecLock	lock(m_csLoading);
 	int  nIndex = nItemID - m_nMinID;
 	m_vecpClosedTabData.erase(m_vecpClosedTabData.begin() + nIndex);
 
-	UpdateMenu();
-
 	return TRUE;
-}
-
-// メニューを更新する
-BOOL CRecentClosedTabList::Impl::UpdateMenu()
-{
-	if (m_hMenu == NULL)
-		return FALSE;
-
-	ATLASSERT( ::IsMenu(m_hMenu) );
-
-	int 	nItems = ::GetMenuItemCount(m_hMenu);
-	int 	nInsertPoint;
-
-	for (nInsertPoint = 0; nInsertPoint < nItems; nInsertPoint++) {
-		MENUITEMINFO mi = { sizeof (MENUITEMINFO) };
-		mi.fMask  = MIIM_ID;
-		::GetMenuItemInfo(m_hMenu, nInsertPoint, TRUE, &mi);
-		if (mi.wID == m_nMinID)
-			break;
-	}
-
-	ATLASSERT(nInsertPoint < nItems && "You need a menu item with an ID = m_nMinID");
-
-	int nItem;
-	for (nItem = m_nMinID; nItem < m_nMinID + m_nMaxEntries; nItem++) {
-		// keep the first one as an insertion point
-		if (nItem != m_nMinID)
-			::DeleteMenu(m_hMenu, nItem, MF_BYCOMMAND);
-	}
-
-	nItem = 0;
-	CString 	strOut;
-	int nSize  = (int)m_vecpClosedTabData.size();
-	if (nSize > 0) {
-		for (nItem = 0; nItem < nSize; ++nItem) {
-			ChildFrameDataOnClose& data = *m_vecpClosedTabData[nItem];
-			char		cShortcut = 0;
-			CString 	strShortcut;
-
-			if (nItem < 10)
-				cShortcut = '0' + nItem;
-			else if (nItem < 36)
-				cShortcut = 'a' + nItem - 10;
-			else if (nItem < 62)
-				cShortcut = 'A' + nItem - 36;
-
-			CString 	strIn;
-
-			if (data.strTitle.IsEmpty() || m_nMenuType == RECENTDOC_MENUTYPE_URL) {
-				//URL表示
-				strIn = data.strURL;
-
-				if (m_cchMaxItemLen != -1) {
-					TCHAR szBuff[INTERNET_MAX_PATH_LENGTH] = _T("\0");
-					bool  bRet 	= CompactDocumentName(szBuff, strIn, m_cchMaxItemLen);
-					strIn 		= szBuff;
-				}
-
-			} else if (m_nMenuType == RECENTDOC_MENUTYPE_TITLE) {
-				//タイトル表示
-				strIn = data.strTitle;
-
-				if (m_cchMaxItemLen != -1) {
-					TCHAR szBuff[INTERNET_MAX_PATH_LENGTH] = _T("\0");
-					bool  bRet 	= CompactDocumentName(szBuff, strIn, m_cchMaxItemLen);
-					strIn 		= szBuff;
-				}
-
-			} else if (m_nMenuType == RECENTDOC_MENUTYPE_DOUBLE) {
-				//両方表示
-				if (m_cchMaxItemLen == -1) {
-					strIn = data.strTitle + _T(" - ") + data.strURL;
-				} else {
-					TCHAR szBuff[INTERNET_MAX_PATH_LENGTH] = _T("\0");
-					bool  bRet 	= CompactDocumentName(szBuff, data.strTitle, m_cchMaxItemLen / 2);
-					strIn		= szBuff;
-					strIn		+= _T(" - ");
-					bRet		= CompactDocumentName(szBuff, data.strURL, m_cchMaxItemLen / 2);
-					strIn		+= szBuff;
-				}
-
-			} else {
-				ATLASSERT(FALSE);
-			}
-
-			{
-				strIn.Replace( _T("&"), _T("&&") );
-				strOut.Format(_T("&%c %s"), cShortcut, strIn);
-			}
-
-			::InsertMenu(m_hMenu, nInsertPoint + nItem, MF_BYPOSITION | MF_STRING, m_nMinID + nItem, strOut);
-		}
-	} else {  // empty
-		::InsertMenu(m_hMenu, nInsertPoint, MF_BYPOSITION | MF_STRING, m_nMinID, m_szNoEntries);
-		::EnableMenuItem(m_hMenu, m_nMinID, MF_GRAYED);
-		nItem++;
-	}
-
-	::DeleteMenu(m_hMenu, nInsertPoint + nItem, MF_BYPOSITION);
-
-	return TRUE;
-}
-
-
-void CRecentClosedTabList::Impl::ResetMenu()
-{
-	for (int nItem = m_nMinID + 1; nItem < m_nMinID + m_nMaxEntries; ++nItem) {
-		::DeleteMenu(m_hMenu, nItem, MF_BYCOMMAND);
-	}
 }
 
 
@@ -298,47 +174,52 @@ void CRecentClosedTabList::Impl::DeleteRecentClosedTabFile()
 
 BOOL CRecentClosedTabList::Impl::ReadFromXmlFile()
 {
-	using boost::property_tree::wptree;
-
-	m_vecpClosedTabData.clear();
-
-	try {
-		std::wifstream	filestream(_GetRecentCloseFile());
-		if (!filestream) {
-			UpdateMenu();
-			return FALSE;
-		}
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-
-		wptree	pt;
-		boost::property_tree::read_xml(filestream, pt);
-
-		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
-			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
-				wptree& item = it->second;
-				vecTravelLog.push_back(std::pair<CString, CString>(
-					item.get(L"<xmlattr>.Title", L"").c_str(), 
-					item.get(L"<xmlattr>.URL", L"").c_str()));
+	m_bLoading = true;
+	m_thrdLoading.swap(boost::thread([this]() {
+		m_vecpClosedTabData.clear();
+		try {
+			std::wifstream	filestream(_GetRecentCloseFile());
+			if (!filestream) {
+				m_bLoading = false;
+				return ;
 			}
-		};
-
-		wptree	ptChild = pt.get_child(L"RecentCloseTab");
-		for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
-			unique_ptr<ChildFrameDataOnClose>	pdata(new ChildFrameDataOnClose);
-			wptree& ptItem = it->second;
+			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+			TIMERSTART();
+			using boost::property_tree::wptree;
+			wptree	pt;
+			boost::property_tree::read_xml(filestream, pt);
+			
+			auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
+				for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
+					wptree& item = it->second;
+					vecTravelLog.push_back(std::pair<CString, CString>(
+						item.get(L"<xmlattr>.Title", L"").c_str(), 
+						item.get(L"<xmlattr>.URL", L"").c_str()));
+				}
+			};
+			CCritSecLock	lock(m_csLoading);
+			m_vecpClosedTabData.reserve(m_nMaxEntries);
+			if (auto opRoot = pt.get_child_optional(L"RecentCloseTab")) {
+				wptree& ptChild = opRoot.get();
+				for (auto it = ptChild.begin(); it != ptChild.end(); ++it) {
+					unique_ptr<ChildFrameDataOnClose>	pdata(new ChildFrameDataOnClose);
+					wptree& ptItem = it->second;
 		
-			pdata->strTitle	= ptItem.get(L"<xmlattr>.Title", L"").c_str();
-			pdata->strURL	= ptItem.get(L"<xmlattr>.URL", L"").c_str();
-			pdata->dwDLCtrl	= ptItem.get<DWORD>(L"<xmlattr>.DLCtrl", CDLControlOption::s_dwDLControlFlags);
-			SetTravelLog(ptItem.get_child(L"TravelLog.Back"), pdata->TravelLogBack);
-			SetTravelLog(ptItem.get_child(L"TravelLog.Fore"), pdata->TravelLogFore);
-
-			m_vecpClosedTabData.push_back(std::move(pdata));
+					pdata->strTitle	= ptItem.get(L"<xmlattr>.Title", L"").c_str();
+					pdata->strURL	= ptItem.get(L"<xmlattr>.URL", L"").c_str();
+					pdata->dwDLCtrl	= ptItem.get<DWORD>(L"<xmlattr>.DLCtrl", CDLControlOption::s_dwDLControlFlags);
+					SetTravelLog(ptItem.get_child(L"TravelLog.Back"), pdata->TravelLogBack);
+					SetTravelLog(ptItem.get_child(L"TravelLog.Fore"), pdata->TravelLogFore);
+					m_vecpClosedTabData.push_back(std::move(pdata));
+				}
+			}
+		} catch (...) {
+			ATLTRACE(_T("CRecentClosedTabList::Impl::ReadFromXmlFile で例外発生!\n"));
 		}
-	} catch (...) {
-		ATLTRACE(_T("CRecentClosedTabList::Impl::ReadFromXmlFile で例外発生!\n"));
-	}
-	return UpdateMenu();
+		TIMERSTOP(L"RecentClosedTabファイル読み込み完了");
+		m_bLoading = false;
+	}));
+	return TRUE;
 }
 
 
@@ -355,15 +236,18 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 			}
 		};
 		wptree	pt;
+		wptree& ptRecentCloseTab = pt.add(L"RecentCloseTab", L"");
 		for (auto it = m_vecpClosedTabData.cbegin(); it != m_vecpClosedTabData.cend(); ++it) {
 			ChildFrameDataOnClose& data = *(*it);
-			wptree& ptItem = pt.add(L"RecentCloseTab.item", L"");
+			wptree& ptItem = ptRecentCloseTab.add(L"item", L"");
 			ptItem.put(L"<xmlattr>.Title", (LPCTSTR)data.strTitle);
 			ptItem.put(L"<xmlattr>.URL"	 , (LPCTSTR)data.strURL);
 			ptItem.put(L"<xmlattr>.DLCtrl", data.dwDLCtrl);
 			AddTravelLog(ptItem.add(L"TravelLog.Back", L""), data.TravelLogBack);
 			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
 		}
+
+		
 		using namespace boost::property_tree::xml_parser;
 
 		std::wofstream filestream(_GetRecentCloseFile() + _T(".temp"));
@@ -377,6 +261,7 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 
 	} catch (...) {
 		ATLTRACE(_T("CRecentClosedTabList::Impl::WriteToXmlFile で例外発生!\n"));
+		return FALSE;
 	}
 
 	return TRUE;
@@ -398,15 +283,6 @@ CRecentClosedTabList::~CRecentClosedTabList()
 
 
 // Attributes
-HMENU CRecentClosedTabList::GetMenuHandle() const
-{
-	return pImpl->GetMenuHandle();
-}
-void  CRecentClosedTabList::SetMenuHandle(HMENU hMenu)
-{
-	pImpl->SetMenuHandle(hMenu);
-}
-
 int  CRecentClosedTabList::GetMaxEntries() const
 {
 	return pImpl->GetMaxEntries();
@@ -467,16 +343,6 @@ BOOL CRecentClosedTabList::WriteToXmlFile()
 void CRecentClosedTabList::DeleteRecentClosedTabFile()
 {
 	pImpl->DeleteRecentClosedTabFile();
-}
-
-// Implementation
-BOOL CRecentClosedTabList::UpdateMenu()
-{
-	return pImpl->UpdateMenu();
-}
-void CRecentClosedTabList::ResetMenu()
-{
-	pImpl->ResetMenu();
 }
 
 

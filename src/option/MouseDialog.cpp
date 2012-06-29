@@ -29,7 +29,7 @@ CString CMouseOption::s_strLEngine;
 CString CMouseOption::s_strREngine;
 CString CMouseOption::s_strBEngine;
 CString CMouseOption::s_strCEngine;
-int		CMouseOption::s_nDragDropCommandID = ID_SEARCH_DIRECT;
+int		CMouseOption::s_nDragDropCommandID = 0;
 
 
 void	CMouseOption::GetProfile()
@@ -152,25 +152,29 @@ void CMousePropertyPage::_GetData()
 
 void CMousePropertyPage::OnInitSetting()
 {
-	static LPCTSTR lpKeyStr[] = {
-		_T("WHEEL_UP"),		_T("WHEEL_DOWN"),
-		_T("LButtonUp"),	_T("MButtonUp"),
-		_T("XButtonUp1"),	_T("XButtonUp2"),
-		_T("LinkOpenBtnM"),
-		_T("Side1"),		_T("Side2")
+	struct DefaultButtonCommand {
+		LPCTSTR button;
+		DWORD	command;
 	};
-	int 		nKeyCnt   = 9;
+	static const DefaultButtonCommand defaultButtonCommand[] = {
+		{ _T("WHEEL_UP"),	0	},
+		{ _T("WHEEL_DOWN"),	0	},
+		{ _T("LButtonUp"),	0	},
+		{ _T("MButtonUp"),	0	},
+		{ _T("XButtonUp1"),	0	},
+		{ _T("XButtonUp2"),	0	},
+		{ _T("LinkOpenBtnM"),	IDM_FOLLOWLINKN },
+		{ _T("Side1"),	ID_VIEW_BACK	},
+		{ _T("Side2"),	ID_VIEW_FORWARD	},
+	};
 
 	CIniFileI	pr( m_strPath, _T("MouseCtrl") );
 
-	for (int ii = 0; ii < nKeyCnt; ii++) {
-		CString		strKey;
-		strKey.Format(_T("%s"), lpKeyStr[ii]);
+	for (int ii = 0; ii < _countof(defaultButtonCommand); ii++) {
+		DWORD	dwCommand = defaultButtonCommand[ii].command;
+		pr.QueryValue(dwCommand, defaultButtonCommand[ii].button);
 
-		DWORD	dwCommand = 0;
-		pr.QueryValue(dwCommand, strKey);
-
-		m_mapMouseCmd.Add(strKey, dwCommand);
+		m_mapMouseCmd.Add(defaultButtonCommand[ii].button, dwCommand);
 	}
 }
 

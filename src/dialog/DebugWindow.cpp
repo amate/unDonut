@@ -12,7 +12,7 @@
 
 #ifdef _DEBUG
 static CDebugUtility	g_debugutil;
-boost::timer	g_timer;
+__declspec(thread) DWORD	g_timer;
 #endif
 
 /////////////////////////////////////////////////
@@ -137,7 +137,7 @@ void CDebugUtility::WriteIn(LPCTSTR pstrFormat, ...)
 void	CDebugUtility::TimerStart()
 {
 #ifdef _DEBUG
-	g_timer.restart();
+	g_timer = ::timeGetTime();
 #endif
 }
 
@@ -150,7 +150,7 @@ void	CDebugUtility::TimerStop(LPCTSTR pstrFormat, ...)
 	str.FormatV(pstrFormat, args);
 	va_end(args);
 	CString strTime;
-	strTime.Format(_T(" : %.4lf\n"), g_timer.elapsed());
+	strTime.Format(_T(" : %.4lf\n"), (static_cast<double>(::timeGetTime()) - static_cast<double>(g_timer)) / 1000.0);
 
 	str += strTime;
 	pImpl->_WriteConsole(str);

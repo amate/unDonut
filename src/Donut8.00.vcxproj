@@ -444,6 +444,7 @@
       <LinkTimeCodeGeneration>
       </LinkTimeCodeGeneration>
       <TargetMachine>MachineX64</TargetMachine>
+      <Profile>true</Profile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">
@@ -1282,6 +1283,7 @@
     <ClCompile Include="Download\DownloadFrame.cpp" />
     <ClCompile Include="Download\DownloadingListView.cpp" />
     <ClCompile Include="Download\DownloadManager.cpp" />
+    <ClCompile Include="FavoriteEditDialog.cpp" />
     <ClCompile Include="FavoriteOrder.cpp" />
     <ClCompile Include="FavoritesMenu.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -1488,6 +1490,7 @@
     <ClInclude Include="ExplorerTreeViewCtrl.h" />
     <ClInclude Include="ExStyle.h" />
     <ClInclude Include="FaviconManager.h" />
+    <ClInclude Include="FavoriteEditDialog.h" />
     <ClInclude Include="FavoriteOrder.h" />
     <ClInclude Include="FavoritesMenu.h" />
     <ClInclude Include="FavTreeViewCtrl.h" />

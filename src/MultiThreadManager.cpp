@@ -38,140 +38,35 @@ struct _RunChildFrameData
 class CMultiThreadManager
 {
 public:
-	// Constructor
-	CMultiThreadManager();
-
-	int Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray);
 	DWORD	AddChildFrameThread(CChildFrame* pChild, NewChildFrameData* pData);
 
 private:
 	// スレッドプロシージャー
-	static DWORD WINAPI RunMainThread(LPVOID lpData);
 	static DWORD WINAPI RunChildFrameThread(LPVOID lpData);
-
-	// Operations
-	DWORD	AddMainThread(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray);
-	
-	void	RemoveThread(DWORD dwIndex);
-
-	// Data members
-	HANDLE m_hMainThread;
-	DWORD m_dwCount;
-	HANDLE m_arrThreadHandles[MAXIMUM_WAIT_OBJECTS - 1];
 
 } g_MultiThreadManager;
 
-//static CMultiThreadManager	g_MultiThreadManager;
 
-// Constructor
-CMultiThreadManager::CMultiThreadManager() : m_dwCount(0), m_hMainThread(NULL)
-{ }
-
-
-/// メインフレーム用のスレッド起動とスレッドの削除を管理する
-int CMultiThreadManager::Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
+/// ChildFrame のスレッド作成
+DWORD CMultiThreadManager::AddChildFrameThread(CChildFrame* pChild, NewChildFrameData* pChildFrameData)
 {
-	//MSG msg;
-	// 強制的にメッセージキューを作らせる
-	//\\::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+	_RunChildFrameData* pData = new _RunChildFrameData(pChildFrameData->hWndParent);
+	pData->pChild = pChild;
+	pData->ConstructData	= *pChildFrameData;
 
-	AddMainThread(lpstrCmdLine, nCmdShow, bTray);
-	if (m_hMainThread == NULL)
+	DWORD dwThreadID;
+	HANDLE hThread = ::CreateThread(NULL, 0, RunChildFrameThread, pData, 0, &dwThreadID);
+	if(hThread == NULL) {
+		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
 		return 0;
-
-	int nRet = 0;
-	DWORD dwRet = ::WaitForSingleObject(m_hMainThread, INFINITE);
-	if(dwRet == 0xFFFFFFFF)
-	{
-		::MessageBox(NULL, _T("エラー: オブジェクトのイベント待ち受けに失敗しました！"), _T("Multi"), MB_OK);
 	}
-	::CloseHandle(m_hMainThread);
-#if 0
-	int nRet = m_dwCount;
-	DWORD dwRet;
-	while(m_dwCount > 0)
-	{
-		dwRet = ::MsgWaitForMultipleObjects(m_dwCount, m_arrThreadHandles, FALSE, INFINITE, QS_ALLINPUT);
+	::CloseHandle(hThread);
 
-		if(dwRet == 0xFFFFFFFF)
-		{
-			::MessageBox(NULL, _T("エラー: オブジェクトのイベント待ち受けに失敗しました！"), _T("Multi"), MB_OK);
-		}
-		else if(dwRet >= WAIT_OBJECT_0 && dwRet <= (WAIT_OBJECT_0 + m_dwCount - 1))
-		{
-			RemoveThread(dwRet - WAIT_OBJECT_0);
-		}
-		else if(dwRet == (WAIT_OBJECT_0 + m_dwCount))
-		{
-			if(::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-			{
-				//if(msg.message == WM_USER)
-					//AddThread(_T(""), SW_SHOWNORMAL);
-			}
-		}
-		else
-		{
-			::MessageBeep((UINT)-1);
-		}
-	}
-#endif
-	return nRet;
+	return dwThreadID;
 }
+
 
 //スレッドプロシージャー
-
-/// MainFrame のメッセージループの本体
-DWORD WINAPI CMultiThreadManager::RunMainThread(LPVOID lpData)
-{
-	_RunMainData* pData = (_RunMainData*)lpData;
-	::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-	::OleInitialize(NULL);
-
-	CHandle hJob;
-	hJob.Attach(::CreateJobObject(NULL, MAINFRAMEJOBOBJECTNAME));
-	JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedLimit = { 0 };
-	extendedLimit.BasicLimitInformation.LimitFlags	= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	::SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &extendedLimit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-
-	_Module.StartMonitor();
-	HRESULT hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
-	ATLASSERT( SUCCEEDED(hRes) );
-	hRes = ::CoResumeClassObjects();
-	ATLASSERT( SUCCEEDED(hRes) );
-	int nRet = 0;
-	{
-		CMessageLoop theLoop;
-		_Module.AddMessageLoop(&theLoop);
-
-		CMainFrame	 wndMain;
-		if (wndMain.CreateEx() == NULL) {
-			ATLTRACE( _T("Main window creation failed!\n") );
-			return 0;
-		}
-
-		// load windowplacement
-		wndMain.StartupMainFrameStyle(pData->nCmdShow, pData->bTray);
-
-		_Module.Lock();
-
-		CStartUpOption::StartUp(wndMain);
-
-		//wndMain.SetAutoBackUp();		//自動更新するなら、開始.
-
-		delete pData;
-		// 実際のメインループ.
-		nRet = theLoop.Run();
-
-		_Module.RemoveMessageLoop();
-	}
-	_Module.RevokeClassObjects();
-	::Sleep(_Module.m_dwPause);
-
-	::CoUninitialize();
-	::OleUninitialize();
-
-	return nRet;	// ※ WTLのメイン窓クローズ時に1を正常値として返しているので注意.
-}
 
 /// ChildFrame のメッセージループの本体
 DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
@@ -242,76 +137,6 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 	::OleUninitialize();
 
 	return nRet;
-}
-
-
-// Operations
-
-
-/// メインフレームのスレッドを作成
-DWORD CMultiThreadManager::AddMainThread(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
-{
-	if (m_dwCount == (MAXIMUM_WAIT_OBJECTS - 1)) {
-		::MessageBox(NULL, _T("エラー: これ以上スレッドを作成できません!!!"), _T("Multi"), MB_OK);
-		return 0;
-	}
-
-	_RunMainData* pData = new _RunMainData;
-	pData->lpstrCmdLine = lpstrCmdLine;
-	pData->nCmdShow = nCmdShow;
-	pData->bTray = bTray;
-		
-	DWORD dwThreadID;
-	m_hMainThread = ::CreateThread(NULL, 0, RunMainThread, pData, 0, &dwThreadID);
-	if (m_hMainThread == NULL) {
-		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
-		return 0;
-	}
-#if 0
-	HANDLE hThread = ::CreateThread(NULL, 0, RunMainThread, pData, 0, &dwThreadID);
-	if (hThread == NULL) {
-		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
-		return 0;
-	}
-
-	m_arrThreadHandles[m_dwCount] = hThread;
-	m_dwCount++;
-#endif
-	return dwThreadID;
-}
-
-/// ChildFrame のスレッド作成
-DWORD CMultiThreadManager::AddChildFrameThread(CChildFrame* pChild, NewChildFrameData* pChildFrameData)
-{
-	if (m_dwCount == (MAXIMUM_WAIT_OBJECTS - 1)) {
-		::MessageBox(NULL, _T("エラー: これ以上スレッドを作成できません!!!"), _T("Multi"), MB_OK);
-		return 0;
-	}
-
-	_RunChildFrameData* pData = new _RunChildFrameData(pChildFrameData->hWndParent);
-	pData->pChild = pChild;
-	pData->ConstructData	= *pChildFrameData;
-
-	DWORD dwThreadID;
-	HANDLE hThread = ::CreateThread(NULL, 0, RunChildFrameThread, pData, 0, &dwThreadID);
-	if(hThread == NULL) {
-		::MessageBox(NULL, _T("エラー: スレッドを作成できません!!!"), _T("Multi"), MB_OK);
-		return 0;
-	}
-	::CloseHandle(hThread);
-#if 0
-	m_arrThreadHandles[m_dwCount] = hThread;
-	m_dwCount++;
-#endif
-	return dwThreadID;
-}
-
-void CMultiThreadManager::RemoveThread(DWORD dwIndex)
-{
-	::CloseHandle(m_arrThreadHandles[dwIndex]);
-	if(dwIndex != (m_dwCount - 1))
-		m_arrThreadHandles[dwIndex] = m_arrThreadHandles[m_dwCount - 1];
-	m_dwCount--;
 }
 
 
@@ -477,10 +302,6 @@ private:
 
 namespace MultiThreadManager {
 
-int Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
-{
-	return g_MultiThreadManager.Run(lpstrCmdLine, nCmdShow, bTray);
-}
 
 bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 {

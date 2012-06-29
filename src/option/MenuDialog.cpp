@@ -71,9 +71,8 @@ void	CMenuOption::WriteProfile()
 // CMenuPropertyPage
 
 // Constructor
-CMenuPropertyPage::CMenuPropertyPage(HMENU hMenu, CCommandBarCtrl2& rCmdBar)
-	: m_rCmdBar(rCmdBar)
-	, m_hMenu(hMenu)
+CMenuPropertyPage::CMenuPropertyPage(HMENU hMenu)
+	: m_hMenu(hMenu)
 	, m_nNoCstmMenu(0)
 	, m_nNoCstmIeMenu(0)
 	, m_nREqualL(0)
@@ -142,8 +141,6 @@ void CMenuPropertyPage::_SaveData()
 
 		CMenuOption::WriteProfile();
 	}
-
-	m_rCmdBar.setMenuBarStyle();		//+++ MenuBarStyle‚Ì”½‰f
 }
 
 

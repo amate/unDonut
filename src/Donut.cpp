@@ -245,6 +245,7 @@ static bool _PrivateInit()
 	CVersionControl().Run();
 
 	CMainOption::GetProfile();
+	CToolBarOption::GetProfile();
 	CAddressBarOption::GetProfile();	// アドレスバー
 	CSearchBarOption::GetProfile();		// 検索バー
 	CMenuOption::GetProfile();			// メニュー
@@ -297,25 +298,6 @@ void _PrivateTerm()
 	CString strPath = Misc::GetExeDirectory() + _T("lock");
 	::DeleteFile(strPath);
 #endif
-}
-
-
-
-
-
-///+++ unDonut.iniファイルがない場合に、他の環境ファイルがたりているかをチェック.
-static bool	HaveEnvFiles()
-{
-	if (::PathFileExists( Misc::GetFullPath_ForExe(g_szIniFileName/*strIniFile*/) )) {
-		return true;	// unDonut.ini が生成されていたら、とりあえずokとしとく.
-	}
-
-	if (   ::PathFileExists( GetConfigFilePath(_T("MouseEdit.ini")))
-		&& ::PathFileExists( Misc::GetFullPath_ForExe(_T("search\\search.ini")) )) {
-		return true;
-	}
-
-	return false;
 }
 
 
@@ -459,7 +441,52 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 }
 
 
-int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
+static int RunMainFrame(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
+{
+	CHandle hJob;
+	LPCTSTR kMainFrameJobName = _T("DonutMainFrameJobObject");
+	hJob.Attach(::CreateJobObject(NULL, kMainFrameJobName));
+	JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedLimit = { 0 };
+	extendedLimit.BasicLimitInformation.LimitFlags	= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+	::SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &extendedLimit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+
+	_Module.StartMonitor();
+	HRESULT hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
+	ATLASSERT( SUCCEEDED(hRes) );
+	hRes = ::CoResumeClassObjects();
+	ATLASSERT( SUCCEEDED(hRes) );
+	int nRet = 0;
+	{
+		CMessageLoop theLoop;
+		_Module.AddMessageLoop(&theLoop);
+
+		CMainFrame	 wndMain;
+		if (wndMain.CreateEx() == NULL) {
+			ATLTRACE( _T("Main window creation failed!\n") );
+			return 0;
+		}
+		// load windowplacement
+		wndMain.StartupMainFrameStyle(nCmdShow, bTray);
+
+		_Module.Lock();
+
+		CStartUpOption::StartUp(wndMain);
+
+		//wndMain.SetAutoBackUp();		//自動更新するなら、開始.
+
+		// 実際のメインループ.
+		nRet = theLoop.Run();
+
+		_Module.RemoveMessageLoop();
+	}
+	_Module.RevokeClassObjects();
+	::Sleep(_Module.m_dwPause);
+
+	return nRet;
+}
+
+
+static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 {
 	TIMERSTART();
 
@@ -507,8 +534,8 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	// make the EXE free threaded. This means that calls come in on a random RPC thread
 	//	HRESULT hRes = ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
 
-//	hRes		 = ::OleInitialize(NULL);
-//	ATLASSERT( SUCCEEDED(hRes) );
+	hRes		 = ::OleInitialize(NULL);
+	ATLASSERT( SUCCEEDED(hRes) );
 
 	ATLTRACE(_T("tWinMain\n") _T("CommandLine : %s\n"), lpstrCmdLine);
 
@@ -540,7 +567,7 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 
 	// ActiveXコントロールをホストするための準備
 	AtlAxWinInit();
-
+	
 	// コマンドライン入力によってはCOMサーバー登録及び解除を行う
 	nRet = RegisterCOMServer(nRet, bRun, bAutomation, bTray);
 	if (FAILED(nRet)) {
@@ -557,20 +584,13 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 		//ATLASSERT( SUCCEEDED(hRes) );
 		//hRes = ::CoResumeClassObjects();
 		//ATLASSERT( SUCCEEDED(hRes) );
-
+		TIMERSTOP(_T("WinMain : preparation"));
 		if (bAutomation) {
 			CMessageLoop theLoop;
 			nRet = theLoop.Run();
 		} else {
-			//+++ 起動時の環境ファイルチェック. unDonut.iniがなく
-			//	環境ファイルが足りてなかったら起動ページをabout:warningにする.
-			if (lpstrCmdLine == 0 || lpstrCmdLine[0] == 0) {
-				if (HaveEnvFiles() == false)
-					lpstrCmdLine = _T("about:warning");
-			}
 			//\\nRet = Run(lpstrCmdLine, nCmdShow, bTray);
-			nRet = MultiThreadManager::Run(lpstrCmdLine, nCmdShow, bTray);
-
+			nRet = RunMainFrame(lpstrCmdLine, nCmdShow, bTray);
 		}
 	  #if 1 //+++ WTLのメイン窓クローズが正常終了時に、終了コードとして1を返す...
 			//+++ OSに返す値なので0のほうがよいはずで、
@@ -590,7 +610,7 @@ int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	ATLTRACE(_T("正常終了しました。\n"));
 END_APP:
 	_Module.Term();
-//	::OleUninitialize();
+	::OleUninitialize();
 	::CoUninitialize();
 
 	CDonutSimpleEventManager::RaiseEvent(EVENT_PROCESS_END);

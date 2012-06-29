@@ -28,7 +28,6 @@
 //#include "DonutSimpleEventManager.h"
 
 #include "DonutRebarCtrl.h"
-#include "MtlCtrlw.h"			// CommandBar
 #include "DonutCommandBar.h"
 #include "DonutToolBar.h"
 #include "DonutAddressBar.h"
@@ -51,6 +50,7 @@
 #include "FaviconManager.h"
 #include "dialog\OpenURLDialog.h"
 #include "ExStyle.h"
+#include "FavoriteEditDialog.h"
 
 //#include "DonutP.h"
 ////#include "DonutP_i.c"
@@ -703,7 +703,6 @@ private:
 
 	// Data members
 	CDonutReBarCtrl 	m_ReBar;
-	CCommandBarCtrl2	m_CmdBar;
 	CDonutCommandBar	m_CommandBar;
 	CDonutToolBar		m_ToolBar;
 	CDonutAddressBar	m_AddressBar;

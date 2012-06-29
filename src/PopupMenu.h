@@ -839,6 +839,12 @@ public:
 	static void	LoadFavoriteBookmark();
 	static void JoinSaveBookmarkThread();
 
+	// for FavoriteEditDialog
+	static vector<unique_ptr<LinkItem> >* GetBookmarkListPtr() {
+		return &s_BookmarkList;
+	}
+	static void SaveFavoriteBookmark() { _SaveFavoriteBookmark(); }
+
 	// ƒIƒvƒVƒ‡ƒ“‚©‚çŒÄ‚Î‚ê‚é
 	static void LinkImportFromFolder(LPCTSTR folder);
 	static void LinkExportToFolder(LPCTSTR folder, bool bOverWrite);

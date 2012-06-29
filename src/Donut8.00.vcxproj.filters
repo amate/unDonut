@@ -491,6 +491,9 @@
     <ClCompile Include="PopupMenu.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
+    <ClCompile Include="FavoriteEditDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -978,6 +981,9 @@
     </ClInclude>
     <ClInclude Include="SharedMemoryUtil.h">
       <Filter>Source Files\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="FavoriteEditDialog.h">
+      <Filter>Source Files\dialog</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

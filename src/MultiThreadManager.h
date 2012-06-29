@@ -12,9 +12,6 @@ struct NewChildFrameData;
 
 namespace MultiThreadManager {
 
-int Run(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray);
-
-
 #define NEWCHILDFRAMESHAREDMEMORYNAME	_T("DonutChildFrameSharedMemoryData")
 
 struct NewChildFrameProcessData {

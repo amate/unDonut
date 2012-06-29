@@ -3,6 +3,7 @@
 // Donut.rc ‚ÅŽg—p
 //
 #define ID_GETFAVICONFROMFILE           3
+#define ID_CREATE_FOLDER                3
 #define ID_GETFAVICONFROMURL            4
 #define IDD_ABOUTBOX                    100
 #define IDD_FORM_TOOLBAR                101
@@ -142,6 +143,7 @@
 #define IDI_FOLDER                      324
 #define IDD_RENAMEDIALOG                325
 #define IDM_LINKBAR                     326
+#define IDD_FAVORITE_EDIT               328
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -490,6 +492,7 @@
 #define IDC_BTN_ADDRESS_BAR_EXE         1341
 #define IDC_CHK_USER_AGENT              1342
 #define IDC_TREE1                       1343
+#define IDC_TREE                        1343
 #define IDC_CHECK_SAVE_SEARCHWORD       1344
 #define IDC_CHECK_FIREFOXLIKE           1345
 #define IDC_TABBAR_FONT                 1346
@@ -593,6 +596,9 @@
 #define IDC_BUTTON_MATCHTEST            1442
 #define IDC_BUTTON_LINKIMPORTFORMFOLDER 1443
 #define IDC_BUTTON_LINKEXPORTTOFOLDER   1444
+#define ID_APPLY                        1444
+#define IDC_STATIC_URL                  1445
+#define ID_APPLY2                       1446
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -981,9 +987,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        328
+#define _APS_NEXT_RESOURCE_VALUE        329
 #define _APS_NEXT_COMMAND_VALUE         33231
-#define _APS_NEXT_CONTROL_VALUE         1444
+#define _APS_NEXT_CONTROL_VALUE         1446
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

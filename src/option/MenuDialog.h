@@ -58,13 +58,11 @@ private:
 
 	int 					m_nMenuBarStyle;		//+++
 
-	MTL::CCommandBarCtrl2&	m_rCmdBar;				//+++ メニューバー関係用
-
 	bool					m_bInit;
 
 public:
 	// Constructor/Destructor
-	CMenuPropertyPage(HMENU hMenu, CCommandBarCtrl2& CmdBar);
+	CMenuPropertyPage(HMENU hMenu);
 	~CMenuPropertyPage();
 
 	// Overrides

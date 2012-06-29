@@ -453,10 +453,8 @@ void CMainPropertyPage2::_GetData()
 	CMainOption::s_bTravelLogGroup = m_nTravelLogGroup != 0;	//+++ ? true : false;
 	CMainOption::s_bTravelLogClose = m_nTravelLogClose != 0;	//+++ ? true : false;
 
-	m_rRecentClosedTabList.ResetMenu();
 	m_rRecentClosedTabList.SetMaxEntries(s_nMaxRecentClosedTabCount);
 	m_rRecentClosedTabList.SetMenuType(s_RecentClosedTabMenuType);
-	m_rRecentClosedTabList.UpdateMenu();
 
   #if 0	//+++ Ž¸”s
 	if (m_nTitleBarStrSwap)	CMainOption::s_dwMainExtendedStyle2 	 |=  MAIN_EX2_TITLEBAR_STR_SWAP;	//+++ ’Ç‰Á.

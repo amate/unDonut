@@ -540,8 +540,15 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 		}
 		if (bUserFolder == false) {
 			CString favoritesFolder;
-			if (MtlGetFavoritesFolder(favoritesFolder))
-				LinkImportFromFolder(favoritesFolder);
+			if (MtlGetFavoritesFolder(favoritesFolder)) {
+				boost::thread td([favoritesFolder]() {
+					s_bBookmarkLoading = true;
+					TIMERSTART();
+					LinkImportFromFolder(favoritesFolder);
+					TIMERSTOP(L"お気に入りフォルダからリンクの読み込み完了");
+					s_bBookmarkLoading = false;
+				});
+			}
 		}
 
 		return ;
@@ -557,7 +564,7 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 				s_bBookmarkLoading = false;
 				return ;
 			}
-
+			TIMERSTART();
 			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 			wptree	pt;
 			read_xml(filestream, pt);
@@ -568,11 +575,12 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 			}
 
 		} catch (const boost::property_tree::ptree_error& error) {
-			CString strError = _T("LinkBookmark.xmlの読み込みに失敗\n");
+			CString strError = _T("FavoriteBookmark.xmlの読み込みに失敗\n");
 			strError += error.what();
 			::MessageBox(NULL, strError, NULL, MB_ICONERROR);
 			::MoveFileEx(FavoriteBookmarkFilePath, FavoriteBookmarkFilePath + _T(".error"), MOVEFILE_REPLACE_EXISTING);
 		}
+		TIMERSTOP(L"FavoriteBookmark.xml読み込み完了");
 		s_bBookmarkLoading = false;
 	});
 }
@@ -706,6 +714,8 @@ void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBot
 		CRect rcTemp = rcWindow;
 		ScreenToClient(&rcTemp);
 		rcSubMenu.bottom = rcTemp.bottom;
+		if (rcSubMenu.right < rcWindow.Width())
+			rcSubMenu.right = rcWindow.Width() - kBoundMargin;
 
 		pSubMenu->Create(m_hWnd, rcSubMenu, NULL, WS_CHILD);
 		pSubMenu->ShowWindow(SW_SHOWNOACTIVATE);
@@ -778,6 +788,8 @@ void	CRootFavoritePopupMenu::DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClien
 		CRect rcTemp = rcWindow;
 		ScreenToClient(&rcTemp);
 		rcSubMenu.bottom = rcTemp.bottom;
+		if (rcSubMenu.right < rcWindow.Width())
+			rcSubMenu.right = rcWindow.Width() - kBoundMargin;
 
 		pSubMenu->Create(m_hWnd, rcSubMenu, NULL, WS_CHILD);
 		pSubMenu->ShowWindow(SW_SHOWNOACTIVATE);
