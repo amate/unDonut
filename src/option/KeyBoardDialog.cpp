@@ -75,26 +75,19 @@ bool	CAcceleratorOption::TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg)
 	/////////////////////////////////////////////////////////////////
 // CKeyBoardPropertyPage
 
-CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL hAccel, HMENU hMenu)
+CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame, function<void (function<void (HWND)>) > foreach)
+	: m_hAccel(hAccel), m_hMenu(hMenu), m_hWndMainFrame(hWndMainFrame), m_TabBarForEachWindow(foreach)
 {
-	m_hAccel	 	= hAccel;
-	m_hMenu 	 	= hMenu;
 	m_nCmdUpdate 	= 0;
 	m_nCmdMove	 	= 0;
 	//m_nMinBtn2Tray= 0;		//+++
-
-	int    nAccelSize = ::CopyAcceleratorTable(m_hAccel, NULL, 0);
-	ACCEL *lpAccel	  = new ACCEL [nAccelSize];
-	::CopyAcceleratorTable(hAccel, lpAccel, nAccelSize);
-	m_hAccel	 = ::CreateAcceleratorTable(lpAccel, nAccelSize);
-	delete[] lpAccel;
 }
 
 
 
 CKeyBoardPropertyPage::~CKeyBoardPropertyPage()
 {
-	::DestroyAcceleratorTable (m_hAccel);
+	//::DestroyAcceleratorTable (m_hAccel);
 }
 
 
@@ -167,9 +160,13 @@ void CKeyBoardPropertyPage::_SetData()
 void CKeyBoardPropertyPage::_GetData()
 {
 	CAccelerManager accelManager(m_hAccel);
-
 	accelManager.SaveAccelaratorState();
 
+	/* ChildFrameにアクセラレーターキーの更新を伝える */
+	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWndMainFrame, m_hAccel);
+	m_TabBarForEachWindow([](HWND hWnd) {
+		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
+	});
   #if 0 //+++ 別のオプションが管理している変数を間借りして追加.
 	if (m_nMinBtn2Tray)	CMainOption::s_dwMainExtendedStyle2 	 |=  MAIN_EX2_MINBTN2TRAY;		//+++ 追加.
 	else				CMainOption::s_dwMainExtendedStyle2 	 &= ~MAIN_EX2_MINBTN2TRAY; 		//+++ 追加.

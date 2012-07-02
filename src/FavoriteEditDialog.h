@@ -51,7 +51,10 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_CREATE_FOLDER	, OnCreateFolder	)
 		COMMAND_ID_HANDLER_EX( ID_DELETE	, OnDelete )
 		COMMAND_ID_HANDLER_EX( IDCANCEL	, OnCancel	)
-		NOTIFY_HANDLER_EX( IDC_TREE, TVN_SELCHANGED, OnTreeSelChanged	)
+		NOTIFY_HANDLER_EX( IDC_TREE, TVN_SELCHANGED	, OnTreeSelChanged	)
+		//NOTIFY_HANDLER_EX( IDC_TREE, TVN_BEGINDRAG	, OnTreeBeginDrag	)
+		//MSG_WM_MOUSEMOVE( OnMouseMove	)
+		//MSG_WM_LBUTTONUP( OnLButtonUp	)
 		CHAIN_MSG_MAP( CDialogResize<CFavoriteEditDialog> ) 
 	END_MSG_MAP()
 
@@ -61,6 +64,9 @@ public:
 	void OnDelete(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
 	LRESULT OnTreeSelChanged(LPNMHDR pnmh);
+	//LRESULT OnTreeBeginDrag(LPNMHDR pnmh);
+	//void OnMouseMove(UINT nFlags, CPoint point);
+	//void OnLButtonUp(UINT nFlags, CPoint point);
 
 private:
 	// Data members
@@ -68,6 +74,7 @@ private:
 	bool	m_bSave;
 	CTreeViewCtrl	m_tree;
 	CImageList		m_image_list;
+	//CImageList		m_dragimage_list;
 	vector<unique_ptr<LinkItem> >*	m_pBookmarkList;
 	CString	m_strName;
 	CString	m_strURL;

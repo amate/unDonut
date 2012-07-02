@@ -431,6 +431,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 				TRACEIN(_T("CONTENT_DISPOSITIONが見つからない？ 内容: %s"), (LPCTSTR)CString(buff));
 			}
 		}
+#if 0
 		if (m_pDLItem->strFileName[0] == L'\0') {
 			dwBuffSize = 1024;
 			hr = spInfo->QueryOption(INTERNET_OPTION_DATAFILE_NAME, (LPVOID)buff, &dwBuffSize);
@@ -449,8 +450,11 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 				}
 			}
 		}
-	} else {
-		ATLASSERT(m_strDLFolder.IsEmpty() == FALSE);	// これ以外で失敗すると困る
+#endif
+	} 
+
+	if (m_pDLItem->strFileName[0] == L'\0') {
+		//ATLASSERT(m_strDLFolder.IsEmpty() == FALSE);	// これ以外で失敗すると困る
 		::wcscpy_s(m_pDLItem->strFileName, Misc::GetFileBaseName(m_pDLItem->strURL));	// [?]がつくかも
 		CString temp = m_pDLItem->strFileName;
 		int nQIndex = temp.ReverseFind(_T('?'));
@@ -461,9 +465,12 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 			::wcscpy_s(m_pDLItem->strFileName, _T("index"));	// めったにないと思うけど一応
 
 		temp = m_pDLItem->strFileName;
+		temp.Replace(_T("%20"), _T(" "));
 		if (temp.Find(_T('%')) != -1) {	// URLデコードする
 			//vector<char> filename = Misc::urlstr_decode(m_pDLItem->strFileName);
 			::wcscpy_s(m_pDLItem->strFileName, Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3));//Misc::UnknownToCString(filename);
+		} else {
+			::wcscpy_s(m_pDLItem->strFileName, temp);
 		}
 	}
 

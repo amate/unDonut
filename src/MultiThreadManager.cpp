@@ -6,6 +6,9 @@
 #include "stdafx.h"
 #include "MultiThreadManager.h"
 #include <boost\thread.hpp>
+#include <boost\serialization\string.hpp>
+#include <boost\serialization\vector.hpp>
+#include <boost\serialization\utility.hpp>
 #include "SharedMemoryUtil.h"
 #include "MainFrame.h"
 #include "ChildFrame.h"

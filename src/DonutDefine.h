@@ -837,6 +837,18 @@ enum TabCreateOption {
 #define WM_DEFAULTRBUTTONUP		(WM_USER + 140)
 
 
+//	void OnUpdateCustomContextMenu()
+#define WM_UPDATECUSTOMCONTEXTMENU	(WM_USER + 141)
+#define USER_MSG_WM_UPDATECUSTOMCONTEXTMENU(func)	\
+	if (uMsg == WM_UPDATECUSTOMCONTEXTMENU) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)

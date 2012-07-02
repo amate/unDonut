@@ -1845,16 +1845,44 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 				// ポップアップメニューを表示する
 				int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, wndMainFrame);				
 				if (nCmd != 0) {
-					if (nCmd == ID_FILE_CLOSE) {	// 場合によっては複数選択されたタブも閉じる
-						CSimpleArray<int>	arr;
-						GetCurMultiSelEx(arr, nIndex);
-						_SetCurSelExceptIndex(arr);
-						int nCount = arr.GetSize();
-						for (int i = 0; i < nCount; ++i) {
-							::PostMessage(GetTabHwnd(arr[i]), WM_CLOSE, 0, 0);
+					switch (nCmd) {
+					case ID_FILE_CLOSE:		// 場合によっては複数選択されたタブも閉じる
+						{
+							CSimpleArray<int>	arr;
+							GetCurMultiSelEx(arr, nIndex);
+							_SetCurSelExceptIndex(arr);
+							int nCount = arr.GetSize();
+							for (int i = 0; i < nCount; ++i) {
+								::PostMessage(GetTabHwnd(arr[i]), WM_CLOSE, 0, 0);
+							}
 						}
-					} else 
+						break;
+
+					case ID_WINDOW_CLOSE_EXCEPT:		// このタブ以外を閉じる
+						{
+							int nCount = GetItemCount();
+							for (int i = 0; i < nCount; ++i) {
+								HWND hWndTab = GetTabHwnd(i);
+								if (hWndTab != hWndChild) 
+									::PostMessage(hWndTab, WM_CLOSE, 0, 0);
+							}
+						}
+						break;
+
+					case ID_WINDOW_REFRESH_EXCEPT:		// このタブ以外を更新
+						{
+							int nCount = GetItemCount();
+							for (int i = 0; i < nCount; ++i) {
+								HWND hWndTab = GetTabHwnd(i);
+								if (hWndTab != hWndChild) 
+									::PostMessage(hWndTab, WM_COMMAND, ID_VIEW_REFRESH, 0);
+							}
+						}
+						break;
+
+					default:
 						MtlSendCommand(hWndChild, nCmd);
+					}
 				}
 				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)GetTabHwnd(GetCurSel()));
 			}

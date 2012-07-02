@@ -956,8 +956,9 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 
 	m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow());
 
-	if (CCustomContextMenuOption::s_menuDefault.IsNull())
-		CCustomContextMenuOption::GetProfile();
+	if (m_pGlobalConfig->bMultiProcessMode &&
+		CCustomContextMenuOption::s_menuDefault.IsNull())
+		CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow());
 
 	RECT rc;
 	GetClientRect(&rc);
@@ -1703,7 +1704,7 @@ void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 		CComQIPtr<IHTMLDocument2>	spDocument = spDisp;
 		ATLASSERT(spDocument);
 		CPoint	pt = m_view.GetMenuPoint();
-		if (pt != CPoint(-1, -1)) {
+		if (pt.x == -1 && pt.y == -1) {
 			::GetCursorPos(&pt);
 			ScreenToClient(&pt);
 		}

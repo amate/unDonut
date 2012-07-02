@@ -13,6 +13,9 @@
 #include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include <boost\serialization\string.hpp>
+#include <boost\serialization\vector.hpp>
+#include <boost\serialization\utility.hpp>
 #include "SharedMemoryUtil.h"
 //--------- MainFrame.h‚©‚ç ------------
 
@@ -326,6 +329,7 @@ public:
 		USER_MSG_WM_HILIGHTSWITCHCHANGE		( OnHilightSwitchChange	)
 		// ChildFrame ‚Ö
 		USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
+		USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
 		USER_MSG_WM_SETPROXYTOCHLDFRAME		( OnSetProxyToChildFrame	)
 
 		USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
@@ -611,6 +615,7 @@ public:
 		m_GlobalConfigManageData.pGlobalConfig->bHilightSwitch = bOn;
 	}
 	void	OnUpdateUrlSecurityList();
+	void	OnUpdateCustomContextMenu();
 	void	OnSetProxyToChildFrame();
 
 	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }

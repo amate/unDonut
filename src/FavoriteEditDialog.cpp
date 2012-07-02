@@ -226,10 +226,44 @@ LRESULT CFavoriteEditDialog::OnTreeSelChanged(LPNMHDR pnmh)
 	return 0;
 }
 
+#if 0
+LRESULT CFavoriteEditDialog::OnTreeBeginDrag(LPNMHDR pnmh)
+{
+	LPNMTREEVIEW pnmtv = reinterpret_cast<LPNMTREEVIEW>(pnmh);
+	m_dragimage_list = m_tree.CreateDragImage(pnmtv->itemNew.hItem);
+	m_dragimage_list.BeginDrag(0, 0, 0);
+	ShowCursor(FALSE);
+	SetCapture();
+	m_tree.ClientToScreen(&pnmtv->ptDrag);
+	m_dragimage_list.DragEnter(m_hWnd, pnmtv->ptDrag);
+	return 0;
+}
 
+void CFavoriteEditDialog::OnMouseMove(UINT nFlags, CPoint point)
+{
+	if (GetCapture() == m_hWnd) {
+		//m_dragimage_list.DragLeave(NULL);
+		UINT flags = TVHT_ONITEM;
+		HTREEITEM htItem = m_tree.HitTest(point, &flags);
+		if (htItem)
+			m_tree.SelectDropTarget(htItem);
+		m_dragimage_list.DragMove(point);
+		//m_dragimage_list.DragEnter(NULL, point);
+	}
+}
 
+void CFavoriteEditDialog::OnLButtonUp(UINT nFlags, CPoint point)
+{
+	if (GetCapture() == m_hWnd) {
+		m_dragimage_list.DragLeave(m_hWnd);
+		m_dragimage_list.EndDrag();
+		ReleaseCapture();
+		ShowCursor(TRUE);
+		UINT flags = TVHT_ONITEM;
+		HTREEITEM htItem = m_tree.HitTest(point, &flags);
 
+	}
+}
 
-
-
+#endif
 

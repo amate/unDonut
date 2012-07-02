@@ -6,6 +6,9 @@
 #include "stdafx.h"
 #include "ChildFrame.h"
 #include <regex>
+#include <boost\serialization\string.hpp>
+#include <boost\serialization\vector.hpp>
+#include <boost\serialization\utility.hpp>
 #include "SharedMemoryUtil.h"
 #include "MtlBrowser.h"
 #include "MtlWin.h"
@@ -355,6 +358,7 @@ public:
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
 		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
+		USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
 		USER_MSG_WM_ACCELTABLECHANGE	( OnAccelTableChange	)
 		MESSAGE_HANDLER_EX( WM_SETPROXYTOCHLDFRAME, OnSetProxyToChildFrame	)
 		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
@@ -435,6 +439,7 @@ public:
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
 	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
+	void	OnUpdateCustomContextMenu() { CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow()); }
 	void	OnAccelTableChange() { m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow()); }
 	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDefaultRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam);

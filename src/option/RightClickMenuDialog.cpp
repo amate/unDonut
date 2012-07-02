@@ -6,6 +6,11 @@
 #include <codecvt>
 #include <boost\property_tree\ptree.hpp>
 #include <boost\property_tree\xml_parser.hpp>
+#include <boost\array.hpp>
+#include <boost\serialization\serialization.hpp>
+#include <boost\serialization\string.hpp>
+#include <boost\serialization\vector.hpp>
+#include <boost\serialization\array.hpp>
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../ToolTipManager.h"
@@ -64,6 +69,9 @@ CMenu	CCustomContextMenuOption::s_menuAnchor;
 CMenu	CCustomContextMenuOption::s_menuHoldLeftButton;
 
 CMenu	CCustomContextMenuOption::s_menuTabItem;
+
+#define CUSTOMCOMTEXTMENULISTSHAREDMEMNAME	_T("DonutCustomContextListMenuSharedMemName")
+CSharedMemory	CCustomContextMenuOption::s_sharedMem;
 
 
 void	CCustomContextMenuOption::GetDefaultContextMenu(CMenu& rMenu, DWORD dwID)
@@ -305,7 +313,7 @@ void	CCustomContextMenuOption::ResetMenu()
 		s_menuTabItem,
 	};
 
-	for (int i = 0; i < sizeof(arrMenu) / sizeof(arrMenu[0]); ++i) {
+	for (int i = 0; i < _countof(arrMenu); ++i) {
 		HMENU	menu			= arrMenu[i];
 		int		nMenuItemCount	= GetMenuItemCount(menu);
 		/* サブメニューを削除 */
@@ -410,6 +418,83 @@ void	CCustomContextMenuOption::WriteProfile()
 	}
 }
 
+/// 子プロセス用に共有メモリ内にカスタムコンテキストメニューのデータを置いておく
+void	CCustomContextMenuOption::UpdateCustomContextMenuList(HWND hWndMainFrame)
+{
+	HMENU	arrMenu[] = {
+		s_menuDefault,
+		s_menuImage,
+		s_menuTextSelect,
+		s_menuAnchor,
+		s_menuHoldLeftButton,
+	};
+
+	boost::array<vector<MenuItem>, _countof(arrMenu)> arrCustomPopupMenu;
+
+	for (int i = 0; i < _countof(arrMenu); ++i) {
+		CMenuHandle	menu		= arrMenu[i];
+		int		nMenuItemCount	= GetMenuItemCount(menu);
+		vector<MenuItem>& vecMenuItem = arrCustomPopupMenu[i];
+		vecMenuItem.clear();
+		vecMenuItem.reserve(nMenuItemCount);
+		for (int i = 0; i < nMenuItemCount; ++i) {
+			MenuItem item;
+			item.command	= menu.GetMenuItemID(i);
+			if (item.command) {
+				CString name;
+				menu.GetMenuString(i, name, MF_BYPOSITION);
+				item.name = name;
+			}
+			vecMenuItem.push_back(item);
+		}
+	}
+
+	s_sharedMem.CloseHandle();
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), CUSTOMCOMTEXTMENULISTSHAREDMEMNAME, hWndMainFrame);
+	s_sharedMem.Serialize(arrCustomPopupMenu, sharedMemName);
+
+	::SendMessage(hWndMainFrame, WM_UPDATECUSTOMCONTEXTMENU, 0, 0);
+}
+
+
+// for ChildFrame
+void	CCustomContextMenuOption::ReloadCustomContextMenuList(HWND hWndMainFrame)
+{
+	CMenu*	arrMenu[] = {
+		&s_menuDefault,
+		&s_menuImage,
+		&s_menuTextSelect,
+		&s_menuAnchor,
+		&s_menuHoldLeftButton,
+	};
+
+	boost::array<vector<MenuItem>, _countof(arrMenu)> arrCustomPopupMenu;
+
+	// 共有メモリからデシリアライズ
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), CUSTOMCOMTEXTMENULISTSHAREDMEMNAME, hWndMainFrame);
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(arrCustomPopupMenu, sharedMemName);
+
+	// 各種ポップアップメニューを作成
+	for (int i = 0; i < _countof(arrMenu); ++i) {
+		CMenu* pmenu = arrMenu[i];
+		if (pmenu->IsMenu())
+			pmenu->DestroyMenu();
+		pmenu->CreatePopupMenu();
+
+		const vector<MenuItem>& vecMenuItem = arrCustomPopupMenu[i];
+		for (auto it = vecMenuItem.cbegin(); it != vecMenuItem.cend(); ++it){
+			if (it->command == 0) {
+				pmenu->AppendMenu(MF_SEPARATOR);
+			} else {
+				pmenu->AppendMenu(MF_STRING, it->command, it->name.c_str());
+			}
+		}
+	}
+}
+
 
 
 
@@ -417,8 +502,9 @@ void	CCustomContextMenuOption::WriteProfile()
 // CRightClickPropertyPage
 
 // Constructor
-CRightClickPropertyPage::CRightClickPropertyPage(HMENU hMenu)
+CRightClickPropertyPage::CRightClickPropertyPage(HMENU hMenu, HWND hWndMainFrame)
 	: m_menu(hMenu)
+	, m_hWndMainFrame(hWndMainFrame)
 	, m_bInit(false)
 {
 }
@@ -847,6 +933,8 @@ void	CRightClickPropertyPage::OnApplyMenu(UINT uNotifyCode, int nID, CWindow wnd
 	int nIndex = m_cmbTarget.GetCurSel();
 	DWORD dwID = (DWORD)m_cmbTarget.GetItemData(nIndex);
 	SetContextMenuFromID(menu, dwID);
+
+	UpdateCustomContextMenuList(m_hWndMainFrame);
 }
 
 // リセット

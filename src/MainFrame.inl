@@ -492,6 +492,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_RecentClosedTabList.ReadFromXmlFile();
 
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
+	CCustomContextMenuOption::UpdateCustomContextMenuList(m_hWnd);
 	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
 
 	RegisterDragDrop();
@@ -529,6 +530,100 @@ void	CMainFrame::Impl::OnClose()
 	SetMsgHandled(FALSE);
 }
 
+
+/// 終了時に設定されていればキャッシュとクッキーを削除する
+static void _DeleteCacheAndCookie()
+{
+	bool	bDelCache	 = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_CASH  ) != 0;
+	bool	bDelCookie	 = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_COOKIE) != 0;
+	if (bDelCache == false && bDelCookie == false)
+		return;
+
+	bool	bDone		 = FALSE;
+	LPINTERNET_CACHE_ENTRY_INFO lpCacheEntry = NULL;
+
+	DWORD	dwTrySize;
+	DWORD	dwEntrySize  = 4096;				// start buffer size
+	HANDLE	hCacheDir	 = NULL;
+	DWORD	dwError 	 = ERROR_INSUFFICIENT_BUFFER;
+
+	do {
+		switch (dwError) {
+			// need a bigger buffer
+		case ERROR_INSUFFICIENT_BUFFER:
+			delete[] lpCacheEntry;
+			lpCacheEntry			   = (LPINTERNET_CACHE_ENTRY_INFO) new char[dwEntrySize];
+			lpCacheEntry->dwStructSize = dwEntrySize;
+			dwTrySize				   = dwEntrySize;
+			BOOL bSuccess;
+			if (hCacheDir == NULL)
+				bSuccess = ( hCacheDir = FindFirstUrlCacheEntry(NULL, lpCacheEntry, &dwTrySize) ) != NULL;
+			else
+				bSuccess = FindNextUrlCacheEntry(hCacheDir, lpCacheEntry, &dwTrySize) != 0;
+
+			if (bSuccess)
+				dwError = ERROR_SUCCESS;
+			else {
+				dwError 	= GetLastError();
+				dwEntrySize = dwTrySize;							// use new size returned
+			}
+			break;
+
+			// we are done
+		case ERROR_NO_MORE_ITEMS:
+			bDone					   = TRUE;
+			//x bResult 			   = TRUE;						//+++ 代入あれど未使用のよう.
+			break;
+
+			// we have got an entry
+		case ERROR_SUCCESS:
+			if (bDelCookie && lpCacheEntry->CacheEntryType & COOKIE_CACHE_ENTRY)
+				DeleteUrlCacheEntry(lpCacheEntry->lpszSourceUrlName);
+
+			// Fixed by zzZ(thx
+			if ( bDelCache && !( lpCacheEntry->CacheEntryType & (COOKIE_CACHE_ENTRY | URLHISTORY_CACHE_ENTRY) ) )
+				DeleteUrlCacheEntry(lpCacheEntry->lpszSourceUrlName);
+
+			// get ready for next entry
+			dwTrySize				   = dwEntrySize;
+
+			if ( FindNextUrlCacheEntry(hCacheDir, lpCacheEntry, &dwTrySize) )
+				dwError = ERROR_SUCCESS;
+			else {
+				dwError 	= GetLastError();
+				dwEntrySize = dwTrySize;							// use new size returned
+			}
+			break;
+
+			// unknown error
+		default:
+			bDone	= TRUE;
+			break;
+		}
+
+		if (bDone) {
+			delete[] lpCacheEntry;
+
+			if (hCacheDir)
+				FindCloseUrlCache(hCacheDir);
+		}
+	} while (!bDone);
+}
+
+/// 履歴を削除する
+static void _DeleteHistory()
+{
+	bool	bDelHistory  = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_HISTORY) != 0;
+	if (bDelHistory == false)
+		return;
+
+	CComPtr<IUrlHistoryStg2>	spUrlHistoryStg2;
+	HRESULT hr = spUrlHistoryStg2.CoCreateInstance(CLSID_CUrlHistory);
+	if ( SUCCEEDED(hr) )
+		hr = spUrlHistoryStg2->ClearHistory();
+}
+
+
 void	CMainFrame::Impl::OnDestroy()
 {
 	TRACEIN(_T("メインフレームの終了中..."));
@@ -563,6 +658,7 @@ void	CMainFrame::Impl::OnDestroy()
 	}
 
 	CUrlSecurityOption::CloseOriginalUrlSecurityList(m_hWnd);
+	CCustomContextMenuOption::CloseCustomContextMenuList();
 	CAcceleratorOption::DestroyOriginAccelerator(m_hWnd, m_hAccel);
 
 	DestroyGlobalConfig(&m_GlobalConfigManageData);
@@ -572,6 +668,8 @@ void	CMainFrame::Impl::OnDestroy()
     pLoop->RemoveMessageFilter(this);
     pLoop->RemoveIdleHandler(this);
 
+	_DeleteCacheAndCookie();
+	_DeleteHistory();
 
 	DWORD	dwTime = ::timeGetTime();
 	boost::thread	terminateWatch([dwTime]() {
@@ -1264,6 +1362,19 @@ void	CMainFrame::Impl::OnUpdateUrlSecurityList()
 	});
 }
 
+/// ChildFrameのカスタムコンテキストメニューを更新する
+void	CMainFrame::Impl::OnUpdateCustomContextMenu()
+{
+	std::set<DWORD> setProcessId;
+	m_TabBar.ForEachWindow([&setProcessId](HWND hWnd) {
+		DWORD processId = 0;
+		::GetWindowThreadProcessId(hWnd, &processId);
+		auto it = setProcessId.insert(processId);
+		if (it.second)	// 挿入が成功した場合、同じプロセスには送っていないので送る
+			::SendMessage(hWnd, WM_UPDATECUSTOMCONTEXTMENU, 0, 0);
+	});
+}
+
 /// ChildFrameにプロクシ切替を通知する
 void	CMainFrame::Impl::OnSetProxyToChildFrame()
 {
@@ -1587,13 +1698,13 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CFileNewPropertyPage			pageFileNew;
 	CStartUpPropertyPage			pageStartUp;
 	CProxyPropertyPage				pageProxy;
-	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu);
+	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu, m_hWnd, std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
 	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, std::bind(&CDonutToolBar::ReloadSkin, &m_ToolBar));
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);
 	CSearchPropertyPage 			pageSearch;
 	CMenuPropertyPage				pageMenu(menu.m_hMenu);
-	CRightClickPropertyPage			pageRightMenu(menu);
+	CRightClickPropertyPage			pageRightMenu(menu, m_hWnd);
 	CExplorerPropertyPage			pageExplorer;
 	CDestroyPropertyPage			pageDestroy;
 	CSkinPropertyPage				pageSkin(m_hWnd, &bSkinChange);
@@ -1652,12 +1763,6 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 
 	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 	//m_cmbBox.ResetProxyList();
-
-	// キーの呼出
-	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
-	m_TabBar.ForEachWindow([](HWND hWnd) {
-		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
-	});
 
 	//RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 	SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);

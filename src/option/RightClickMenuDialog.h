@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "../resource.h"
+#include "..\SharedMemoryUtil.h"
+#include "..\resource.h"
 
 #define CONTEXT_MENU_HOLDLEFTBUTTON		(123)
 #define CONTEXT_MENU_TABITEM			(130)
@@ -35,6 +36,30 @@ public:
 	static void		AddSubMenu(CMenuHandle menu, HWND hWndTopLevel, CSimpleArray<HMENU>& arrDestroyMenu, int& nExtIndex);
 	static void		RemoveSubMenu(CMenuHandle menu, CSimpleArray<HMENU>& arrDestroyMenu, int nExtIndex);
 	static void		ResetMenu();	// for CRightClickPropertyPage
+
+	// for MainFrame
+	static void		UpdateCustomContextMenuList(HWND hWndMainFrame);
+	static void		CloseCustomContextMenuList() { s_sharedMem.CloseHandle(); }
+
+	// for ChildFrame
+	static void		ReloadCustomContextMenuList(HWND hWndMainFrame);
+
+private:
+	struct MenuItem {
+		std::wstring name;
+		UINT	command;
+		MenuItem() : command(0) {	}
+
+	private:
+		friend class boost::serialization::access;  
+		template<class Archive>
+		void serialize(Archive& ar, const unsigned int version)
+		{
+			ar & name & command;
+		}
+	};
+	
+	static CSharedMemory	s_sharedMem;
 };
 
 
@@ -102,24 +127,8 @@ public:
 	// Constants
 	enum { IDD = IDD_PROPPAGE_MENU_RIGHTCLICK };
 
-private:
-	CMenuHandle		m_menu;
-	bool			m_bInit;
-
-	CComboBox		m_cmbTarget;	// 対象
-	CComboBox		m_cmbCategory;	// カテゴリ
-
-	CListBox		m_listCommand;	// コマンド
-	CDragListBox	m_listMenu;		// メニュー
-
-	CButton			m_btnAdd;
-	CButton			m_btnRemove;
-	CButton			m_btnAddSeparator;
-	CButton			m_btnApplyMenu;
-
-public:
 	// Constructor
-	CRightClickPropertyPage(HMENU hMenu);
+	CRightClickPropertyPage(HMENU hMenu, HWND hWndMainFrame);
 
 	// Overrides
 	BOOL	OnSetActive();
@@ -178,4 +187,20 @@ public:
 	void	OnMenuReset(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnExample(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+private:
+	// Data members
+	CMenuHandle		m_menu;
+	HWND			m_hWndMainFrame;
+	bool			m_bInit;
+
+	CComboBox		m_cmbTarget;	// 対象
+	CComboBox		m_cmbCategory;	// カテゴリ
+
+	CListBox		m_listCommand;	// コマンド
+	CDragListBox	m_listMenu;		// メニュー
+
+	CButton			m_btnAdd;
+	CButton			m_btnRemove;
+	CButton			m_btnAddSeparator;
+	CButton			m_btnApplyMenu;
 };
