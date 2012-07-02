@@ -1120,7 +1120,7 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 	if (hWndAct == m_hWnd) {
 		m_bNowActive = true;
 		if (MtlIsApplicationActive(m_hWnd) && m_view.IsWindow())
-			m_view.SetFocus();
+			OnSetFocus(NULL);
 
 		if (m_pGlobalConfig->bSaveSearchWord) {
 			CString str;
