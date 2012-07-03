@@ -191,15 +191,15 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
 		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
-		::ShowWindowAsync(m_hWndChildFrame, FALSE);
+		//::ShowWindowAsync(m_hWndChildFrame, FALSE);
 	}
 	
 	if (hWndChildFrame) {
 		::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
 		RECT rcClient;
 		GetClientRect(&rcClient);
-		::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
-		::ShowWindowAsync(hWndChildFrame, TRUE);
+		//::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
+		//::ShowWindowAsync(hWndChildFrame, TRUE);
 		//::RedrawWindow(hWndChildFrame, NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW*/ | RDW_ALLCHILDREN);
 		//::BringWindowToTop(hWndChildFrame);
 	} else {

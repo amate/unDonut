@@ -1843,7 +1843,8 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 				CWindow wndMainFrame = GetTopLevelWindow();
 				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)hWndChild);
 				// ポップアップメニューを表示する
-				int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, wndMainFrame);				
+				int nCmd = menu.TrackPopupMenu(dwFlag, point.x, point.y, wndMainFrame);
+				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)GetTabHwnd(GetCurSel()));
 				if (nCmd != 0) {
 					switch (nCmd) {
 					case ID_FILE_CLOSE:		// 場合によっては複数選択されたタブも閉じる
@@ -1861,7 +1862,7 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 					case ID_WINDOW_CLOSE_EXCEPT:		// このタブ以外を閉じる
 						{
 							int nCount = GetItemCount();
-							for (int i = 0; i < nCount; ++i) {
+							for (int i = nCount - 1; i >= 0 ; --i) {
 								HWND hWndTab = GetTabHwnd(i);
 								if (hWndTab != hWndChild) 
 									::PostMessage(hWndTab, WM_CLOSE, 0, 0);
@@ -1884,7 +1885,6 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 						MtlSendCommand(hWndChild, nCmd);
 					}
 				}
-				wndMainFrame.SendMessage(WM_CHANGECHILDFRAMEUIMAP, (WPARAM)GetTabHwnd(GetCurSel()));
 			}
 			CCustomContextMenuOption::RemoveSubMenu(menu, arrDestroyMenu, nExtIndex);
 

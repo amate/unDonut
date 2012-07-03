@@ -192,9 +192,11 @@ BOOL CRecentClosedTabList::Impl::ReadFromXmlFile()
 			auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
 				for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
 					wptree& item = it->second;
-					vecTravelLog.push_back(std::pair<CString, CString>(
-						item.get(L"<xmlattr>.Title", L"").c_str(), 
-						item.get(L"<xmlattr>.URL", L"").c_str()));
+					CString title = item.get(L"<xmlattr>.Title", L"").c_str();
+					title.Replace(_T("&quot;"), _T("\""));
+					CString url	  = item.get(L"<xmlattr>.URL", L"").c_str();
+					url.Replace(_T("&quot;"), _T("\""));
+					vecTravelLog.push_back(std::make_pair(title, url));
 				}
 			};
 			CCritSecLock	lock(m_csLoading);
@@ -206,13 +208,17 @@ BOOL CRecentClosedTabList::Impl::ReadFromXmlFile()
 					wptree& ptItem = it->second;
 		
 					pdata->strTitle	= ptItem.get(L"<xmlattr>.Title", L"").c_str();
+					pdata->strTitle.Replace(_T("&quot;"), _T("\""));
 					pdata->strURL	= ptItem.get(L"<xmlattr>.URL", L"").c_str();
+					pdata->strURL.Replace(_T("&quot;"), _T("\""));
 					pdata->dwDLCtrl	= ptItem.get<DWORD>(L"<xmlattr>.DLCtrl", CDLControlOption::s_dwDLControlFlags);
 					SetTravelLog(ptItem.get_child(L"TravelLog.Back"), pdata->TravelLogBack);
 					SetTravelLog(ptItem.get_child(L"TravelLog.Fore"), pdata->TravelLogFore);
 					m_vecpClosedTabData.push_back(std::move(pdata));
 				}
 			}
+		} catch (boost::property_tree::xml_parser_error e) {
+			ATLTRACE(e.what());
 		} catch (...) {
 			ATLTRACE(_T("CRecentClosedTabList::Impl::ReadFromXmlFile で例外発生!\n"));
 		}
@@ -228,19 +234,23 @@ BOOL CRecentClosedTabList::Impl::WriteToXmlFile()
 	using boost::property_tree::wptree;
 
 	try {
-		auto AddTravelLog = [](wptree& ptLog, const vector<std::pair<CString, CString> >& vecTravelLog) {
-			for (auto it = vecTravelLog.cbegin(); it != vecTravelLog.cend(); ++it) {
+		auto AddTravelLog = [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
+			for (auto it = vecTravelLog.begin(); it != vecTravelLog.end(); ++it) {
 				wptree& ptItem = ptLog.add(L"item", L"");
+				it->first.Replace(_T("\""), _T("&quot;"));
+				it->second.Replace(_T("\""), _T("&quot;"));
 				ptItem.put(L"<xmlattr>.Title", (LPCTSTR)it->first);
 				ptItem.put(L"<xmlattr>.URL"	 , (LPCTSTR)it->second);
 			}
 		};
 		wptree	pt;
 		wptree& ptRecentCloseTab = pt.add(L"RecentCloseTab", L"");
-		for (auto it = m_vecpClosedTabData.cbegin(); it != m_vecpClosedTabData.cend(); ++it) {
+		for (auto it = m_vecpClosedTabData.begin(); it != m_vecpClosedTabData.end(); ++it) {
 			ChildFrameDataOnClose& data = *(*it);
 			wptree& ptItem = ptRecentCloseTab.add(L"item", L"");
+			data.strTitle.Replace(_T("\""), _T("&quot;"));
 			ptItem.put(L"<xmlattr>.Title", (LPCTSTR)data.strTitle);
+			data.strURL.Replace(_T("\""), _T("&quot;"));
 			ptItem.put(L"<xmlattr>.URL"	 , (LPCTSTR)data.strURL);
 			ptItem.put(L"<xmlattr>.DLCtrl", data.dwDLCtrl);
 			AddTravelLog(ptItem.add(L"TravelLog.Back", L""), data.TravelLogBack);

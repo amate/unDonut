@@ -1136,6 +1136,14 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			m_pGlobalConfig->bSaveSearchWord = m_pGlobalConfig->bSaveSearchWordOrg;
 		}
 
+		RECT rcClient;
+		GetParent().GetClientRect(&rcClient);
+		::SetWindowPos(m_hWnd, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
+		::ShowWindow(m_hWnd, TRUE);
+
+		if (hWndDeact)
+			::ShowWindowAsync(hWndDeact, FALSE);
+
 	} else if (hWndDeact == m_hWnd) {
 		m_bNowActive = false;
 		// _KillFocusToHTML

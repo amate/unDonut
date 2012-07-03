@@ -47,6 +47,7 @@ void	CChildFrameCommandUIUpdater::ChangeCommandUIMap(HWND hWndChildFrame)
 		::SendMessage(s_hWndMainFrame, WM_BROWSERLOCATIONCHANGE, (WPARAM)_T("\0"), 0);
 	} else {
 		s_nActiveUIIndex = _GetIndexFromHWND(hWndChildFrame);
+		ATLASSERT( 0 <= s_nActiveUIIndex &&  s_nActiveUIIndex < static_cast<int>(s_vecpUIData.size()) );
 
 		CString strapp;
 		strapp.LoadString(IDR_MAINFRAME);
@@ -93,6 +94,7 @@ void	CChildFrameCommandUIUpdater::OnRemoveCommandUIMap(HWND hWndChildFrame)
 	auto it = s_mapHWND_int.find(hWndChildFrame);
 	ATLASSERT( it != s_mapHWND_int.end() );
 	int nDestroyIndex = it->second;
+	TRACEIN(_T("OnRemoveCommandUIMap(), HWND : %#x, index : %d"), hWndChildFrame, nDestroyIndex);
 
 	HANDLE hMap = s_vecpUIData[nDestroyIndex]->hMapForMainFrameOpen;
 	::UnmapViewOfFile(s_vecpUIData[nDestroyIndex]);
@@ -118,7 +120,7 @@ void	CChildFrameCommandUIUpdater::OnChangeChildFrameUIMap(HWND hWndChildFrame)
 		pUIData->hWndActiveChildFrame	= hWndChildFrame;
 	});
 	s_nActiveUIIndex = _GetIndexFromHWND(hWndChildFrame);
-	ATLASSERT(s_nActiveUIIndex != -1);
+	ATLASSERT( 0 <= s_nActiveUIIndex &&  s_nActiveUIIndex < static_cast<int>(s_vecpUIData.size()) );
 }
 
 
