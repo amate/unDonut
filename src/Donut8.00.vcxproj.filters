@@ -42,17 +42,11 @@
     <Filter Include="boost">
       <UniqueIdentifier>{4519c687-f5db-420a-b0f8-aadca0d8990a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="boost\regex">
-      <UniqueIdentifier>{8ffd7242-3a9a-405e-aa36-e8ac2687f496}</UniqueIdentifier>
-    </Filter>
     <Filter Include="boost\thread">
       <UniqueIdentifier>{db8abc57-b810-48af-84a3-8ba90ed9b485}</UniqueIdentifier>
     </Filter>
     <Filter Include="boost\serialization">
       <UniqueIdentifier>{3d4d7afb-77c4-4929-8f33-bef7f7221d7f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="boost\detail">
-      <UniqueIdentifier>{ca5d47ec-1032-408b-b1ee-f6d60b825b2c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -308,57 +302,6 @@
     <ClCompile Include="option\LinkBarPropertyPage.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
-    <ClCompile Include="boost\regex\wc_regex_traits.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\wide_posix_api.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\winstances.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\c_regex_traits.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\cpp_regex_traits.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\cregex.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\fileiter.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\icu.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\instances.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\posix_api.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\regex.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\regex_debug.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\regex_raw_buffer.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\regex_traits_defaults.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\static_mutex.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\usinstances.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\regex\w32_regex_traits.cpp">
-      <Filter>boost\regex</Filter>
-    </ClCompile>
     <ClCompile Include="boost\thread\thread.cpp">
       <Filter>boost\thread</Filter>
     </ClCompile>
@@ -485,13 +428,16 @@
     <ClCompile Include="boost\serialization\codecvt_null.cpp">
       <Filter>boost\serialization</Filter>
     </ClCompile>
-    <ClCompile Include="boost\detail\utf8_codecvt_facet.cpp">
-      <Filter>boost\detail</Filter>
-    </ClCompile>
     <ClCompile Include="PopupMenu.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
     <ClCompile Include="FavoriteEditDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="boost\thread\tss_null.cpp">
+      <Filter>boost\thread</Filter>
+    </ClCompile>
+    <ClCompile Include="ProcessMonitorDialog.cpp">
       <Filter>Source Files\dialog</Filter>
     </ClCompile>
   </ItemGroup>
@@ -983,6 +929,9 @@
       <Filter>Source Files\Base</Filter>
     </ClInclude>
     <ClInclude Include="FavoriteEditDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="ProcessMonitorDialog.h">
       <Filter>Source Files\dialog</Filter>
     </ClInclude>
   </ItemGroup>

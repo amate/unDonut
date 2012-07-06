@@ -848,6 +848,15 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
+#define WM_RELEASE_PROCESSMONITOR_PTR	(WM_USER + 142)
+#define USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR(func)	\
+	if (uMsg == WM_RELEASE_PROCESSMONITOR_PTR) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
 
 
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)

@@ -51,6 +51,8 @@ DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 	}														   \
 }
 
+#define WM_GETCHILDFRAMENOWACTIVE	(WM_APP + 1)
+
 namespace {
 
 	
@@ -347,6 +349,7 @@ public:
 		MSG_WM_COPYDATA		( OnCopyData	)
 		MSG_WM_SETFOCUS		( OnSetFocus	)
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
+		MESSAGE_HANDLER_EX( WM_GETCHILDFRAMENOWACTIVE, OnGetChildFrameActive	)
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
 		USER_MSG_WM_GETCHILDFRAMEDATA( OnGetChildFrameData )
@@ -429,6 +432,7 @@ public:
 	void	OnSize(UINT nType, CSize size);
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	void	OnSetFocus(CWindow wndOld);
+	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam) { return m_bNowActive; }
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// ƒ^ƒu‚ÌØ‚è‘Ö‚¦‚ª’Ê’m‚³‚ê‚é
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
 	void	OnGetChildFrameData(bool bCreateData);
@@ -499,6 +503,7 @@ private:
 	void	_SearchWebWithEngine(const CString& strText, const CString& strEngine);
 	void	_ExecuteUserJavascript(const CString& strScriptText);
 	int		_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
+	void	_SetFocusToHTML();
 
 	// Data members
 	CChildFrame*	m_pParentChild;
@@ -598,7 +603,7 @@ HWND	CChildFrame::CreateEx(HWND hWndParent)
 {
 	RECT rc;
 	::GetClientRect(hWndParent, &rc);
-	return pImpl->Create(hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/);
+	return pImpl->Create(hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
 }
 
 void	CChildFrame::Navigate2(LPCTSTR lpszURL)

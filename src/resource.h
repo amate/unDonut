@@ -144,6 +144,8 @@
 #define IDD_RENAMEDIALOG                325
 #define IDM_LINKBAR                     326
 #define IDD_FAVORITE_EDIT               328
+#define IDD_DIALOG1                     329
+#define IDD_PROCESS_MONITOR             329
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -333,6 +335,7 @@
 #define IDC_BTN_CLEAR                   1174
 #define IDC_BTN_ADD                     1177
 #define IDC_LIST1                       1178
+#define IDC_LIST_PROCESS                1178
 #define IDC_LIST2                       1179
 #define IDC_BTN_UP                      1180
 #define IDC_NO_CSTM_TXT_MENU            1181
@@ -598,7 +601,7 @@
 #define IDC_BUTTON_LINKEXPORTTOFOLDER   1444
 #define ID_APPLY                        1444
 #define IDC_STATIC_URL                  1445
-#define ID_APPLY2                       1446
+#define ID_KILLPROCESS                  1446
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -943,7 +946,7 @@
 #define ID_VIEW_ROOT                    33227
 #define ID_Menu33228                    33228
 #define ID_UNDOMENUITEM                 33229
-#define ID_33230                        33230
+#define ID_VIEW_PROCESSMONITOR          33230
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -987,9 +990,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        329
+#define _APS_NEXT_RESOURCE_VALUE        330
 #define _APS_NEXT_COMMAND_VALUE         33231
-#define _APS_NEXT_CONTROL_VALUE         1446
+#define _APS_NEXT_CONTROL_VALUE         1447
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

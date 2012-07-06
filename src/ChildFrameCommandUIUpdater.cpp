@@ -94,7 +94,6 @@ void	CChildFrameCommandUIUpdater::OnRemoveCommandUIMap(HWND hWndChildFrame)
 	auto it = s_mapHWND_int.find(hWndChildFrame);
 	ATLASSERT( it != s_mapHWND_int.end() );
 	int nDestroyIndex = it->second;
-	TRACEIN(_T("OnRemoveCommandUIMap(), HWND : %#x, index : %d"), hWndChildFrame, nDestroyIndex);
 
 	HANDLE hMap = s_vecpUIData[nDestroyIndex]->hMapForMainFrameOpen;
 	::UnmapViewOfFile(s_vecpUIData[nDestroyIndex]);
@@ -574,6 +573,8 @@ void	CChildFrameUIStateChange::SetPrivacyImpacted(bool b)
 
 void	CChildFrameUIStateChange::SetDLCtrl(DWORD dw)
 {
+	if (m_pUIData == nullptr)	// 
+		return ;
 	ChildFrameUIData& data = *m_pUIData;
 	if (data.dwDLCtrl != dw) {
 		data.dwDLCtrl = dw;

@@ -54,7 +54,7 @@
 #include "dialog\OpenURLDialog.h"
 #include "ExStyle.h"
 #include "FavoriteEditDialog.h"
-
+#include "ProcessMonitorDialog.h"
 //#include "DonutP.h"
 ////#include "DonutP_i.c"
 ////+++ #include "FileCriticalSection.h"				//+++ 別の方法をとるので、不要になった.
@@ -155,7 +155,7 @@ HWND	CChildFrameClient::Create(HWND hWndMainFrame)
 
 void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 {
-#if 1	/* 前のウィンドウの画面を更新しておく */
+#if 0	/* 前のウィンドウの画面を更新しておく */
 	if (   m_hWndChildFrame && hWndChildFrame
 		&& Misc::IsGpuRendering() 
 		&& CDLControlOption::s_nGPURenderStyle != CDLControlOption::GPURENDER_NONE)
@@ -334,6 +334,8 @@ public:
 
 		USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
 		USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG( OnSetDLConfigToGlobalConfig	)
+
+		USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR( OnReleaseProcessMonitorPtr	)
 
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loop防止
@@ -621,6 +623,8 @@ public:
 	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }
 	void	OnSetDLConfigToGlobalConfig();
 
+	void	OnReleaseProcessMonitorPtr() { m_pProcessMonitor.reset(); }
+
 	void	OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl);
 
@@ -735,6 +739,7 @@ private:
 	bool	m_bCommandFromChildFrame;
 	bool	m_bFullScreen;
 
+	unique_ptr<CProcessMonitorDialog>	m_pProcessMonitor;
 };
 
 #include "MainFrame.inl"

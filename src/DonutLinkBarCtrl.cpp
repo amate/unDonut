@@ -30,11 +30,11 @@ using namespace boost::property_tree::xml_parser;
 // CDonutLinkBarCtrl::Impl
 
 class CDonutLinkBarCtrl::Impl : 
-	public CDoubleBufferWindowImpl<Impl>,
-	public CThemeImpl<Impl>,
-	public CTrackMouseLeave<Impl>,
-	public IDropTargetImpl<Impl>,
-	public IDropSourceImpl<Impl>
+	public CDoubleBufferWindowImpl<CDonutLinkBarCtrl::Impl>,
+	public CThemeImpl<CDonutLinkBarCtrl::Impl>,
+	public CTrackMouseLeave<CDonutLinkBarCtrl::Impl>,
+	public IDropTargetImpl<CDonutLinkBarCtrl::Impl>,
+	public IDropSourceImpl<CDonutLinkBarCtrl::Impl>
 {
 public:
 	DECLARE_WND_CLASS(_T("DonutLinkBarCtrl"))
@@ -69,8 +69,9 @@ public:
 		ChvPressed	= CHEVS_PRESSED,
 	};
 
-	// Constructer
+	// Constructer/Destructor
 	Impl();
+	~Impl();
 
 	void	SetFont(HFONT hFont);
 	void	Refresh();
@@ -88,7 +89,7 @@ public:
 	DROPEFFECT OnDrop(IDataObject *pDataObject, DROPEFFECT dropEffect, DROPEFFECT dropEffectList, CPoint point);
 	void	OnDragLeave();
 
-	BEGIN_MSG_MAP( Impl )
+	BEGIN_MSG_MAP( CDonutLinkBarCtrl::Impl )
 		MSG_WM_CREATE( OnCreate )
 		MSG_WM_DESTROY( OnDestroy )
 		MSG_WM_SIZE( OnSize )
@@ -102,9 +103,9 @@ public:
 		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
 		MESSAGE_HANDLER_EX( WM_SAVELINKBOOKMARK, OnSaveLinkBookmark )
 		MESSAGE_HANDLER_EX( WM_GETROOTLINKFOLDERPTR	, OnGetRootLinkFolderPtr	)
-		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
-		CHAIN_MSG_MAP( CThemeImpl<Impl> )
-		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
+		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CDonutLinkBarCtrl::Impl> )
+		CHAIN_MSG_MAP( CThemeImpl<CDonutLinkBarCtrl::Impl> )
+		CHAIN_MSG_MAP( CTrackMouseLeave<CDonutLinkBarCtrl::Impl> )
 	END_MSG_MAP()
 
 	 int  OnCreate(LPCREATESTRUCT lpCreateStruct);
@@ -176,6 +177,10 @@ private:
 
 	CToolTipCtrl	m_tip;
 	CString			m_strTipText;
+
+	bool			m_bLoading;
+	boost::thread	m_thread_load;
+	boost::thread	m_thread_save;
 };
 
 unique_ptr<CLinkPopupMenu>	CDonutLinkBarCtrl::Impl::s_pSubMenu = nullptr;

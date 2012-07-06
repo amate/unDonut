@@ -8,17 +8,27 @@ CDonutLinkBarCtrl::Impl::Impl() :
 	m_nHotIndex(-1), 
 	m_nPressedIndex(-1),
 	m_nNowDragItemIndex(-1),
-	m_ChevronState(ChvNormal)
+	m_ChevronState(ChvNormal),
+	m_bLoading(true)
 {
 	
 	CLinkPopupMenu::s_iconFolder.LoadIcon(IDI_FOLDER);
 	::ExtractIconEx(_T("url.dll"), 0, NULL, &CLinkPopupMenu::s_iconLink.m_hIcon, 1);
 }
 
+CDonutLinkBarCtrl::Impl::~Impl()
+{
+	if (m_thread_load.joinable())
+		m_thread_load.join();
+	if (m_thread_save.joinable())
+		m_thread_save.join();
+}
 
 void	CDonutLinkBarCtrl::Impl::SetFont(HFONT hFont)
 {
 	m_font = hFont;
+	if (m_bLoading)
+		return ;
 	WTL::CLogFont	lf;
 	m_font.GetLogFont(&lf);
 	LONG fontHeight = lf.GetHeight();
@@ -40,6 +50,33 @@ void	CDonutLinkBarCtrl::Impl::Refresh()
 
 	CRect rc;
 	GetClientRect(&rc);
+	HWND		  hWndReBar = GetParent();
+	CReBarCtrl	  rebar(hWndReBar);
+	static UINT wID = 0;
+	if (wID == 0) {
+		REBARBANDINFO rb = { sizeof (REBARBANDINFO) };
+		rb.fMask	= RBBIM_CHILD | RBBIM_ID;
+		int nCount	= rebar.GetBandCount();
+		for (int i = 0; i < nCount; ++i) {
+			rebar.GetBandInfo(i, &rb);
+			if (rb.hwndChild == m_hWnd) {
+				wID = rb.wID;
+				break;
+			}
+		}
+		return;
+	}
+
+	int	nIndex = rebar.IdToIndex( wID );
+	if (nIndex != -1) {
+
+		REBARBANDINFO rbinfo = { sizeof(REBARBANDINFO) };
+		rbinfo.fMask = RBBIM_CHILDSIZE;
+		rebar.GetBandInfo(nIndex, &rbinfo);
+		rc.right	= rbinfo.cxMinChild;
+		if (rc.right == 0)
+			return ;
+	}
 	OnSize(0, rc.BottomRight());
 }
 
@@ -553,8 +590,6 @@ void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 
 	_LoadLinkBookmark();
 
-	_UpdateItemPosition();	
-
 	return 0;
 }
 
@@ -675,7 +710,8 @@ void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder, bool* pbCancel)
  {
 	 DefWindowProc();
 	 _RefreshBandInfo();
-
+	 if (m_bLoading)
+		 return ;
 	 LinkFolderPtr pFolder = m_BookmarkList.back()->pFolder;
 	 for (;;) {
 		 // ChevronFolderÇ™å©Ç¶ÇƒÇµÇ‹Ç§ÇÃÇ≈ÅAChevronFolderÇ©ÇÁÉAÉCÉeÉÄï‚è[
@@ -1048,45 +1084,52 @@ void	_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
 
 void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 {
-	CString LinkBookmarkFilePath = GetConfigFilePath(_T("LinkBookmark.xml"));
+	m_bLoading = true;
+	m_thread_load = boost::thread([this]() {
+		CString LinkBookmarkFilePath = GetConfigFilePath(_T("LinkBookmark.xml"));
 
-	if (::PathFileExists(LinkBookmarkFilePath) == FALSE) {
-		CString LinkFolder;
-		CIniFileIO	pr(g_szIniFileName, _T("LinkBar"));
-		LinkFolder = pr.GetStringUW(_T("RootPath"));
-		pr.DeleteValue(_T("RootPath"));
-		if (LinkFolder.IsEmpty()) {
-			MtlGetFavoriteLinksFolder(LinkFolder);
-		}
-		LinkImportFromFolder(LinkFolder);
-		return ;
-	}
-	try {
-		std::wifstream	filestream(LinkBookmarkFilePath);
-		if (!filestream)
+		if (::PathFileExists(LinkBookmarkFilePath) == FALSE) {
+			CString LinkFolder;
+			CIniFileIO	pr(g_szIniFileName, _T("LinkBar"));
+			LinkFolder = pr.GetStringUW(_T("RootPath"));
+			pr.DeleteValue(_T("RootPath"));
+			if (LinkFolder.IsEmpty()) {
+				MtlGetFavoriteLinksFolder(LinkFolder);
+			}
+			LinkImportFromFolder(LinkFolder);
+			m_bLoading = false;
+			Refresh();
 			return ;
+		}
+		try {
+			std::wifstream	filestream(LinkBookmarkFilePath);
+			if (!filestream)
+				return ;
 
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-		wptree	pt;
-		read_xml(filestream, pt);
+			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+			wptree	pt;
+			read_xml(filestream, pt);
 
-		if (auto optChild = pt.get_child_optional(L"LinkBookmark")) {
-			wptree ptChild = optChild.get();
-			_AddLinkItem(&m_BookmarkList, ptChild);
+			if (auto optChild = pt.get_child_optional(L"LinkBookmark")) {
+				wptree ptChild = optChild.get();
+				_AddLinkItem(&m_BookmarkList, ptChild);
+			}
+
+		} catch (const boost::property_tree::ptree_error& error) {
+			CString strError = _T("LinkBookmark.xmlÇÃì«Ç›çûÇ›Ç…é∏îs\n");
+			strError += error.what();
+			this->MessageBox(strError, NULL, MB_ICONERROR);
+			::MoveFileEx(LinkBookmarkFilePath, LinkBookmarkFilePath + _T(".error"), MOVEFILE_REPLACE_EXISTING);
 		}
 
-	} catch (const boost::property_tree::ptree_error& error) {
-		CString strError = _T("LinkBookmark.xmlÇÃì«Ç›çûÇ›Ç…é∏îs\n");
-		strError += error.what();
-		MessageBox(strError, NULL, MB_ICONERROR);
-		::MoveFileEx(LinkBookmarkFilePath, LinkBookmarkFilePath + _T(".error"), MOVEFILE_REPLACE_EXISTING);
-	}
-
-	unique_ptr<LinkItem> pItem(new LinkItem);
-	LinkFolderPtr	pFolder = new LinkFolder;
-	pItem->pFolder	= pFolder;
-	pItem->strName = _T("ChevronFolder");
-	m_BookmarkList.push_back(std::move(pItem));
+		unique_ptr<LinkItem> pItem(new LinkItem);
+		LinkFolderPtr	pFolder = new LinkFolder;
+		pItem->pFolder	= pFolder;
+		pItem->strName = _T("ChevronFolder");
+		m_BookmarkList.push_back(std::move(pItem));
+		m_bLoading = false;
+		Refresh();
+	});
 }
 
 void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
@@ -1097,7 +1140,7 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 #else
 	static bool	s_bCancel = false;
 #endif
-	boost::thread	td([this]() {
+	m_thread_save.swap(boost::thread([this]() {
 		for (;;) {
 			if (s_cs.TryEnter()) {
 				CString LinkBookmarkFilePath = GetConfigFilePath(_T("LinkBookmark.xml"));
@@ -1147,7 +1190,7 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 				continue;
 			}
 		}
-	});
+	}));
 }
 
 void	CDonutLinkBarCtrl::Impl::_UpdateItemPosition()
@@ -1244,6 +1287,7 @@ void	CDonutLinkBarCtrl::Impl::_CloseSubMenu()
 bool	CDonutLinkBarCtrl::Impl::_DoPopupSubMenu(int nIndex, bool bPressItem /*= true*/)
 {
 	ATLASSERT(_IsValidIndex(nIndex));
+	CLinkPopupMenu::SetLinkBarHWND(m_hWnd);
 	_CloseSubMenu();
 
 	LinkFolderPtr	pFolder = m_BookmarkList[nIndex]->pFolder;

@@ -114,8 +114,8 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 	bool bTopWindow = IsPageIWebBrowser(pDisp);
 
 	/* 新しく開いたリンクにフォーカスが映ってしまうバグ修正 */
-	if (m_bNowActive == false && IsChild(GetFocus()))
-		GetTopLevelWindow().PostMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
+//	if (m_bNowActive == false && IsChild(GetFocus()))
+//		GetTopLevelWindow().PostMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
 
 	// mailto: 無効
 	if (m_view.GetExStyle() & DVS_EX_BLOCK_MAILTO) {
@@ -284,6 +284,9 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 
 		_AutoImageResize(true);	// 画像の自動リサイズ
 
+		if (m_bNowActive && MtlIsApplicationActive(m_hWnd))
+			_SetFocusToHTML();
+
 		_SetFavicon(strURL);
 
 		/* ユーザー定義Javascript */
@@ -386,8 +389,8 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
 	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
 	if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
-		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
-		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
+		dwDLCtrl	= m_pGlobalConfig->dwDLControlFlags;
+		dwExStyle	= m_pGlobalConfig->dwExtendedStyleFlags;
 	}
 	data.dwDLCtrl	= dwDLCtrl;
 	data.dwExStyle	= dwExStyle;
@@ -475,6 +478,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 
 void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)
 {
+	bCancel = true;
 	PostMessage(WM_CLOSE);
 }
 
@@ -773,7 +777,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	// 自動リサイズのトグル
 	if (   m_bImagePage 
 		&& pMsg->message == WM_LBUTTONDOWN 
-		&& CMainOption::s_nAutoImageResizeType != AUTO_IMAGE_RESIZE_NONE)
+		&& m_pGlobalConfig->AutoImageResizeType != AUTO_IMAGE_RESIZE_NONE)
 	{
 		CPoint	pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 		CRect	rc;
@@ -913,12 +917,13 @@ FINISH_FILL:
 		|| Misc::IsGpuRendering() == false 
 		|| CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_NONE)
 		return ;
-
+#if 0
 	if (m_pPageBitmap) {
 		CMemoryDC	memDC(dc, rect);
 		memDC.SelectBitmap(*m_pPageBitmap);
 	}
-#if 0
+#endif
+#if 1
 	CComQIPtr<IViewObject>	spViewObject = m_spBrowser;
 	if (spViewObject == nullptr)
 		return ;
@@ -1113,14 +1118,17 @@ void	CChildFrame::Impl::OnSetFocus(CWindow wndOld)
 
 	//m_bPageFocusInitialized = true; 			// avoid the endless loop
 	hr = spWnd->focus();	// makes mainframe active
+	TRACEIN(L"ChildFrame::OnSetFocus : hr(%s)", GetLastErrorString(hr));
 }
 
 void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 {
 	if (hWndAct == m_hWnd) {
 		m_bNowActive = true;
-		if (MtlIsApplicationActive(m_hWnd) && m_view.IsWindow())
-			OnSetFocus(NULL);
+		if (MtlIsApplicationActive(m_hWnd)) {
+			//SetForegroundWindow(m_hWnd);
+			_SetFocusToHTML();
+		}
 
 		if (m_pGlobalConfig->bSaveSearchWord) {
 			CString str;
@@ -1136,14 +1144,52 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			m_pGlobalConfig->bSaveSearchWord = m_pGlobalConfig->bSaveSearchWordOrg;
 		}
 
-		RECT rcClient;
-		GetParent().GetClientRect(&rcClient);
-		::SetWindowPos(m_hWnd, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
-		::ShowWindow(m_hWnd, TRUE);
 
-		if (hWndDeact)
-			::ShowWindowAsync(hWndDeact, FALSE);
+		if (Misc::IsGpuRendering()) {
+			//SetRedraw(FALSE);
+			RECT rcClient;
+			GetParent().GetClientRect(&rcClient);
+			::SetWindowPos(m_hWnd, HWND_BOTTOM, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_NOREDRAW);
+			::ShowWindow(m_hWnd, TRUE);
+			//::BringWindowToTop(m_hWnd);
 
+			if (hWndDeact) {
+				::ShowWindowAsync(hWndDeact, FALSE);
+			}
+			//m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+			//SetRedraw(TRUE);
+			//PostMessage(WM_APP + 123);
+			//m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
+		} else {	// no GPU で成功！
+			GetParent().SetRedraw(FALSE);
+			RECT rcClient;
+			GetParent().GetClientRect(&rcClient);
+			::SetWindowPos(m_hWnd, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_NOREDRAW);
+			::ShowWindow(m_hWnd, TRUE);
+			//::BringWindowToTop(m_hWnd);
+
+			if (hWndDeact) {
+				::ShowWindow/*Async*/(hWndDeact, FALSE);
+			}
+			GetParent().SetRedraw(TRUE);
+			m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
+		}
+#if 0
+		{	// アクティブ先のウィンドウが表示されない...
+			GetParent().SetRedraw(FALSE);
+			RECT rcClient;
+			GetParent().GetClientRect(&rcClient);
+			::SetWindowPos(m_hWnd, hWndDeact, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_SHOWWINDOW/* | SWP_NOREDRAW*/);
+			//::ShowWindow(m_hWnd, TRUE);
+			::BringWindowToTop(m_hWnd);
+			if (hWndDeact)
+				::ShowWindow/*Async*/(hWndDeact, FALSE);
+			GetParent().SetRedraw(TRUE);
+			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
+		}
+#endif
 	} else if (hWndDeact == m_hWnd) {
 		m_bNowActive = false;
 		// _KillFocusToHTML
@@ -1157,6 +1203,7 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			::SendMessage(m_pGlobalConfig->SearchEditHWND, WM_GETTEXT, 1024, (LPARAM)m_strSearchWord.GetBuffer(1024));
 			m_strSearchWord.ReleaseBuffer();
 		}
+
 #if 0
 		{
 			CComQIPtr<IViewObject>	spViewObject = m_spBrowser;
@@ -2544,7 +2591,7 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 /// 自動画像リサイズ
 void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 {
-	if (CMainOption::s_nAutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
+	if (m_pGlobalConfig->AutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
 		return ;
 
 	if (bFirst) {
@@ -3044,5 +3091,16 @@ int		CChildFrame::Impl::_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, 
 }
 
 
+void	CChildFrame::Impl::_SetFocusToHTML()
+{
+	CComQIPtr<IOleObject>	spOleObj = m_spBrowser;
+	if (spOleObj) {
+		CComPtr<IOleClientSite> spClientSite;
+		spOleObj->GetClientSite(&spClientSite);
+		RECT rcClient;
+		GetClientRect(&rcClient);
+		HRESULT hr = spOleObj->DoVerb(OLEIVERB_UIACTIVATE, NULL, spClientSite, 0, m_hWnd, &rcClient);
+	}
+}
 
 

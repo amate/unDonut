@@ -445,17 +445,33 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	OnSetDLConfigToGlobalConfig();
 	m_StatusBar.GetProxyComboBox().SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 
-	TIMERSTART();
+	//TIMERSTART();
 	/* 各種バンドウィンドウ作成 */
+	TIMERSTART();
 	_initRebar();
+	TIMERSTOP(L"_initRebar");
+	TIMERSTART();
 	HWND hWndCmdBar		= _initCommandBar();
+	TIMERSTOP(L"_initCommandBar");
+	TIMERSTART();
 	HWND hWndToolBar	= _initToolBar();
+	TIMERSTOP(L"_initToolBar");
+	TIMERSTART();
 	HWND hWndAddressBar = _initAddressBar();
+	TIMERSTOP(L"_initAddressBar");
+	TIMERSTART();
 	HWND hWndSearchBar	= m_SearchBar.Create(m_ReBar);
+	TIMERSTOP(L"m_SearchBar");
+	TIMERSTART();
 	HWND hWndTabBar		= _initTabBar();
+	TIMERSTOP(L"_initTabBar");
+	TIMERSTART();
 	HWND hWndLinkBar	= _initLinkBar();
+	TIMERSTOP(L"_initLinkBar");
+	TIMERSTART();
 	_initBandPosition(hWndCmdBar, hWndToolBar, hWndAddressBar, hWndSearchBar, hWndLinkBar, hWndTabBar);
-	TIMERSTOP(_T("各種バンド作成"));
+	TIMERSTOP(L"_initBandPosition");
+	//TIMERSTOP(_T("各種バンド作成"));
 	
 	m_GlobalConfigManageData.pGlobalConfig->SearchEditHWND	= m_SearchBar.GetEditCtrl();
 
@@ -670,21 +686,6 @@ void	CMainFrame::Impl::OnDestroy()
 
 	_DeleteCacheAndCookie();
 	_DeleteHistory();
-
-	DWORD	dwTime = ::timeGetTime();
-	boost::thread	terminateWatch([dwTime]() {
-		extern bool g_bSefShutDown;
-		while (dwTime + (5 * 1000) > ::timeGetTime()) {
-			if (g_bSefShutDown)
-				return ;
-
-			::Sleep(50);
-		}
-		if (g_bSefShutDown == false) {
-			TRACEIN(_T("待機時間を過ぎたので強制終了します-------------------"));
-			ExitProcess(-5);
-		}
-	});
 }
 
 /// Windowsが終了前に呼ばれる　ファイルがダウンロード中なら中止するかどうか確認する
@@ -951,16 +952,11 @@ void	CMainFrame::Impl::_initSkin()
 void	CMainFrame::Impl::_initSysMenu()
 {
 	CMenuHandle SysMenu = GetSystemMenu(FALSE);
-	//		::AppendMenu(hSysMenu, MF_ENABLED|MF_STRING, ID_VIEW_COMMANDBAR, _T("メニューを表示"));
 
-	TCHAR		cText[]	 = _T("メニューを表示");
-	MENUITEMINFO  menuInfo = { sizeof(MENUITEMINFO) };
-	menuInfo.fMask		= MIIM_ID | MIIM_TYPE;
-	menuInfo.fType		= MFT_STRING;
-	menuInfo.wID		= ID_VIEW_COMMANDBAR;
-	menuInfo.dwTypeData = cText;
-	menuInfo.cch		= sizeof (cText);
-	SysMenu.InsertMenuItem(0, MF_BYPOSITION, &menuInfo);
+	SysMenu.InsertMenu(0, MF_BYPOSITION | MF_STRING, ID_VIEW_COMMANDBAR, _T("メニューを表示(&V)"));
+	SysMenu.InsertMenu(1, MF_BYPOSITION | MF_SEPARATOR);
+	SysMenu.InsertMenu(2, MF_BYPOSITION | MF_STRING, ID_VIEW_PROCESSMONITOR, _T("プロセス モニター(&P)"));
+	SysMenu.InsertMenu(3, MF_BYPOSITION | MF_SEPARATOR);
 }
 
 
@@ -1020,6 +1016,19 @@ void	CMainFrame::Impl::OnSysCommand(UINT nID, CPoint pt)
 	switch (nID) {
 	case ID_VIEW_COMMANDBAR:
 		OnViewBar(0, ID_VIEW_COMMANDBAR, NULL);
+		break;
+
+	case ID_VIEW_PROCESSMONITOR:
+		{
+			if (m_pProcessMonitor) {
+				m_pProcessMonitor->ShowWindow(TRUE);
+				m_pProcessMonitor->SetActiveWindow();
+			} else {
+				m_pProcessMonitor.reset(new CProcessMonitorDialog(std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1), CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode));
+				m_pProcessMonitor->Create(m_hWnd);
+				m_pProcessMonitor->ShowWindow(TRUE);
+			}
+		}
 		break;
 
 	case SC_RESTORE:

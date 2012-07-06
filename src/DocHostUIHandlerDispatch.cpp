@@ -228,7 +228,7 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 			// Send selected shortcut menu item command to shell
 			LRESULT  lRes	= S_OK;
 			if (iSelection != 0) {
-				lRes = ::PostMessage(hWndTarget, WM_COMMAND, iSelection, NULL);
+				lRes = ::SendMessage(hWndTarget, WM_COMMAND, iSelection, NULL);
 			}
 
 			{	// MainFrameにメッセージを送信するかどうか

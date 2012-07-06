@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "BingTranslatorMenu.h"
+#define BOOST_ERROR_CODE_HEADER_ONLY
 #include <boost/thread.hpp>
 #include <WinInet.h>
 #include "ChildFrame.h"

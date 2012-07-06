@@ -159,8 +159,6 @@ void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 {
 	// 検索バーを使って検索する
 	CString str = lpszCommandline;
-	if (str.Find(_T("/dde")) != -1)
-		return ;
 	if (str.Left(13) == _T("SearchEngine:")) {
 		vecUrls.push_back(str);
 		return ;
@@ -172,7 +170,9 @@ void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 	std::wregex		rx(L"(?:\")([^\"]+)(?:\")");	// "～"
 	std::wsmatch	result;
 	while (std::regex_search(itbegin, itend, result, rx)) {
-		vecUrls.push_back(result[1].str().c_str());
+		CString url = result[1].str().c_str();
+		if (url.CompareNoCase(_T("/dde")) != 0)
+			vecUrls.push_back(url);
 		itbegin = result[0].second;
 	}
 	if (vecUrls.size() == 0) {
@@ -182,7 +182,9 @@ void PerseUrls(LPCTSTR lpszCommandline, std::vector<CString>& vecUrls)
 		std::wregex		rx(L"([^ ]+)");
 		std::wsmatch	result;
 		while (std::regex_search(itbegin, itend, result, rx)) {
-			vecUrls.push_back(result[1].str().c_str());
+			CString url = result[1].str().c_str();
+			if (url.CompareNoCase(_T("/dde")) != 0)
+				vecUrls.push_back(url);
 			itbegin = result[0].second;
 		}
 	}
@@ -567,7 +569,7 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 
 	// ActiveXコントロールをホストするための準備
 	AtlAxWinInit();
-	
+
 	// コマンドライン入力によってはCOMサーバー登録及び解除を行う
 	nRet = RegisterCOMServer(nRet, bRun, bAutomation, bTray);
 	if (FAILED(nRet)) {
@@ -604,11 +606,27 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 		//::Sleep(_Module.m_dwPause);
 	}
 
+
 	//_PrivateTerm();
-	g_bSefShutDown = true;
+	//g_bSefShutDown = true;
 
 	ATLTRACE(_T("正常終了しました。\n"));
 END_APP:
+	boost::thread	terminateWatch([]() {
+		DWORD	dwTime = ::timeGetTime();
+		extern bool g_bSefShutDown;
+		while (dwTime + (5 * 1000) > ::timeGetTime()) {
+			if (g_bSefShutDown)
+				return ;
+
+			::Sleep(50);
+		}
+		if (g_bSefShutDown == false) {
+			TRACEIN(_T("待機時間を過ぎたので強制終了します-------------------"));
+			ExitProcess(-5);
+		}
+	});
+
 	_Module.Term();
 	::OleUninitialize();
 	::CoUninitialize();

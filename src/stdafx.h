@@ -49,8 +49,6 @@
 #define ATLASSUME(e)			ATLASSERT(e)
 #endif
 
-#define BOOST_THREAD_NO_LIB
-
 
 #if 0	// 1 でメモリリークチェック
 #define _CRTDBG_MAP_ALLOC

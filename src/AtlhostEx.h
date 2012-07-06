@@ -1866,6 +1866,11 @@ GetClientRect(&rect);
 	}
 	STDMETHOD(RequestUIActivate)()
 	{
+		enum { WM_GETCHILDFRAMENOWACTIVE =	(WM_APP + 1) };
+		if (GetParent().SendMessage(WM_GETCHILDFRAMENOWACTIVE) == 0) {
+			return E_FAIL;
+		}
+
 		return S_OK;
 	}
 

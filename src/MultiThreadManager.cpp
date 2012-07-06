@@ -235,8 +235,8 @@ private:
 		pChild->SetThreadIdFromNewWindow2(NewChildData.dwThreadIdFromNewWindow);
 		
 		// ChildFrameウィンドウ作成
-		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);
 		pChild->SetDLCtrl(NewChildData.dwDLCtrl);
+		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);		
 		pChild->SetExStyle(NewChildData.dwExStyle);
 		pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
 		pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
