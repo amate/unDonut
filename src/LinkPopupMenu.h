@@ -202,6 +202,9 @@ public:
 		kSubMenuPopupTimerID = 2,
 		kSubMenuPopupTime	= 300,
 
+		kCloseBaseSubMenuTimerID = 3,
+		kCloseBaseSubMenuTime = 300,
+
 		kDragInsertHitWidthOnFolder = 3,
 	};
 	int	kItemHeight;

@@ -1370,8 +1370,10 @@ void	CLinkPopupMenu::OnDragLeave()
 		::GetCursorPos(&pt);
 		HWND hWnd = ::WindowFromPoint(pt);
 		if (m_pSubMenu->m_hWnd == hWnd)
-			return ;
+			return ;	// サブメニューにカーソルが移った
 	}
+
+	SetTimer(kCloseBaseSubMenuTimerID, kCloseBaseSubMenuTime);
 
 	_HotItem(-1);
 
@@ -1432,6 +1434,21 @@ void CLinkPopupMenu::OnTimer(UINT_PTR nIDEvent)
 		GetCursorPos(&pt);
 		ScreenToClient(&pt);
 		_DoExec(pt);
+
+	} else if (nIDEvent == kCloseBaseSubMenuTimerID) {
+		KillTimer(nIDEvent);
+		CPoint pt;
+		::GetCursorPos(&pt);
+		HWND hWndpt = ::WindowFromPoint(pt);
+		WCHAR classname[32] = L"";
+		::GetClassName(hWndpt, classname, 32);
+		if (hWndpt == NULL || 
+			(::lstrcmp(classname, L"DonutLinkPopupMenu") != 0 && 
+			 ::lstrcmp(classname, L"DonutBasePopupMenu") != 0 && 
+			 ::lstrcmp(classname, L"DonutLinkBarCtrl") != 0
+			)
+		   )
+			_CloseBaseSubMenu();
 	}
 }
 

@@ -113,10 +113,6 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 {
 	bool bTopWindow = IsPageIWebBrowser(pDisp);
 
-	/* 新しく開いたリンクにフォーカスが映ってしまうバグ修正 */
-//	if (m_bNowActive == false && IsChild(GetFocus()))
-//		GetTopLevelWindow().PostMessage(WM_COMMAND, ID_VIEW_SETFOCUS);
-
 	// mailto: 無効
 	if (m_view.GetExStyle() & DVS_EX_BLOCK_MAILTO) {
 		if (strURL.Left(7).CompareNoCase( _T("mailto:") ) == 0) {
@@ -773,6 +769,14 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	if (m_bNowActive == false) {
 		return FALSE;
 	}
+#if 0	// http://digital-mixnews.com/archives/67603987.html で固まるバグ修正だけどこれやるとyoutubeでサムネイル読み込まなくなる...
+	if (pMsg->message == (WM_APP + 3)) {
+		WCHAR classname[32] = L"";
+		::GetClassName(pMsg->hwnd, classname, 32);
+		if (::lstrcmp(classname, L"Internet Explorer_Hidden") == 0)
+			return TRUE;
+	}
+#endif
 
 	// 自動リサイズのトグル
 	if (   m_bImagePage 
@@ -836,8 +840,13 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 			} else {	// カーソル下の自分のウィンドウにホイールスクロールを通知する
 				CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 				HWND hWndFound = WindowFromPoint(pt);
-				if (hWndFound && IsChild(hWndFound)) {
-					::SendMessage(hWndFound, pMsg->message, pMsg->wParam, pMsg->lParam);
+				if (hWndFound) {
+					if (IsChild(hWndFound)) {
+						::SendMessage(hWndFound, pMsg->message, pMsg->wParam, pMsg->lParam);
+					} else if (wndMainFrame.m_hWnd == hWndFound || wndMainFrame.IsChild(hWndFound)) {
+						// ホイールでタブ切替用
+						wndMainFrame.PostMessage(pMsg->message, pMsg->wParam, pMsg->lParam);
+					}
 				}
 			}
 			return TRUE;
@@ -2593,7 +2602,7 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 {
 	if (m_pGlobalConfig->AutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
 		return ;
-
+	TRACEIN(L"_AutoImageResize : bFirst(%d)", bFirst);
 	if (bFirst) {
 		CComPtr<IDispatch>	spDisp;
 		m_spBrowser->get_Document(&spDisp);
@@ -2604,6 +2613,7 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 		HRESULT hr = spDoc->get_mimeType(&strmineType);
 		if (strmineType) {
 			CString strExt = CString(strmineType).Left(3);
+			TRACEIN(L"  mineType == %s  Ext == %s", strmineType, strExt);
 			if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF"))
 				return ;
 		} else {
@@ -2691,7 +2701,7 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 	pHtmlStyle->setAttribute(bstrZoom, variantVal);
 	if (m_nImgSclSw)
 		pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"hidden"));
-
+	TRACEIN(L"  リサイズ成功");
 }
 
 /// タブなどにFaviconを設定

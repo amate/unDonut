@@ -93,8 +93,6 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 	pData->pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
 	pData->pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
 	pData->pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
-	if (NewChildData.strURL.GetLength() > 0)
-		pData->pChild->Navigate2(NewChildData.strURL);
 
 	DWORD dwOption = 0;
 	if (NewChildData.bActive)
@@ -103,6 +101,9 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 		dwOption |= TAB_LINK;
 	CWindow wndMainFrame = wnd.GetTopLevelWindow();
 	wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+
+	if (NewChildData.strURL.GetLength() > 0)
+		pData->pChild->Navigate2(NewChildData.strURL);
 
 	class CThreadRefManager : public CMessageFilter
 	{

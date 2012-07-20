@@ -50,6 +50,7 @@ void	CDonutLinkBarCtrl::Impl::Refresh()
 
 	CRect rc;
 	GetClientRect(&rc);
+#if 0
 	HWND		  hWndReBar = GetParent();
 	CReBarCtrl	  rebar(hWndReBar);
 	static UINT wID = 0;
@@ -64,19 +65,21 @@ void	CDonutLinkBarCtrl::Impl::Refresh()
 				break;
 			}
 		}
-		return;
+		if (wID == 0)
+			return;
 	}
 
 	int	nIndex = rebar.IdToIndex( wID );
 	if (nIndex != -1) {
 
 		REBARBANDINFO rbinfo = { sizeof(REBARBANDINFO) };
-		rbinfo.fMask = RBBIM_CHILDSIZE;
+		rbinfo.fMask = RBBIM_SIZE;
 		rebar.GetBandInfo(nIndex, &rbinfo);
-		rc.right	= rbinfo.cxMinChild;
+		rc.right	= rbinfo.cx;
 		if (rc.right == 0)
 			return ;
 	}
+#endif
 	OnSize(0, rc.BottomRight());
 }
 
@@ -219,7 +222,7 @@ void CDonutLinkBarCtrl::Impl::DoPaint(CDCHandle dc)
 
 void CDonutLinkBarCtrl::Impl::OnTrackMouseMove(UINT nFlags, CPoint pt)
 {
-	if (CLinkPopupMenu::s_bNowShowRClickMenu)
+	if (CLinkPopupMenu::s_bNowShowRClickMenu || m_bLoading)
 		return ;
 
 	int nIndex = -1;
@@ -270,7 +273,7 @@ void CDonutLinkBarCtrl::Impl::OnTrackMouseMove(UINT nFlags, CPoint pt)
 
 void CDonutLinkBarCtrl::Impl::OnTrackMouseLeave()
 {
-	if (CLinkPopupMenu::s_bNowShowRClickMenu)
+	if (CLinkPopupMenu::s_bNowShowRClickMenu || m_bLoading)
 		return ;
 
 	_HotItem(-1);
@@ -563,6 +566,14 @@ DROPEFFECT CDonutLinkBarCtrl::Impl::OnDrop(IDataObject *pDataObject, DROPEFFECT 
 void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 {
 	_ClearInsertionEdge();
+
+	if (s_pSubMenu) {
+		CPoint pt;
+		::GetCursorPos(&pt);
+		HWND hWndpt = ::WindowFromPoint(pt);
+		if (hWndpt != s_pSubMenu->m_hWnd)
+			_CloseSubMenu();	// サブメニューにカーソルを移すつもりがなければ閉じる
+	}
 }
 
 
@@ -1098,7 +1109,8 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 			}
 			LinkImportFromFolder(LinkFolder);
 			m_bLoading = false;
-			Refresh();
+			//Refresh();
+			PostMessage(WM_REFRESH);
 			return ;
 		}
 		try {
@@ -1128,7 +1140,8 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 		pItem->strName = _T("ChevronFolder");
 		m_BookmarkList.push_back(std::move(pItem));
 		m_bLoading = false;
-		Refresh();
+		//Refresh();
+		PostMessage(WM_REFRESH);
 	});
 }
 

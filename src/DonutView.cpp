@@ -419,6 +419,24 @@ STDMETHODIMP CDonutView::Download(
 		}
 	}
 	if (SUCCEEDED(hr)) {
+		auto funcTravelLogCount = [this]() -> DWORD {
+			CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;
+			if (pISP == nullptr)
+				return 0;
+
+			CComPtr<ITravelLogStg>		 pTLStg;
+			HRESULT hr	= pISP->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void **) &pTLStg);
+			if (FAILED(hr) || pTLStg == nullptr)
+				return 0;
+			DWORD	dwTotalCount = 0;
+			DWORD	dwCount = 0;
+			hr = pTLStg->GetCount(TLEF_RELATIVE_FORE, &dwCount);
+			dwTotalCount += dwCount;
+			hr = pTLStg->GetCount(TLEF_RELATIVE_BACK, &dwCount);
+			dwTotalCount += dwCount;
+			return dwTotalCount;
+		};
+
 		CComPtr<IDispatch> spDisp;
 		m_spBrowser->get_Document(&spDisp);
 		CComQIPtr<IHTMLDocument2> spDoc = spDisp;
@@ -429,27 +447,12 @@ STDMETHODIMP CDonutView::Download(
 				CComBSTR strBody;
 				spElm->get_outerHTML(&strBody);
 
-				auto funcTravelLogCount = [this]() -> DWORD {
-					CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;
-					if (pISP == nullptr)
-						return 0;
-
-					CComPtr<ITravelLogStg>		 pTLStg;
-					HRESULT hr	= pISP->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void **) &pTLStg);
-					if (FAILED(hr) || pTLStg == nullptr)
-						return 0;
-					DWORD	dwTotalCount = 0;
-					DWORD	dwCount = 0;
-					hr = pTLStg->GetCount(TLEF_RELATIVE_FORE, &dwCount);
-					dwTotalCount += dwCount;
-					hr = pTLStg->GetCount(TLEF_RELATIVE_BACK, &dwCount);
-					dwTotalCount += dwCount;
-					return dwTotalCount;
-				};
 				DWORD dwHistoryCount = funcTravelLogCount();
 				if (CString(strBody) == _T("\r\n<BODY></BODY>") && dwHistoryCount == 0)
 					GetParent().PostMessage(WM_CLOSE);	// 空のページなので閉じる
 			}
+		} else if (funcTravelLogCount() == 0) {
+			GetParent().PostMessage(WM_CLOSE);	// 空のページなので閉じる
 		}
 
 		pCBSCB->SetOption(_T(""), NULL, m_pGlobalConfig->dwDLImageExStyle);

@@ -173,14 +173,15 @@ bool MtlIsApplicationActive(HWND hWnd)
 	wndFrame.GetWindowPlacement(&wndpl);
 
 	if (wndpl.showCmd == SW_SHOWMINIMIZED)
-		return false;
+		return false;	// メインフレームが最小化されてるならActiveにしない
 
-	CWindow 	wndFore 	  = ::GetForegroundWindow();
+	CWindow wndFore = ::GetForegroundWindow();
 	if (wndFore.m_hWnd == NULL)
-		return false;
+		return false;	// フォアグラウンドウィンドウがなければActiveにしない
 
 	CWindow 	wndForeParent = wndFore.GetTopLevelParent();
-	return wndFrame.m_hWnd == wndForeParent.m_hWnd;
+	bool bActive = wndFrame.m_hWnd == wndForeParent.m_hWnd;
+	return bActive;
 }
 
 

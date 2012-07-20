@@ -54,6 +54,8 @@ public:
 		kLeftIconMargin = 3,
 
 		kLeftTextPadding = kLeftIconMargin * 2 + kcxIcon,
+
+		WM_REFRESH = WM_APP + 20,
 	};
 
 	enum hitTestDragCategory {
@@ -103,6 +105,7 @@ public:
 		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
 		MESSAGE_HANDLER_EX( WM_SAVELINKBOOKMARK, OnSaveLinkBookmark )
 		MESSAGE_HANDLER_EX( WM_GETROOTLINKFOLDERPTR	, OnGetRootLinkFolderPtr	)
+		MESSAGE_HANDLER_EX( WM_REFRESH				, OnRefresh )
 		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CDonutLinkBarCtrl::Impl> )
 		CHAIN_MSG_MAP( CThemeImpl<CDonutLinkBarCtrl::Impl> )
 		CHAIN_MSG_MAP( CTrackMouseLeave<CDonutLinkBarCtrl::Impl> )
@@ -127,6 +130,10 @@ public:
 	 }
 	 LRESULT OnGetRootLinkFolderPtr(UINT uMsg, WPARAM wParam, LPARAM lParam) {
 		 return reinterpret_cast<LRESULT>(&m_BookmarkList);
+	 }
+	 LRESULT OnRefresh(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+		 Refresh();
+		 return 0;
 	 }
 
 private:
