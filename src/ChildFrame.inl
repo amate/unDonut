@@ -786,8 +786,10 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		CPoint	pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
 		CRect	rc;
 		GetClientRect(&rc);
-		rc.right -= GetSystemMetrics(SM_CXVSCROLL);
-		rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+		if (m_nImgSclSw == 0) {
+			rc.right -= GetSystemMetrics(SM_CXVSCROLL);
+			rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+		}
 		if (rc.PtInRect(pt))
 			OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, 0);
 		return FALSE;
@@ -1874,6 +1876,35 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 				pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"hidden"));
 			else 
 				pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"auto"));
+
+			if (m_ImageSize != CSize(0, 0) && m_nImgSclSw == 0 && m_nImgScl == 100) {	// 画像を100%に戻す
+				CSize	shrinkImageSize;
+				enum { kImageMargin = 4, kImagePadding = 20 };
+				shrinkImageSize.cx = static_cast<LONG>((m_ImageSize.cx + kImagePadding) * (double(m_nImgSclSav) / 100.0));
+				shrinkImageSize.cy = static_cast<LONG>((m_ImageSize.cy + kImagePadding) * (double(m_nImgSclSav) / 100.0));
+				CRect rcShrinkImage(0, 0, shrinkImageSize.cx, shrinkImageSize.cy);
+				
+				rcShrinkImage.MoveToXY(kImageMargin, kImageMargin);
+				CPoint pt;
+				::GetCursorPos(&pt);
+				this->GetParent().ScreenToClient(&pt);
+				if (rcShrinkImage.PtInRect(pt)) {
+					CPoint pt100;
+					pt100.x		= static_cast<LONG>(double(pt.x + kImageMargin) / (double(m_nImgSclSav) / 100.0));
+					pt100.y		= static_cast<LONG>(double(pt.y + kImageMargin) / (double(m_nImgSclSav) / 100.0));
+					int a = 0;
+					CRect rcClient;
+					this->GetClientRect(&rcClient);
+					CPoint ptScroll;
+					ptScroll.x	= pt100.x - (rcClient.Width() / 2);// + kImageMargin;
+					ptScroll.y	= pt100.y - (rcClient.Height() / 2);// + kImageMargin;
+					CComPtr<IHTMLWindow2> spWindow;
+					pDoc->get_parentWindow(&spWindow);
+					if (!spWindow)
+						return ;
+					spWindow->scrollBy(ptScroll.x, ptScroll.y);
+				}
+			}
 		}
 	};	// lamda
 
@@ -2613,15 +2644,15 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 		HRESULT hr = spDoc->get_mimeType(&strmineType);
 		if (strmineType) {
 			CString strExt = CString(strmineType).Left(3);
-			TRACEIN(L"  mineType == %s  Ext == %s", strmineType, strExt);
-			if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF"))
+			//TRACEIN(L"  mineType == %s  Ext == %s", strmineType, strExt);
+			if (strExt != _T("JPG") && strExt != _T("PNG") && strExt != _T("GIF") && strmineType != L"ビットマップ イメージ" && strExt != _T("JPE"))
 				return ;
 		} else {
 			CString strUrl = GetLocationURL();
 			if (GetLocationName() == strUrl) {
 				CString strExt = strUrl.Right(4);
 				strExt.MakeUpper();
-				if (strExt != _T(".JPG") && strExt != _T(".PNG") && strExt != _T(".GIF"))
+				if (strExt != _T(".JPG") && strExt != _T(".PNG") && strExt != _T(".GIF") && strExt != _T(".BMP") && strExt != _T(".JPE"))
 					return ;
 			} else 
 				return ;
@@ -2672,7 +2703,7 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 	RECT	rcClient;
 	GetClientRect(&rcClient);
 
-	enum { kMargen = 10/*32*/ };
+	enum { kMargen = 20/*32*/ };
 	long 	scWidth  = (rcClient.right  - kMargen < 0) ? 1 : rcClient.right  - kMargen;
 	long 	scHeight = (rcClient.bottom - kMargen < 0) ? 1 : rcClient.bottom - kMargen;
 

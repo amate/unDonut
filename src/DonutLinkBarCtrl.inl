@@ -1110,7 +1110,7 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 			LinkImportFromFolder(LinkFolder);
 			m_bLoading = false;
 			//Refresh();
-			PostMessage(WM_REFRESH);
+			::PostMessage(m_hWnd, WM_REFRESH, 0, 0);
 			return ;
 		}
 		try {
@@ -1141,7 +1141,7 @@ void	CDonutLinkBarCtrl::Impl::_LoadLinkBookmark()
 		m_BookmarkList.push_back(std::move(pItem));
 		m_bLoading = false;
 		//Refresh();
-		PostMessage(WM_REFRESH);
+		::PostMessage(m_hWnd, WM_REFRESH, 0, 0);
 	});
 }
 
