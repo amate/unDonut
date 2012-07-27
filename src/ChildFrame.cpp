@@ -52,6 +52,7 @@ DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
 }
 
 #define WM_GETCHILDFRAMENOWACTIVE	(WM_APP + 1)
+#define WM_EXECUTE_JAVASCRIPT		(WM_APP + 2)
 
 namespace {
 
@@ -368,6 +369,8 @@ public:
 		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONDOWN	, OnDefaultRButtonDown	)
 		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONUP		, OnDefaultRButtonUp	)
 
+		MESSAGE_HANDLER_EX( WM_EXECUTE_JAVASCRIPT	, OnExecuteJavascript	)
+
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_TEXT,OnEditOpenSelectedText	)	// URLテキストを開く
@@ -448,6 +451,8 @@ public:
 	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDefaultRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	LRESULT OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);

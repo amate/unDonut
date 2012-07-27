@@ -2189,9 +2189,9 @@ GetClientRect(&rect);
 	STDMETHODIMP ShowMessage(HWND hwnd, LPOLESTR lpstrText, LPOLESTR lpstrCaption, DWORD dwType, LPOLESTR lpstrHelpFile, DWORD dwHelpContext, LRESULT *plResult)
 	{
 		CString strMessage = lpstrText;
-		HWND hWndMDIActive = (HWND)::SendMessage(::GetParent(GetParent()), WM_MDIGETACTIVE, 0, 0);
-		if (hWndMDIActive == GetParent()) {
-			CWindow wndFrame   = GetTopLevelParent();
+		enum { WM_GETCHILDFRAMENOWACTIVE =	(WM_APP + 1) };
+		if (GetParent().SendMessage(WM_GETCHILDFRAMENOWACTIVE)) {
+			CWindow wndFrame   = GetTopLevelWindow();
 			HWND	hWndStatus = wndFrame.GetDlgItem(ATL_IDW_STATUS_BAR);
 			int 	nMode	   = (int) ::SendMessage(hWndStatus, WM_GET_OWNERDRAWMODE, 0, 0);
 			if (nMode)

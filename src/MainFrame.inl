@@ -430,6 +430,7 @@ bool CMainFrame::Impl::OnDDEOpenFile(const CString& strFileName)
 	return true;
 }
 
+
 int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	SetMsgHandled(FALSE);
@@ -447,27 +448,17 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	//TIMERSTART();
 	/* 各種バンドウィンドウ作成 */
-	TIMERSTART();
 	_initRebar();
-	TIMERSTOP(L"_initRebar");
-	TIMERSTART();
 	HWND hWndCmdBar		= _initCommandBar();
-	TIMERSTOP(L"_initCommandBar");
-	TIMERSTART();
 	HWND hWndToolBar	= _initToolBar();
-	TIMERSTOP(L"_initToolBar");
 	TIMERSTART();
 	HWND hWndAddressBar = _initAddressBar();
 	TIMERSTOP(L"_initAddressBar");
 	TIMERSTART();
 	HWND hWndSearchBar	= m_SearchBar.Create(m_ReBar);
 	TIMERSTOP(L"m_SearchBar");
-	TIMERSTART();
 	HWND hWndTabBar		= _initTabBar();
-	TIMERSTOP(L"_initTabBar");
-	TIMERSTART();
 	HWND hWndLinkBar	= _initLinkBar();
-	TIMERSTOP(L"_initLinkBar");
 	TIMERSTART();
 	_initBandPosition(hWndCmdBar, hWndToolBar, hWndAddressBar, hWndSearchBar, hWndLinkBar, hWndTabBar);
 	TIMERSTOP(L"_initBandPosition");
@@ -512,6 +503,9 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
 
 	RegisterDragDrop();
+
+	if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP)
+		SetTimer(kAutoBackupTimerId, CMainOption::s_dwBackUpTime * 60000);
 
 	TIMERSTOP(L"メインフレームのOnCreateにかかった時間");
 	return 0;
@@ -647,6 +641,8 @@ void	CMainFrame::Impl::OnDestroy()
 
 	_PrivateTerm();		// 設定の保存
 
+	KillTimer(kAutoBackupTimerId);
+
 	RevokeDragDrop();
 
 	_SaveBandPosition();
@@ -700,10 +696,18 @@ BOOL	CMainFrame::Impl::OnQueryEndSession(UINT nSource, UINT uLogOff)
 void	CMainFrame::Impl::OnEndSession(BOOL bEnding, UINT uLogOff)
 {
 	if (bEnding) {
-
+		OnDestroy();	// 設定の保存
 	}
 }
 
+void	CMainFrame::Impl::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent == kAutoBackupTimerId) {
+		TIMERSTART();
+		SaveAllTab();
+		TIMERSTOP(L"定期TabList.xmlセーブ");
+	}
+}
 
 void	CMainFrame::Impl::_initRebar()
 {
@@ -1772,6 +1776,11 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 
 	SetGlobalConfig(m_GlobalConfigManageData.pGlobalConfig);
 	//m_cmbBox.ResetProxyList();
+
+	if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP)
+		SetTimer(kAutoBackupTimerId, CMainOption::s_dwBackUpTime * 60000);
+	else
+		KillTimer(kAutoBackupTimerId);
 
 	//RtlSetMinProcWorkingSetSize();		//+++ (メモリの予約領域を一時的に最小化。ウィンドウを最小化した場合と同等)
 	SendMessage(WM_COMMAND, ID_VIEW_SETFOCUS);

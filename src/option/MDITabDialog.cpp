@@ -123,8 +123,7 @@ void CTabBarOption::WriteProfile()
 	switch (m_nRadioRightClick) {
 	case 1: s_dwExStyle |= MTB_EX_RIGHTCLICKCLOSE;		break;
 	case 2: s_dwExStyle |= MTB_EX_RIGHTCLICKREFRESH;	break;
-	case 4: s_dwExStyle |= MTB_EX_RIGHTCLICKCOMMAND;	break;	// minit
-	default: bCommand = true;
+	case 4: s_dwExStyle |= MTB_EX_RIGHTCLICKCOMMAND;	bCommand = true;	break;	// minit
 	}
 	if (bCommand == false)
 		s_RClickCommand = 0;
@@ -134,8 +133,7 @@ void CTabBarOption::WriteProfile()
 	case 1: s_dwExStyle |= MTB_EX_DOUBLECLICKCLOSE; 	break;
 	case 2: s_dwExStyle |= MTB_EX_DOUBLECLICKREFRESH;	break;
 	case 3: s_dwExStyle |= MTB_EX_DOUBLECLICKNLOCK; 	break;	// UDT DGSTR
-	case 5: s_dwExStyle |= MTB_EX_DOUBLECLICKCOMMAND;	break;	// minit
-	default: bCommand = true;
+	case 5: s_dwExStyle |= MTB_EX_DOUBLECLICKCOMMAND;	bCommand = true;	break;	// minit
 	}
 	if (bCommand == false)
 		s_DClickCommand = 0;
@@ -145,8 +143,7 @@ void CTabBarOption::WriteProfile()
 	case 1: s_dwExStyle |= MTB_EX_XCLICKCLOSE;			break;
 	case 2: s_dwExStyle |= MTB_EX_XCLICKREFRESH;		break;
 	case 3: s_dwExStyle |= MTB_EX_XCLICKNLOCK;			break;	// UDT DGSTR
-	case 5: s_dwExStyle |= MTB_EX_XCLICKCOMMAND;		break;	// minit
-	default: bCommand = true;
+	case 5: s_dwExStyle |= MTB_EX_XCLICKCOMMAND;	bCommand = true;	break;	// minit
 	}
 	if (bCommand == false)
 		s_MClickCommand = 0;

@@ -556,6 +556,7 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 
 	/* FavoriteBookmark.xml Ç©ÇÁ s_BookmarkList Çç\ízÇ∑ÇÈ */
 	boost::thread td([]() {
+		//DWORD dw = ::timeGetTime();
 		s_bBookmarkLoading = true;
 		CString FavoriteBookmarkFilePath = GetConfigFilePath(_T("FavoriteBookmark.xml"));
 		try {
@@ -565,6 +566,7 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 				return ;
 			}
 			TIMERSTART();
+			
 			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 			wptree	pt;
 			read_xml(filestream, pt);
@@ -581,6 +583,9 @@ void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 			::MoveFileEx(FavoriteBookmarkFilePath, FavoriteBookmarkFilePath + _T(".error"), MOVEFILE_REPLACE_EXISTING);
 		}
 		TIMERSTOP(L"FavoriteBookmark.xmlì«Ç›çûÇ›äÆóπ");
+		//CString str;
+		//str.Format(L"FavoriteBookmark : %d", ::timeGetTime() - dw);
+		//::MessageBox(NULL, str, 0, 0);
 		s_bBookmarkLoading = false;
 	});
 }

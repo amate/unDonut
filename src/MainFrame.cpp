@@ -313,6 +313,7 @@ public:
 		MSG_WM_DESTROY	( OnDestroy )
 		MSG_WM_QUERYENDSESSION( OnQueryEndSession	)
 		MSG_WM_ENDSESSION( OnEndSession	)
+		MSG_WM_TIMER	( OnTimer	)
 		MSG_WM_PAINT	( OnPaint	)
 		MSG_WM_ACTIVATE ( OnActivate )
 		MSG_WM_SYSCOMMAND( OnSysCommand	)
@@ -600,6 +601,7 @@ public:
 	void	OnDestroy();
 	BOOL	OnQueryEndSession(UINT nSource, UINT uLogOff);
 	void	OnEndSession(BOOL bEnding, UINT uLogOff);
+	void	OnTimer(UINT_PTR nIDEvent);
 	void	OnPaint(CDCHandle /*dc*/);
 	void	OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther);
 	void	OnSysCommand(UINT nID, CPoint pt);
@@ -708,7 +710,7 @@ private:
 	}
 
 	// Constants
-	enum { kPosMRU	= 11 };
+	enum { kPosMRU	= 11, kAutoBackupTimerId = 1 };
 
 	// Data members
 	CDonutReBarCtrl 	m_ReBar;

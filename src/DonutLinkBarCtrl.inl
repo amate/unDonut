@@ -1082,7 +1082,7 @@ void	_AddLinkItem(LinkFolderPtr pFolder, wptree pt)
 				pItem->dwExPropOpt	= ptItem.get<DWORD>(L"ExPropOpt");
 			}
 			_AddFaviconDataToLinkItem(ptItem, pItem.get());
-			::Sleep(1);
+			//::Sleep(1);
 		} else if (it->first == L"Folder") {
 			pItem->strName	= ptItem.get<std::wstring>(L"<xmlattr>.name").c_str();
 			pItem->pFolder = new LinkFolder;		

@@ -122,7 +122,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 	}
 
 	// Navigate中かつjavescriptから始まるウィンドウはナビゲートしない
-	if (m_bNowNavigate && 
+	if (//m_bNowNavigate && // msdnで無理だった
 		strURL.Left(15).CompareNoCase(_T("javascript:void")) == 0 || strURL.CompareNoCase(_T("javascript:;")) == 0) 
 	{
 		bCancel = true;
@@ -1083,7 +1083,11 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		break;
 
 	case kExecuteUserJavascript:
-		_ExecuteUserJavascript(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
+		{
+			CString* pScript = new CString(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
+			PostMessage(WM_EXECUTE_JAVASCRIPT, (WPARAM)pScript);
+			//_ExecuteUserJavascript();
+		}
 		break;
 
 	case kHilightFromFindBar:
@@ -1332,6 +1336,14 @@ LRESULT CChildFrame::Impl::OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM l
 	return SendMessage(WM_RBUTTONUP, wParam, lParam);
 }
 
+
+LRESULT CChildFrame::Impl::OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CString* pScript = (CString*)wParam;
+	_ExecuteUserJavascript(*pScript);
+	delete pScript;
+	return 0;
+}
 
 
 /// ファイルを閉じる
@@ -2633,7 +2645,7 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 {
 	if (m_pGlobalConfig->AutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
 		return ;
-	TRACEIN(L"_AutoImageResize : bFirst(%d)", bFirst);
+	//TRACEIN(L"_AutoImageResize : bFirst(%d)", bFirst);
 	if (bFirst) {
 		CComPtr<IDispatch>	spDisp;
 		m_spBrowser->get_Document(&spDisp);
