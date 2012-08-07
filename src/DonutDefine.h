@@ -859,6 +859,29 @@ enum TabCreateOption {
 	}
 
 
+// HANDLE	OnGetLoginInfomation(HANDLE hMapForClose)
+#define WM_GETLOGININFOMATION	(WM_USER + 143)
+#define USER_MSG_WM_GETLOGININFOMATION(func)	\
+	if (uMsg == WM_GETLOGININFOMATION) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = (LRESULT)func((HANDLE)wParam);				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	void OnUpdateAutoLoginDataList()
+#define WM_UPDATEAUTOLOGINDATALIST	(WM_USER + 144)
+#define USER_MSG_WM_UPDATEAUTOLOGINDATALIST(func)	\
+	if (uMsg == WM_UPDATEAUTOLOGINDATALIST) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// ===================================================================
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)
 #define USER_MSG_WM_INCREMENTTHREADREFCOUNT()	\

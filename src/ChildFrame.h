@@ -6,41 +6,9 @@
 #pragma once
 
 #include <boost/serialization/serialization.hpp>
-
+#include "CustomSerializeClass.h"
 
 class CChildFrame;
-
-namespace boost {
-  namespace serialization {
-
-	template <class Archive>
-	inline void save(Archive& ar, const WTL::CString& s, const unsigned int version)
-	{
-		static_cast<void>(version);
-
-		const std::wstring ss(s);
-		ar & ss;
-	}
-
-	template<class Archive>
-	inline void load(Archive& ar, WTL::CString& s, const unsigned int version) 
-	{
-		static_cast<void>(version);
-
-		std::wstring ss;
-		ar & ss;
-		s = ss.c_str();
-	}
-
-
-    template <class Archive>
-	inline void serialize(Archive& ar, WTL::CString& s, const unsigned int version)
-	{
-		boost::serialization::split_free(ar, s, version);
-	}
-  }
-}
-
 
 struct NewChildFrameData {
 	HWND	hWndParent;

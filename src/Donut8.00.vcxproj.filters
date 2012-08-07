@@ -440,6 +440,9 @@
     <ClCompile Include="ProcessMonitorDialog.cpp">
       <Filter>Source Files\dialog</Filter>
     </ClCompile>
+    <ClCompile Include="AutoLogin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -933,6 +936,12 @@
     </ClInclude>
     <ClInclude Include="ProcessMonitorDialog.h">
       <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="AutoLogin.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CustomSerializeClass.h">
+      <Filter>Source Files\Base</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

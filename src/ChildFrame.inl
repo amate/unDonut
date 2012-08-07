@@ -26,7 +26,8 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_bClosing(false),
 	m_pPageBitmap(nullptr),
 	m_hMapChildFrameData(NULL),
-	m_dwThreadIdFromNewWindow(0)
+	m_dwThreadIdFromNewWindow(0),
+	m_nAutoLoginPrevIndex(-1)
 {	}
 
 
@@ -323,6 +324,7 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 		//	});
 		//}
 
+		/* ページ内ハイライト */
 		bool bHilight = m_bAutoHilight || m_pGlobalConfig->bHilightSwitch;
 		if (bHilight && m_strSearchWord.IsEmpty() == FALSE) {
 			if (m_bNowActive) {
@@ -339,6 +341,19 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 			m_bNowHilight = true;
 			_HilightOnce(pDisp, strWords);
 		}
+
+		/* 自動ログイン */
+		if (m_nAutoLoginPrevIndex == -1) {
+			int nIndex = CLoginDataManager::Find(strURL);
+			if (nIndex != -1) {
+				bool bSuccess = CLoginDataManager::DoAutoLogin(strURL, nIndex, m_spBrowser);
+				if (bSuccess)
+					m_nAutoLoginPrevIndex = nIndex;
+			}
+		} else {
+			m_nAutoLoginPrevIndex = -1;
+		}
+
 	}
 }
 
@@ -972,9 +987,14 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 
 	m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow());
 
-	if (m_pGlobalConfig->bMultiProcessMode &&
-		CCustomContextMenuOption::s_menuDefault.IsNull())
-		CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow());
+	if (m_pGlobalConfig->bMultiProcessMode) {
+		static bool s_bInit = false;
+		if (s_bInit == false) {
+			CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow());
+			CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow());
+			s_bInit = true;
+		}
+	}
 
 	RECT rc;
 	GetClientRect(&rc);
@@ -1344,6 +1364,76 @@ LRESULT CChildFrame::Impl::OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM 
 	delete pScript;
 	return 0;
 }
+
+
+HANDLE	CChildFrame::Impl::OnGetLoginInfomation(HANDLE hMapForClose)
+{
+	if (hMapForClose == NULL) {
+		LoginInfomation info;
+		CComBSTR	strUrl;
+		m_spBrowser->get_LocationURL(&strUrl);
+		if (strUrl)
+			info.strLoginUrl = strUrl;
+
+		CComPtr<IDispatch> spDisp;
+		m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument2>	spDoc2 = spDisp;
+		if (spDoc2) {
+			CComPtr<IHTMLElement>	spActiveElement;
+			spDoc2->get_activeElement(&spActiveElement);
+
+			CComPtr<IHTMLElementCollection>	spCol;
+			spDoc2->get_forms(&spCol);
+			ForEachHtmlElement(spCol, [&](IDispatch* pDisp) -> bool {
+				LoginInfomation& info2 = info;
+				CComQIPtr<IHTMLFormElement>	spForm = pDisp;
+				if (spForm.p) {
+					CComQIPtr<IHTMLElement>	spFormElm = spForm;
+					VARIANT_BOOL	vbResult;
+					spFormElm->contains(spActiveElement, &vbResult);
+					if (vbResult == VARIANT_TRUE) {
+
+						ForEachHtmlElement(spForm, [&](IDispatch* pDisp) -> bool {
+							CComQIPtr<IHTMLInputElement>	spInput = pDisp;
+							if (spInput.p) {
+								CComBSTR	strType;
+								spInput->get_type(&strType);
+								if (strType == nullptr)
+									return true;
+								strType.ToLower();
+								if (strType == L"text" || strType == L"password") {
+									CComBSTR	strName;
+									spInput->get_name(&strName);
+									CComBSTR	strValue;
+									spInput->get_value(&strValue);
+									info2.mapNameValue.insert(std::make_pair(WTL::CString(strName), WTL::CString(strValue)));								
+								} else if (strType == L"checkbox") {
+									CComBSTR	strName;
+									spInput->get_name(&strName);
+									VARIANT_BOOL	vChecked;
+									spInput->get_checked(&vChecked);
+									info2.mapCheckbox.insert(std::make_pair(WTL::CString(strName), bool(vChecked != VARIANT_FALSE)));
+								}
+							}
+							return true;
+						});
+					}
+				}
+				return true;
+			});
+		}
+
+		CString sharedMemName;
+		sharedMemName.Format(_T("%s%#x"), GETLOGININFOMATIONSHAREDMEMNAME, m_hWnd);
+		CSharedMemoryHandle sharedMem;
+		sharedMem.Serialize(info, sharedMemName);		
+		return sharedMem.Handle();
+	} else {
+		::CloseHandle(hMapForClose);
+		return NULL;
+	}
+}
+
 
 
 /// ファイルを閉じる
@@ -1822,6 +1912,7 @@ void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 void	CChildFrame::Impl::OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	m_bReload = true;
+	m_nAutoLoginPrevIndex = -1;
 	if (::GetAsyncKeyState(VK_CONTROL) < 0) 	// Inspired by DOGSTORE, Thanks
 		Refresh2(REFRESH_COMPLETELY);
 	else

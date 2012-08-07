@@ -64,7 +64,7 @@ public:
 		kSubMenuPopupCloseTimerID = 1,
 		kSubMenuPopupCloseTime	= 500,
 		kSubMenuPopupTimerID = 2,
-		kSubMenuPopupTime	= 300,
+		kSubMenuPopupTime	= 250,
 
 		kDragInsertHitWidthOnFolder = 3,
 
@@ -796,6 +796,7 @@ public:
 
 	int  OnCreate(LPCREATESTRUCT lpCreateStruct);
 	void OnDestroy();
+	void OnSize(UINT nType, CSize size);
 	void OnMButtonDown(UINT nFlags, CPoint point);
 	void OnMouseMove(UINT nFlags, CPoint point);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);

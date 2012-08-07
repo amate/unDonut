@@ -501,6 +501,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
 	CCustomContextMenuOption::UpdateCustomContextMenuList(m_hWnd);
 	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
+	CLoginDataManager::CreateOriginalLoginDataList(m_hWnd);
 
 	RegisterDragDrop();
 
@@ -1492,7 +1493,9 @@ void	CMainFrame::Impl::OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl)
 	NewChildFrameData	data(m_ChildFrameClient);
 	data.strURL		= pdata->strURL;
 	data.dwDLCtrl	= pdata->dwDLCtrl;
-	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);	// Force New Window
+	data.bActive	= _check_flag(DonutGetStdOpenActivateFlag(), D_OPENFILE_ACTIVATE);
+	if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
+		data.bActive = true;
 	data.TravelLogBack = pdata->TravelLogBack;
 	data.TravelLogFore = pdata->TravelLogFore;
 	m_RecentClosedTabList.RemoveFromList(nID);
@@ -1622,6 +1625,31 @@ void	CMainFrame::Impl::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		break;
 	}	
 
+}
+
+/// 自動ログイン編集ダイアログを表示する
+void	CMainFrame::Impl::OnAutoLoginEdit(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	LoginInfomation info;
+	HWND activeChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
+	if (activeChildFrame) {
+		HANDLE hMapForClose = (HANDLE)::SendMessage(activeChildFrame, WM_GETLOGININFOMATION, NULL, 0);
+		ATLASSERT( hMapForClose );
+		CString sharedMemName;
+		sharedMemName.Format(_T("%s%#x"), GETLOGININFOMATIONSHAREDMEMNAME, activeChildFrame);
+		CSharedMemory sharedMem;
+		sharedMem.Deserialize(info, sharedMemName);
+		::SendMessage(activeChildFrame, WM_GETLOGININFOMATION, (WPARAM)hMapForClose, 0);
+	}
+	auto funcRefresh = [activeChildFrame]() {
+		if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode)
+			::SendMessage(activeChildFrame, WM_UPDATEAUTOLOGINDATALIST, 0, 0);
+		::SendMessage(activeChildFrame, WM_COMMAND, ID_VIEW_REFRESH, 0);
+	};
+	CLoginInfoEditDialog dlg(info);
+	dlg.SetAutoLoginfunc(funcRefresh);
+	dlg.SetTabBarForEach(std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
+	dlg.DoModal(m_hWnd);
 }
 
 void	CMainFrame::Impl::OnSetFocusToBar(UINT uNotifyCode, int nID, CWindow wndCtl)

@@ -200,7 +200,7 @@ public:
 		kSubMenuPopupCloseTimerID = 1,
 		kSubMenuPopupCloseTime	= 500,
 		kSubMenuPopupTimerID = 2,
-		kSubMenuPopupTime	= 300,
+		kSubMenuPopupTime	= 250,
 
 		kCloseBaseSubMenuTimerID = 3,
 		kCloseBaseSubMenuTime = 300,

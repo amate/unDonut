@@ -55,6 +55,7 @@
 #include "ExStyle.h"
 #include "FavoriteEditDialog.h"
 #include "ProcessMonitorDialog.h"
+#include "AutoLogin.h"
 //#include "DonutP.h"
 ////#include "DonutP_i.c"
 ////+++ #include "FileCriticalSection.h"				//+++ 別の方法をとるので、不要になった.
@@ -383,6 +384,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR_CUST		, OnViewBar			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR_LOCK		, OnViewBar			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_STATUS_BAR		, OnViewBar			)
+		COMMAND_ID_HANDLER_EX( ID_AUTOLOGINEDIT			, OnAutoLoginEdit	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_ADDRESSBAR		, OnSetFocusToBar	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR		, OnSetFocusToBar	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE	, OnSetFocusToBar	)
@@ -636,6 +638,7 @@ public:
 	LRESULT OnHilight(CString strKeyword);
 
 	void	OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnAutoLoginEdit(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSetFocusToBar(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnViewFullScreen(UINT uNotifyCode, int nID, CWindow wndCtl) { _FullScreen(!m_bFullScreen); }
 

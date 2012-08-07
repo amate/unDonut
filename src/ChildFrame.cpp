@@ -32,6 +32,7 @@
 #include "FaviconManager.h"
 #include "ToolTipManager.h"
 #include "BingTranslatorMenu.h"
+#include "AutoLogin.h"
 //#include "PluginManager.h"
 //#include "Download\DownloadManager.h"
 //#include "MainFrame.h"
@@ -370,6 +371,8 @@ public:
 		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONUP		, OnDefaultRButtonUp	)
 
 		MESSAGE_HANDLER_EX( WM_EXECUTE_JAVASCRIPT	, OnExecuteJavascript	)
+		USER_MSG_WM_GETLOGININFOMATION( OnGetLoginInfomation	)
+		USER_MSG_WM_UPDATEAUTOLOGINDATALIST( OnUpdateAutoLoginDataList	)
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -453,6 +456,8 @@ public:
 	LRESULT OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	HANDLE	OnGetLoginInfomation(HANDLE hMapForClose);
+	void	OnUpdateAutoLoginDataList() { CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow()); }
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -549,6 +554,7 @@ private:
 	HANDLE	m_hMapChildFrameData;
 
 	DWORD	m_dwThreadIdFromNewWindow;
+	int		m_nAutoLoginPrevIndex;
 };
 
 #include "ChildFrame.inl"

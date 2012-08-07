@@ -76,7 +76,7 @@ void CTabBarOption::GetProfile()
 
 	if		(s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) m_nRadioOnClose = 0;
 	else if (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE ) m_nRadioOnClose = 1;
-	else											  m_nRadioOnClose = 1;
+	else											  m_nRadioOnClose = 2;
 
 	if		(s_dwExStyle & MTB_EX_ADDLEFT 		)	m_nAddPos = 1;
 	else if (s_dwExStyle & MTB_EX_ADDRIGHTACTIVE)	m_nAddPos = 2;
@@ -203,6 +203,7 @@ BOOL CMDITabPropertyPage::OnSetActive()
 	if (m_bInit == false) {
 		DoDataExchange(DDX_LOAD);
 		CmbUpdate();
+		OnBtnFixedWidth(0, 0, NULL);
 		m_bInit = true;
 	}
 	SetModified(TRUE);
@@ -292,6 +293,22 @@ void CMDITabPropertyPage::OnCmbSelChange(UINT /*code*/, int id, HWND /*hWnd*/)
 			else if (id == IDC_COMBO_MDITAB_MCLICK)
 				s_MClickCommand = dwCommand;
 		}
+	}
+}
+
+
+void CMDITabPropertyPage::OnBtnFixedWidth(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	CButton btn = GetDlgItem(IDC_CHECK_MDITAB_FIXEDSIZE);
+	CEdit edit = GetDlgItem(IDC_EDIT_MDITAB_FIXEDSIZEX);
+	if (btn.GetCheck()) {
+		edit.EnableWindow(TRUE);
+		//CString temp;
+		//temp.Append(s_FixedSize.cx);
+		//edit.SetWindowText(temp);
+	} else {
+		edit.EnableWindow(FALSE);
+		//edit.SetWindowText(L"");
 	}
 }
 

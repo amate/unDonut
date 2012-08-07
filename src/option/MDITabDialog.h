@@ -156,11 +156,12 @@ public:
 		COMMAND_HANDLER_EX ( IDC_COMBO_MDITAB_RIGHTCLICK , CBN_SELCHANGE, OnCmbSelChange )
 		COMMAND_HANDLER_EX ( IDC_COMBO_MDITAB_DOUBLECLICK, CBN_SELCHANGE, OnCmbSelChange )
 		COMMAND_HANDLER_EX ( IDC_COMBO_MDITAB_MCLICK	 , CBN_SELCHANGE, OnCmbSelChange )
+		COMMAND_ID_HANDLER_EX( IDC_CHECK_MDITAB_FIXEDSIZE, OnBtnFixedWidth	)
 	END_MSG_MAP()
 
 
 	void OnCmbSelChange(UINT /*code*/, int id, HWND /*hWnd*/);
-
+	void OnBtnFixedWidth(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 private:
 	void CmbUpdate();

@@ -36,9 +36,10 @@ struct TabItem
 	int 		nImgIndex;	// image list index
 	int			nFaviconIndex;
 	HWND		hWnd;
+	HWND		hWndPrevActive;
 	
 	// Constructor
-	TabItem() : state(TISS_NORMAL), nImgIndex(-1), nFaviconIndex(-1), hWnd(NULL)
+	TabItem() : state(TISS_NORMAL), nImgIndex(-1), nFaviconIndex(-1), hWnd(NULL), hWndPrevActive(NULL)
 	{	}
 
 
@@ -872,6 +873,8 @@ bool	CDonutTabBar::Impl::SetCurSel(int nIndex, bool bClicked/* = false*/, bool b
 	if ( m_vecpItem[nIndex]->ModifyState(TISS_HOT | TISS_PRESSED | TISS_MSELECTED | TISS_INACTIVE, TISS_SELECTED) )
 		InvalidateRect(m_vecpItem[nIndex]->rcItem);
 
+	m_vecpItem[nIndex]->hWndPrevActive = _IsValidIndex(nCurSel) ? m_vecpItem[nCurSel]->hWnd : nullptr;
+
 	_ScrollOpposite(nIndex, bClicked);
 
 	if (bActiveOnly == false)
@@ -1074,9 +1077,11 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 	int nIndex = GetTabIndex(hWnd);
 	int nCurIndex = GetCurSel();
 	if (hWnd == m_pChildFrameClient->GetActiveChildFrameWindow()/*nCurIndex == nIndex*/) {
+
+		HWND hWndPrevActive = m_vecpItem[nCurIndex]->hWndPrevActive;
 		// アクティブなビューが破棄された
 		// 次のタブをアクティブにする
-		auto funcManageClose = [this](int nActiveIndex) ->int {
+		auto funcManageClose = [this, hWndPrevActive](int nActiveIndex) ->int {
 			int	nCount	= GetItemCount();
 			if (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE) {
 				// 閉じるときアクティブなタブの左をアクティブにする
@@ -1101,17 +1106,24 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 						return nNext;
 					}
 				}
+			} else {	// 直前にアクティブだったタブをアクティブにする
+				int nNext = GetTabIndex(hWndPrevActive);
+				return nNext;
 			}
 			// 全タブが削除された
 			return -1;
 		};
-		_DeleteItem(nIndex);			// タブを削除する
 
+		_DeleteItem(nIndex);			// タブを削除する
 		int nNextIndex = funcManageClose(nCurIndex);
+		if (nNextIndex == -1 && GetItemCount() > 0 && (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE) == 0 && (s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) == 0) {
+			s_dwExStyle |= MTB_EX_LEFTACTIVEONCLOSE;
+			nNextIndex = funcManageClose(nCurIndex);
+			s_dwExStyle &= ~MTB_EX_LEFTACTIVEONCLOSE;
+		}
 		if (nNextIndex == -1) {
 			// 最後のタブが閉じられた
 			m_pChildFrameClient->SetChildFrameWindow(NULL);
-			//return ;	// 今のところ閉じない
 		} else
 			SetCurSel(nNextIndex);
 
@@ -2198,6 +2210,8 @@ int		CDonutTabBar::Impl::_GetRequiredHeight()
 /// タブ1個の高さを返す
 int		CDonutTabBar::Impl::_GetItemHeight()
 {
+	return s_FixedSize.cy;
+#if 0
 	if (s_bUseFixedSize) {
 		return s_FixedSize.cy;
 	} else {
@@ -2205,6 +2219,7 @@ int		CDonutTabBar::Impl::_GetItemHeight()
 		nFontHeight += s_kcyTextMargin * 2;
 		return nFontHeight;
 	}
+#endif
 }
 
 //------------------------------
@@ -2247,11 +2262,10 @@ void	CDonutTabBar::Impl::_SetTabText(int nIndex, LPCTSTR lpszTab)
 
 	m_vecpItem[nIndex]->strItem = strTab;
 
-	if (s_bUseFixedSize) {
-		InvalidateRect(m_vecpItem[nIndex]->rcItem);
+	InvalidateRect(m_vecpItem[nIndex]->rcItem);
+	if (s_bUseFixedSize) {		
 		UpdateWindow();
 	} else {
-		InvalidateRect(m_vecpItem[nIndex]->rcItem);	// even if layout will not be changed
 		_UpdateLayout();							//_UpdateItems(nIndex);
 	}
 }
@@ -2532,11 +2546,13 @@ CRect	CDonutTabBar::Impl::_MeasureItem(const CString& strText)
 	if (CTabBarOption::s_bShowFavicon)
 		cx += 20;
 
+	int cy = s_FixedSize.cy;
+#if 0
 	int	cy = GetFontHeight(m_font);
 	cy += s_kcyTextMargin * 2;
 	// height of item is the bigger of these two
 	cy	= std::max(cy, 16);
-
+#endif
 	return CRect(0, 0, cx, cy);
 }
 
@@ -2656,11 +2672,19 @@ void	CDonutTabBar::Impl::_SetCurSelExceptIndex(const CSimpleArray<int>& arrCurMu
 							}
 						}
 					}
+				} else {
+					int nNext = GetTabIndex(m_vecpItem[nActiveIndex]->hWndPrevActive);
+					return nNext;
 				}
 				return -1;
 			};// lamda
 
 			int nNext = SearchNextIndex();
+			if (nNext == -1 && (s_dwExStyle & MTB_EX_LEFTACTIVEONCLOSE) == 0 && (s_dwExStyle & MTB_EX_RIGHTACTIVEONCLOSE) == 0) {
+				s_dwExStyle |= MTB_EX_LEFTACTIVEONCLOSE;
+				nNext = SearchNextIndex();
+				s_dwExStyle &= ~MTB_EX_LEFTACTIVEONCLOSE;
+			}
 			ATLASSERT( _IsValidIndex(nNext) );
 			SetCurSel(nNext);
 		}

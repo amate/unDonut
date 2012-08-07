@@ -871,6 +871,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="appconst.cpp" />
+    <ClCompile Include="AutoLogin.cpp" />
     <ClCompile Include="BingTranslatorMenu.cpp" />
     <ClCompile Include="boost\serialization\archive_exception.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -1350,6 +1351,7 @@
     <ClInclude Include="API.h" />
     <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
+    <ClInclude Include="AutoLogin.h" />
     <ClInclude Include="BeginMsgMap_decl.h" />
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />
@@ -1357,6 +1359,7 @@
     <ClInclude Include="ChildFrame.h" />
     <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
+    <ClInclude Include="CustomSerializeClass.h" />
     <ClInclude Include="DialogHook.h" />
     <ClInclude Include="DialogKiller.h" />
     <ClInclude Include="DocHostUIHandlerDispatch.h" />

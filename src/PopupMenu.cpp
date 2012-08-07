@@ -265,12 +265,17 @@ BOOL CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
 
 int CRecentClosedTabPopupMenu::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
-	SetMsgHandled(FALSE);
+	//SetMsgHandled(FALSE);
 
 	_InitTooltip();
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
+
+	__super::OnCreate(lpCreateStruct);
+
+	m_nWheelLines = 1;
+	SetScrollLine(1, kItemHeight * 3);
 
 	return 0;
 }
@@ -281,6 +286,15 @@ void CRecentClosedTabPopupMenu::OnDestroy()
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->RemoveMessageFilter(this);
+}
+
+void CRecentClosedTabPopupMenu::OnSize(UINT nType, CSize size)
+{
+	DefWindowProc();
+
+	if (size != CSize(0, 0)) {
+
+	}
 }
 
 void CRecentClosedTabPopupMenu::OnMButtonDown(UINT nFlags, CPoint point)

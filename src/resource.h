@@ -146,6 +146,7 @@
 #define IDD_FAVORITE_EDIT               328
 #define IDD_DIALOG1                     329
 #define IDD_PROCESS_MONITOR             329
+#define IDD_LOGININFOEDITOR             330
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -244,6 +245,7 @@
 #define IDC_EDIT_MDITAB_FIXEDSIZEX      1085
 #define IDC_EDIT_MDITAB_FIXEDSIZEY      1086
 #define IDC_CHECK_NAVILOCK              1087
+#define IDC_EDIT_MDITAB_FIXEDSIZEY2     1087
 #define IDC_COMBO_MDITAB_ADDPOS         1088
 #define IDC_COMBO_MDITAB_RIGHTCLICK     1089
 #define IDC_COMBO_MDITAB_DOUBLECLICK    1090
@@ -282,8 +284,11 @@
 #define IDC_CHECK_MAIN_DEL_CASH         1121
 #define IDC_EDIT3                       1121
 #define IDC_EDIT_EXCLUDE                1121
+#define IDC_VALUE1                      1121
 #define IDC_RAND_CHK                    1122
+#define IDC_VALUE2                      1122
 #define IDC_CHECK_MAIN_DEL_COOKIE       1123
+#define IDC_VALUE3                      1123
 #define IDC_EDIT_RAND_MIN               1124
 #define IDC_CHECK_MAIN_DEL_HISTORY      1125
 #define IDC_BUTTON_BAR_FONT             1126
@@ -292,7 +297,9 @@
 #define IDC_EDIT_CTRL_ENTER             1129
 #define IDC_EDIT2                       1130
 #define IDC_CMB_CATEGORY                1131
+#define IDC_NAME2                       1131
 #define IDC_CMB_CATEGORY2               1132
+#define IDC_NAME3                       1132
 #define IDC_CMB_COMMAND                 1133
 #define IDC_EDIT_SZ_PAIN2               1134
 #define IDC_CMB_COMMAND2                1134
@@ -583,7 +590,9 @@
 #define IDC_CHECK2                      1428
 #define IDC_CHECK_EXTERNALNEWTABACTIVE  1428
 #define IDC_CHECK_NOSHOWDRAGIMAGE       1428
+#define IDC_CHECKBOX1                   1428
 #define IDC_STATIC_SCRIPTPOSITION       1429
+#define IDC_CHECKBOX2                   1429
 #define IDC_SYSLINK_HP                  1430
 #define IDC_STATIC_DISCRIPTION          1431
 #define IDC_STATIC_FILENAME             1432
@@ -602,6 +611,15 @@
 #define ID_APPLY                        1444
 #define IDC_STATIC_URL                  1445
 #define ID_KILLPROCESS                  1446
+#define IDC_URL_LIST                    1447
+#define IDC_CHECKNAME1                  1448
+#define IDC_CHECKNAME2                  1449
+#define IDC_BTN_APPLY                   1450
+#define IDC_BTN_DELETE                  1452
+#define IDC_BTN_TEST                    1453
+#define IDC_BTN_IMPORT                  1454
+#define IDC_BTN_EXPORT                  1455
+#define IDC_NAME1                       1456
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -947,6 +965,9 @@
 #define ID_Menu33228                    33228
 #define ID_UNDOMENUITEM                 33229
 #define ID_VIEW_PROCESSMONITOR          33230
+#define ID_33231                        33231
+#define ID_AUTOLOGIN                    33232
+#define ID_AUTOLOGINEDIT                33233
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -990,9 +1011,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        330
-#define _APS_NEXT_COMMAND_VALUE         33231
-#define _APS_NEXT_CONTROL_VALUE         1447
+#define _APS_NEXT_RESOURCE_VALUE        331
+#define _APS_NEXT_COMMAND_VALUE         33234
+#define _APS_NEXT_CONTROL_VALUE         1457
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif
