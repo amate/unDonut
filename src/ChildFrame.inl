@@ -27,7 +27,9 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_pPageBitmap(nullptr),
 	m_hMapChildFrameData(NULL),
 	m_dwThreadIdFromNewWindow(0),
-	m_nAutoLoginPrevIndex(-1)
+	m_bFirstNavigate(true),
+	m_nAutoLoginPrevIndex(-1),
+	m_bMClickFail(false)
 {	}
 
 
@@ -130,6 +132,22 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 		return;
 	}
 
+	// ポップアップをキャンセルしたときナビゲートされてしまうのを防ぐ
+	if (m_bMClickFail) {
+		bCancel = true;
+		return ;
+	}
+
+	// ポップアップ抑止
+	if (m_bFirstNavigate && strURL != _T("about:blank") && m_strNewWindowURL.GetLength() > 0) {
+		if (CSupressPopupOption::SearchURLString(strURL)) {
+			bCancel = true;
+			PostMessage(WM_CLOSE);
+			return ;
+		}
+		m_bFirstNavigate = false;
+	}
+
 	// ユーザースクリプトをインストールするかどうか
 	//if (strURL.Right(8).CompareNoCase(_T(".user.js")) == 0) {
 	//	if (CUserDefinedJsOption::UserDefinedScriptInstall(strURL, m_hWnd)) {
@@ -203,6 +221,9 @@ void	CChildFrame::Impl::OnTitleChange(const CString& strTitle)
 	m_UIChange.SetTitle(strTitle);
 
 	m_UIChange.SetLocationURL(GetLocationURL());
+
+	if (CSupressPopupOption::SearchTitleString(strTitle))
+		PostMessage(WM_CLOSE);
 }
 
 void	CChildFrame::Impl::OnProgressChange(long progress, long progressMax)
@@ -391,7 +412,19 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 
 	GetTopLevelWindow().PostMessage(WM_TABCREATE, (WPARAM)pChild->pImpl->m_hWnd, TAB_LINK);
 #endif
-#if 1
+}
+
+void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl)
+{
+	if (CSupressPopupOption::SearchURLString(bstrUrl)) {
+		bCancel = true;
+		CString statusText;
+		statusText.Format(_T("ポップアップをブロックしました。: %s"), bstrUrl);
+		m_UIChange.SetTitle(statusText);
+		SetTimer(kReturnTitleTimerId, kReturnTitleInterval);
+		return ;
+	}
+
 	//bCancel	= true;
 	m_bExecutedNewWindow = true;
 
@@ -409,6 +442,7 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 	data.searchWord	= m_strSearchWord;
 	data.bAutoHilight= m_bNowHilight;
 	data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
+	data.strNewWindowURL	= bstrUrl;
 
 	class CThreadObserver : public CMessageFilter
 	{
@@ -458,33 +492,6 @@ void	CChildFrame::Impl::OnNewWindow2(IDispatch **ppDisp, bool& bCancel)
 
 	loop.RemoveMessageFilter(&threadObserver);
 	//CChildFrame::AsyncCreate(data);
-#endif
-}
-
-void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dwFlags, BSTR bstrUrlContext,  BSTR bstrUrl)
-{
-#if 0
-	bCancel	= true;
-	m_bExecutedNewWindow = true;
-
-	NewChildFrameData	data(GetParent());
-	data.strURL	= bstrUrl;
-	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
-	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
-	if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
-		dwDLCtrl	= CDLControlOption::s_dwDLControlFlags;
-		dwExStyle	= CDLControlOption::s_dwExtendedStyleFlags;
-	}
-	data.dwDLCtrl	= dwDLCtrl;
-	data.dwExStyle	= dwExStyle;
-	data.bLink	= true;
-	CString strSearchWord = m_strSearchWord;
-	bool	bNowHilight	= m_bNowHilight;
-	//data.funcCallAfterCreated	= [strSearchWord, bNowHilight](CChildFrame* pChild) {
-	//	pChild->SetSearchWordAutoHilight(strSearchWord, bNowHilight);
-	//};
-	CChildFrame::AsyncCreate(data);
-#endif
 }
 
 void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)
@@ -522,8 +529,9 @@ BOOL	CChildFrame::Impl::OnMButtonHook(MSG* pMsg)
 	//int 	nTabCnt2 = m_MDITab.GetItemCount();
 	//if (nTabCnt != nTabCnt2 || bLink)											//+++ リンクメッセージがあるか、タブが増えていたら、リンクをクリックしたとする.
 	///	return TRUE;															//+++ trueを返して中ボタンクリックの処理をやったことにする.
-
+	m_bMClickFail = true;
 	::SendMessage(pMsg->hwnd, WM_LBUTTONUP, 0, pMsg->lParam);					//+++ リンク以外をクリックした場合おまじないの左クリック押しを終了しておく.
+	m_bMClickFail = false;
 	return FALSE;																//+++ falseを返すことで、IEコンポーネントにウィールクリックの処理を任せる.
 }
 
@@ -806,7 +814,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 			rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
 		}
 		if (rc.PtInRect(pt))
-			OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, 0);
+			OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, (HWND)true);
 		return FALSE;
 	}
 
@@ -968,6 +976,8 @@ FINISH_FILL:
 
 // Message map
 
+static bool s_bInit = false;
+
 int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 {
 	DefWindowProc();
@@ -977,21 +987,23 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_UIChange.SetChildFrame(m_hWnd);
 	m_UIChange.AddCommandUIMap();
 
-	m_GlobalConfigManageData = GetGlobalConfig(GetTopLevelWindow());
+	CWindow wndMainFrame = GetTopLevelWindow();
+
+	m_GlobalConfigManageData = GetGlobalConfig(wndMainFrame);
 	m_pGlobalConfig	= m_GlobalConfigManageData.pGlobalConfig;
 	m_view.SetGlobalConfig(m_pGlobalConfig);
 	OnSetProxyToChildFrame(0, 0, 0);	// プロクシ設定
 
-	m_UrlSecurity.SetMainFrameHWND(GetTopLevelWindow());
+	m_UrlSecurity.SetMainFrameHWND(wndMainFrame);
 	m_UrlSecurity.ReloadList();
 
-	m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow());
+	m_AcceleratorOption.ReloadAccelerator(wndMainFrame);
 
-	if (m_pGlobalConfig->bMultiProcessMode) {
-		static bool s_bInit = false;
+	if (m_pGlobalConfig->bMultiProcessMode) {		
 		if (s_bInit == false) {
-			CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow());
-			CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow());
+			CCustomContextMenuOption::ReloadCustomContextMenuList(wndMainFrame);
+			CLoginDataManager::UpdateLoginDataList(wndMainFrame);
+			CSupressPopupOption::UpdateSupressPopupData(wndMainFrame);
 			s_bInit = true;
 		}
 	}
@@ -1156,6 +1168,15 @@ void	CChildFrame::Impl::OnSetFocus(CWindow wndOld)
 	TRACEIN(L"ChildFrame::OnSetFocus : hr(%s)", GetLastErrorString(hr));
 }
 
+void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent == kReturnTitleTimerId) {
+		KillTimer(kReturnTitleTimerId);
+		m_UIChange.SetTitle(MtlGetWindowText(m_hWnd));
+	}
+}
+
+
 void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 {
 	if (hWndAct == m_hWnd) {
@@ -1278,6 +1299,36 @@ void	CChildFrame::Impl::OnGetChildFrameData(bool bCreateData)
 	}
 }
 
+void	CChildFrame::Impl::OnCreateTravelLogMenu(bool bFore)
+{
+	m_sharedTravelLogMenu.CloseHandle();
+
+	vector<CString> vecLog;
+
+	CComQIPtr<IServiceProvider> spServiceProvider = m_spBrowser;
+	CComPtr<ITravelLogStg>	spTLStg;
+	spServiceProvider->QueryService(SID_STravelLogCursor, IID_ITravelLogStg, (void**)&spTLStg);
+	if (spTLStg) {
+		CComPtr<IEnumTravelLogEntry> spEnum;
+		spTLStg->EnumEntries(bFore ? TLEF_RELATIVE_FORE : TLEF_RELATIVE_BACK, &spEnum);
+		if (spEnum) {
+			for (int i = 0; i < 9; ++i) {
+				CComPtr<ITravelLogEntry> spEntry;
+				if (spEnum->Next(1, &spEntry, nullptr) != S_OK)
+					break;
+
+				LPWSTR title = nullptr;
+				spEntry->GetTitle(&title);
+				ATLASSERT( title );
+				vecLog.push_back(title);
+				::CoTaskMemFree(title);
+			}
+		}
+	}
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), CREATETRAVELLOGMENUSHAREDMEMNAME, m_hWnd);
+	m_sharedTravelLogMenu.Serialize(vecLog, sharedMemName);
+}
 
 /// 現在選択されているテキストを返す
 void	CChildFrame::Impl::OnGetSelectedText(LPCTSTR* ppStr)
@@ -1934,10 +1985,12 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 			else if (scl > 500)
 				scl = 500;
 
-			vZoom.lVal = scl;
-			m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoom, NULL); 
+			vZoom = static_cast<long>(scl);
+			HRESULT hr = m_spBrowser->ExecWB(OLECMDID_OPTICAL_ZOOM, OLECMDEXECOPT_DONTPROMPTUSER, &vZoom, NULL);
+			m_nImgScl = scl;
 
 		} else {
+			// ここは画像の拡大/縮小以外使わないと思う
 			CComPtr<IDispatch>	spDisp;
 			m_spBrowser->get_Document(&spDisp);
 			CComQIPtr<IHTMLDocument2> 	pDoc = spDisp;
@@ -2024,7 +2077,7 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 			m_nImgScl    = 100;
 			m_nImgSclSw	 = 0;
 		}
-		SetBodyStyleZoom(0, m_nImgScl, false);
+		SetBodyStyleZoom(0, m_nImgScl, wndCtl == NULL);
 		break;
 
 	default: {
@@ -2033,7 +2086,7 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 		int  n = nID - ID_HTMLZOOM_400;
 		if (n < 0 || n > ID_HTMLZOOM_050 - ID_HTMLZOOM_400)
 			return;
-		SetBodyStyleZoom(0, scls[n], false);
+		SetBodyStyleZoom(0, scls[n], true);
 		}
 		break;
 	}
@@ -2196,6 +2249,15 @@ void 	CChildFrame::Impl::OnAddClosePopupUrl(WORD /*wNotifyCode*/, WORD /*wID*/, 
 {
 //	CIgnoredURLsOption::Add( GetLocationURL() );
 	//m_bClosing = true;
+	CString url = GetLocationURL();
+	if (::GetKeyState(VK_CONTROL) < 0)
+		url = m_strNewWindowURL;
+	COPYDATASTRUCT cds = { 0 };
+	cds.dwData	= kAddIgnoreURL;
+	cds.lpData	= static_cast<LPVOID>(url.GetBuffer(0));
+	cds.cbData	= (url.GetLength() + 1) * sizeof(TCHAR);
+	GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+
 	PostMessage(WM_CLOSE);
 }
 
@@ -2204,6 +2266,13 @@ void 	CChildFrame::Impl::OnAddClosePopupTitle(WORD /*wNotifyCode*/, WORD /*wID*/
 {
 //	CCloseTitlesOption::Add( MtlGetWindowText(m_hWnd) );
 	//m_bClosing = true;
+	CString title = MtlGetWindowText(m_hWnd);
+	COPYDATASTRUCT cds = { 0 };
+	cds.dwData	= kAddCloseTitle;
+	cds.lpData	= static_cast<LPVOID>(title.GetBuffer(0));
+	cds.cbData	= (title.GetLength() + 1) * sizeof(TCHAR);
+	GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+
 	PostMessage(WM_CLOSE);
 }
 

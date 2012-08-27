@@ -67,7 +67,7 @@ public:
 	}
 
 	template <class T>
-	void	Serialize(const T& data, LPCTSTR sharedMemName = nullptr, bool bInheritHandle = false)
+	bool	Serialize(const T& data, LPCTSTR sharedMemName = nullptr, bool bInheritHandle = false)
 	{
 		ATLASSERT( m_hMap == NULL );
 
@@ -83,15 +83,18 @@ public:
 		DWORD	dwMapFileSize = (serializedData.size() + 1) * sizeof(WCHAR);
 		m_hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, dwMapFileSize, sharedMemName);
 		ATLASSERT( m_hMap );
+		if (m_hMap == NULL)
+			return false;
 
 		/* メモリマップされた領域に書き込む */
 		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
 		::wcscpy_s(sharedMemData, serializedData.size() + 1, serializedData.c_str());
 		::UnmapViewOfFile((LPCVOID)sharedMemData);
+		return true;
 	}
 
 	template <class T>
-	void	Deserialize(T& data, LPCTSTR sharedMemName)
+	bool	Deserialize(T& data, LPCTSTR sharedMemName)
 	{
 		ATLASSERT( m_hMap == NULL );
 		ATLASSERT( sharedMemName );
@@ -99,12 +102,15 @@ public:
 		/* 共有メモリを開く */
 		m_hMap = ::OpenFileMapping(FILE_MAP_READ, FALSE, sharedMemName);
 		ATLASSERT( m_hMap );
+		if (m_hMap == NULL)
+			return false;
 
 		_desirialize(data);
+		return true;
 	}
 
 	template <class T>
-	void	Deserialize(T& data, HANDLE hMap)
+	bool	Deserialize(T& data, HANDLE hMap)
 	{
 		ATLASSERT( m_hMap == NULL );
 		ATLASSERT( hMap );
@@ -112,6 +118,7 @@ public:
 		m_hMap = hMap;
 
 		_desirialize(data);
+		return true;
 	}
 
 private:

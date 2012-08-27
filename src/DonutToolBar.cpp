@@ -13,6 +13,10 @@
 #include "option/ToolBarDialog.h"
 #include "ToolTipManager.h"
 #include "PopupMenu.h"
+#include "SharedMemoryUtil.h"
+#include <boost\serialization\vector.hpp>
+#include "CustomSerializeClass.h"
+#include "MainFrame.h"
 
 using namespace 	MTL;
 
@@ -921,18 +925,56 @@ HMENU CDonutToolBar::Impl::_GetDropDownMenu(int nCmdID, bool &bDestroy, bool &bS
 		break;
 
 	case ID_VIEW_BACK:
-		menu.LoadMenu(IDR_VIEW_BACK);
 		{
-			HWND hChildFrm = ::GetParent( GetParent() );
-			::SendMessage(hChildFrm, WM_MENU_GOBACK, (WPARAM) (HMENU) menu.m_hMenu, (LPARAM) 0);
+			HWND hWndActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+			if (hWndActiveChildFrame) {
+				::SendMessage(hWndActiveChildFrame, WM_CREATETRAVELLOGMENU, false, 0);
+				
+				CString sharedMemName;
+				sharedMemName.Format(_T("%s%#x"), CREATETRAVELLOGMENUSHAREDMEMNAME, hWndActiveChildFrame);
+				
+				vector<CString> vecLog;
+				CSharedMemory sharedMem;
+				sharedMem.Deserialize(vecLog, sharedMemName);
+
+				bSubMenu = false;
+				menu.CreatePopupMenu();
+				int nCount = 0;
+				for (auto it = vecLog.cbegin(); it != vecLog.cend(); ++it, ++nCount) {
+					menu.AppendMenu(MF_ENABLED, ID_VIEW_BACK1 + nCount, *it);
+				}
+				if (nCount == 0)
+					menu.AppendMenu(MF_DISABLED, static_cast<UINT_PTR>(0), _T("(‚È‚µ)"));
+			} else {
+				menu.LoadMenu(IDR_VIEW_BACK);
+			}
 		}
 		break;
 
-	case ID_VIEW_FORWARD:
-		menu.LoadMenu(IDR_VIEW_FORWARD);
+	case ID_VIEW_FORWARD:		
 		{
-			HWND hChildFrm = ::GetParent( GetParent() );
-			::SendMessage(hChildFrm, WM_MENU_GOFORWARD, (WPARAM) (HMENU) menu.m_hMenu, (LPARAM) 0);
+			HWND hWndActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+			if (hWndActiveChildFrame) {
+				::SendMessage(hWndActiveChildFrame, WM_CREATETRAVELLOGMENU, true, 0);
+				
+				CString sharedMemName;
+				sharedMemName.Format(_T("%s%#x"), CREATETRAVELLOGMENUSHAREDMEMNAME, hWndActiveChildFrame);
+				
+				vector<CString> vecLog;
+				CSharedMemory sharedMem;
+				sharedMem.Deserialize(vecLog, sharedMemName);
+
+				bSubMenu = false;
+				menu.CreatePopupMenu();
+				int nCount = 0;
+				for (auto it = vecLog.cbegin(); it != vecLog.cend(); ++it, ++nCount) {
+					menu.AppendMenu(MF_ENABLED, ID_VIEW_FORWARD1 + nCount, *it);
+				}
+				if (nCount == 0)
+					menu.AppendMenu(MF_DISABLED, static_cast<UINT_PTR>(0), _T("(‚È‚µ)"));
+			} else {
+				menu.LoadMenu(IDR_VIEW_FORWARD);
+			}
 		}
 		break;
 

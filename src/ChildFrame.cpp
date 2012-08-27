@@ -20,11 +20,10 @@
 #include "option\RightClickMenuDialog.h"
 #include "option\UrlSecurityOption.h"
 #include "option\KeyBoardDialog.h"
+#include "option\SupressPopupOption.h"
 //#include "option\MainOption.h"
 //#include "option\DLControlOption.h"
 //#include "option\MouseDialog.h"
-//#include "option\IgnoreURLsOption.h"
-//#include "option\CloseTitleOption.h"
 //#include "option\SearchPropertyPage.h"
 //#include "option\AddressBarPropertyPage.h"
 //#include "option\UserDefinedCSSOption.h"
@@ -290,6 +289,12 @@ class CChildFrame::Impl :
 public:
 	DECLARE_WND_CLASS_EX(_T("DonutChildFrame"), 0, 0/*COLOR_APPWORKSPACE*/)
 
+	// Constants
+	enum { 
+		kReturnTitleTimerId = 1, 
+		kReturnTitleInterval = 2000,
+	};
+
 	Impl(CChildFrame* pChild);
 
 	void	SetThreadRefCount(int* pCount) { m_pThreadRefCount = pCount; }
@@ -350,13 +355,14 @@ public:
 		MSG_WM_SIZE			( OnSize		)
 		MSG_WM_COPYDATA		( OnCopyData	)
 		MSG_WM_SETFOCUS		( OnSetFocus	)
+		MSG_WM_TIMER		( OnTimer		)
+
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		MESSAGE_HANDLER_EX( WM_GETCHILDFRAMENOWACTIVE, OnGetChildFrameActive	)
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
 		USER_MSG_WM_GETCHILDFRAMEDATA( OnGetChildFrameData )
-		USER_MSG_WM_MENU_GOBACK 	( OnMenuGoBack		)
-		USER_MSG_WM_MENU_GOFORWARD	( OnMenuGoForward	)
+		USER_MSG_WM_CREATETRAVELLOGMENU( OnCreateTravelLogMenu	)
 		USER_MSG_WM_GETSELECTEDTEXT	( OnGetSelectedText	)
 		USER_MSG_WM_SETPAGEBITMAP	( OnSetPageBitmap )
 		USER_MSG_WM_DRAWCHILDFRAMEPAGE( OnDrawChildFramePage )
@@ -371,8 +377,9 @@ public:
 		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONUP		, OnDefaultRButtonUp	)
 
 		MESSAGE_HANDLER_EX( WM_EXECUTE_JAVASCRIPT	, OnExecuteJavascript	)
-		USER_MSG_WM_GETLOGININFOMATION( OnGetLoginInfomation	)
-		USER_MSG_WM_UPDATEAUTOLOGINDATALIST( OnUpdateAutoLoginDataList	)
+		USER_MSG_WM_GETLOGININFOMATION		( OnGetLoginInfomation	)
+		USER_MSG_WM_UPDATEAUTOLOGINDATALIST	( OnUpdateAutoLoginDataList	)
+		USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -438,13 +445,12 @@ public:
 	void	OnSize(UINT nType, CSize size);
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	void	OnSetFocus(CWindow wndOld);
+	void	OnTimer(UINT_PTR nIDEvent);
 	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam) { return m_bNowActive; }
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
 	void	OnGetChildFrameData(bool bCreateData);
-
-	LRESULT OnMenuGoBack(HMENU hMenu)	 { MenuChgGoBack(hMenu);	return 0; }
-	LRESULT OnMenuGoForward(HMENU hMenu) { MenuChgGoForward(hMenu); return 0; }
+	void	OnCreateTravelLogMenu(bool bFore);
 	void	OnGetSelectedText(LPCTSTR* ppStr);
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
@@ -458,6 +464,7 @@ public:
 	LRESULT OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HANDLE	OnGetLoginInfomation(HANDLE hMapForClose);
 	void	OnUpdateAutoLoginDataList() { CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow()); }
+	void	OnUpdateSupressPopupData() { CSupressPopupOption::UpdateSupressPopupData(GetTopLevelWindow()); }
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -554,7 +561,12 @@ private:
 	HANDLE	m_hMapChildFrameData;
 
 	DWORD	m_dwThreadIdFromNewWindow;
+	CString m_strNewWindowURL;
+	bool	m_bFirstNavigate;
 	int		m_nAutoLoginPrevIndex;
+
+	bool	m_bMClickFail;
+	CSharedMemory m_sharedTravelLogMenu;
 };
 
 #include "ChildFrame.inl"
@@ -605,21 +617,28 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 	}
 }
 
-void	CChildFrame::SetThreadRefCount(int* pCount)
+HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRefCount)
 {
-	pImpl->SetThreadRefCount(pCount);
-}
+	pImpl->SetThreadRefCount(pThreadRefCount);
 
-HWND	CChildFrame::CreateEx(HWND hWndParent)
-{
+	pImpl->m_dwThreadIdFromNewWindow = data.dwThreadIdFromNewWindow;
+	pImpl->m_strNewWindowURL	= data.strNewWindowURL;
+		
+	// ChildFrameウィンドウ作成
+	pImpl->SetDLCtrl(data.dwDLCtrl);
+
 	RECT rc;
-	::GetClientRect(hWndParent, &rc);
-	return pImpl->Create(hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
-}
+	::GetClientRect(data.hWndParent, &rc);
+	HWND hWndChildFrame = pImpl->Create(data.hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
 
-void	CChildFrame::Navigate2(LPCTSTR lpszURL)
-{
-	pImpl->Navigate2(lpszURL);
+	pImpl->SetExStyle(data.dwExStyle);
+	pImpl->SetAutoRefreshStyle(data.dwAutoRefresh);
+	pImpl->SetSearchWordAutoHilight(data.searchWord, data.bAutoHilight);
+	pImpl->SetTravelLog(data.TravelLogFore, data.TravelLogBack);
+	if (data.strURL.GetLength() > 0)
+		pImpl->Navigate2(data.strURL);
+
+	return hWndChildFrame;
 }
 
 HWND	CChildFrame::GetHwnd() const
@@ -627,86 +646,6 @@ HWND	CChildFrame::GetHwnd() const
 	return pImpl->m_hWnd;
 }
 
-DWORD	CChildFrame::GetExStyle() const
-{
-	return pImpl->GetExStyle();
-}
-
-void	CChildFrame::SetExStyle(DWORD dwStyle)
-{
-	pImpl->SetExStyle(dwStyle);
-}
-
-void	CChildFrame::SetDLCtrl(DWORD dwDLCtrl)
-{
-	pImpl->SetDLCtrl(dwDLCtrl);
-}
-
-void	CChildFrame::SetMarshalDLCtrl(DWORD dwDLCtrl)
-{
-	pImpl->SetMarshalDLCtrl(dwDLCtrl);
-}
-
-void	CChildFrame::SetAutoRefreshStyle(DWORD dwAutoRefresh)
-{
-	pImpl->SetAutoRefreshStyle(dwAutoRefresh);
-}
-
-void	CChildFrame::SetSearchWordAutoHilight(const CString& str, bool bAutoHilight)
-{
-	pImpl->SetSearchWordAutoHilight(str, bAutoHilight);
-}
-
-void	CChildFrame::SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back)
-{
-	pImpl->SetTravelLog(fore, back);
-}
-
-void	CChildFrame::SetThreadIdFromNewWindow2(DWORD dwThreadId)
-{
-	pImpl->m_dwThreadIdFromNewWindow = dwThreadId;
-}
-
-
-CComPtr<IWebBrowser2>	CChildFrame::GetIWebBrowser()
-{
-	return pImpl->m_spBrowser;
-}
-
-
-CComPtr<IWebBrowser2>	CChildFrame::GetMarshalIWebBrowser()
-{
-	IStream* pStream = (IStream*)pImpl->SendMessage(GET_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr));
-	if (pStream == nullptr)
-		return nullptr;
-	CComPtr<IWebBrowser2>	spBrowser;
-	CoGetInterfaceAndReleaseStream(pStream, IID_IWebBrowser2, (void**)&spBrowser);
-	return spBrowser;
-}
-
-CString	CChildFrame::GetLocationURL()
-{
-	//CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
-	//if (spBrowser == nullptr)
-	//	return CString();
-	//CComBSTR	strtemp;
-	//spBrowser->get_LocationURL(&strtemp);
-	//if (strtemp)
-	//	return CString(strtemp);
-	return CString();
-}
-
-CString CChildFrame::GetTitle()
-{
-	//CComPtr<IWebBrowser2>	spBrowser = GetMarshalIWebBrowser();
-	//if (spBrowser == nullptr)
-	//	return CString();
-	//CComBSTR	strtemp;
-	//spBrowser->get_LocationName(&strtemp);
-	//if (strtemp)
-	//	return CString(strtemp);
-	return CString();
-}
 
 CString CChildFrame::GetSelectedTextLine()
 {

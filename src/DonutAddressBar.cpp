@@ -187,6 +187,7 @@ public:
 	int			m_nEditFaviconIndex;
 	bool		m_bNowSetWindowText;
 	CString		m_strCurrentURL;
+	function<void (CString, CString)>	m_funcSearchWebWithEngine;
 };
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -1107,7 +1108,8 @@ void	CDonutAddressBar::Impl::_OnEnterKeyDownEx()
 		}
 
 		// CtrlŽž
-		::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) str, (LPARAM) (LPCTSTR) strEnterCtrl);
+		m_funcSearchWebWithEngine(str, strEnterCtrl);
+		//::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) str, (LPARAM) (LPCTSTR) strEnterCtrl);
 		return;
 
 	} else if (::GetKeyState(VK_SHIFT) < 0) {
@@ -1116,7 +1118,8 @@ void	CDonutAddressBar::Impl::_OnEnterKeyDownEx()
 			return;
 		}
 		// ShiftŽž
-		::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) str, (LPARAM) (LPCTSTR) strEnterShift);
+		m_funcSearchWebWithEngine(str, strEnterShift);
+		//::SendMessage(GetTopLevelParent(), WM_SEARCH_WEB_SELTEXT, (WPARAM) (LPCTSTR) str, (LPARAM) (LPCTSTR) strEnterShift);
 		return;
 	}
 
@@ -1483,6 +1486,11 @@ HWND	CDonutAddressBar::Create(HWND hWndParent, UINT nID, UINT nGoBtnCmdID, int c
 void	CDonutAddressBar::InitReBarBandInfo(CReBarCtrl rebar)
 {
 	pImpl->InitReBarBandInfo(rebar);
+}
+
+void	CDonutAddressBar::SetSearchWebWidthEngineFunc(function<void (CString, CString)> func)
+{
+	pImpl->m_funcSearchWebWithEngine = func;
 }
 
 

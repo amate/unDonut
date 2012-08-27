@@ -39,7 +39,6 @@ public:
 
 	// for MainFrame
 	static void		UpdateCustomContextMenuList(HWND hWndMainFrame);
-	static void		CloseCustomContextMenuList() { s_sharedMem.CloseHandle(); }
 
 	// for ChildFrame
 	static void		ReloadCustomContextMenuList(HWND hWndMainFrame);

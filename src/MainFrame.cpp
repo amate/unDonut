@@ -333,6 +333,7 @@ public:
 		USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
 		USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
 		USER_MSG_WM_SETPROXYTOCHLDFRAME		( OnSetProxyToChildFrame	)
+		USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
 
 		USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
 		USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG( OnSetDLConfigToGlobalConfig	)
@@ -579,9 +580,10 @@ public:
 		UPDATE_COMMAND_UI				( ID_SECURE_PANE	, _UpdateStautsIcon		)
 		UPDATE_COMMAND_UI				( ID_PRIVACY_PANE	, _UpdateStautsIcon		)
 
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_POPUP_CLOSE	, CIgnoredURLsOption::s_bValid )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_TITLE_CLOSE	, CCloseTitlesOption::s_bValid )
-		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_DOUBLE_CLOSE	, CIgnoredURLsOption::s_bValid && CCloseTitlesOption::s_bValid )
+		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_POPUP_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL )
+		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_TITLE_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidCloseTitle )
+		UPDATE_COMMAND_UI_SETCHECK_IF	( ID_DOUBLE_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL && 
+															  CSupressPopupOption::s_PopupBlockData.bValidCloseTitle )
 
 		UPDATE_COMMAND_UI_POPUP_ENABLE_IF( ID_STYLESHEET_BASE	, bActiveChild )
 		UPDATE_COMMAND_UI_ENABLE_IF 	( ID_CSS_DROPDOWN		, bActiveChild )
@@ -623,6 +625,7 @@ public:
 	void	OnUpdateUrlSecurityList();
 	void	OnUpdateCustomContextMenu();
 	void	OnSetProxyToChildFrame();
+	void	OnUpdateSupressPopupData();
 
 	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }
 	void	OnSetDLConfigToGlobalConfig();

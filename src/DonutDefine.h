@@ -60,6 +60,8 @@ enum WmCopyDataUseage {
 	kHilightFromFindBar,
 	kOpenFindBarWithText,
 	kCommandDirect,
+	kAddIgnoreURL,
+	kAddCloseTitle,
 	kDebugTrace = 0xFFFF,
 
 };
@@ -140,24 +142,6 @@ extern	class CMainFrame *		g_pMainWnd;
 
 #define WM_USER_SIZE_CHG_EX 		(WM_USER + 44)
 
-// UH
-#define WM_MENU_GOBACK	(WM_USER + 50)
-#define USER_MSG_WM_MENU_GOBACK(func)				\
-	if (uMsg == WM_MENU_GOBACK) {					\
-		SetMsgHandled(TRUE);						\
-		lResult = (LRESULT) func( (HMENU) wParam ); \
-		if ( IsMsgHandled() )						\
-			return TRUE;							\
-	}
-
-#define WM_MENU_GOFORWARD	(WM_USER + 51)
-#define USER_MSG_WM_MENU_GOFORWARD(func)			\
-	if (uMsg == WM_MENU_GOFORWARD) {				\
-		SetMsgHandled(TRUE);						\
-		lResult = (LRESULT) func( (HMENU) wParam ); \
-		if ( IsMsgHandled() )						\
-			return TRUE;							\
-	}
 
 #define WM_MENU_GET_FAV 	(WM_USER + 52)
 #define USER_MEG_WM_MENU_GET_FAV(func) \
@@ -875,6 +859,31 @@ enum TabCreateOption {
 	if (uMsg == WM_UPDATEAUTOLOGINDATALIST) {	   \
 		SetMsgHandled(TRUE);		   \
 		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+//	void OnUpdateSupressPopupData()
+#define WM_UPDATESUPRESSPOPUPDATA	(WM_USER + 145)
+#define USER_MSG_WM_UPDATESUPRESSPOPUPDATA(func)	\
+	if (uMsg == WM_UPDATESUPRESSPOPUPDATA) {	   \
+		SetMsgHandled(TRUE);		   \
+		func();				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+#define CREATETRAVELLOGMENUSHAREDMEMNAME _T("DonutCreateTravelLogMenuSharedMemName")
+
+//	void OnCreateTravelLogMenu(bool bFore)
+#define WM_CREATETRAVELLOGMENU	(WM_USER + 146)
+#define USER_MSG_WM_CREATETRAVELLOGMENU(func)	\
+	if (uMsg == WM_CREATETRAVELLOGMENU) {	   \
+		SetMsgHandled(TRUE);		   \
+		func(wParam != 0);				\
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \

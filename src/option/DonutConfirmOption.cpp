@@ -200,6 +200,8 @@ void CDonutConfirmPropertyPage::_GetData()
 
 	CDonutConfirmOption::s_dwStopScript = (m_nStopScript != 0);
 	CDonutConfirmOption::s_dwFlags		= dwFlags;
+
+	CDonutConfirmOption::WriteProfile();
 }
 
 

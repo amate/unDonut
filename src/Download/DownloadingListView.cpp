@@ -59,7 +59,7 @@ public:
 			return ;
 		}
 		if (::PathFileExists(m_strFolder + m_strNewFileName)) {
-			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION) == IDCANCEL)
+			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION) != IDOK)
 				return ;
 		}
 		EndDialog(nID);
@@ -569,6 +569,35 @@ LRESULT CDownloadingListView::OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPAR
 {
 	return CDLOptions::bUseSaveFileDialog;
 }
+
+
+//----------------------------------------------------------------------
+/// ファイルの保存先がかぶると true を返す
+LRESULT CDownloadingListView::OnIsDoubleDownloading(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	uintptr_t unique = static_cast<uintptr_t>(wParam);
+	DLItem* pDLItem = nullptr;
+	for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
+		if (it->pDLItem->unique == unique) {
+			pDLItem = it->pDLItem;
+			break;
+		}
+	}
+	if (pDLItem == nullptr) {
+		ATLASSERT( FALSE );
+		return false;
+	}
+
+	for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
+		if (it->pDLItem->unique == unique) 
+			continue;
+
+		if (::_wcsicmp(it->pDLItem->strIncompleteFilePath, pDLItem->strIncompleteFilePath) == 0)
+			return true;
+	}
+	return false;
+}
+
 
 //----------------------------------------------------------------------
 /// リストに追加する

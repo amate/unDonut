@@ -116,9 +116,6 @@
     <ClCompile Include="MtlWin.cpp">
       <Filter>Source Files\MTL</Filter>
     </ClCompile>
-    <ClCompile Include="option\CloseTitleOption.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
     <ClCompile Include="option\DestroyDialog.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
@@ -138,9 +135,6 @@
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\FileNewOption.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="option\IgnoreURLsOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\KeyBoardDialog.cpp">
@@ -443,6 +437,9 @@
     <ClCompile Include="AutoLogin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="option\SupressPopupOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -616,9 +613,6 @@
     <ClInclude Include="option\AddressBarPropertyPage.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
-    <ClInclude Include="option\CloseTitleOption.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
     <ClInclude Include="option\DestroyDialog.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
@@ -638,9 +632,6 @@
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\FileNewOption.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
-    <ClInclude Include="option\IgnoreURLsOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\KeyBoardDialog.h">
@@ -942,6 +933,9 @@
     </ClInclude>
     <ClInclude Include="CustomSerializeClass.h">
       <Filter>Source Files\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="option\SupressPopupOption.h">
+      <Filter>Source Files\option</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

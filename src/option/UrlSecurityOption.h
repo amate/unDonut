@@ -46,7 +46,6 @@ public:
 	static void WriteProfile();
 
 	static void UpdateOriginalUrlSecurityList(HWND hWndMainFrame);
-	static void CloseOriginalUrlSecurityList(HWND hWndMainFrame);
 
 	//static bool SearchString(const CString &strURL);
 	static int	MatchTest(const CString& strURL);

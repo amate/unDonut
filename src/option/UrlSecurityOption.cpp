@@ -138,11 +138,6 @@ void CUrlSecurityOption::UpdateOriginalUrlSecurityList(HWND hWndMainFrame)
 	::SendMessage(hWndMainFrame, WM_UPDATEURLSECURITYLIST, 0, 0);
 }
 
-void CUrlSecurityOption::CloseOriginalUrlSecurityList(HWND hWndMainFrame)
-{
-	s_sharedMem.CloseHandle();
-}
-
 
 #if 0
 bool CUrlSecurityOption::SearchString(const CString &strURL)

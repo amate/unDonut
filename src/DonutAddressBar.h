@@ -17,6 +17,7 @@ public:
 	static CDonutAddressBar* GetInstance();
 	HWND	Create(HWND	hWndParent, UINT nID, UINT nGoBtnCmdID, int cx, int cy, COLORREF clrMask, UINT nFlags = ILC_COLOR24);
 	void	InitReBarBandInfo(CReBarCtrl rebar);
+	void	SetSearchWebWidthEngineFunc(function<void (CString, CString)> func);
 	
 	// Attribute
 	void	SetFont(HFONT hFont);

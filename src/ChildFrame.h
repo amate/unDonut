@@ -25,6 +25,7 @@ struct NewChildFrameData {
 	CString searchWord;
 
 	DWORD	dwThreadIdFromNewWindow;
+	CString	strNewWindowURL;
 
 	NewChildFrameData(HWND Parent) : 
 		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), 
@@ -37,7 +38,7 @@ private:
 	void serialize(Archive& ar, const unsigned int version)
 	{
 		ar & strURL & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefresh;
-		ar & bActive & bLink & bAutoHilight & searchWord & dwThreadIdFromNewWindow;
+		ar & bActive & bLink & bAutoHilight & searchWord & dwThreadIdFromNewWindow & strNewWindowURL;
 #ifdef WIN64
 		ar & reinterpret_cast<__int64&>(hWndParent);
 #else
@@ -143,24 +144,10 @@ public:
 	/// スレッドを立ててCChildFrameのインスタンスを作る
 	static void	AsyncCreate(NewChildFrameData& data);
 
-	void	SetThreadRefCount(int* pCount);
-	HWND	CreateEx(HWND hWndParent);
-	void	Navigate2(LPCTSTR lpszURL);
+	HWND	CreateChildFrame(const NewChildFrameData& data, int* pThreadRefCount);
 
 	HWND	GetHwnd() const;
-	DWORD	GetExStyle() const;
-	void	SetExStyle(DWORD dwStyle);
-	void	SetDLCtrl(DWORD dwDLCtrl);
-	void	SetMarshalDLCtrl(DWORD dwDLCtrl);
-	void	SetAutoRefreshStyle(DWORD dwAutoRefresh);
-	void	SetSearchWordAutoHilight(const CString& str, bool bAutoHilight);
-	void	SetTravelLog(const vector<std::pair<CString, CString> >& fore, const vector<std::pair<CString, CString> >& back);
-	void	SetThreadIdFromNewWindow2(DWORD dwThreadId);
 
-	CComPtr<IWebBrowser2>	GetIWebBrowser();
-	CComPtr<IWebBrowser2>	GetMarshalIWebBrowser();
-	CString	GetLocationURL();
-	CString GetTitle();
 	CString GetSelectedTextLine();
 
 private:

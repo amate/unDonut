@@ -147,6 +147,7 @@ public:
 		MESSAGE_HANDLER_EX( WM_USER_ADDTODOWNLOADLIST , OnAddToList	)
 		MESSAGE_HANDLER_EX( WM_USER_REMOVEFROMDOWNLIST, OnRemoveFromList )
 		MESSAGE_HANDLER_EX( WM_USER_USESAVEFILEDIALOG , OnUseSaveFileDialog )
+		MESSAGE_HANDLER_EX( WM_USER_ISDOUBLEDOWNLOADING, OnIsDoubleDownloading )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MSG_WM_MOUSEMOVE	( OnMouseMove )
 		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM		, OnRenameDLItem )
@@ -169,6 +170,7 @@ public:
 	LRESULT OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnIsDoubleDownloading(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	void	OnMouseMove(UINT nFlags, CPoint point);
 	void	OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl);

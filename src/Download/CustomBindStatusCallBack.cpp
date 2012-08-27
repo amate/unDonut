@@ -511,7 +511,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		return true;
 	}
 	// 名前を付けて保存ダイアログを出す
-	if (::SendMessage(m_hWndDLing, WM_USER_USESAVEFILEDIALOG, 0, 0) != 0 || ::GetKeyState(VK_CONTROL) < 0) {
+	if (::SendMessage(m_hWndDLing, WM_USER_USESAVEFILEDIALOG, 0, 0) != 0 || ::GetKeyState(VK_MENU) < 0) {
 		COMDLG_FILTERSPEC filter[] = {
 			{ L"テキスト文書 (*.txt)", L"*.txt" },// ダミー
 			{ L"すべてのファイル", L"*.*" }
@@ -563,7 +563,7 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		if (::PathFileExists(m_pDLItem->strFilePath)) {
 			if (m_dwDLOption & DLO_OVERWRITEPROMPT) {
 				CString strMessage;
-				strMessage.Format(_T("%s は既に存在します。\n上書きしますか？\n"), (LPCTSTR)m_pDLItem->strFileName);;
+				strMessage.Format(_T("%s は既に存在します。\n上書きしますか？\n"), (LPCTSTR)m_pDLItem->strFileName);
 				if (MessageBox(m_hWndDLing, strMessage, _T("確認"), MB_OKCANCEL | MB_ICONWARNING) == IDCANCEL) {
 					return false;
 				}
@@ -595,6 +595,15 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		}
 	}
 	::swprintf_s(m_pDLItem->strIncompleteFilePath, _T("%s.incomplete"), m_pDLItem->strFilePath);
+	
+	// 他にダウンロード中のファイルの保存先とかぶるかどうか
+	if (::SendMessage(m_hWndDLing, WM_USER_ISDOUBLEDOWNLOADING, static_cast<WPARAM>(m_pDLItem->unique), 0)) {
+		MessageBox(m_hWndDLing, 
+				   _T("ダウンロード中の他のファイルが存在します。\nダウンロードはキャンセルされます。"), 
+				   _T("エラー"), 
+				   MB_OK | MB_ICONERROR);
+		return false;
+	}
 	return true;
 }
 

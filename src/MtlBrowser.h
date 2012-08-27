@@ -1027,7 +1027,7 @@ public:
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_SETSECURELOCKICON	, &__OnSetSecureLockIcon , &OnSecureLockIcon)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_PRIVACYIMPACTEDSTATECHANGE, &__OnPrivacyImpactedStateChange, &PrivacyImpactedStateChange)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_FILEDOWNLOAD		, &__OnFileDownload		, &FileDownloadInfo)
-		//SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_NEWWINDOW3			, &__OnNewWindow3		, &NewWindow3Info)
+		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_NEWWINDOW3			, &__OnNewWindow3		, &NewWindow3Info)
 		SINK_ENTRY_INFO(nID, DIID_DWebBrowserEvents2, DISPID_WINDOWCLOSING		, &__OnWindowClosing	, &WindowClosingInfo)	
 	END_SINK_MAP()
 

@@ -12,6 +12,7 @@ struct DLItem;
 #define WM_USER_REMOVEFROMDOWNLIST	(WM_APP + 1)
 #define WM_USER_ADDTODOWNLOADLIST	(WM_APP	+ 2)
 #define WM_USER_USESAVEFILEDIALOG	(WM_APP + 3)
+#define WM_USER_ISDOUBLEDOWNLOADING	(WM_APP + 4)
 
 enum { kDownloadingFileExists = 1, kDownloadingURLExists = 2, };
 

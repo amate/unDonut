@@ -82,18 +82,12 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 
 	_RunChildFrameData* pData = (_RunChildFrameData*)lpData;
 
+	// ChildFrameウィンドウ作成
+	CChildFrame* pChild = new CChildFrame;
 	int	nThreadRefCount = 0;
-	pData->pChild->SetThreadRefCount(&nThreadRefCount);
-	pData->pChild->SetThreadIdFromNewWindow2(pData->ConstructData.dwThreadIdFromNewWindow);
+	CWindow wnd = pData->pChild->CreateChildFrame(pData->ConstructData, &nThreadRefCount);
 
-	CWindow wnd = pData->pChild->CreateEx(pData->ConstructData.hWndParent);
-	NewChildFrameData& NewChildData = pData->ConstructData;
-	pData->pChild->SetDLCtrl(NewChildData.dwDLCtrl);
-	pData->pChild->SetExStyle(NewChildData.dwExStyle);
-	pData->pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
-	pData->pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
-	pData->pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
-
+	const NewChildFrameData& NewChildData = pData->ConstructData;
 	DWORD dwOption = 0;
 	if (NewChildData.bActive)
 		dwOption |= TAB_ACTIVE;
@@ -102,8 +96,8 @@ DWORD WINAPI CMultiThreadManager::RunChildFrameThread(LPVOID lpData)
 	CWindow wndMainFrame = wnd.GetTopLevelWindow();
 	wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
 
-	if (NewChildData.strURL.GetLength() > 0)
-		pData->pChild->Navigate2(NewChildData.strURL);
+	//if (NewChildData.strURL.GetLength() > 0)
+	//	pData->pChild->Navigate2(NewChildData.strURL);
 
 	class CThreadRefManager : public CMessageFilter
 	{
@@ -230,20 +224,10 @@ private:
 		CMessageLoop theLoop;
 		_Module.AddMessageLoop(&theLoop);
 
+		// ChildFrameウィンドウ作成
 		CChildFrame* pChild = new CChildFrame;
 		int	nThreadRefCount = 0;
-		pChild->SetThreadRefCount(&nThreadRefCount);
-		pChild->SetThreadIdFromNewWindow2(NewChildData.dwThreadIdFromNewWindow);
-		
-		// ChildFrameウィンドウ作成
-		pChild->SetDLCtrl(NewChildData.dwDLCtrl);
-		CWindow wnd = pChild->CreateEx(NewChildData.hWndParent);		
-		pChild->SetExStyle(NewChildData.dwExStyle);
-		pChild->SetAutoRefreshStyle(NewChildData.dwAutoRefresh);
-		pChild->SetSearchWordAutoHilight(NewChildData.searchWord, NewChildData.bAutoHilight);
-		pChild->SetTravelLog(NewChildData.TravelLogFore, NewChildData.TravelLogBack);
-		if (NewChildData.strURL.GetLength() > 0)
-			pChild->Navigate2(NewChildData.strURL);
+		CWindow wnd = pChild->CreateChildFrame(NewChildData, &nThreadRefCount);
 
 		// タブに追加
 		DWORD dwOption = 0;

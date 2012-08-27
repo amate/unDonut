@@ -1308,20 +1308,6 @@
     <ClCompile Include="MtlUser.cpp" />
     <ClCompile Include="MtlWeb.cpp" />
     <ClCompile Include="MtlWin.cpp" />
-    <ClCompile Include="option\CloseTitleOption.cpp">
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug-MB|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release-DIET|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release-DIET|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release-MB|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release-MB|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-      <ObjectFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)%(Filename)1.obj</ObjectFileName>
-    </ClCompile>
     <ClCompile Include="option\DestroyDialog.cpp" />
     <ClCompile Include="option\DLControlOption.cpp" />
     <ClCompile Include="option\DonutConfirmOption.cpp" />
@@ -1329,7 +1315,7 @@
     <ClCompile Include="option\ExplorerBarDialog.cpp" />
     <ClCompile Include="option\FavoriteMenuDialog.cpp" />
     <ClCompile Include="option\FileNewOption.cpp" />
-    <ClCompile Include="option\IgnoreURLsOption.cpp" />
+    <ClCompile Include="option\SupressPopupOption.cpp" />
     <ClCompile Include="option\KeyBoardDialog.cpp" />
     <ClCompile Include="option\MainOption.cpp" />
     <ClCompile Include="option\MenuDialog.cpp" />
@@ -1466,7 +1452,6 @@
     <ClInclude Include="MtlWeb.h" />
     <ClInclude Include="MtlWin.h" />
     <ClInclude Include="option\AddressBarPropertyPage.h" />
-    <ClInclude Include="option\CloseTitleOption.h" />
     <ClInclude Include="option\DestroyDialog.h" />
     <ClInclude Include="option\DLControlOption.h" />
     <ClInclude Include="option\DonutConfirmOption.h" />
@@ -1474,7 +1459,7 @@
     <ClInclude Include="option\ExplorerBarDialog.h" />
     <ClInclude Include="option\FavoriteMenuDialog.h" />
     <ClInclude Include="option\FileNewOption.h" />
-    <ClInclude Include="option\IgnoreURLsOption.h" />
+    <ClInclude Include="option\SupressPopupOption.h" />
     <ClInclude Include="option\KeyBoardDialog.h" />
     <ClInclude Include="option\LinkBarPropertyPage.h" />
     <ClInclude Include="option\MainOption.h" />

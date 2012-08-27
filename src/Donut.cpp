@@ -254,8 +254,6 @@ static bool _PrivateInit()
 	CLinkBarOption::GetProfile();		// リンクバー
 	CCustomContextMenuOption::GetProfile();
 	CDLControlOption::GetProfile();
-	CIgnoredURLsOption::GetProfile();
-	CCloseTitlesOption::GetProfile();
 	CFileNewOption::GetProfile();
 	CStartUpOption::GetProfile();
 	CUrlSecurityOption::GetProfile();
@@ -283,11 +281,8 @@ static bool _PrivateInit()
 // iniファイルに設定を保存する
 void _PrivateTerm()
 {
-	CIgnoredURLsOption::WriteProfile();
-	CCloseTitlesOption::WriteProfile();
 	CFileNewOption::WriteProfile();
 	CStartUpOption::WriteProfile();
-	CDonutConfirmOption::WriteProfile();
 	CStyleSheetOption::WriteProfile();
 
   #if 0	//+++ atltheme_d.hの使用をやめた

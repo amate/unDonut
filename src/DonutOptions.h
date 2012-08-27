@@ -5,13 +5,12 @@
 #pragma once
 
 #include "option/MainOption.h"
-#include "option/CloseTitleOption.h"
+#include "option/SupressPopupOption.h"
 #include "option/DestroyDialog.h"
 #include "option/DLControlOption.h"
 #include "option/DonutConfirmOption.h"
 #include "option/ExplorerBarDialog.h"
 #include "option/FileNewOption.h"
-#include "option/IgnoreURLsOption.h"
 #include "option/UrlSecurityOption.h"
 #include "option/KeyBoardDialog.h"
 #include "option/MenuDialog.h"

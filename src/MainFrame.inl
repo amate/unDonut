@@ -502,6 +502,7 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CCustomContextMenuOption::UpdateCustomContextMenuList(m_hWnd);
 	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
 	CLoginDataManager::CreateOriginalLoginDataList(m_hWnd);
+	CSupressPopupOption::CreateSupressPopupData(m_hWnd);
 
 	RegisterDragDrop();
 
@@ -670,8 +671,6 @@ void	CMainFrame::Impl::OnDestroy()
 		m_RecentClosedTabList.WriteToXmlFile();
 	}
 
-	CUrlSecurityOption::CloseOriginalUrlSecurityList(m_hWnd);
-	CCustomContextMenuOption::CloseCustomContextMenuList();
 	CAcceleratorOption::DestroyOriginAccelerator(m_hWnd, m_hAccel);
 
 	DestroyGlobalConfig(&m_GlobalConfigManageData);
@@ -749,6 +748,8 @@ HWND	CMainFrame::Impl::_initAddressBar()
 	HWND hWndAddressBar = m_AddressBar.Create(m_ReBar, IDC_ADDRESSBAR, ID_VIEW_GO,
 												 16, 16, RGB(255, 0, 255) );
 	ATLASSERT( ::IsWindow(hWndAddressBar) );
+	m_AddressBar.SetSearchWebWidthEngineFunc(
+		std::bind(&CDonutSearchBar::SearchWebWithEngine, &m_SearchBar, std::placeholders::_1, std::placeholders::_2));
 
 	return hWndAddressBar;
 }
@@ -1200,6 +1201,18 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kAddIgnoreURL:
+	case kAddCloseTitle:
+		{
+			CString str = (LPCWSTR)pCopyDataStruct->lpData;
+			if (pCopyDataStruct->dwData == kAddIgnoreURL)
+				CSupressPopupOption::AddIgnoreURL(str);
+			else
+				CSupressPopupOption::AddCloseTitle(str);
+			
+			break;
+		}
+
 	case kDebugTrace:
 		TRACE(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
 		break;
@@ -1297,7 +1310,8 @@ void	CMainFrame::Impl::OnInitProcessFinished()
 
 void	CMainFrame::Impl::OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle)
 {
-	m_TabBar.SetTitle(hWndChildFrame, strTitle);
+	if (::wcsncmp(strTitle, L"ポップアップをブロックしました。: ", 18) != 0)
+		m_TabBar.SetTitle(hWndChildFrame, strTitle);
 
 	// キャプションを変更
 	if (m_ChildFrameClient.GetActiveChildFrameWindow() == hWndChildFrame) {
@@ -1397,6 +1411,19 @@ void	CMainFrame::Impl::OnSetProxyToChildFrame()
 			::PostMessage(hWnd, WM_SETPROXYTOCHLDFRAME, 0, 0);
 		});
 	}
+}
+
+/// ChildFrameのポップアップ抑止の情報を更新する
+void	CMainFrame::Impl::OnUpdateSupressPopupData()
+{
+	std::set<DWORD> setProcessId;
+	m_TabBar.ForEachWindow([&setProcessId](HWND hWnd) {
+		DWORD processId = 0;
+		::GetWindowThreadProcessId(hWnd, &processId);
+		auto it = setProcessId.insert(processId);
+		if (it.second)	// 挿入が成功した場合、同じプロセスには送っていないので送る
+			::SendMessage(hWnd, WM_UPDATESUPRESSPOPUPDATA, 0, 0);
+	});
 }
 
 /// 現在のダウンロードマネージャーの設定をGlobalConfigに設定する
@@ -1714,6 +1741,7 @@ void	CMainFrame::Impl::OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl)
 	}
 }
 
+
 /// IEのオプションを表示する
 void	CMainFrame::Impl::OnViewOption(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -1819,6 +1847,25 @@ void	CMainFrame::Impl::OnTabClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	switch (nID) {
 	case ID_WINDOW_CLOSE_EXCEPT:	/// このウィンドウ以外を閉じる
+		{
+			if ( !CDonutConfirmOption::OnCloseAllExcept(m_hWnd) )
+				return ;
+			CWaitCursor  cur;
+			CLockRedrawMDIClient		lock(m_ChildFrameClient);
+			CDonutTabBar::CLockRedraw	lock2(m_TabBar);
+			vector<HWND>	vechwnd;
+			HWND	hWndActive = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
+			m_TabBar.ForEachWindow([&](HWND hWnd) { 
+				if (hWnd == hWndActive)
+					return ;
+				vechwnd.push_back(hWnd);
+			});
+			boost::reverse(vechwnd);
+			boost::for_each(vechwnd, [](HWND hWnd) { ::PostMessage(hWnd, WM_CLOSE, 0, 0); });
+			//RtlSetMinProcWorkingSetSize();
+		}
+		break;
+
 	case ID_WINDOW_CLOSE_ALL:		/// 全てのウィンドウを閉じる(すべて閉じる)
 		{
 			if ( !CDonutConfirmOption::OnCloseAll(m_hWnd) )
@@ -1827,12 +1874,10 @@ void	CMainFrame::Impl::OnTabClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 			CLockRedrawMDIClient		lock(m_ChildFrameClient);
 			CDonutTabBar::CLockRedraw	lock2(m_TabBar);
 			vector<HWND>	vechwnd;
-			HWND	hWndActive = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
-			m_TabBar.ForEachWindow([&](HWND hWnd) { 
-				if (nID == ID_WINDOW_CLOSE_EXCEPT && hWnd == hWndActive)
-					return ;
+			m_TabBar.ForEachWindow([&](HWND hWnd) {
 				vechwnd.push_back(hWnd);
 			});
+			boost::reverse(vechwnd);
 			boost::for_each(vechwnd, [](HWND hWnd) { ::PostMessage(hWnd, WM_CLOSE, 0, 0); });
 			//RtlSetMinProcWorkingSetSize();
 		}

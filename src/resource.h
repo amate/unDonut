@@ -156,6 +156,7 @@
 #define IDC_DEL_BUTTON                  1003
 #define IDC_COMBO_STDTB_ICON            1004
 #define IDC_BTN_DEL_URL                 1004
+#define IDC_DEL_BUTTON2                 1004
 #define IDC_STATIC_CB_EXT               1005
 #define IDC_CHECK_CB_DIRECT             1006
 #define IDC_DELALL_BUTTON               1007
@@ -245,7 +246,6 @@
 #define IDC_EDIT_MDITAB_FIXEDSIZEX      1085
 #define IDC_EDIT_MDITAB_FIXEDSIZEY      1086
 #define IDC_CHECK_NAVILOCK              1087
-#define IDC_EDIT_MDITAB_FIXEDSIZEY2     1087
 #define IDC_COMBO_MDITAB_ADDPOS         1088
 #define IDC_COMBO_MDITAB_RIGHTCLICK     1089
 #define IDC_COMBO_MDITAB_DOUBLECLICK    1090

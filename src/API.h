@@ -9,7 +9,6 @@
 #include "DonutPCP.h"
 
 #include "MDIChildUserMessenger.h"
-#include "option\CloseTitleOption.h"
 #include "option\DonutConfirmOption.h"
 #include "dialog\aboutdlg.h"
 #include "ChildFrame.h"			//#include ""ChildFrm.h"	//+++
