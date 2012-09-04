@@ -293,6 +293,7 @@ public:
 	void	UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink = false);
 
 	HWND	GetActiveChildFrameHWND() { return m_ChildFrameClient.GetActiveChildFrameWindow(); }
+	CString GetActiveLocationURL();
 
 	// Overrides
 	BOOL AddSimpleReBarBandCtrl(HWND hWndReBar, HWND hWndBand, int nID, LPTSTR lpstrTitle, UINT fStyle, int cxWidth);
@@ -830,3 +831,7 @@ CString	CMainFrame::GetActiveSelectedText()
 }
 
 
+CString CMainFrame::GetActiveLocationURL()
+{
+	return pImpl->GetActiveLocationURL();
+}

@@ -345,36 +345,7 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 		//	});
 		//}
 
-		/* ページ内ハイライト */
-		bool bHilight = m_bAutoHilight || m_pGlobalConfig->bHilightSwitch;
-		if (bHilight && m_strSearchWord.IsEmpty() == FALSE) {
-			if (m_bNowActive) {
-				COPYDATASTRUCT	cds;
-				cds.dwData	= kSetSearchText;
-				CString str;
-				str.Format(_T("%d%s"), bHilight, m_strSearchWord);
-				cds.lpData	= (LPVOID)str.GetBuffer(0);
-				cds.cbData	= (str.GetLength() + 1) * sizeof(WCHAR);
-				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
-			}
-			CString strWords = m_strSearchWord;
-			//DeleteMinimumLengthWord(strWords);
-			m_bNowHilight = true;
-			_HilightOnce(pDisp, strWords);
-		}
-
-		/* 自動ログイン */
-		if (m_nAutoLoginPrevIndex == -1) {
-			int nIndex = CLoginDataManager::Find(strURL);
-			if (nIndex != -1) {
-				bool bSuccess = CLoginDataManager::DoAutoLogin(strURL, nIndex, m_spBrowser);
-				if (bSuccess)
-					m_nAutoLoginPrevIndex = nIndex;
-			}
-		} else {
-			m_nAutoLoginPrevIndex = -1;
-		}
-
+		PostMessage(WM_DELAYDOCUMENTCOMPLETE);
 	}
 }
 
@@ -1173,7 +1144,75 @@ void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 	if (nIDEvent == kReturnTitleTimerId) {
 		KillTimer(kReturnTitleTimerId);
 		m_UIChange.SetTitle(MtlGetWindowText(m_hWnd));
+
+	} else if (nIDEvent == kDelayHilightTimerId) {
+		KillTimer(kDelayHilightTimerId);
+
+		/* ページ内ハイライト */
+		bool bHilight = m_bAutoHilight || m_pGlobalConfig->bHilightSwitch;
+		if (bHilight && m_strSearchWord.IsEmpty() == FALSE) {
+			if (m_bNowActive) {
+				COPYDATASTRUCT	cds;
+				cds.dwData	= kSetSearchText;
+				CString str;
+				str.Format(_T("%d%s"), bHilight, m_strSearchWord);
+				cds.lpData	= (LPVOID)str.GetBuffer(0);
+				cds.cbData	= (str.GetLength() + 1) * sizeof(WCHAR);
+				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+			}
+			CString strWords = m_strSearchWord;
+			//DeleteMinimumLengthWord(strWords);
+			m_bNowHilight = true;
+			MtlForEachHTMLDocument2g(m_spBrowser, _Function_SelectEmpt());
+			MtlForEachHTMLDocument2g(m_spBrowser, _Function_Hilight2(L"", FALSE));
+			CComQIPtr<IDispatch> spDisp(m_spBrowser);
+			_HilightOnce(spDisp, strWords);
+		}
 	}
+}
+
+
+LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CString strURL = GetLocationURL();
+	strURL.MakeLower();
+
+	if (strURL.Left(30) == L"http://www.google.co.jp/search" || strURL.Left(31) == L"https://www.google.co.jp/search" ) {
+		SetTimer(kDelayHilightTimerId, kDelayHilightInterval);
+	} else {
+		/* ページ内ハイライト */
+		bool bHilight = m_bAutoHilight || m_pGlobalConfig->bHilightSwitch;
+		if (bHilight && m_strSearchWord.IsEmpty() == FALSE) {
+			if (m_bNowActive) {
+				COPYDATASTRUCT	cds;
+				cds.dwData	= kSetSearchText;
+				CString str;
+				str.Format(_T("%d%s"), bHilight, m_strSearchWord);
+				cds.lpData	= (LPVOID)str.GetBuffer(0);
+				cds.cbData	= (str.GetLength() + 1) * sizeof(WCHAR);
+				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+			}
+			CString strWords = m_strSearchWord;
+			//DeleteMinimumLengthWord(strWords);
+			m_bNowHilight = true;
+			CComQIPtr<IDispatch> spDisp(m_spBrowser);
+			_HilightOnce(spDisp, strWords);
+		}
+	}
+
+	/* 自動ログイン */
+	if (m_nAutoLoginPrevIndex == -1) {
+		int nIndex = CLoginDataManager::Find(strURL);
+		if (nIndex != -1) {
+			bool bSuccess = CLoginDataManager::DoAutoLogin(strURL, nIndex, m_spBrowser);
+			if (bSuccess)
+				m_nAutoLoginPrevIndex = nIndex;
+		}
+	} else {
+		m_nAutoLoginPrevIndex = -1;
+	}
+
+	return 0;
 }
 
 

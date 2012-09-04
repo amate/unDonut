@@ -445,26 +445,24 @@ HRESULT CDonutAddressBar::Impl::OnGetAddressBarCtrlDataObject(IDataObject **ppDa
 	CHlinkDataObject *pHlinkDataObject = NULL;	// this is hack, no need to release
 
 	hr = (*ppDataObject)->QueryInterface(IID_NULL, (void **) &pHlinkDataObject);
+	if ( SUCCEEDED(hr) ) {
+		HWND activeChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
+		if (activeChildFrame == NULL)
+			return E_NOTIMPL;
 
-	//if ( SUCCEEDED(hr) ) {
-	//	CChildFrame* pChild = g_pMainWnd->GetActiveChildFrame();
-	//	if (pChild == NULL)
-	//		return E_NOTIMPL;
+		CString strName =  MtlGetWindowText(activeChildFrame);
+		CString strUrl  = g_pMainWnd->GetActiveLocationURL();
+		if ( strUrl.IsEmpty() )
+			return E_NOTIMPL;
 
-	//	CString 	 strName =  MtlGetWindowText(pChild->GetHwnd());
-	//	CString 	 strUrl  = pChild->GetLocationURL();
+		if ( strUrl.Left(5) == _T("file:") ) {			// Donut, to be explorer or not
+			strName.Empty();
+			strUrl = strUrl.Right(strUrl.GetLength() - 8);
+			strUrl.Replace( _T('/'), _T('\\') );
+		}
 
-	//	if ( strUrl.IsEmpty() )
-	//		return E_NOTIMPL;
-
-	//	if ( strUrl.Left(5) == _T("file:") ) {			// Donut, to be explorer or not
-	//		strName.Empty();
-	//		strUrl = strUrl.Right(strUrl.GetLength() - 8);
-	//		strUrl.Replace( _T('/'), _T('\\') );
-	//	}
-
-	//	pHlinkDataObject->m_arrNameAndUrl.Add( std::make_pair(strName, strUrl) );
-	//}
+		pHlinkDataObject->m_arrNameAndUrl.Add( std::make_pair(strName, strUrl) );
+	}
 
 	return S_OK;
 }

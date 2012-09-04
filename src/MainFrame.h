@@ -75,7 +75,7 @@ public:
 	HWND	GetHWND();
 	HWND	GetActiveChildFrameHWND();
 	CString	GetActiveSelectedText();
-	CString GetActiveLocationURL() { return CString(); }
+	CString GetActiveLocationURL();
 
 private:
 	class Impl;

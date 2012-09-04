@@ -59,7 +59,7 @@ public:
 			return ;
 		}
 		if (::PathFileExists(m_strFolder + m_strNewFileName)) {
-			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION) != IDOK)
+			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION | MB_YESNO) != IDYES)
 				return ;
 		}
 		EndDialog(nID);

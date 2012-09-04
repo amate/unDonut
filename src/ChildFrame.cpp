@@ -293,6 +293,10 @@ public:
 	enum { 
 		kReturnTitleTimerId = 1, 
 		kReturnTitleInterval = 2000,
+
+		WM_DELAYDOCUMENTCOMPLETE = WM_APP + 300,
+		kDelayHilightTimerId = 2,
+		kDelayHilightInterval = 500,
 	};
 
 	Impl(CChildFrame* pChild);
@@ -357,6 +361,7 @@ public:
 		MSG_WM_SETFOCUS		( OnSetFocus	)
 		MSG_WM_TIMER		( OnTimer		)
 
+		MESSAGE_HANDLER_EX( WM_DELAYDOCUMENTCOMPLETE	, OnDelayDocumentComplete	)
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		MESSAGE_HANDLER_EX( WM_GETCHILDFRAMENOWACTIVE, OnGetChildFrameActive	)
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
@@ -446,6 +451,8 @@ public:
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	void	OnSetFocus(CWindow wndOld);
 	void	OnTimer(UINT_PTR nIDEvent);
+
+	LRESULT OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam) { return m_bNowActive; }
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// É^ÉuÇÃêÿÇËë÷Ç¶Ç™í ímÇ≥ÇÍÇÈ
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }

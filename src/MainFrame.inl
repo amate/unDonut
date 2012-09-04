@@ -284,6 +284,18 @@ void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& v
 }
 
 
+CString CMainFrame::Impl::GetActiveLocationURL() 
+{
+	HWND activeChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
+	if (activeChildFrame == NULL)
+		return CString();
+
+	auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(activeChildFrame);
+	ATLASSERT( pChildFrameUIData );
+	return pChildFrameUIData->strLocationURL;
+}
+
+
 
 // Overrides
 

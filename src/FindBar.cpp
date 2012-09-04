@@ -44,7 +44,7 @@ public:
 		StaticHeight = 22,
 
 		TimerID = 1,
-		Interval = 200,
+		Interval = 500,
 	};
 
 	// Constructor

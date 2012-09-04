@@ -13,6 +13,7 @@
 #include "option\MenuDialog.h"
 #include "option\RightClickMenuDialog.h"
 #include "option\MDITabDialog.h"
+#include "option\DonutConfirmOption.h"
 #include "DonutAddressBar.h"
 #include "HlinkDataObject.h"
 #include "dialog\CommandSelectDialog.h"
@@ -1873,11 +1874,13 @@ void	CDonutTabBar::Impl::OnRButtonUp(UINT nFlags, CPoint point)
 
 					case ID_WINDOW_CLOSE_EXCEPT:		// ‚±‚Ìƒ^ƒuˆÈŠO‚ð•Â‚¶‚é
 						{
-							int nCount = GetItemCount();
-							for (int i = nCount - 1; i >= 0 ; --i) {
-								HWND hWndTab = GetTabHwnd(i);
-								if (hWndTab != hWndChild) 
-									::PostMessage(hWndTab, WM_CLOSE, 0, 0);
+							if ( CDonutConfirmOption::OnCloseAllExcept(m_hWnd) ) {
+								int nCount = GetItemCount();
+								for (int i = nCount - 1; i >= 0 ; --i) {
+									HWND hWndTab = GetTabHwnd(i);
+									if (hWndTab != hWndChild) 
+										::PostMessage(hWndTab, WM_CLOSE, 0, 0);
+								}
 							}
 						}
 						break;
@@ -2137,7 +2140,7 @@ HRESULT CDonutTabBar::Impl::OnGetTabCtrlDataObject(CSimpleArray<int>& arrIndex, 
 			int 		 nIndex  = arrIndex[i];
 			HWND		 hWnd	 = GetTabHwnd(nIndex);
 			ATLASSERT( ::IsWindow(hWnd) );
-			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
+
 			CString 	 strName = MtlGetWindowText(hWnd);
 			CString 	 strUrl;
 			auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(hWnd);

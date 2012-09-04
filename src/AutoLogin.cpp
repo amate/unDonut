@@ -42,11 +42,10 @@ void CLoginDataManager::CreateOriginalLoginDataList(HWND hWndMainFrame)
 // for ChildFrame
 void CLoginDataManager::UpdateLoginDataList(HWND hWndMainFrame)
 {
-	s_sharedMem.CloseHandle();
-
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), AUTOLOGINSHAREDMEMNAME, hWndMainFrame);
-	s_sharedMem.Deserialize(s_vecLoginInfo, sharedMemName);
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(s_vecLoginInfo, sharedMemName);
 }
 
 bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2* pBrowser)
@@ -73,7 +72,8 @@ bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2
 			CComQIPtr<IHTMLFormElement>	spForm = pDisp;
 			if (spForm.p) {
 				int nFoundCount = 0;
-				ForEachHtmlElement(spForm, [=, &map2, &mapCheck, &nFoundCount](IDispatch* pDisp) -> bool {
+				CComQIPtr<IHTMLElement> spSubmit;
+				ForEachHtmlElement(spForm, [=, &map2, &mapCheck, &spSubmit, &nFoundCount](IDispatch* pDisp) -> bool {
 					CComQIPtr<IHTMLInputElement>	spInput = pDisp;
 					if (spInput.p) {
 						CComBSTR	strType;
@@ -101,14 +101,21 @@ bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2
 									spInput->put_checked(it->second);
 								}
 							}
+						} else if (strType == L"submit") {
+							spSubmit = spInput;
 						}
 
 					}
 					return true;
 				});
 				if (nFoundCount == static_cast<int>(map2.size() + mapCheck.size())) {
-					spForm->submit();	// ˆê’v‚µ‚½‚Ì‚ÅŽ©“®ƒƒOƒCƒ“‚·‚é
-					//this->SetTimer(FlashIconTimerID, 1000);
+					// ˆê’v‚µ‚½‚Ì‚ÅŽ©“®ƒƒOƒCƒ“‚·‚é
+					if (spSubmit.p) {
+						spSubmit->click();
+					} else {
+						spForm->submit();
+						//this->SetTimer(FlashIconTimerID, 1000);
+					}
 					bSuccess = true;
 					return false;
 				}
