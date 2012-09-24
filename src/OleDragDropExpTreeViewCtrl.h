@@ -10,7 +10,6 @@
 #include "HLinkDataObject.h"
 #include "FavoriteOrder.h"
 
-#if 0
 
 template <class T>
 class COleDragDrogExplorerTreeViewCtrlImpl
@@ -224,7 +223,7 @@ public:
 		  #if 1	//+++ お気に入りバーの並べ替え対策... ちょっと無理やりすぎ...
 			int  		cpyFlags = 0;
 			if (  (dropEffect & (DROPEFFECT_COPY | DROPEFFECT_MOVE))
-				&& CFavoritesMenuOption::s_bCstmOrder ) {
+				&& true/*CFavoritesMenuOption::s_bCstmOrder*/ ) {
 				CFavoriteOrderHandler	dstOrder;
 				if (dstOrder.ReadData(strPath) != 0) {	//+++ strPathのお気に入り一覧取得. お気に入りバー以外は、ここでfalseになる.
 					CString		strNextItemPath = HitItemPath(point);	//+++
@@ -614,5 +613,5 @@ public:
 	DECLARE_WND_SUPERCLASS( _T("MTL_DragDropExpTreeViewCtrl"), GetWndClassName() )
 };
 
-#endif
+
 

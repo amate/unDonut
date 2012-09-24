@@ -7,14 +7,116 @@
 
 #define CHAIN_COMMANDS_TO_EXPLORERBAR(x)		CHAIN_COMMANDS_ALT_MEMBER(x, 1)
 
+#include <atlsplit.h>
 #include "option/ExplorerBarDialog.h"
 #include "FavTreeViewCtrl.h"
 #include "DonutClipboardBar.h"
-#include "DonutPanelBar.h"
+//#include "DonutPanelBar.h"
 #include "DonutPFunc.h"
 #include "PluginBar.h"
 
+class CDonutExplorerBar	: 
+	public CPaneContainerImpl<CDonutExplorerBar>,
+	public CUpdateCmdUI<CDonutExplorerBar>
+{
+public:
+	DECLARE_WND_CLASS_EX(_T("Donut_ExplorerBar"), 0, -1)
 
+	// Constants
+	enum { kBottomHeight = 20, kcyIcon = 16, };
+
+	CDonutExplorerBar(CSplitterWindow& SplitWindow) : m_rSplitWindow(SplitWindow)
+	{	}
+
+	void SetFuncSinglePaneMode(function<bool ()> func) { m_funcSetSinglePaneMode = func; }
+
+	// Overrides
+	void UpdateLayout() { __super::UpdateLayout(); }
+	void UpdateLayout(int cxWidth, int cyHeight);
+	void DrawPaneTitle(CDCHandle dc);
+
+	BEGIN_MSG_MAP( CDonutExplorerBar )
+		MSG_WM_CREATE	( OnCreate	)
+		COMMAND_ID_HANDLER_EX( ID_PANE_CLOSE	, OnPaneClose 		)
+		CHAIN_MSG_MAP( CPaneContainerImpl<CDonutExplorerBar> )
+	ALT_MSG_MAP(1)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR		, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR_HIST	, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR_GROUP	, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR_USER	, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_EXPBAR_SETFOCUS	, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR_SCRIPT	, OnViewBar )
+		COMMAND_ID_HANDLER_EX( ID_VIEW_CLIPBOARDBAR		, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_PANELBAR			, OnViewBar	)
+		COMMAND_ID_HANDLER_EX( ID_VIEW_PLUGINBAR		, OnViewBar	)
+		//COMMAND_ID_HANDLER_EX( ID_VIEW_EXPLORERBAR_TAB , OnViewExpBarTabs		)
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_STANDARD  , OnFavoriteExpBar )
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_GROUP		, OnFavoriteExpBar )
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_SCRIPT	, OnFavoriteExpBar )
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_USER 		, OnFavoriteExpBar )
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_MYCOMPUTER, OnFavoriteExpBar )
+		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_HISTORY	, OnFavoriteExpBar )
+
+		//USER_MSG_WM_OPEN_EXPFAVMENU( OnOpenFavExpMenu )
+	END_MSG_MAP()
+
+	// Update command UI and handlers
+	BEGIN_UPDATE_COMMAND_UI_MAP( CDonutExplorerBar )
+#if 0
+		for (int ii = 0; ii < (int) m_aryID.size(); ii++) {
+			int nIndexAct = m_nIndexAct;
+
+			switch (m_aryID[ii]) {
+			case ID_VIEW_FAVEXPBAR: 		if ( IsFavBarVisibleNormal() )	m_nIndexAct = ii;	break;
+			case ID_VIEW_FAVEXPBAR_HIST:	if ( IsFavBarVisibleHist()	 )	m_nIndexAct = ii;	break;
+			case ID_VIEW_FAVEXPBAR_GROUP:	if ( IsFavBarVisibleGroup()  )	m_nIndexAct = ii;	break;
+			case ID_VIEW_FAVEXPBAR_USER:	if ( IsFavBarVisibleUser()	 )	m_nIndexAct = ii;	break;
+			case ID_VIEW_FAVEXPBAR_SCRIPT:	if ( IsFavBarVisibleScript() )	m_nIndexAct = ii;	break;
+			case ID_VIEW_CLIPBOARDBAR:		if ( IsClipboardBarVisible() )	m_nIndexAct = ii;	break;
+			case ID_VIEW_PANELBAR:			if ( IsPanelBarVisible()	 )	m_nIndexAct = ii;	break;
+			case ID_VIEW_PLUGINBAR: 		if ( IsPluginBarVisible()	 )	m_nIndexAct = ii;	break;
+			}
+			if (nIndexAct != m_nIndexAct) {
+				Invalidate(FALSE);
+				break;
+			}
+		}
+#endif
+		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR		, _IsBarVisible(nID)	)
+		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_HIST	, _IsBarVisible(nID)	)
+		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_GROUP	, _IsBarVisible(nID)	)
+		//UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_USER	, _IsBarVisible(nID)	)
+		//UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_SCRIPT , _IsBarVisible(nID)	)
+		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_CLIPBOARDBAR 	, _IsBarVisible(nID)	)
+		//UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_PANELBAR 		, _IsBarVisible(nID)	)
+		//UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_PLUGINBAR		, _IsBarVisible(nID)	)
+		UPDATE_COMMAND_UI_SETCHECK_IF( ID_EXPLORERBAR			, _IsBarVisible(nID)	)	// IsFavBarVisible())
+//		UPDATE_COMMAND_UI_SETCHECK_IF_PASS( ID_VIEW_EXPLORERBAR_TAB, !m_bHideTab )
+//		CHAIN_UPDATE_COMMAND_UI_MEMBER(m_FavBar)
+	END_UPDATE_COMMAND_UI_MAP()
+
+
+	int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	void OnPaneClose(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+	void OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnFavoriteExpBar(UINT uNotifyCode, int nID, CWindow wndCtl);
+
+private:
+	bool	_IsBarVisible(int nID);
+
+	// Data members
+	CSplitterWindow&	m_rSplitWindow;
+
+	CDonutFavoritesBar	m_FavBar;
+	CDonutClipboardBar	m_ClipBar;
+
+	function<bool ()>	m_funcSetSinglePaneMode;
+	CImageList	m_imgs;
+	int		m_nIndexAct;
+};
+
+#if 0
 class CDonutExplorerBar
 	: public CPaneContainerImpl<CDonutExplorerBar>
 	, public CUpdateCmdUI<CDonutExplorerBar>
@@ -847,6 +949,6 @@ private:
 
 
 __declspec(selectany) CDonutExplorerBar*	CDonutExplorerBar::s_pThis_;
-
+#endif
 
 

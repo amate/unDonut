@@ -440,6 +440,9 @@
     <ClCompile Include="option\SupressPopupOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
+    <ClCompile Include="DonutExplorerBar.cpp">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">

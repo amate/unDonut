@@ -359,40 +359,6 @@ CString MtlCompactString(const CString &str, int nMaxTextLength)
 }
 
 
-
-#if 0	//+++
-CString MtlGetModuleFileName()
-{
-	TCHAR sz[MAX_PATH];
-	sz[0] = 0;
-	if (::GetModuleFileName(_Module.GetModuleInstance(), sz, MAX_PATH) == 0)
-		sz[0] = 0;
-	return sz;
-}
-#endif
-
-
-
-#if 0	//+++ –¢Žg—p
-CString MtlCurrentDirectoryFileName(const CString &strFileName)
-{
-  #if 1
-	return GetExeDirectory() + strFileName;
-  #else
-	TCHAR	sz[MAX_PATH];
-
-	::GetModuleFileName(_Module.GetModuleInstance(), sz, MAX_PATH);
-
-	CString str(sz);
-	int 	nIndex = str.ReverseFind( _T('\\') );
-
-	return str.Left(nIndex + 1) + strFileName;
-  #endif
-}
-#endif
-
-
-
 // UDT DGSTR
 CString MtlGetHTMLHelpPath()
 {

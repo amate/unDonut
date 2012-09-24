@@ -111,6 +111,7 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 
 	case STARTUP_GOHOME:
 		::PostMessage(__frame.GetHWND(), WM_COMMAND, ID_FILE_NEW_HOME, 0);
+		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
 		break;
 
 	case STARTUP_LATEST:

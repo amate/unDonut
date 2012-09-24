@@ -684,8 +684,6 @@ bool			MtlSetClipboardText(const CString &str, HWND hWnd);
 bool			AtlCompactPathFixed(LPTSTR lpstrOut, LPCTSTR lpstrIn, int cchLen);
 bool			MtlCompactPath(CString &strOut, const CString &str, int cchLen);
 CString 		MtlCompactString(const CString &str, int nMaxTextLength);
-//x CString 	MtlCurrentDirectoryFileName(const CString &strFileName);	//+++ –¢Žg—p
-//x CString 	MtlGetModuleFileName();
 CString 		MtlGetHTMLHelpPath();		// UDT DGSTR
 CString 		MtlGetFileNameFromCommandLine(const CString &_strCommand);
 

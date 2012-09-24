@@ -167,3 +167,34 @@ void	APIHook(PCSTR pszModuleName, PCSTR pszFuncName, PROC pfnReplace, PROC* ppfn
         pszModuleName, pfnOrig, pfnReplace);
 	*ppfnOrig = pfnOrig;
 }
+
+#if 0
+// É_ÉÅÇ≈ÇµÇΩÅ[
+typedef DWORD (WINAPI* pFuncGetModuleFileNameW)(HMODULE, LPWSTR, DWORD);
+pFuncGetModuleFileNameW pfOrgGetModuleFileNameW = nullptr;
+typedef DWORD (WINAPI* pFuncGetModuleFileNameA)(HMODULE, LPSTR, DWORD);
+pFuncGetModuleFileNameA pfOrgGetModuleFileNameA = nullptr;
+
+DWORD WINAPI Hook_GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename, DWORD nSize)
+{
+	DWORD dwRet = pfOrgGetModuleFileNameW(hModule, lpFilename, nSize);
+	LPWSTR name = ::PathFindFileNameW(lpFilename);
+	if (::_wcsicmp(name, L"unDonut.exe") == 0) {
+		::PathRemoveFileSpecW(lpFilename);
+		::PathAppendW(lpFilename, L"iexplore.exe");
+	}
+	return dwRet;
+}
+
+DWORD WINAPI Hook_GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize)
+{
+	DWORD dwRet = pfOrgGetModuleFileNameA(hModule, lpFilename, nSize);
+	LPSTR name = ::PathFindFileNameA(lpFilename);
+	if (::_stricmp(name, "unDonut.exe") == 0) {
+		::PathRemoveFileSpecA(lpFilename);
+		::PathAppendA(lpFilename, "iexplore.exe");
+	}
+	return dwRet;
+}
+
+#endif

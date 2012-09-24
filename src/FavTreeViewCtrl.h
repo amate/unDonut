@@ -19,7 +19,6 @@
 
 //GetUrlCacheEntryInfo
 
-#if 0
 
 class CFavoritesTreeViewCtrl : public COleDragDrogExplorerTreeViewCtrlImpl<CFavoritesTreeViewCtrl> 
 {
@@ -468,7 +467,13 @@ public:
 private:
 	LRESULT OnSize(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM lParam, BOOL & /*bHandled*/)
 	{
-		UpdateLayout( GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) );
+		CSize size(GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam));
+		UpdateLayout( size.cx, size.cy );
+		
+		CRect rect;
+		m_wndReBar.GetRect(0, &rect);
+		// ボーダー分 + タブ分(-20)だけずらす
+		m_view.MoveWindow(1, rect.bottom + 3, size.cx - 3, size.cy - rect.bottom - 5/* - 20*/);
 		return 0;
 	}
 
@@ -673,4 +678,4 @@ private:
   #endif
 };
 
-#endif
+

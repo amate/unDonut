@@ -358,7 +358,7 @@ void CFavoritesTreeViewCtrl::OnInitialUpdateTreeItems(CSimpleArray<TV_INSERTSTRU
 {
 	ATLASSERT(pidl != NULL);
 
-	if ( CFavoritesMenuOption::s_bIEOrder && _check_flag( ETV_EX_FAVORITES, GetExplorerTreeViewExtendedStyle() ) ) {
+	if ( true/*CFavoritesMenuOption::s_bIEOrder*/ && _check_flag( ETV_EX_FAVORITES, GetExplorerTreeViewExtendedStyle() ) ) {
 		CFavoritesOrder 	order;
 		MtlGetFavoritesOrder( order, CItemIDList(pidl).GetPath() );
 		std::sort( _begin(items), _end(items), _FavoritesTreeItemCompare(order) );

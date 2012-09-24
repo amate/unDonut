@@ -4,7 +4,7 @@
 
 CMainFrame::Impl::Impl() : 
 	CDDEMessageHandler<Impl>(_T("Donut")),
-//	m_ExplorerBar(m_SplitterWindow),
+	m_ExplorerBar(m_SplitterWindow),
 	m_hWndRestoreFocus(NULL),
 	m_bFullScreen(false)
 {
@@ -918,10 +918,16 @@ void	CMainFrame::Impl::_initChildFrameClient()
 
 void	CMainFrame::Impl::_initExplorerBar()
 {
-//	m_ExplorerBar.Create(m_hWndClient);
-//	ATLASSERT( m_ExplorerBar.IsWindow() );
+	m_ExplorerBar.Create(m_hWndClient);
+	ATLASSERT( m_ExplorerBar.IsWindow() );
+
+	m_ExplorerBar.SetFuncSinglePaneMode(std::bind(&CSplitterWindow::SetSinglePaneMode, &m_SplitterWindow, SPLIT_PANE_RIGHT));
 //	m_ExplorerBar.Init(m_ChildFrameClient);	// スプリットバーの状態も設定される
-	m_SplitterWindow.SetSplitterPanes(NULL, m_ChildFrameClient);
+
+	m_SplitterWindow.SetSplitterPanes(m_ExplorerBar, m_ChildFrameClient);
+
+	UpdateLayout();
+	//m_SplitterWindow.SetSplitterPos(240);
 	m_SplitterWindow.SetSinglePaneMode(SPLIT_PANE_RIGHT);
 }
 

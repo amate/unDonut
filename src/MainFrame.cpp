@@ -93,7 +93,7 @@
 //#include "StyleSheetOption.h"
 //#include "ExStyle.h"
 //#include "MenuDropTargetWindow.h"
-//#include "ParseInternetShortcutFile.h"
+#include "ParseInternetShortcutFile.h"
 //
 //#include "option/AddressBarPropertyPage.h"	//+++ AddressBar.hより分離
 //#include "option/SearchPropertyPage.h"		//+++ SearchBar.hより分離
@@ -387,6 +387,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR_LOCK		, OnViewBar			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_STATUS_BAR		, OnViewBar			)
 		COMMAND_ID_HANDLER_EX( ID_AUTOLOGINEDIT			, OnAutoLoginEdit	)
+		CHAIN_COMMANDS_TO_EXPLORERBAR( m_ExplorerBar )	// Explorer バー へ
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_ADDRESSBAR		, OnSetFocusToBar	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR		, OnSetFocusToBar	)
 		COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE	, OnSetFocusToBar	)
@@ -448,6 +449,7 @@ public:
 #pragma region UI map
 	BEGIN_UPDATE_COMMAND_UI_MAP( Impl )
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_MainOption		)
+		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ExplorerBar		)
 		CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ChildFrameUIState )
 
 		bool bActiveChild = (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL);
@@ -731,8 +733,8 @@ private:
 	CFindBar			m_FindBar;
 
 	CSplitterWindow		m_SplitterWindow;
+	CDonutExplorerBar	m_ExplorerBar;			// エクスプローラー バー
 	CChildFrameClient	m_ChildFrameClient;		// ChildFrameの親ウィンドウ
-//	CDonutExplorerBar	m_ExplorerBar;
 
 	CRecentClosedTabList	m_RecentClosedTabList;
 	CDownloadManager		m_DownloadManager;

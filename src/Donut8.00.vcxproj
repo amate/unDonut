@@ -865,10 +865,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-MB|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-DIET|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-MB|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="appconst.cpp" />
     <ClCompile Include="AutoLogin.cpp" />
@@ -1172,6 +1172,7 @@
     <ClCompile Include="DonutAddressBar.cpp" />
     <ClCompile Include="DonutClipboardBar.cpp" />
     <ClCompile Include="DonutCommandBar.cpp" />
+    <ClCompile Include="DonutExplorerBar.cpp" />
     <ClCompile Include="DonutLinkBarCtrl.cpp" />
     <ClCompile Include="DonutOption.cpp" />
     <ClCompile Include="DonutPFunc.cpp" />
@@ -1192,10 +1193,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="FavTreeViewCtrl.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="FavTreeViewCtrl.cpp" />
     <ClCompile Include="FindBar.cpp" />
     <ClCompile Include="GdiplusUtil.cpp" />
     <ClCompile Include="GlobalConfig.cpp" />
