@@ -1130,6 +1130,15 @@ void	CDonutTabBar::Impl::OnMDIChildDestroy(HWND hWnd)
 
 	} else {
 		// アクティブでないビューが破棄された
+
+		HWND hWndDestroy = m_vecpItem[nIndex]->hWnd;
+		HWND hWndDestroyPrev = m_vecpItem[nIndex]->hWndPrevActive;
+		for (auto it = m_vecpItem.begin(); it != m_vecpItem.end(); ++it) {
+			if (hWndDestroy == it->get()->hWndPrevActive) {
+				it->get()->hWndPrevActive = hWndDestroyPrev;
+			}			
+		}
+
 		_DeleteItem(nIndex);
 	}
 }

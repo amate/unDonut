@@ -126,7 +126,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 
 	// Navigate中かつjavescriptから始まるウィンドウはナビゲートしない
 	if (//m_bNowNavigate && // msdnで無理だった
-		strURL.Left(15).CompareNoCase(_T("javascript:void")) == 0 || strURL.CompareNoCase(_T("javascript:;")) == 0) 
+		strURL.Left(15).CompareNoCase(_T("javascript:void(0)")) == 0 || strURL.CompareNoCase(_T("javascript:;")) == 0) 
 	{
 		bCancel = true;
 		return;
