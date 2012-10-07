@@ -51,9 +51,9 @@ void CDonutConfirmOption::WriteProfile()
 
 
 
-bool CDonutConfirmOption::OnDonutExit(HWND hWnd)
+bool CDonutConfirmOption::OnDonutExit(HWND hWnd, const std::set<DWORD>& setProcessId)
 {
-	if ( _SearchDownloadingDialog() ) {
+	if ( _SearchDownloadingDialog(setProcessId) ) {
 		if ( IDYES == ::MessageBox(hWnd,
 						_T("ダウンロード中のファイルがありますが、Donutを終了してもよろしいですか？"),
 						_T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION ) )
@@ -120,13 +120,26 @@ bool CDonutConfirmOption::OnCloseLeftRight(HWND hWnd, bool bLeft)
 
 
 
-bool CDonutConfirmOption::_SearchDownloadingDialog()
+bool CDonutConfirmOption::_SearchDownloadingDialog(const std::set<DWORD>& setProcessId)
 {
-	_Function_Searcher f;
+	bool bFound = false;
+	MtlForEachTopLevelWindow(_T("#32770"), NULL, [&setProcessId, &bFound](HWND hWnd) -> bool {
+		DWORD dwProcessId = 0;
+		::GetWindowThreadProcessId(hWnd, &dwProcessId);
+		if (setProcessId.find(dwProcessId) != setProcessId.end()) {
+			CString strCaption = MtlGetWindowText(hWnd);
 
-	f = MtlForEachTopLevelWindow(_T("#32770"), NULL, f);
+			if ( (strCaption.Find( _T('%') ) != -1 && strCaption.Find( _T("完了しました") ) != -1)
+				|| strCaption.Find( _T("ファイルのダウンロード") ) != -1 )
+			{
+				bFound = true;
+				return false;
+			}
+		}
+		return true; // continue finding
+	});
 
-	return f.m_bFound;
+	return bFound;
 }
 
 

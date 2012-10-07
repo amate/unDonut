@@ -890,6 +890,18 @@ enum TabCreateOption {
 	}
 
 
+//	void OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd)
+#define WM_ADDREMOVECHILDPROCESSID	(WM_USER + 147)
+#define USER_MSG_WM_ADDREMOVECHILDPROCESSID(func)	\
+	if (uMsg == WM_ADDREMOVECHILDPROCESSID) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((DWORD)wParam, lParam != 0);				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 // ===================================================================
 #define WM_DECREMENTTHREADREFCOUNT	(WM_APP + 200)
 #define WM_INCREMENTTHREADREFCOUNT	(WM_APP + 201)

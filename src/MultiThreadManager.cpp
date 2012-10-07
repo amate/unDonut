@@ -329,6 +329,8 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 	AssignProcessToJobObject(hJob, GetCurrentProcess());
 	::CloseHandle(hJob);
 
+	CWindow wndMainFrame = CWindow(NewChildData.hWndParent).GetTopLevelWindow();
+
 	// 強制的にメッセージキューを作らせる
 	MSG msg;
 	::PeekMessage(&msg, NULL, WM_USER, WM_USER, PM_NOREMOVE);
@@ -338,10 +340,33 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 
 	g_child_process_thread_manager.ObserveChildProcessThread();
 
+	/// ファイルのDL中ならプロセスを終わらせない
+	for (;;) {
+		bool bFound = false;
+		MtlForEachTopLevelWindow(_T("#32770"), NULL, [&bFound](HWND hWnd) -> bool {
+			if ( MtlIsWindowCurrentProcess(hWnd) ) {
+				CString strCaption = MtlGetWindowText(hWnd);
+				if ( (strCaption.Find( _T('%') ) != -1 && strCaption.Find( _T("完了しました") ) != -1)
+					|| strCaption.Find( _T("ファイルのダウンロード") ) != -1 )
+				{
+					bFound = true;
+					return false;
+				}
+			}
+
+			return true; // continue finding
+		});
+		if (bFound == false)
+			break;	// 終了してもおｋ
+		
+		::Sleep(60 * 1000);	// 1分ごとに調べる
+	}
 	//::CoUninitialize();
 	//::OleUninitialize();
 
 	_Module.Term();
+
+	::PostMessage(wndMainFrame, WM_ADDREMOVECHILDPROCESSID, ::GetCurrentProcessId(), false);
 
 	TRACEIN(_T("RunChildProcessMessageLoop() 終了..."));
 
@@ -359,6 +384,25 @@ void	AddChildThread(NewChildFrameData* pData)
 void	ExecuteChildFrameThread(CChildFrame* pChild, NewChildFrameData* pData)
 {
 	g_MultiThreadManager.AddChildFrameThread(pChild, pData);
+}
+
+/// マルチプロセスモードで子プロセスの作成
+void	CreateChildProcess(NewChildFrameData& data)
+{
+	CSharedMemoryHandle sharedMem;
+	sharedMem.Serialize(data, nullptr, true);
+	CString commandline;
+	commandline.Format(_T("-NewProcessSharedMemoryData=%d"), sharedMem.Handle());
+
+	/* 子プロセス作成 */
+	STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
+	PROCESS_INFORMATION	processInfo = { 0 };
+	ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
+
+	CWindow(data.hWndParent).GetTopLevelWindow().PostMessage(WM_ADDREMOVECHILDPROCESSID, processInfo.dwProcessId, true);
+
+	::CloseHandle(processInfo.hProcess);
+	::CloseHandle(processInfo.hThread);
 }
 
 

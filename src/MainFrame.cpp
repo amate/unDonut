@@ -341,6 +341,8 @@ public:
 
 		USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR( OnReleaseProcessMonitorPtr	)
 
+		USER_MSG_WM_ADDREMOVECHILDPROCESSID( OnAddRemoveChildProcessId	)
+
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loopñhé~
 			uMsg = WM_COMMAND;
@@ -416,6 +418,7 @@ public:
 
 		// Special Command
 		COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
+		COMMAND_ID_HANDLER_EX( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine	)
 
 		USER_MSG_WM_SHOW_TOOLBARMENU( OnShowToolBarMenu )
 		USER_MSG_WM_SHOW_BAND_TEXT_CHANGE( OnShowBandTextChange	)
@@ -635,6 +638,9 @@ public:
 
 	void	OnReleaseProcessMonitorPtr() { m_pProcessMonitor.reset(); }
 
+	void	OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd);
+
+	// Commands
 	void	OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl);
 
@@ -664,6 +670,9 @@ public:
 
 	void	OnMenuRecentLast(UINT uNotifyCode, int nID, CWindow wndCtl) { 
 		OnFileRecent(0, ID_RECENTDOCUMENT_FIRST, NULL);
+	}
+	void	OnSpecialRefreshSearchEngine(UINT uNotifyCode, int nID, CWindow wndCtl) {
+		m_SearchBar.RefreshEngine();
 	}
 
 	LRESULT OnShowToolBarMenu();
@@ -751,6 +760,7 @@ private:
 	bool	m_bFullScreen;
 
 	unique_ptr<CProcessMonitorDialog>	m_pProcessMonitor;
+	std::set<DWORD>	m_setChildProcessId;
 };
 
 #include "MainFrame.inl"

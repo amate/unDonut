@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "DonutAddressBar.h"
+#include <regex>
 #include "HlinkDataObject.h"
 #include "DonutSearchBar.h"
 #include "Donut.h"
@@ -352,9 +353,18 @@ void	CDonutAddressBar::Impl::ReloadSkin(int nCmbStyle)
 // 'h'‚ª”²‚¯‚Ä‚¢‚ê‚Î•âŠ®‚·‚é
 void	CDonutAddressBar::Impl::_ComplementURL(CString &strURL)
 {
+	std::wregex rx(L"(?:(?:(?:(?:(?:h|)t|)t|)p(s)?|)://|)?((?:(?:\\w+\\.)+)\\w+(?::\\d+)?(?:/.*)?)", std::regex_constants::icase);
+	std::wsmatch result;
+	std::wstring url = strURL;
+	if (std::regex_match(url, result, rx)) {
+		strURL = result[1].str().empty() ? _T("http://") : _T("https://");
+		strURL += result[2].str().c_str();
+	}
+#if 0
 	if (strURL.Left(6).CompareNoCase(_T("ttp://")) == 0) {
 		strURL.Insert(0 ,_T("h"));
 	}
+#endif
 }
 
 // str‚ðŠJ‚­
@@ -685,9 +695,7 @@ void	CDonutAddressBar::Impl::OnCommand(UINT, int nID, HWND hWndCtrl)
 {
 	if (hWndCtrl == m_wndGo.m_hWnd) {
 		ATLASSERT(nID == m_nGoBtnCmdID);
-		CString str  = GetAddressBarText();
-		if (str.IsEmpty() == FALSE) 
-			OnItemSelected(str);
+		_OnEnterKeyDown();
 
 	} else {
 		SetMsgHandled(FALSE);

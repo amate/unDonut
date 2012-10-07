@@ -38,6 +38,8 @@ void	AddChildThread(NewChildFrameData* pData);
 /// マルチスレッドモードでの子スレッド作成
 void	ExecuteChildFrameThread(CChildFrame* pChild, NewChildFrameData* pData);
 
+/// マルチプロセスモードで子プロセスの作成
+void	CreateChildProcess(NewChildFrameData& data);
 
 };	// namespace MultiThreadManager
 

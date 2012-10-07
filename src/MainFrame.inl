@@ -544,7 +544,7 @@ void	CMainFrame::Impl::OnClose()
 	if (_ConfirmCloseForFileDownloading() == false)
 		return ;
 
-	if ( CDonutConfirmOption::OnDonutExit(m_hWnd) == false ) {
+	if ( CDonutConfirmOption::OnDonutExit(m_hWnd, m_setChildProcessId) == false ) {
 		if (IsWindowVisible() == FALSE) {
 			_SetHideTrayIcon();
 		}
@@ -1250,7 +1250,8 @@ LRESULT CMainFrame::Impl::OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam
 	} else {
 		switch (lParam) {
 		case WM_LBUTTONUP:
-			_DeleteTrayIcon();
+			//_DeleteTrayIcon();
+			OnGetOut(0, 0, NULL);
 			return 0;
 			break;
 
@@ -1267,11 +1268,13 @@ LRESULT CMainFrame::Impl::OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam
 				::GetCursorPos(&pt);
 				HRESULT hr = menu.TrackPopupMenu(TPM_LEFTALIGN | TPM_LEFTBUTTON | TPM_RIGHTBUTTON| TPM_RETURNCMD, pt.x, pt.y, m_hWnd, NULL);
 				if (hr == 57666/*復帰*/) {
-					_DeleteTrayIcon();
+					//_DeleteTrayIcon();
+					OnGetOut(0, 0, NULL);
 					return 0;
 				}
 				if (hr == 57665/*終了*/) {
-					_DeleteTrayIcon();
+					//_DeleteTrayIcon();
+					OnGetOut(0, 0, NULL);
 					PostMessage(WM_CLOSE);
 					break;
 				}
@@ -1320,7 +1323,10 @@ void	CMainFrame::Impl::OnInitProcessFinished()
 	static bool s_bInit = false;
 	if (s_bInit == false) {
 		extern CString g_commandline;	// Donut.cppにある
+		bool bSaveFlag = CMainOption::s_bExternalNewTabActive;
+		CMainOption::s_bExternalNewTabActive = true;
 		_NewDonutInstance(g_commandline);
+		CMainOption::s_bExternalNewTabActive = bSaveFlag;
 		s_bInit = true;
 	}
 }
@@ -1451,6 +1457,16 @@ void	CMainFrame::Impl::OnSetDLConfigToGlobalConfig()
 	::wcscpy_s(m_GlobalConfigManageData.pGlobalConfig->strDefaultDLFolder, CDLOptions::strDLFolderPath);
 	::wcscpy_s(m_GlobalConfigManageData.pGlobalConfig->strImageDLFolder, CDLOptions::strImgDLFolderPath);
 	m_GlobalConfigManageData.pGlobalConfig->dwDLImageExStyle	= CDLOptions::dwImgExStyle;
+}
+
+/// ChildProcessIdを追加/削除する
+void	CMainFrame::Impl::OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd)
+{
+	if (bAdd) {
+		m_setChildProcessId.insert(dwProcessId);
+	} else {
+		m_setChildProcessId.erase(dwProcessId);
+	}
 }
 
 
@@ -1738,6 +1754,9 @@ void	CMainFrame::Impl::OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 	if ( IsWindowVisible() ) {
 		//+++ メモ:窓状態のときはトレイ化
+		WINDOWPLACEMENT wp = { sizeof (WINDOWPLACEMENT) };
+		GetWindowPlacement(&wp);
+		nShow = wp.showCmd;
 #if 0
 		m_bTray = true; 		//+++
 		WINDOWPLACEMENT wp = { sizeof (WINDOWPLACEMENT) };
@@ -1756,6 +1775,8 @@ void	CMainFrame::Impl::OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl)
 		//x ShowWindow( SW_SHOW /*nShow*/ );
 
 		_DeleteTrayIcon();	//+++ トレイアイコン削除
+
+		ShowWindow(nShow);
 	}
 }
 
@@ -2472,6 +2493,7 @@ void	CMainFrame::Impl::_NewDonutInstance(const CString& strURL)
 	PerseUrls(strURL, vecUrl);
 	if (vecUrl.size() == 1) {
 		OnDDEOpenFile(vecUrl.front());
+
 	} else if (vecUrl.size() > 1) {
 		for (auto it = vecUrl.cbegin(); it !=  vecUrl.cend(); ++it) {
 			std::unique_ptr<NewChildFrameData>	item(new NewChildFrameData(m_ChildFrameClient));

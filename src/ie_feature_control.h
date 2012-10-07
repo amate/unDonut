@@ -49,6 +49,8 @@ inline void ie_feature_control_setting()
 {
 	// 拡張子ではなく内容によって開く、をやめる
 	ie_coInternetSetFeatureEnabled(FEATURE_MIME_SNIFFING   , SET_FEATURE_ON_PROCESS, TRUE);
+
+	//::CoInternetSetFeatureEnabled(FEATURE_TABBED_BROWSING, SET_FEATURE_ON_PROCESS, TRUE);
 #if 0	//* あとで
 	// 情報バー表示。ActivXの実行オフ時ActiveXオブジェクトがある場合等に表示
 	bool	sw = _check_flag(MAIN_EX_KILLDIALOG, CMainOption::s_dwMainExtendedStyle);

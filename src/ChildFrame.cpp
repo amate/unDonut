@@ -605,19 +605,7 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 		MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
 
 	} else if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
-
-		CSharedMemoryHandle sharedMem;
-		sharedMem.Serialize(data, nullptr, true);
-		CString commandline;
-		commandline.Format(_T("-NewProcessSharedMemoryData=%d"), sharedMem.Handle());
-
-		/* 子プロセス作成 */
-		STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
-		PROCESS_INFORMATION	processInfo = { 0 };
-		ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
-		::CloseHandle(processInfo.hProcess);
-		::CloseHandle(processInfo.hThread);
-
+		MultiThreadManager::CreateChildProcess(data);
 
 	} else {
 		ATLASSERT(FALSE);

@@ -11,7 +11,7 @@
 
 #include "../resource.h"
 #include "../MtlWin.h"
-
+#include <set>
 
 
 /**
@@ -41,7 +41,7 @@ public:
 	static void 	GetProfile();
 	static void 	WriteProfile();
 
-	static bool 	OnDonutExit(HWND hWnd = NULL);
+	static bool 	OnDonutExit(HWND hWnd, const std::set<DWORD>& setProcessId);
 	static bool 	OnCloseAll(HWND hWnd = NULL);
 	static bool 	OnCloseAllExcept(HWND hWnd = NULL);
 	static bool		OnCloseLeftRight(HWND hWnd = NULL, bool bLeft = false);
@@ -49,31 +49,7 @@ public:
 	static BOOL 	WhetherConfirmScript();
 
 private:
-	static bool 	_SearchDownloadingDialog();
-
-	//内部で使用する構造体
-	struct _Function_Searcher {
-		bool	m_bFound;
-
-		_Function_Searcher() : m_bFound(false) { }
-
-		bool operator ()(HWND hWnd)
-		{
-			if ( MtlIsWindowCurrentProcess(hWnd) ) {
-				CString strCaption = MtlGetWindowText(hWnd);
-
-				if ( (strCaption.Find( _T('%') ) != -1 && strCaption.Find( _T("完了しました") ) != -1)
-				   || strCaption.Find( _T("ファイルのダウンロード") ) != -1 )
-				{
-					m_bFound = true;
-					return false;
-				}
-			}
-
-			return true; // continue finding
-		}
-	};
-
+	static bool 	_SearchDownloadingDialog(const std::set<DWORD>& setProcessId);
 };
 
 

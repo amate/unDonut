@@ -145,6 +145,8 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			PostMessage(WM_CLOSE);
 			return ;
 		}
+		if (m_strNewWindowURL == _T("about:blank"))
+			m_strNewWindowURL = strURL;
 		m_bFirstNavigate = false;
 	}
 
@@ -393,6 +395,12 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 		statusText.Format(_T("ポップアップをブロックしました。: %s"), bstrUrl);
 		m_UIChange.SetTitle(statusText);
 		SetTimer(kReturnTitleTimerId, kReturnTitleInterval);
+		return ;
+	}
+
+	/// window.openなリンクをミドルクリックで開いたとき、空白なページが開かないようにする
+	if (CString(bstrUrl).Left(11).CompareNoCase(_T("javascript:")) == 0) {
+		bCancel = true;
 		return ;
 	}
 
@@ -773,20 +781,54 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 #endif
 
 	// 自動リサイズのトグル
-	if (   m_bImagePage 
-		&& pMsg->message == WM_LBUTTONDOWN 
+	if (   m_bImagePage
+		&& pMsg->message == WM_LBUTTONDOWN
 		&& m_pGlobalConfig->AutoImageResizeType != AUTO_IMAGE_RESIZE_NONE)
 	{
-		CPoint	pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
-		CRect	rc;
-		GetClientRect(&rc);
-		if (m_nImgSclSw == 0) {
-			rc.right -= GetSystemMetrics(SM_CXVSCROLL);
-			rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+		CPoint ptCur;
+		GetCursorPos(&ptCur);
+		if (::DragDetect(m_hWnd, ptCur)) {
+			if (m_nImgScl == 100) {
+				/// 原寸画像をドラッグでスクロール
+				SetCapture();
+				CPoint ptFirst(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+				CComPtr<IDispatch> spDisp;
+				m_spBrowser->get_Document(&spDisp);
+				CComQIPtr<IHTMLDocument2> spDoc(spDisp);
+				CComPtr<IHTMLWindow2> spWindow;
+				spDoc->get_parentWindow(&spWindow);
+
+				MSG msg = { 0 };
+				do {
+					BOOL nRet = GetMessage(&msg, NULL, 0, 0);
+					if (nRet == 0 || nRet == -1 || GetCapture() != m_hWnd)
+						break;
+
+					if (msg.message == WM_MOUSEMOVE) {
+						CPoint	ptNow(GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam));
+						int xDiff = ptFirst.x - ptNow.x;
+						int yDiff = ptFirst.y - ptNow.y;
+						ptFirst = ptNow;
+						spWindow->scrollBy(xDiff, yDiff);
+					}
+					::DispatchMessage(&msg);
+				} while (msg.message != WM_LBUTTONUP);
+				ReleaseCapture();
+				return FALSE;
+			} 
+		} else {
+			// 拡大/原寸のトグル切替
+			CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+			CRect	rc;
+			GetClientRect(&rc);
+			if (m_nImgSclSw == 0) {
+				rc.right -= GetSystemMetrics(SM_CXVSCROLL);
+				rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+			}
+			if (rc.PtInRect(pt))
+				OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, (HWND)true);
+			return FALSE;
 		}
-		if (rc.PtInRect(pt))
-			OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, (HWND)true);
-		return FALSE;
 	}
 
 	// ミドルクリック
@@ -2288,9 +2330,13 @@ void 	CChildFrame::Impl::OnAddClosePopupUrl(WORD /*wNotifyCode*/, WORD /*wID*/, 
 {
 //	CIgnoredURLsOption::Add( GetLocationURL() );
 	//m_bClosing = true;
+
+	if (::GetKeyState(VK_CONTROL) < 0) {
+		MtlSetClipboardText(m_strNewWindowURL, NULL);
+		return ;
+	}
+
 	CString url = GetLocationURL();
-	if (::GetKeyState(VK_CONTROL) < 0)
-		url = m_strNewWindowURL;
 	COPYDATASTRUCT cds = { 0 };
 	cds.dwData	= kAddIgnoreURL;
 	cds.lpData	= static_cast<LPVOID>(url.GetBuffer(0));
@@ -3221,7 +3267,7 @@ void	CChildFrame::Impl::_ExecuteUserJavascript(const CString& strScriptText)
 	if (spWindow == nullptr)
 		return ;
 	CComVariant	vRet;
-	spWindow->execScript(CComBSTR(strScriptText), CComBSTR(L"javascript"), &vRet);
+	HRESULT hr = spWindow->execScript(CComBSTR(strScriptText), CComBSTR(L"javascript"), &vRet);
 	TRACEIN(_T("_ExecuteUserJavascript() : 実行(%s)"), CString(strScriptText).Left(45));
 }
 
