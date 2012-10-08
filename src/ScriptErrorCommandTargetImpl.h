@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "DonutDefine.h"
 
 //+++ #include "DonutDefine.h" したら、その中のincludeで依存関係の辻褄が
 //+++ 合わなくなったので必要な1行をコピペ(ここでしか使わないので移動)
@@ -56,12 +57,55 @@ public:
 
 		secTRACE( _T("IScriptErrorCommandTargetImpl::Exec\n") );
 
-		T * 	pT		  = static_cast<T *>(this);
-		CWindow wndFrame  = pT->GetTopLevelParent();
-		CWindow wndStatus = wndFrame.GetDlgItem(ATL_IDW_STATUS_BAR);
-		wndStatus.SetWindowText( _T("スクリプトエラーが発生しました") );
 		pvaOut->vt	   = VT_BOOL;
 		V_BOOL(pvaOut) = VARIANT_TRUE;
+
+		CString strErrorMessage;
+
+		CComPtr<IHTMLDocument2>	spIHTMLDocument2;
+		CComPtr<IHTMLWindow2>	spIHTMLWindow2;
+		CComPtr<IHTMLEventObj>	spIHTMLEventObj;
+
+		if (pvaIn && pvaIn->punkVal)
+			pvaIn->punkVal->QueryInterface(IID_IHTMLDocument2,(void**)&spIHTMLDocument2);
+		if (spIHTMLDocument2)
+			spIHTMLDocument2->get_parentWindow(&spIHTMLWindow2);
+		if (spIHTMLWindow2)
+			spIHTMLWindow2->get_event(&spIHTMLEventObj);
+		if (spIHTMLEventObj) {
+			OLECHAR*	pwszName[] = {L"errorLine",L"errorCharacter",L"errorCode",L"errorMessage",L"errorUrl"};
+			TCHAR*		pszHeader[] = {_T("ライン："),_T("文字："),_T("エラーコード："),_T(""),_T("URI：")};
+
+			for (int i = 0; i < 5; ++i) {
+				DISPID		nDispID;
+				HRESULT		hr;
+				DISPPARAMS	sDispParams;
+				CComVariant	vResult;
+
+				//エラー情報のDISPID取得
+				hr = spIHTMLEventObj->GetIDsOfNames(IID_NULL, &pwszName[i], 1, LOCALE_SYSTEM_DEFAULT, &nDispID);
+				if(FAILED(hr))
+					continue;
+
+				//エラー情報取得
+				::ZeroMemory(&sDispParams,sizeof(DISPPARAMS));
+				hr = spIHTMLEventObj->Invoke(nDispID, IID_NULL, LOCALE_SYSTEM_DEFAULT, DISPATCH_PROPERTYGET, &sDispParams, &vResult, NULL, NULL);
+				if(FAILED(hr))
+					continue;
+
+				CString	strBuff;
+				CComVariant varResult;
+				hr = ::VariantChangeType( &varResult, &vResult, 0, VT_BSTR );
+				if (SUCCEEDED(hr))
+					strBuff = varResult.bstrVal;
+
+				strErrorMessage += pszHeader[i];
+				strErrorMessage += strBuff;
+				strErrorMessage += _T("\r\n");
+			}
+		}
+		T* pT = static_cast<T*>(this);
+		pT->GetParent().SendMessage(WM_SETLASTSCRIPTERRORMESSAGE, (WPARAM)strErrorMessage.GetBuffer(0));
 
 		return S_OK;
 	}

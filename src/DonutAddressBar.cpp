@@ -353,7 +353,7 @@ void	CDonutAddressBar::Impl::ReloadSkin(int nCmbStyle)
 // 'h'‚ª”²‚¯‚Ä‚¢‚ê‚Î•âŠ®‚·‚é
 void	CDonutAddressBar::Impl::_ComplementURL(CString &strURL)
 {
-	std::wregex rx(L"(?:(?:(?:(?:(?:h|)t|)t|)p(s)?|)://|)?((?:(?:\\w+\\.)+)\\w+(?::\\d+)?(?:/.*)?)", std::regex_constants::icase);
+	std::wregex rx(L"(?:(?:(?:(?:(?:h|)t|)t|)p(s)?|)://|)?((?:(?:[a-z0-9_-]+\\.)+)\\w+(?::\\d+)?(?:/.*)?)", std::regex_constants::icase);
 	std::wsmatch result;
 	std::wstring url = strURL;
 	if (std::regex_match(url, result, rx)) {

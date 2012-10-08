@@ -397,6 +397,9 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_VIEW_FULLSCREEN		, OnViewFullScreen		)
 
 		// ÉcÅ[Éã
+		COMMAND_ID_HANDLER_EX( ID_DOUBLE_CLOSE			, OnDoubleClose		)
+		COMMAND_ID_HANDLER_EX( ID_POPUP_CLOSE			, OnPopupClose		)
+		COMMAND_ID_HANDLER_EX( ID_TITLE_CLOSE			, OnTitleClose		)
 		COMMAND_ID_HANDLER_EX( ID_GET_OUT				, OnGetOut			)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION			, OnViewOption		)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut	)
@@ -620,7 +623,7 @@ public:
 	LRESULT OnMyNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	BOOL	OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
 
-	void	OnInitProcessFinished();
+	void	OnInitProcessFinished(bool bHome);
 	void	OnBrowserTitleChange(HWND hWndChildFrame, LPCTSTR strTitle);
 	void	OnBrowserLocationChange(LPCTSTR strURL, HICON hFavicon);
 
@@ -657,6 +660,9 @@ public:
 	void	OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	void	OnDoubleClose(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnPopupClose(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnTitleClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnViewOption(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndCtl);

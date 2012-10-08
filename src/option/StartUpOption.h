@@ -102,8 +102,6 @@ private:
 template <class _MainFrame>
 void CStartUpOption::StartUp(_MainFrame &__frame)
 {
-	HWND	hWndChild = NULL;
-
 	switch (s_dwFlags) {
 	case STARTUP_NOINITWIN:
 		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
@@ -111,7 +109,7 @@ void CStartUpOption::StartUp(_MainFrame &__frame)
 
 	case STARTUP_GOHOME:
 		::PostMessage(__frame.GetHWND(), WM_COMMAND, ID_FILE_NEW_HOME, 0);
-		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
+		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, true, 0);
 		break;
 
 	case STARTUP_LATEST:

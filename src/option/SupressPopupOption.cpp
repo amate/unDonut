@@ -100,6 +100,19 @@ void CSupressPopupOption::UpdateSupressPopupData(HWND hWndMainFrame)
 }
 
 
+void CSupressPopupOption::ReCreateSupressPopupDataAndNotify()
+{
+	s_sharedMem.CloseHandle();
+
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s%#x"), IGNOREURLLISTSHAREDMEMNAME, s_hWndMainFrame);
+	s_sharedMem.Serialize(s_PopupBlockData, sharedMemName);
+
+	NotifyUpdateToChildFrame();
+}
+
+
+
 bool CSupressPopupOption::SearchURLString(const CString &strURL)
 {
 	if (s_PopupBlockData.bValidIgnoreURL == false)

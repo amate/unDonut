@@ -207,6 +207,8 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			_SetFavicon(strURL);
 		}
 
+		m_strLastScriptErrorMessage.Empty();
+
 	}
 	
 	m_bNowNavigate = true;	// Navigate中である
@@ -1781,6 +1783,16 @@ void	CChildFrame::Impl::OnRemoveHilight()
 }
 
 
+void	CChildFrame::Impl::OnStatusBarDefaultPaneDblClk(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (m_strLastScriptErrorMessage.GetLength() > 0) {
+		if (::GetKeyState(VK_CONTROL) < 0)
+			MtlSetClipboardText(m_strLastScriptErrorMessage, NULL);
+		MessageBox(m_strLastScriptErrorMessage, _T("スクリプトエラー"), MB_ICONWARNING);
+	}
+}
+
+
 /// ポップアップズームメニューを開く
 void	CChildFrame::Impl::OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
@@ -2271,14 +2283,12 @@ void 	CChildFrame::Impl::OnEditOpenSelectedText(WORD /*wNotifyCode*/, WORD /*wID
 		return;
 
 	std::vector<CString>	vecUrls;
-	std::wregex rx(L"(http(?:s|)://|)((?:[a-zA-Z0-9_\\-]+\\.)+\\w+(?::\\d+|)(?:/[a-zA-Z0-9./_\\-?#%&=+あ-んア-ンｱ-ﾝ一-龠]*|))");
+	std::wregex rx(L"(?:(?:(?:(?:(?:h|)t|)t|)p(s)?|)://|)?((?:(?:[a-z0-9_-]+\\.)+)\\w+(?::\\d+)?(?:/\\S*)?)", std::regex_constants::icase);
 	std::wsmatch result;
 	auto itbegin = strText.cbegin();
 	auto itend	 = strText.cend();
 	while (std::regex_search(itbegin, itend, result, rx)) {
-		CString strUrl;
-		if (result[1].str().empty())
-			strUrl = _T("http://");
+		CString strUrl = result[1].str().empty() ? _T("http://") : _T("https://");
 		strUrl += result[2].str().c_str();
 		vecUrls.push_back(strUrl);
 		itbegin = result[0].second;

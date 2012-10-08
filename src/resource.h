@@ -968,6 +968,7 @@
 #define ID_33231                        33231
 #define ID_AUTOLOGIN                    33232
 #define ID_AUTOLOGINEDIT                33233
+#define ID_STATUSBAR_DEFAULTPANE		33234
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -1012,7 +1013,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        331
-#define _APS_NEXT_COMMAND_VALUE         33234
+#define _APS_NEXT_COMMAND_VALUE         33235
 #define _APS_NEXT_CONTROL_VALUE         1457
 #define _APS_NEXT_SYMED_VALUE           130
 #endif

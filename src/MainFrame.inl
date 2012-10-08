@@ -851,6 +851,7 @@ void	CMainFrame::Impl::_initStatusBar()
 	//		int nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_COMBOBOX_PANE};
 	static int   nPanes[] = { ID_DEFAULT_PANE, ID_PROGRESS_PANE, ID_PRIVACY_PANE, ID_SECURE_PANE, ID_COMBOBOX_PANE };
 	m_StatusBar.SetPanes( nPanes, _countof(nPanes), false );
+	m_StatusBar.SetCommand( ID_DEFAULT_PANE , ID_STATUSBAR_DEFAULTPANE);
 	m_StatusBar.SetCommand( ID_PRIVACY_PANE, ID_PRIVACYREPORT );
 	m_StatusBar.SetCommand( ID_SECURE_PANE, ID_SECURITYREPORT);
 	m_StatusBar.SetIcon( ID_PRIVACY_PANE, 1 );				//minit
@@ -1318,15 +1319,28 @@ BOOL	CMainFrame::Impl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 }
 
 /// コマンドラインを実行する
-void	CMainFrame::Impl::OnInitProcessFinished()
+void	CMainFrame::Impl::OnInitProcessFinished(bool bHome)
 {
 	static bool s_bInit = false;
 	if (s_bInit == false) {
 		extern CString g_commandline;	// Donut.cppにある
-		bool bSaveFlag = CMainOption::s_bExternalNewTabActive;
-		CMainOption::s_bExternalNewTabActive = true;
-		_NewDonutInstance(g_commandline);
-		CMainOption::s_bExternalNewTabActive = bSaveFlag;
+		if (bHome) {
+			m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>());
+			std::vector<CString> vecUrl;
+			PerseUrls(g_commandline, vecUrl);
+			for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
+				NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
+				pdata->strURL	= *it;
+				pdata->bActive	= it == vecUrl.cbegin();
+				m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
+			}
+			// あとはOnTabCreateがタブを作ってくれる
+		} else {
+			bool bSaveFlag = CMainOption::s_bExternalNewTabActive;
+			CMainOption::s_bExternalNewTabActive = true;
+			_NewDonutInstance(g_commandline);
+			CMainOption::s_bExternalNewTabActive = bSaveFlag;
+		}
 		s_bInit = true;
 	}
 }
@@ -1746,6 +1760,27 @@ void	CMainFrame::Impl::OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wnd
 	//bool bOldShell = _check_flag(MAIN_EX_ORGFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
 	//MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
 }
+
+
+void	CMainFrame::Impl::OnDoubleClose(UINT uNotifyCode, int nID, CWindow wndCtl) 
+{
+	CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL = !CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL;
+	CSupressPopupOption::s_PopupBlockData.bValidCloseTitle = !CSupressPopupOption::s_PopupBlockData.bValidCloseTitle;
+	CSupressPopupOption::ReCreateSupressPopupDataAndNotify();
+}
+
+void	CMainFrame::Impl::OnPopupClose(UINT uNotifyCode, int nID, CWindow wndCtl) 
+{
+	CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL = !CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL;
+	CSupressPopupOption::ReCreateSupressPopupDataAndNotify();
+}
+
+void	CMainFrame::Impl::OnTitleClose(UINT uNotifyCode, int nID, CWindow wndCtl) 
+{
+	CSupressPopupOption::s_PopupBlockData.bValidCloseTitle = !CSupressPopupOption::s_PopupBlockData.bValidCloseTitle;
+	CSupressPopupOption::ReCreateSupressPopupDataAndNotify();
+}
+
 
 /// タスクトレイに退避
 void	CMainFrame::Impl::OnGetOut(UINT uNotifyCode, int nID, CWindow wndCtl)

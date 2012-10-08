@@ -618,12 +618,12 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
-// void	OnInitProcessFinished()
+// void	OnInitProcessFinished(bool bHome)
 #define WM_INITPROCESSFINISHED	(WM_USER + 119)
 #define USER_MSG_WM_INITPROCESSFINISHED(func)	\
 	if (uMsg == WM_INITPROCESSFINISHED) {	   \
 		SetMsgHandled(TRUE);		   \
-		func();				\
+		func(wParam != 0);				\
 		lResult = 0;					\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
@@ -900,6 +900,21 @@ enum TabCreateOption {
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
 	}
+
+
+//	void OnSetLastScriptErrorMessage(LPCTSTR strErrorMessage)
+#define WM_SETLASTSCRIPTERRORMESSAGE	(WM_USER + 148)
+#define USER_MSG_WM_SETLASTSCRIPTERRORMESSAGE(func)	\
+	if (uMsg == WM_SETLASTSCRIPTERRORMESSAGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((LPCTSTR)wParam);				\
+		lResult = 0;				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+
 
 
 // ===================================================================

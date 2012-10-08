@@ -47,9 +47,11 @@ public:
 	static void AddIgnoreURL(const CString &strURL);
 	static void AddCloseTitle(const CString &strTitle);
 
+	static void ReCreateSupressPopupDataAndNotify();
+
 protected:
 	static void GetProfile();
-	static void WriteProfile(bool bIgnoreURLPropertyPage);
+	static void WriteProfile(bool bIgnoreURLPropertyPage);	
 	static void	NotifyUpdateToChildFrame();
 
 	// Data members

@@ -385,6 +385,7 @@ public:
 		USER_MSG_WM_GETLOGININFOMATION		( OnGetLoginInfomation	)
 		USER_MSG_WM_UPDATEAUTOLOGINDATALIST	( OnUpdateAutoLoginDataList	)
 		USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
+		USER_MSG_WM_SETLASTSCRIPTERRORMESSAGE( OnSetLastScriptErrorMessage	)
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -418,6 +419,8 @@ public:
 		USER_MSG_WM_CHILDFRAMEFINDKEYWORD	( OnFindKeyWord 	)
 		// 独自ページ内検索バーから
 		USER_MSG_WM_REMOVEHILIGHT( OnRemoveHilight )
+
+		COMMAND_ID_HANDLER_EX( ID_STATUSBAR_DEFAULTPANE	, OnStatusBarDefaultPaneDblClk )
 
 		COMMAND_ID_HANDLER_EX( ID_HTMLZOOM_MENU			, OnHtmlZoomMenu			)
 		// Special command
@@ -472,6 +475,10 @@ public:
 	HANDLE	OnGetLoginInfomation(HANDLE hMapForClose);
 	void	OnUpdateAutoLoginDataList() { CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow()); }
 	void	OnUpdateSupressPopupData() { CSupressPopupOption::UpdateSupressPopupData(GetTopLevelWindow()); }
+	void	OnSetLastScriptErrorMessage(LPCTSTR strErrorMessage) { 
+		m_UIChange.SetStatusText(_T("スクリプトエラーが発生しました"));
+		m_strLastScriptErrorMessage = strErrorMessage; 
+	}
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -505,6 +512,8 @@ public:
 	int		OnFindKeyWord(HANDLE handle);
 	// 独自ページ内検索バーから
 	void	OnRemoveHilight();
+
+	void	OnStatusBarDefaultPaneDblClk(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnHtmlZoomMenu(UINT uNotifyCode, int nID, CWindow wndCtl);
 	// Specla command
@@ -574,6 +583,7 @@ private:
 
 	bool	m_bMClickFail;
 	CSharedMemory m_sharedTravelLogMenu;
+	CString m_strLastScriptErrorMessage;
 };
 
 #include "ChildFrame.inl"
