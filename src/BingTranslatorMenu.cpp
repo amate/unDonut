@@ -242,7 +242,7 @@ void CBingTranslatorMenu::OnInitMenuPopup(CMenuHandle menuPopup, UINT nIndex, BO
 			std::string strTempBuff;
 			while (1) {
 				enum { BuffSize = 512 };
-				char Buff[BuffSize] = "\0";
+				char Buff[BuffSize + 1] = "\0";
 				DWORD ReadSize = 0;
 				if (::InternetReadFile(hFile, (LPVOID)Buff, BuffSize, &ReadSize) && ReadSize == 0)
 					break;

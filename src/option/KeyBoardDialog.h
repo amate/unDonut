@@ -20,8 +20,8 @@ public:
 	}
 
 	// for MainFrame
-	static HACCEL CreateOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
-	static void	  DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
+	static void	CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAccel);
+	static void	DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
 
 	// for ChildFrame
 	void	ReloadAccelerator(HWND hWndMainFrame);

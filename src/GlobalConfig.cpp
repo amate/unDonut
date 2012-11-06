@@ -62,6 +62,10 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	pConfig->dwDLControlFlags		= CDLControlOption::s_dwDLControlFlags;
 	pConfig->dwExtendedStyleFlags	= CDLControlOption::s_dwExtendedStyleFlags;
 
+	pConfig->bChangeUserAgent	= (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_USER_AGENT_FLAG) != 0;
+	::wcscpy_s(pConfig->strUserAgent, CDLControlOption::s_szUserAgent);
+	::wcscpy_s(pConfig->strUserAgentCurrent, CDLControlOption::s_szUserAgent_cur);
+
 	// CSearchBarOption
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
 	pConfig->bSaveSearchWord	= CSearchBarOption::s_bSaveSearchWord;

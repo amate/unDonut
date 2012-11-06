@@ -93,7 +93,7 @@ public:
 	//見つからない場合は0を返す
 	HACCEL		DeleteAccelerator(UINT uCmd);				//指定したコマンドIDを持つアクセラレータを削除する
 	HACCEL		AddAccelerator(ACCEL *lpAccel); 			//指定したアクセラレータをテーブルに追加する
-	HACCEL		LoadAccelaratorState(HACCEL hAccel);		//ファイルからアクセラレータの情報をロードする
+	void		LoadAccelaratorState(HACCEL& hAccel);		//ファイルからアクセラレータの情報をロードする
 
 	//(minit)引数はファイルが読めない場合の代替アクセラレータテーブル?
 	BOOL		SaveAccelaratorState(); 					//ファイルにアクセラレータテーブルの状態を記録する

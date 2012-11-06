@@ -512,9 +512,10 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
 	CCustomContextMenuOption::UpdateCustomContextMenuList(m_hWnd);
-	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWnd, m_hAccel);
 	CLoginDataManager::CreateOriginalLoginDataList(m_hWnd);
 	CSupressPopupOption::CreateSupressPopupData(m_hWnd);
+
+	CDLControlOption::SetUserAgent();
 
 	RegisterDragDrop();
 

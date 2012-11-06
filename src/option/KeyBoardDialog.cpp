@@ -19,15 +19,15 @@ CSharedMemory CAcceleratorOption::s_sharedMem;
 
 
 /// アクセラレータテーブルを読み込んでChildFrameのために共有メモリに書き込んでおく
-HACCEL CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel)
+void CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAccel)
 {
 	CAccelerManager accel(hAccel);
-	hAccel = accel.LoadAccelaratorState(hAccel);
+	accel.LoadAccelaratorState(hAccel);
 
 	s_sharedMem.CloseHandle();
 
 	if (accel.m_nAccelSize == 0)
-		return hAccel;
+		return ;
 
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), ACCELERATORSHAREDMEMNAME, hWndMainFrame);
@@ -37,8 +37,6 @@ HACCEL CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL hA
 	*pAccelSize = accel.m_nAccelSize;
 	pView = static_cast<void*>(reinterpret_cast<int*>(pView) + 1);
 	ATLVERIFY(::memcpy_s(pView, size - sizeof(int), accel.m_lpAccel, size - sizeof(int)) == 0);
-
-	return hAccel;
 }
 
 void	CAcceleratorOption::DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel)
@@ -163,7 +161,7 @@ void CKeyBoardPropertyPage::_GetData()
 	accelManager.SaveAccelaratorState();
 
 	/* ChildFrameにアクセラレーターキーの更新を伝える */
-	m_hAccel = CAcceleratorOption::CreateOriginAccelerator(m_hWndMainFrame, m_hAccel);
+	CAcceleratorOption::CreateOriginAccelerator(m_hWndMainFrame, m_hAccel);
 	m_TabBarForEachWindow([](HWND hWnd) {
 		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
 	});

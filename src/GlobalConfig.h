@@ -30,6 +30,10 @@ struct GlobalConfig
 	DWORD	dwDLControlFlags;
 	DWORD	dwExtendedStyleFlags;
 
+	bool	bChangeUserAgent;
+	WCHAR	strUserAgent[256];
+	WCHAR	strUserAgentCurrent[256];
+
 	// CSearchBarOption
 	bool	bScrollCenter;
 	bool	bSaveSearchWord;

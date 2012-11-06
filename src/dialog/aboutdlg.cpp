@@ -144,7 +144,72 @@ LRESULT CAboutDlg::OnLButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 //OSが識別できなかった場合の文字列
 #define UNKNOWNCODE 		_T("OS:unknown")
 
+static CString GetRenderingMode()
+{
+	CString exeFileName = Misc::GetFileBaseName(Misc::GetExeFileName());
 
+	// http://msdn.microsoft.com/en-us/library/ee330730(v=vs.85).aspx#browser_emulation
+	enum RenderingMode { 
+		kIE7mode = 7,
+		kIE8mode = 8,
+		kIE9mode = 9,
+		kIE10mode = 10,
+	};
+	RenderingMode mode = kIE7mode;
+	bool bForce = false;
+
+	auto funcGetRenderingModeFromRegistory = [&] (HKEY hk) {
+		static LPCTSTR BROWSEREMULATIONKEY	= _T("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION");
+		CRegKey rk;
+		LONG result = rk.Open(hk, BROWSEREMULATIONKEY, KEY_QUERY_VALUE);
+		if (result == ERROR_SUCCESS) {
+			DWORD dwMode = 0;
+			rk.QueryDWORDValue(exeFileName, dwMode);
+			switch (dwMode) {
+			// IE7mode
+			case 7000:
+			default:
+				mode = kIE7mode;
+				break;
+
+			// IE8mode
+			case 8888:
+				bForce = true;
+			case 8000:
+				mode = kIE8mode;
+				break;
+
+			// IE9mode
+			case 9999:
+				bForce = true;
+			case 9000:
+				mode = kIE9mode;
+				break;
+
+			// IE10mode
+			case 10001:
+				bForce = true;
+			case 10000:			
+				mode = kIE10mode;
+				break;
+			}
+		}
+	};
+
+	funcGetRenderingModeFromRegistory(HKEY_LOCAL_MACHINE);
+	funcGetRenderingModeFromRegistory(HKEY_CURRENT_USER);
+
+	CString temp;
+	temp.Format(_T("(IE%dmode"), mode);
+	if (bForce) {
+		temp += _T(" force");
+	}
+	if (Misc::IsGpuRendering()) {
+		temp += _T(", GPURendering 有効");
+	}
+	temp += _T(")");
+	return temp;
+}
 
 CString CAboutDlg::GetEnvironInfo()
 {
@@ -154,6 +219,7 @@ CString CAboutDlg::GetEnvironInfo()
 	CString strOSInfo	  = GetOSInfo();
 	CString strIEVersion  = GetIEVersion();
 	CString strUpdateInfo = GetUpdateInfo();
+	CString strRenderingMode = GetRenderingMode();
 
 	//判定失敗時の処理
 	if (strOSName != UNKNOWNCODE)
@@ -161,13 +227,11 @@ CString CAboutDlg::GetEnvironInfo()
 
 	//情報をテキストボックスに表示
 	CString strInfo;
-	strInfo.Format(_T("%s %s\r\nOS : %s (%s) %s\r\nIE : %s%s\r\n"),
-				   app::cnt_AppName, app::cnt_AppVersion, strOSName, strVersion, strOSInfo, strIEVersion, strUpdateInfo);
+	strInfo.Format(_T("%s %s\r\nOS : %s (%s) %s\r\nIE : %s%s %s\r\n"),
+				   app::cnt_AppName, app::cnt_AppVersion, strOSName, strVersion, strOSInfo, strIEVersion, strUpdateInfo, strRenderingMode);
 
 	return strInfo;
 }
-
-
 
 CString CAboutDlg::GetIEVersion()
 {
@@ -194,8 +258,7 @@ CString CAboutDlg::GetIEVersion()
 		}
 	}
 
-
-	return CString(buf);
+	return buf;
 }
 
 

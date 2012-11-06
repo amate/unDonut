@@ -140,12 +140,13 @@ void CKeyHelper::SetAccelerator(LPACCEL lpAccel)
 //CAccelerManagerの定義
 ////////////////////////////////////////////////////////////////////////////////
 
-CAccelerManager::CAccelerManager(HACCEL hAccel)
+CAccelerManager::CAccelerManager(HACCEL hAccel) : m_hAccel(hAccel), m_nAccelSize(0), m_lpAccel(nullptr)
 {
-	m_hAccel	 = hAccel;
-	m_nAccelSize = ::CopyAcceleratorTable(m_hAccel, NULL, 0);
-	m_lpAccel	 = new ACCEL[m_nAccelSize];
-	::CopyAcceleratorTable(m_hAccel, m_lpAccel, m_nAccelSize);
+	if (m_hAccel) {
+		m_nAccelSize = ::CopyAcceleratorTable(m_hAccel, NULL, 0);
+		m_lpAccel	 = new ACCEL[m_nAccelSize];
+		::CopyAcceleratorTable(m_hAccel, m_lpAccel, m_nAccelSize);
+	}
 }
 
 
@@ -270,7 +271,7 @@ HACCEL CAccelerManager::AddAccelerator(ACCEL *lpAccel)
 
 
 ///+++ メモ:KeyBoard.iniよりキー定義を読み込む
-HACCEL CAccelerManager::LoadAccelaratorState(HACCEL hAccel)
+void CAccelerManager::LoadAccelaratorState(HACCEL& hAccel)
 {
 	CIniFileI	pr( GetConfigFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
 
@@ -279,7 +280,7 @@ HACCEL CAccelerManager::LoadAccelaratorState(HACCEL hAccel)
 	m_nAccelSize = dwMax;
 
 	if (m_nAccelSize == 0)
-		return hAccel;
+		return ;
 
 	delete[] m_lpAccel;
 	m_lpAccel	 = new ACCEL[m_nAccelSize];
@@ -305,8 +306,7 @@ HACCEL CAccelerManager::LoadAccelaratorState(HACCEL hAccel)
 	pr.Close();
 
 	::DestroyAcceleratorTable(hAccel);			//外部から与えられたものを削除するって設計的にまずくないかなぁ(minit)
-	m_hAccel	 = ::CreateAcceleratorTable(m_lpAccel, m_nAccelSize);
-	return m_hAccel;
+	hAccel = m_hAccel = ::CreateAcceleratorTable(m_lpAccel, m_nAccelSize);
 }
 
 

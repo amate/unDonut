@@ -782,6 +782,7 @@ CMainFrame::CMainFrame() : pImpl(new Impl)
 
 CMainFrame::~CMainFrame()
 {
+	delete pImpl;
 	g_pMainWnd = nullptr;
 }
 
@@ -811,6 +812,9 @@ void	CMainFrame::StartupMainFrameStyle(int nCmdShow, bool bTray)
 	} else if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_FULLSCREEN) {
 		//_FullScreen(TRUE);
 	}
+
+	// キーボードショートカットの初期化
+	CAcceleratorOption::CreateOriginAccelerator(pImpl->m_hWnd, pImpl->m_hAccel);	
 }
 
 void	CMainFrame::RestoreAllTab(LPCTSTR strFilePath /*= nullptr*/, bool bCloseAllTab /*= false*/)

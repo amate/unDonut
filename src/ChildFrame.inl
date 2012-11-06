@@ -1002,8 +1002,8 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_UIChange.SetChildFrame(m_hWnd);
 	m_UIChange.AddCommandUIMap();
 
+	// グローバル設定データを取得する
 	CWindow wndMainFrame = GetTopLevelWindow();
-
 	m_GlobalConfigManageData = GetGlobalConfig(wndMainFrame);
 	m_pGlobalConfig	= m_GlobalConfigManageData.pGlobalConfig;
 	m_view.SetGlobalConfig(m_pGlobalConfig);
@@ -1021,6 +1021,15 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 			CSupressPopupOption::UpdateSupressPopupData(wndMainFrame);
 			s_bInit = true;
 		}
+		
+		// ユーザーエージェントを設定
+		std::vector<char>	userAgent;
+		if (m_pGlobalConfig->bChangeUserAgent) {
+			userAgent = Misc::wcs_to_sjis( m_pGlobalConfig->strUserAgent );
+		} else {
+			userAgent = Misc::wcs_to_sjis( m_pGlobalConfig->strUserAgentCurrent );
+		}
+		::UrlMkSetSessionOption(URLMON_OPTION_USERAGENT, (void*)userAgent.data(), (int)userAgent.size(), 0);
 	}
 
 	RECT rc;
@@ -1786,9 +1795,9 @@ void	CChildFrame::Impl::OnRemoveHilight()
 void	CChildFrame::Impl::OnStatusBarDefaultPaneDblClk(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	if (m_strLastScriptErrorMessage.GetLength() > 0) {
+		MessageBox(m_strLastScriptErrorMessage, _T("スクリプトエラー"), MB_ICONWARNING);
 		if (::GetKeyState(VK_CONTROL) < 0)
 			MtlSetClipboardText(m_strLastScriptErrorMessage, NULL);
-		MessageBox(m_strLastScriptErrorMessage, _T("スクリプトエラー"), MB_ICONWARNING);
 	}
 }
 

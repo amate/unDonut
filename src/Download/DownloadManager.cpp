@@ -125,8 +125,11 @@ HWND CDownloadManager::OnGetDownloadingViewHWND()
 void CDownloadManager::OnShowDLManager(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	if (CDLControlOption::s_bUseDLManager == false)	{
-		::MessageBox(NULL, _T("[Donutのオプション]->[ブラウザ]->「ダウンロードマネージャーを使用する」にチェックを入れてください"), NULL, MB_OK | MB_ICONWARNING);
-		return;
+		// 直接呼び出された場合は無視する
+		if (!(uNotifyCode == 0 && nID == 0 && wndCtl == NULL)) {
+			::MessageBox(NULL, _T("[Donutのオプション]->[ブラウザ]->「ダウンロードマネージャーを使用する」にチェックを入れてください"), NULL, MB_OK | MB_ICONWARNING);
+			return;
+		}
 	}
 	if (m_wndDownload.IsWindow() == FALSE) {
 		m_wndDownload.CreateEx();

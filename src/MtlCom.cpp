@@ -76,7 +76,7 @@ bool MtlGetDropFileName(IDataObject *pDataObject, CSimpleArray<CString> &arrFile
 		arrFileNames.Add( CString(szFileName) );
 	}
 
-	::DragFinish(hDropInfo); // required?
+	//::DragFinish(hDropInfo); // required? \\Ç¢ÇÁÇ»Ç¢ÅHÇ†ÇÈÇ∆óéÇøÇÈ
 
 	::ReleaseStgMedium(&stgmedium);
 
