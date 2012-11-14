@@ -8,6 +8,7 @@
 #include "../MtlMisc.h"
 #include "../appconst.h"
 #include "../DonutPFunc.h"
+#include "../option/MainOption.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
@@ -160,7 +161,7 @@ static CString GetRenderingMode()
 
 	auto funcGetRenderingModeFromRegistory = [&] (HKEY hk) {
 		static LPCTSTR BROWSEREMULATIONKEY	= _T("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION");
-		CRegKey rk;
+		ATL::CRegKey rk;
 		LONG result = rk.Open(hk, BROWSEREMULATIONKEY, KEY_QUERY_VALUE);
 		if (result == ERROR_SUCCESS) {
 			DWORD dwMode = 0;
@@ -225,10 +226,12 @@ CString CAboutDlg::GetEnvironInfo()
 	if (strOSName != UNKNOWNCODE)
 		strOSName = _T("Windows ") + strOSName;
 
+	CString strmode = CMainOption::s_BrowserOperatingMode == kMultiThreadMode ? _T("(mt)") : _T("(mp)");
+
 	//情報をテキストボックスに表示
 	CString strInfo;
-	strInfo.Format(_T("%s %s\r\nOS : %s (%s) %s\r\nIE : %s%s %s\r\n"),
-				   app::cnt_AppName, app::cnt_AppVersion, strOSName, strVersion, strOSInfo, strIEVersion, strUpdateInfo, strRenderingMode);
+	strInfo.Format(_T("%s %s %s\r\nOS : %s (%s) %s\r\nIE : %s%s %s\r\n"),
+				   app::cnt_AppName, app::cnt_AppVersion, strmode, strOSName, strVersion, strOSInfo, strIEVersion, strUpdateInfo, strRenderingMode);
 
 	return strInfo;
 }

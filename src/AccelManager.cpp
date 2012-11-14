@@ -275,12 +275,12 @@ void CAccelerManager::LoadAccelaratorState(HACCEL& hAccel)
 {
 	CIniFileI	pr( GetConfigFilePath( _T("KeyBoard.ini") ), _T("KEYBOARD") );
 
-	DWORD		dwMax = 0;
+	DWORD	dwMax = 0;
 	pr.QueryValue( (DWORD) dwMax, _T("MAX") );
-	m_nAccelSize = dwMax;
-
-	if (m_nAccelSize == 0)
+	if (dwMax == 0)
 		return ;
+
+	m_nAccelSize = dwMax;
 
 	delete[] m_lpAccel;
 	m_lpAccel	 = new ACCEL[m_nAccelSize];

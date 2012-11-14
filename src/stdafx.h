@@ -13,7 +13,7 @@
 #ifdef WIN64	//+++ 64ビット版win は winXp64以降のみに対応.
 #define WINVER					0x0502
 #define _WIN32_WINNT			0x0502
-#define _WIN32_IE				0x0603					//+++ _WIN32_IE_IE60SP2
+#define _WIN32_IE				0x0700					//+++ _WIN32_IE_IE60SP2
 #define _RICHEDIT_VER			0x0100					//+++ 0x200以上(3?)で十分だが、なんとなく
 #define DONUT_NAME				_T("64unDonut")
 #ifdef NDEBUG
@@ -24,7 +24,7 @@
 #else		   //+++ 一応、win9xの範囲 //\\2000以降に変更
 #define WINVER					0x0502
 #define _WIN32_WINNT			0x0502	// XP
-#define _WIN32_IE				0x0603
+#define _WIN32_IE				0x0700
 #define _RICHEDIT_VER			0x0100
 #define DONUT_NAME				_T("unDonut_mp")
 #ifdef NDEBUG

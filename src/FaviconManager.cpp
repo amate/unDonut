@@ -137,9 +137,13 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 
 HICON	CFaviconManager::_DownloadFavicon(LPCTSTR FaviconURL)
 {
+	CoInitialize(NULL);
+
 	CString strSaveIconPath;
 	::URLDownloadToCacheFile(NULL, FaviconURL, strSaveIconPath.GetBuffer(INTERNET_MAX_URL_LENGTH), INTERNET_MAX_URL_LENGTH, 0, NULL);
 	strSaveIconPath.ReleaseBuffer();
+
+	CoUninitialize();
 
 	CString strExt = Misc::GetFileExt(strSaveIconPath);
 	strExt.MakeLower();

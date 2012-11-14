@@ -22,6 +22,8 @@ class CRenameDialog : public CDialogImpl<CRenameDialog>
 {
 public:
 	enum { IDD = IDD_RENAMEDIALOG };
+
+	enum { WM_SELTEXTWITHOUTEXT = WM_APP + 1 };
 	
 	// Constructor
 	CRenameDialog(LPCTSTR strOldFileName, LPCTSTR strFilePath) : m_strOldFileName(strOldFileName)
@@ -34,16 +36,31 @@ public:
 
 	BEGIN_MSG_MAP( CRenameDialog )
 		MSG_WM_INITDIALOG( OnInitDialog )
+		MESSAGE_HANDLER_EX( WM_SELTEXTWITHOUTEXT, OnSelTextWithoutExt )
 		COMMAND_ID_HANDLER_EX( IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX( IDCANCEL, OnCancel )
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	{
-		GetDlgItem(IDC_EDIT).SetWindowText(m_strOldFileName);
+		CEdit edit = GetDlgItem(IDC_EDIT);
+		edit.SetWindowText(m_strOldFileName);
+		CString ext = Misc::GetFileExt(m_strOldFileName);
+		if (ext.GetLength() > 0) {
+			int nSel = m_strOldFileName.GetLength() - ext.GetLength() - 1;
+			PostMessage(WM_SELTEXTWITHOUTEXT, nSel);
+		}
+		
 		//WTL::CLogFont	lf;
 		//lf.SetMenuFont();
 		//GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
+		return 0;
+	}
+
+	LRESULT OnSelTextWithoutExt(UINT uMsg, WPARAM wParam, LPARAM lParam)
+	{
+		CEdit edit = GetDlgItem(IDC_EDIT);
+		edit.SetSel(0, (int)wParam, TRUE);
 		return 0;
 	}
 
@@ -584,7 +601,6 @@ LRESULT CDownloadingListView::OnIsDoubleDownloading(UINT uMsg, WPARAM wParam, LP
 		}
 	}
 	if (pDLItem == nullptr) {
-		ATLASSERT( FALSE );
 		return false;
 	}
 

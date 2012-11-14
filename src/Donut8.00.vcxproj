@@ -1131,6 +1131,7 @@
     <ClCompile Include="ChildFrame.cpp" />
     <ClCompile Include="ChildFrameCommandUIUpdater.cpp" />
     <ClCompile Include="CmbboxPrxy.cpp" />
+    <ClCompile Include="CustomHttpInternetProtocol.cpp" />
     <ClCompile Include="DocHostUIHandlerDispatch.cpp" />
     <ClCompile Include="Donut.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">Disabled</Optimization>
@@ -1344,6 +1345,7 @@
     <ClInclude Include="ChildFrame.h" />
     <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
+    <ClInclude Include="CustomHttpInternetProtocol.h" />
     <ClInclude Include="CustomSerializeClass.h" />
     <ClInclude Include="DialogHook.h" />
     <ClInclude Include="DialogKiller.h" />

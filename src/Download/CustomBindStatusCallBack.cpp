@@ -257,8 +257,8 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 			m_hFile = ::CreateFile(m_pDLItem->strIncompleteFilePath, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 			if (m_hFile == INVALID_HANDLE_VALUE) {
 				//ATLASSERT(FALSE);
-				CString strError = _T("ファイルの作成に失敗しました\n");
-				strError += GetLastErrorString();
+				CString strError;
+				strError.Format(_T("ファイルの作成に失敗しました\n%s\n「%s」"), GetLastErrorString(), m_pDLItem->strIncompleteFilePath);
 				MessageBox(NULL, strError, NULL, MB_OK | MB_ICONWARNING);
 				Cancel();
 				return E_ABORT;
@@ -271,6 +271,9 @@ HRESULT CCustomBindStatusCallBack::OnDataAvailable(
 
 	if (m_spStream && dwSize > m_dwTotalRead) {
 		DWORD dwRead = dwSize - m_dwTotalRead; // まだ読まれていないデータ量
+		enum { kMinBuffSize = 5120 };
+		if (dwRead < kMinBuffSize)
+			dwRead = kMinBuffSize;
 		DWORD dwActuallyRead = 0;
 		if (dwRead > 0) {
 			do {

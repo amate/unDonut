@@ -893,6 +893,12 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
+	// Ctrl + Tab
+	if((pMsg->message == WM_KEYDOWN) && (pMsg->wParam == VK_TAB) && ::GetKeyState(VK_CONTROL) < 0) {
+		GetTopLevelWindow().PostMessage(WM_COMMAND, ::GetKeyState(VK_SHIFT) < 0 ? ID_TAB_LEFT : ID_TAB_RIGHT);
+		return TRUE;
+	}
+
 	// アクセラレータキー
 	if (m_AcceleratorOption.TranslateAccelerator(m_hWnd, pMsg))
 		return TRUE;
