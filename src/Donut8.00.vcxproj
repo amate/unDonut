@@ -856,7 +856,6 @@
   <ItemGroup>
     <ClCompile Include="AccelManager.cpp" />
     <ClCompile Include="APIHook.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug-MB|x64'">true</ExcludedFromBuild>
@@ -869,7 +868,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-DIET|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release-MB|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="appconst.cpp" />
     <ClCompile Include="AutoLogin.cpp" />
@@ -1131,7 +1129,6 @@
     <ClCompile Include="ChildFrame.cpp" />
     <ClCompile Include="ChildFrameCommandUIUpdater.cpp" />
     <ClCompile Include="CmbboxPrxy.cpp" />
-    <ClCompile Include="CustomHttpInternetProtocol.cpp" />
     <ClCompile Include="DocHostUIHandlerDispatch.cpp" />
     <ClCompile Include="Donut.cpp">
       <Optimization Condition="'$(Configuration)|$(Platform)'=='Debug-DIET|Win32'">Disabled</Optimization>
@@ -1345,7 +1342,6 @@
     <ClInclude Include="ChildFrame.h" />
     <ClInclude Include="ChildFrameCommandUIUpdater.h" />
     <ClInclude Include="CmbboxPrxy.h" />
-    <ClInclude Include="CustomHttpInternetProtocol.h" />
     <ClInclude Include="CustomSerializeClass.h" />
     <ClInclude Include="DialogHook.h" />
     <ClInclude Include="DialogKiller.h" />

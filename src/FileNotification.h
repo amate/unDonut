@@ -43,7 +43,7 @@ public:
 
 		m_hNotification = ::FindFirstChangeNotification(  strDirPath,
 														bWatchSubTree,													// flag for monitoring
-														FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME);	// fixed by INUYA, thank you.
+														FILE_NOTIFY_CHANGE_FILE_NAME | FILE_NOTIFY_CHANGE_DIR_NAME | FILE_NOTIFY_CHANGE_LAST_WRITE);	// fixed by INUYA, thank you.
 		ATLASSERT(m_hNotification != INVALID_HANDLE_VALUE);
 		if (m_hNotification == INVALID_HANDLE_VALUE) 			// can't find the Link directory
 			return false;

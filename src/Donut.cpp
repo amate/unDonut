@@ -26,8 +26,7 @@
 #include "MultiThreadManager.h"
 #include "DonutSimpleEventManager.h"
 #include "VersionControl.h"
-#include "CustomHttpInternetProtocol.h"
-
+#include "APIHook.h"
 
 // Ini file name
 TCHAR				g_szIniFileName[MAX_PATH];
@@ -454,18 +453,6 @@ static int RunMainFrame(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 	hRes = ::CoResumeClassObjects();
 	ATLASSERT( SUCCEEDED(hRes) );
 
-	CComPtr<IInternetSession> spInternetSession;
-	hRes = ::CoInternetGetSession(0, &spInternetSession, 0);
-	ATLASSERT( SUCCEEDED(hRes) );
-
-	// {69E8F9D2-DC21-4D5F-9C3A-3D3E25DECC6C}
-	static const GUID CLSID_CustomHttpInternetProtocol = 
-	{ 0x69e8f9d2, 0xdc21, 0x4d5f, { 0x9c, 0x3a, 0x3d, 0x3e, 0x25, 0xde, 0xcc, 0x6c } };
-
-	CCustomHttpInternetProtocolClassFactory	factory;
-	hRes = spInternetSession->RegisterNameSpace(&factory, CLSID_CustomHttpInternetProtocol, L"http", 0, NULL, 0);
-	ATLASSERT( SUCCEEDED(hRes) );
-
 	int nRet = 0;
 	{
 		CMessageLoop theLoop;
@@ -490,8 +477,6 @@ static int RunMainFrame(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 
 		_Module.RemoveMessageLoop();
 	}
-	hRes = spInternetSession->UnregisterNameSpace(&factory, L"http:");
-	ATLASSERT( SUCCEEDED(hRes) );
 
 	_Module.RevokeClassObjects();
 	::Sleep(_Module.m_dwPause);
@@ -531,6 +516,11 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 
 	// 設定ファイルのフルパスを取得する
 	InitDonutConfigFilePath(g_szIniFileName, MAX_PATH);
+
+	// urlkillフックを仕掛ける
+	CString killfilepath = GetConfigFilePath(_T("kill.txt"));
+	if (::PathFileExists(killfilepath) != 0)
+		DoHookInternetConnect();
 
 	if (MultiThreadManager::RunChildProcessMessageLoop(hInstance)) 
 		return 0;

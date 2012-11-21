@@ -168,6 +168,8 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			m_dwMarshalDLCtrlFlags = 0;
 		}
 
+		m_view.PutDLControlFlags(m_view.GetDLControlFlags());
+
 		if (m_view.m_bLightRefresh) {
 			m_view.m_bLightRefresh = false;	// 手動でセキュリティを設定したので何もしない
 		} else	{	
@@ -801,7 +803,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 				spDoc->get_parentWindow(&spWindow);
 
 				MSG msg = { 0 };
-				do {
+				for (;;) {
 					BOOL nRet = GetMessage(&msg, NULL, 0, 0);
 					if (nRet == 0 || nRet == -1 || GetCapture() != m_hWnd)
 						break;
@@ -812,11 +814,13 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 						int yDiff = ptFirst.y - ptNow.y;
 						ptFirst = ptNow;
 						spWindow->scrollBy(xDiff, yDiff);
+					} else if (msg.message == WM_LBUTTONUP) {
+						break;
 					}
 					::DispatchMessage(&msg);
-				} while (msg.message != WM_LBUTTONUP);
+				}
 				ReleaseCapture();
-				return FALSE;
+				return TRUE;
 			} 
 		} else {
 			// 拡大/原寸のトグル切替
@@ -829,7 +833,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 			}
 			if (rc.PtInRect(pt))
 				OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, (HWND)true);
-			return FALSE;
+			return TRUE;
 		}
 	}
 

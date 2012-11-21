@@ -4,7 +4,6 @@
 
 #pragma once
 
-#include <Windows.h>
-
-
-void	APIHook(PCSTR pszModuleName, PCSTR pszFuncName, PROC pfnReplace, PROC* ppfnOrig);
+////////////////////////////////////////////////////
+/// InternetConnectに対してフックを仕掛ける
+void	DoHookInternetConnect();

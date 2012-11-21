@@ -914,6 +914,17 @@ enum TabCreateOption {
 	}
 
 
+//	LRESULT	OnGetUniqueNumberForDLItem();
+#define WM_GETUNIQUENUMBERFORDLITEM	(WM_USER + 149)
+#define USER_MSG_WM_GETUNIQUENUMBERFORDLITEM(func)	\
+	if (uMsg == WM_GETUNIQUENUMBERFORDLITEM) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = func();				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 
 
 

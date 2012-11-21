@@ -39,8 +39,9 @@ bool CDownloadManager::UseDownloadManager()
 
 
 //---------------------------------------
-CCustomBindStatusCallBack*	CDownloadManager::CreateCustomBindStatusCallBack(HWND hWndMainFrame, uintptr_t unique, LPCTSTR defaultDLFolder)
+CCustomBindStatusCallBack*	CDownloadManager::CreateCustomBindStatusCallBack(HWND hWndMainFrame, LPCTSTR defaultDLFolder)
 {
+	uintptr_t unique = ::SendMessage(hWndMainFrame, WM_GETUNIQUENUMBERFORDLITEM, 0, 0);
 	/* ‹¤—Lƒƒ‚ƒŠ‚ðì¬ */
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
@@ -76,7 +77,7 @@ void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND h
 	if (dwDLOption & DLO_SHOWWINDOW || CDLOptions::bShowWindowOnDL) 
 		OnShowDLManager(0, 0, NULL);
 
-	auto pCBSCB = CreateCustomBindStatusCallBack(m_hWndParent, ::timeGetTime(), CDLOptions::strDLFolderPath);
+	auto pCBSCB = CreateCustomBindStatusCallBack(m_hWndParent, CDLOptions::strDLFolderPath);
 	pCBSCB->SetReferer(s_strReferer);
 	s_strReferer.Empty();
 	pCBSCB->SetOption(strDLFolder, hWnd, dwDLOption);

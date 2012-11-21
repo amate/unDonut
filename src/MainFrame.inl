@@ -1186,7 +1186,7 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 			if (CDLOptions::bShowWindowOnDL)
 				m_DownloadManager.OnShowDLManager(0, 0, NULL);
 
-			auto pCustomBindStatusCallback = CDownloadManager::CreateCustomBindStatusCallBack(m_hWnd, DLdata.unique, CDLOptions::strDLFolderPath);
+			auto pCustomBindStatusCallback = CDownloadManager::CreateCustomBindStatusCallBack(m_hWnd, CDLOptions::strDLFolderPath);
 			pCustomBindStatusCallback->SetReferer(DLdata.strReferer.c_str());			
 			pCustomBindStatusCallback->SetOption(DLdata.strFolder.c_str(), NULL, DLdata.dwImageExStyle);
 
@@ -1483,6 +1483,15 @@ void	CMainFrame::Impl::OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd)
 		m_setChildProcessId.erase(dwProcessId);
 	}
 }
+
+// for DownloadManager
+LRESULT CMainFrame::Impl::OnGetUniqueNumberForDLItem()
+{
+	static LRESULT unique = 0;
+	++unique;
+	return unique;
+}
+
 
 
 void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)

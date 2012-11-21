@@ -443,9 +443,6 @@
     <ClCompile Include="DonutExplorerBar.cpp">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClCompile>
-    <ClCompile Include="CustomHttpInternetProtocol.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -943,7 +940,6 @@
     <ClInclude Include="option\SupressPopupOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
-    <ClInclude Include="CustomHttpInternetProtocol.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

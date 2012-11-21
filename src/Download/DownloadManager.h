@@ -1,7 +1,5 @@
 #pragma once
 
-#include <regex>
-#include <boost\thread.hpp>
 #include <downloadmgr.h>
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
@@ -51,7 +49,7 @@ public:
 	static bool UseDownloadManager();
 	static void	SetReferer(LPCTSTR strReferer) { s_strReferer = strReferer; }
 
-	static CCustomBindStatusCallBack*	CreateCustomBindStatusCallBack(HWND hWndMainFrame, uintptr_t unique, LPCTSTR defaultDLFolder);
+	static CCustomBindStatusCallBack*	CreateCustomBindStatusCallBack(HWND hWndMainFrame, LPCTSTR defaultDLFolder);
 	static void	StartTheDownload(LPCTSTR strURL, IBindStatusCallback* pcbsc);
 
 	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = DLO_OVERWRITEPROMPT );

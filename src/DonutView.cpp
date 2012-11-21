@@ -384,7 +384,7 @@ STDMETHODIMP CDonutView::Download(
 		wndMainFrame.SendMessage(WM_COMMAND, ID_SHOW_DLMANAGER);
 
 	CString strReferer = GetLocationURL();
-	CCustomBindStatusCallBack* pCBSCB = CDownloadManager::CreateCustomBindStatusCallBack(wndMainFrame, reinterpret_cast<uintptr_t>(pmk), m_pGlobalConfig->strDefaultDLFolder);
+	CCustomBindStatusCallBack* pCBSCB = CDownloadManager::CreateCustomBindStatusCallBack(wndMainFrame, m_pGlobalConfig->strDefaultDLFolder);
 	IBindStatusCallback* pbscbPrev;
 	HRESULT hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, &pbscbPrev, 0);
 	if (FAILED(hr) && pbscbPrev) {
@@ -788,6 +788,7 @@ bool CDonutView::_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse)
 	}
 
 	PutDLControlFlags(dwDLControlFlags);
+	_LightRefresh();
 	return bRet;
 }
 
@@ -811,6 +812,7 @@ void CDonutView::_AddFlag(DWORD dwFlag) 	//minit
 	dwDLControlFlags |= dwFlag;
 
 	PutDLControlFlags(dwDLControlFlags);
+	_LightRefresh();
 }
 
 /// DLフラグを取り除く
@@ -820,6 +822,7 @@ void CDonutView::_RemoveFlag(DWORD dwFlag)	//minit
 	dwDLControlFlags &= ~dwFlag;
 
 	PutDLControlFlags(dwDLControlFlags);
+	_LightRefresh();
 }
 
 /// 自動更新用のタイマーを開始する

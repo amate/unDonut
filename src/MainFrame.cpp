@@ -343,6 +343,9 @@ public:
 
 		USER_MSG_WM_ADDREMOVECHILDPROCESSID( OnAddRemoveChildProcessId	)
 
+		// for DownloadManager
+		USER_MSG_WM_GETUNIQUENUMBERFORDLITEM( OnGetUniqueNumberForDLItem	)
+
 		m_bCommandFromChildFrame = false;
 		if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loopñhé~
 			uMsg = WM_COMMAND;
@@ -642,6 +645,9 @@ public:
 	void	OnReleaseProcessMonitorPtr() { m_pProcessMonitor.reset(); }
 
 	void	OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd);
+
+	// for DownloadManager
+	LRESULT OnGetUniqueNumberForDLItem();
 
 	// Commands
 	void	OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl);

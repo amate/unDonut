@@ -12,8 +12,20 @@
 #include <tlhelp32.h>
 #include <Dbghelp.h>
 
+#include <WinInet.h>
+
+#include <string>
+#include <unordered_map>
+#include <list>
+#include <memory>
+#include "DonutPFunc.h"
+#include "FileNotification.h"
+
+
 // ImageDirectoryEntryToData
 #pragma comment(lib, "Dbghelp.lib")
+
+namespace {
 
 // ひとつのモジュールに対してAPIフックを行う関数
 void ReplaceIATEntryInOneMod(
@@ -81,120 +93,203 @@ void ReplaceIATEntryInAllMods(
     CloseHandle(hModuleSnap);
 }
 
-#if 0
-// フックする関数のプロトタイプを定義
-typedef int (WINAPI *PFNMESSAGEBOXA)(HWND, PCSTR, PCSTR, UINT);
-typedef int (WINAPI *PFNMESSAGEBOXW)(HWND, PCSTR, PCSTR, UINT);
+}	// namespace
 
-int WINAPI Hook_MessageBoxA(
-                            HWND hWnd, 
-                            PCSTR pszText, 
-                            PCSTR pszCaption, 
-                            UINT uType)
-{
-    // オリジナルMessageBoxAを呼び出す
-    PROC pfnOrig = GetProcAddress(
-        GetModuleHandleA("user32.dll"), "MessageBoxA");
-    int nResult = ((PFNMESSAGEBOXA) pfnOrig)
-        (hWnd, pszText, _T("I am Hook_MessageBoxA"), uType);
-    return nResult;
-}
-
-int WINAPI Hook_MessageBoxW(
-                            HWND hWnd, 
-                            PCSTR pszText, 
-                            PCSTR pszCaption, 
-                            UINT uType)
-{
-    // オリジナルMessageBoxAを呼び出す
-    PROC pfnOrig = GetProcAddress(
-        GetModuleHandleA("user32.dll"), "MessageBoxW");
-    int nResult = ((PFNMESSAGEBOXA) pfnOrig)
-        (hWnd, pszText, _T("I am Hook_MessageBoxW"), uType);
-    return nResult;
-}
-#endif
-
-#if 0
-int APIENTRY _tWinMain(HINSTANCE hInstance,
-                       HINSTANCE hPrevInstance,
-                       LPTSTR    lpCmdLine,
-                       int       nCmdShow)
-{
-    PROC pfnOrig;
-    pfnOrig = ::GetProcAddress(
-        GetModuleHandleA("user32.dll"), "MessageBoxA");
-    ReplaceIATEntryInAllMods(
-        "user32.dll", pfnOrig, (PROC)Hook_MessageBoxA);
-
-    pfnOrig = ::GetProcAddress(
-        GetModuleHandleA("user32.dll"), "MessageBoxW");
-    ReplaceIATEntryInAllMods(
-        "user32.dll", pfnOrig, (PROC)Hook_MessageBoxW);
-
-    MessageBox(GetActiveWindow(), 
-        _T("メッセージボックス表示のテスト"), _T("テスト"), MB_OK);
-    return 0;
-}
-
-#endif
-
-#if 0
-typedef UINT_PTR (WINAPI *PFNSETTIMER)(HWND, UINT_PTR, UINT, TIMERPROC);
-
-PFNSETTIMER pfnOrg;
-
-UINT_PTR WINAPI Hook_SetTimer(
-  HWND hWnd,              // ウィンドウのハンドル
-  UINT_PTR nIDEvent,      // タイマの識別子
-  UINT uElapse,           // タイムアウト値
-  TIMERPROC lpTimerFunc)   // タイマのプロシージャ
-{
-	return pfnOrg(hWnd, nIDEvent, uElapse, lpTimerFunc);
-}
-
-APIHook("user32.dll", "SetTimer", (PROC)Hook_SetTimer, (PROC*)&pfnOrg);
-
-#endif
+////////////////////////////////////////////////////////////////////////////////
+// リンクしているdll内にある関数を置換する
 
 void	APIHook(PCSTR pszModuleName, PCSTR pszFuncName, PROC pfnReplace, PROC* ppfnOrig)
 {
     PROC pfnOrig = ::GetProcAddress(GetModuleHandleA(pszModuleName), pszFuncName);
-	if (pfnOrig == NULL)
+	if (pfnOrig == NULL) {
+		ATLASSERT( FALSE );
 		return;
+	}
 
     ReplaceIATEntryInAllMods(
         pszModuleName, pfnOrig, pfnReplace);
 	*ppfnOrig = pfnOrig;
 }
 
+
+
+/////////////////////////////////////////////////////////////////////////////////////
+// InternetConnectW Hook
+
+namespace {
+
+FILETIME	GetFileLastWriteTime(LPCTSTR filepath)
+{
+	FILETIME lastWriteTime = {};
+	HANDLE hFile = CreateFile(GetConfigFilePath(_T("kill.txt")), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return lastWriteTime;
+	
+	GetFileTime(hFile, NULL, NULL, &lastWriteTime);
+	CloseHandle(hFile);
+	return lastWriteTime;
+}
+
+class CURLHashMatch
+{
+public:
+	CURLHashMatch();
+
+	void	StartWatch();
+	void	LoadURLList();
+
+	bool	IsKillURL(LPCWSTR url);
+
+private:
+	std::vector<CString>	_SplitURL(LPCWSTR host, int count);
+
+	struct WordUnit {
+		std::unordered_map<std::wstring, std::unique_ptr<WordUnit> > wordmap;
+	};
+	WordUnit	m_unitList;
+	//CDirectoryWatcher	m_killtxtWatcher;
+	CFileNotification	m_killtxtModifyNotificate;
+	FILETIME	m_lastWriteTime;
+} matchtest;
+
+CURLHashMatch::CURLHashMatch() : m_lastWriteTime()
+{
 #if 0
-// ダメでしたー
-typedef DWORD (WINAPI* pFuncGetModuleFileNameW)(HMODULE, LPWSTR, DWORD);
-pFuncGetModuleFileNameW pfOrgGetModuleFileNameW = nullptr;
-typedef DWORD (WINAPI* pFuncGetModuleFileNameA)(HMODULE, LPSTR, DWORD);
-pFuncGetModuleFileNameA pfOrgGetModuleFileNameA = nullptr;
-
-DWORD WINAPI Hook_GetModuleFileNameW(HMODULE hModule, LPWSTR lpFilename, DWORD nSize)
-{
-	DWORD dwRet = pfOrgGetModuleFileNameW(hModule, lpFilename, nSize);
-	LPWSTR name = ::PathFindFileNameW(lpFilename);
-	if (::_wcsicmp(name, L"unDonut.exe") == 0) {
-		::PathRemoveFileSpecW(lpFilename);
-		::PathAppendW(lpFilename, L"iexplore.exe");
-	}
-	return dwRet;
-}
-
-DWORD WINAPI Hook_GetModuleFileNameA(HMODULE hModule, LPSTR lpFilename, DWORD nSize)
-{
-	DWORD dwRet = pfOrgGetModuleFileNameA(hModule, lpFilename, nSize);
-	LPSTR name = ::PathFindFileNameA(lpFilename);
-	if (::_stricmp(name, "unDonut.exe") == 0) {
-		::PathRemoveFileSpecA(lpFilename);
-		::PathAppendA(lpFilename, "iexplore.exe");
-	}
-	return dwRet;
-}
-
+	m_killtxtWatcher.SetCallbackFunction([this](const CString& filename) {
+		if (filename.CompareNoCase(_T("kill.txt")) == 0)
+			LoadURLList();
+	});
+	m_killtxtWatcher.WatchDirectory(GetConfigFilePath(_T("")));
 #endif
+	LoadURLList();
+}
+
+void	CURLHashMatch::StartWatch()
+{
+	m_lastWriteTime = GetFileLastWriteTime(GetConfigFilePath(_T("kill.txt")));
+	m_killtxtModifyNotificate.SetFileNotifyFunc([this]() {
+		FILETIME nowLastWriteTime = GetFileLastWriteTime(GetConfigFilePath(_T("kill.txt")));
+		if (   nowLastWriteTime.dwHighDateTime != m_lastWriteTime.dwHighDateTime 
+			&& nowLastWriteTime.dwLowDateTime != m_lastWriteTime.dwLowDateTime)
+			LoadURLList();
+	});
+	m_killtxtModifyNotificate.SetUpFileNotification(GetConfigFilePath(_T("")));
+}
+
+void	CURLHashMatch::LoadURLList()
+{
+	//TIMERSTART();
+	m_unitList.wordmap.clear();
+
+	CString killfilepath = GetConfigFilePath(_T("Kill.txt"));
+	std::list<CString>	urlList;
+	FileReadString(killfilepath, urlList);
+
+	for (auto it = urlList.begin(); it != urlList.end(); ++it) {
+		if ((*it).Left(1) == _T("#") || it->IsEmpty())
+			continue;
+			
+		it->MakeLower();
+
+		int count = it->GetLength();
+		int slashPos = it->Find(_T('/'));
+		if (slashPos != -1)
+			count = slashPos;
+		std::vector<CString>	vecWordList = _SplitURL(*it, count);
+			
+		WordUnit* map = &m_unitList;
+		for (auto rit = vecWordList.begin(); rit != vecWordList.end(); ++rit) {
+			auto findit = map->wordmap.find(static_cast<LPCTSTR>(*rit));
+			if (findit != map->wordmap.end()) {  // もうすでにある
+				map = findit->second.get();
+			} else {
+				WordUnit* newmap = new WordUnit;
+				map->wordmap[std::wstring(*rit)] = std::unique_ptr<WordUnit>(std::move(newmap));
+				map = newmap;
+			}
+		}
+	}
+
+	//TIMERSTOP(_T("CURLHashMatch::LoadURLList()"));
+}
+
+bool	CURLHashMatch::IsKillURL(LPCWSTR host)
+{
+	std::vector<CString>	vecWordList = _SplitURL(host, ::wcslen(host));
+	WordUnit* map = &m_unitList;
+	for (auto it = vecWordList.cbegin(); it != vecWordList.cend(); ++it) {
+		auto findit = map->wordmap.find(static_cast<LPCWSTR>(*it));
+		if (findit == map->wordmap.cend()) {
+			return false;		// 見つからなかった
+		} else {
+			map = findit->second.get();
+			if (map->wordmap.size() == 0)	// もう終わりなので
+				return true;
+		}
+	}
+
+	return true;
+}
+
+
+std::vector<CString>	CURLHashMatch::_SplitURL(LPCWSTR host, int count)
+{
+	std::vector<CString>	vecWordList;
+	int lastDotPos = count;
+	for (int i = count - 1; i >= 0; --i) {
+		if (host[i] == L'.') {
+			WCHAR	word[512] = L"";
+			wcsncpy_s(word, &host[i + 1], lastDotPos - i - 1);
+			lastDotPos = i;
+			vecWordList.push_back(word);
+		}
+	}
+	WCHAR word[512] = L"";
+	wcsncpy_s(word, host, lastDotPos);
+	if (word[0] != L'*')
+		vecWordList.push_back(word);
+
+	return vecWordList;
+}
+
+
+typedef HINTERNET (WINAPI* FuncInternetConnectW)(
+    _In_ HINTERNET hInternet,
+    _In_ LPCWSTR lpszServerName,
+    _In_ INTERNET_PORT nServerPort,
+    _In_opt_ LPCWSTR lpszUserName,
+    _In_opt_ LPCWSTR lpszPassword,
+    _In_ DWORD dwService,
+    _In_ DWORD dwFlags,
+    _In_opt_ DWORD_PTR dwContext
+    );
+FuncInternetConnectW	pfOrgInternetConnectW = nullptr;
+
+HINTERNET WINAPI HookInternetConnectW(
+    _In_ HINTERNET hInternet,
+    _In_ LPCWSTR lpszServerName,
+    _In_ INTERNET_PORT nServerPort,
+    _In_opt_ LPCWSTR lpszUserName,
+    _In_opt_ LPCWSTR lpszPassword,
+    _In_ DWORD dwService,
+    _In_ DWORD dwFlags,
+    _In_opt_ DWORD_PTR dwContext
+    )
+{
+	if (matchtest.IsKillURL(lpszServerName))
+		return NULL;
+	else
+		return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
+}
+
+}	// namespace
+
+
+///////////////////////////////////////////////////////////////////////////////////////////
+// InternetConnectに対してフックを仕掛ける
+void	DoHookInternetConnect()
+{
+	APIHook("wininet.dll", "InternetConnectW", (PROC)&HookInternetConnectW, (PROC*)&pfOrgInternetConnectW);
+	matchtest.StartWatch();
+}
+
