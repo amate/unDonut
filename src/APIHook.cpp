@@ -145,6 +145,10 @@ private:
 
 	struct WordUnit {
 		std::unordered_map<std::wstring, std::unique_ptr<WordUnit> > wordmap;
+		bool	bEnd;
+
+		WordUnit() : bEnd(false)
+		{	}
 	};
 	WordUnit	m_unitList;
 	//CDirectoryWatcher	m_killtxtWatcher;
@@ -170,8 +174,11 @@ void	CURLHashMatch::StartWatch()
 	m_killtxtModifyNotificate.SetFileNotifyFunc([this]() {
 		FILETIME nowLastWriteTime = GetFileLastWriteTime(GetConfigFilePath(_T("kill.txt")));
 		if (   nowLastWriteTime.dwHighDateTime != m_lastWriteTime.dwHighDateTime 
-			&& nowLastWriteTime.dwLowDateTime != m_lastWriteTime.dwLowDateTime)
+			|| nowLastWriteTime.dwLowDateTime != m_lastWriteTime.dwLowDateTime)
+		{
 			LoadURLList();
+			m_lastWriteTime = nowLastWriteTime;
+		}
 	});
 	m_killtxtModifyNotificate.SetUpFileNotification(GetConfigFilePath(_T("")));
 }
@@ -207,6 +214,8 @@ void	CURLHashMatch::LoadURLList()
 				map->wordmap[std::wstring(*rit)] = std::unique_ptr<WordUnit>(std::move(newmap));
 				map = newmap;
 			}
+			if (&vecWordList.back() == &(*rit))
+				map->bEnd = true;
 		}
 	}
 
@@ -225,10 +234,12 @@ bool	CURLHashMatch::IsKillURL(LPCWSTR host)
 			map = findit->second.get();
 			if (map->wordmap.size() == 0)	// もう終わりなので
 				return true;
+			if (map->bEnd)			// 上位のドメインで登録されていたら
+				return true;
 		}
 	}
 
-	return true;
+	return false;
 }
 
 
@@ -244,11 +255,12 @@ std::vector<CString>	CURLHashMatch::_SplitURL(LPCWSTR host, int count)
 			vecWordList.push_back(word);
 		}
 	}
-	WCHAR word[512] = L"";
-	wcsncpy_s(word, host, lastDotPos);
-	if (word[0] != L'*')
-		vecWordList.push_back(word);
-
+	if (lastDotPos > 0) {
+		WCHAR word[512] = L"";
+		wcsncpy_s(word, host, lastDotPos);
+		if (word[0] != L'*')
+			vecWordList.push_back(word);
+	}
 	return vecWordList;
 }
 
@@ -276,10 +288,13 @@ HINTERNET WINAPI HookInternetConnectW(
     _In_opt_ DWORD_PTR dwContext
     )
 {
-	if (matchtest.IsKillURL(lpszServerName))
-		return NULL;
-	else
-		return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
+	if (matchtest.IsKillURL(lpszServerName)) {
+		if (!(::GetAsyncKeyState(VK_PAUSE) < 0)) {	//　pauseキーを押してればバイパス
+			TRACEIN(_T("urlkill : %s"), lpszServerName);
+			return NULL;
+		}
+	}
+	return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
 }
 
 }	// namespace

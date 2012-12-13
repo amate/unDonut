@@ -7,36 +7,43 @@
 
 #include "../resource.h"
 
-class CDonutRenameFileDialog
-	: public CDialogImpl<CDonutRenameFileDialog>
-	, public CWinDataExchange<CDonutRenameFileDialog>
+/////////////////////////////////////////////////////////////////
+/// ファイル名変更ダイアログ
+
+class CRenameDialog : public CDialogImpl<CRenameDialog>
 {
 public:
-	enum { IDD = IDD_DIALOG_RENAMEFILE };
+	enum { IDD = IDD_RENAMEDIALOG };
 
-	// Data members
-	CString 	m_strName;
+	enum { WM_SELTEXTWITHOUTEXT = WM_APP + 1 };
+	
+	// Constructor
+	CRenameDialog(LPCTSTR strOldFileName, LPCTSTR strFilePath, bool bDoRename = true);
+	
+	CString	GetNewFileName() const { return m_strNewFileName; }
+	CString GetNewFilePath() const { return m_strFolder + m_strNewFileName; }
 
-public:
-	// DDX map
-	BEGIN_DDX_MAP(CDonutRenameFileDialog)
-		DDX_TEXT_LEN ( IDC_EDIT_RENAMEFILE, m_strName, MAX_PATH )
-	END_DDX_MAP()
+	void	DoRename() const;
 
-	// Message map and handlers
-	BEGIN_MSG_MAP( CDonutRenameFileDialog ) 		//+++
-		MESSAGE_HANDLER 	( WM_INITDIALOG , OnInitDialog	)
-		COMMAND_ID_HANDLER	( IDOK			, OnOkCmd		)
-		COMMAND_ID_HANDLER	( IDCANCEL		, OnCloseCmd	)
+	BEGIN_MSG_MAP( CRenameDialog )
+		MSG_WM_INITDIALOG( OnInitDialog )
+		MESSAGE_HANDLER_EX( WM_SELTEXTWITHOUTEXT, OnSelTextWithoutExt )
+		COMMAND_ID_HANDLER_EX( IDOK, OnOk)
+		COMMAND_ID_HANDLER_EX( IDCANCEL, OnCancel )
 	END_MSG_MAP()
 
+	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
+	LRESULT OnSelTextWithoutExt(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	void OnOk(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl) {
+		EndDialog(nID);
+	}
+
 private:
-	LRESULT OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/);
-	LRESULT OnOkCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-	LRESULT OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-
-public:
-	static BOOL IsContainBadCharacterForName(CString &strFileName);
-	static void ReplaceBadCharacterForName(CString &strFileName);
+	// Data members
+	CString	m_strOldFileName;
+	CString m_strFolder;
+	CString m_strNewFileName;
+	bool	m_bDoRename;
 };
-

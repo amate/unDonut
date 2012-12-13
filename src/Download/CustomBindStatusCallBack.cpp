@@ -381,6 +381,20 @@ HRESULT CCustomBindStatusCallBack::OnResponse(
 		}
 	}
 	
+	{
+		std::wregex	rx(L"Content-Type: ([^\r]+)");
+		std::wsmatch	result;
+		if (std::regex_search(strRespons, result, rx)) {
+			CString type = result.str(1).c_str();
+			CString regkeyPath = _T("MIME\\Database\\Content Type\\") + type;
+			ATL::CRegKey rk;
+			if (rk.Open(HKEY_CLASSES_ROOT, regkeyPath, KEY_READ) == ERROR_SUCCESS) {
+				ULONG nChars = MAX_PATH;
+				rk.QueryStringValue(_T("Extension"), m_strExtentionFromContentType.GetBuffer(MAX_PATH), &nChars);
+				m_strExtentionFromContentType.ReleaseBuffer();
+			}
+		}
+	}
 	return S_OK;
 }
 
@@ -458,13 +472,26 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 
 	if (m_pDLItem->strFileName[0] == L'\0') {
 		//ATLASSERT(m_strDLFolder.IsEmpty() == FALSE);	// これ以外で失敗すると困る
-		::wcscpy_s(m_pDLItem->strFileName, Misc::GetFileBaseName(m_pDLItem->strURL));	// [?]がつくかも
-		CString temp = m_pDLItem->strFileName;
+		CString temp = Misc::GetFileBaseName(m_pDLItem->strURL);
 		int nQIndex = temp.ReverseFind(_T('?'));
 		if (nQIndex != -1) {
 			::wcscpy_s(m_pDLItem->strFileName, temp.Left(nQIndex));	// "?"から右は無視する
+		} else {
+			// ファイル名を入れるとMAX_PATHを超えるので切り詰め処理をする
+			int filepathlength = m_strDefaultDLFolder.GetLength() + temp.GetLength() + 20;
+			if (filepathlength > MAX_PATH) {
+				int reducelength = MAX_PATH - filepathlength;
+				ATLASSERT( temp.GetLength() - reducelength > 0 );
+				CString filebasename = Misc::GetFileBaseNoExt(temp);
+				CString fileext = Misc::GetFileExt(temp);
+				temp = filebasename.Left(filebasename.GetLength() - reducelength);
+				if (fileext.GetLength() > 0)
+					temp += _T(".") + fileext;
+			}
+			::wcscpy_s(m_pDLItem->strFileName, temp);
 		}
-		if (m_pDLItem->strFileName == L'\0')
+
+		if (m_pDLItem->strFileName[0] == L'\0')
 			::wcscpy_s(m_pDLItem->strFileName, _T("index"));	// めったにないと思うけど一応
 
 		temp = m_pDLItem->strFileName;
@@ -476,6 +503,10 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 			::wcscpy_s(m_pDLItem->strFileName, temp);
 		}
 	}
+
+	// 拡張子がなければContent-Typeから得た拡張子を付け加える(※とりあえず画像のみ)
+	if (Misc::GetFileExt(m_pDLItem->strFileName).IsEmpty())
+		::wcscat_s(m_pDLItem->strFileName, m_strExtentionFromContentType);
 
 	// リンク抽出ダイアログより(画像を保存も)
 	if (m_strDLFolder.IsEmpty() == FALSE) {
@@ -510,43 +541,52 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 				}
 			}
 		}
+
 		::swprintf_s(m_pDLItem->strIncompleteFilePath, L"%s.incomplete", m_pDLItem->strFilePath);
 		return true;
 	}
 	// 名前を付けて保存ダイアログを出す
 	if (::SendMessage(m_hWndDLing, WM_USER_USESAVEFILEDIALOG, 0, 0) != 0 || ::GetKeyState(VK_MENU) < 0) {
-		COMDLG_FILTERSPEC filter[] = {
-			{ L"テキスト文書 (*.txt)", L"*.txt" },// ダミー
-			{ L"すべてのファイル", L"*.*" }
-		};
-		CString strExt = Misc::GetFileExt(m_pDLItem->strFileName);
-		filter[0].pszName	= strExt.GetBuffer(0);
-		CString strSpec = _T("*.") + strExt;
-		filter[0].pszSpec	= strSpec.GetBuffer(0);
+		bool bRet = true;
+		boost::thread threadFileDialog([this, &bRet]() {
+			COMDLG_FILTERSPEC filter[] = {
+				{ L"テキスト文書 (*.txt)", L"*.txt" },// ダミー
+				{ L"すべてのファイル", L"*.*" }
+			};
+			CString strExt = Misc::GetFileExt(m_pDLItem->strFileName);
+			filter[0].pszName	= strExt.GetBuffer(0);
+			CString strSpec = _T("*.") + strExt;
+			filter[0].pszSpec	= strSpec.GetBuffer(0);
 
-		CShellFileSaveDialog	ShellSaveFileDialog(m_pDLItem->strFileName, FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT, strExt, filter, 2);
-		if (ShellSaveFileDialog.IsNull()  == false) {
-			if (ShellSaveFileDialog.DoModal(NULL) == IDOK) {		
-				ShellSaveFileDialog.GetFileTitle(m_pDLItem->strFileName, MAX_PATH);
-				ShellSaveFileDialog.GetFilePath(m_pDLItem->strFilePath, MAX_PATH);
+			CoInitialize(NULL);
+			CShellFileSaveDialog	ShellSaveFileDialog(m_pDLItem->strFileName, FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST | FOS_OVERWRITEPROMPT, strExt, filter, 2);
+			if (ShellSaveFileDialog.IsNull()  == false) {
+				if (ShellSaveFileDialog.DoModal(NULL) == IDOK) {		
+					ShellSaveFileDialog.GetFileTitle(m_pDLItem->strFileName, MAX_PATH);
+					ShellSaveFileDialog.GetFilePath(m_pDLItem->strFilePath, MAX_PATH);
+				} else {
+					bRet = false;
+				}
 			} else {
-				return false;
-			}
-		} else {
-			CFileDialog dlg(FALSE, NULL, m_pDLItem->strFileName, OFN_OVERWRITEPROMPT, _T("すべてのファイル (*.*)\0*.*\0\0"));
-			if (dlg.DoModal(NULL) == IDOK) {
-				::wcscpy_s(m_pDLItem->strFileName, dlg.m_szFileTitle);
-				strExt.Insert(0, _T('.'));
-				if (Misc::GetFileExt(m_pDLItem->strFileName).IsEmpty())
-					::wcscat_s(m_pDLItem->strFileName, strExt);
+				CFileDialog dlg(FALSE, NULL, m_pDLItem->strFileName, OFN_OVERWRITEPROMPT, _T("すべてのファイル (*.*)\0*.*\0\0"));
+				if (dlg.DoModal(NULL) == IDOK) {
+					::wcscpy_s(m_pDLItem->strFileName, dlg.m_szFileTitle);
+					strExt.Insert(0, _T('.'));
+					if (Misc::GetFileExt(m_pDLItem->strFileName).IsEmpty())
+						::wcscat_s(m_pDLItem->strFileName, strExt);
 
-				::wcscpy_s(m_pDLItem->strFilePath, dlg.m_szFileName);
-				if (Misc::GetFileExt(m_pDLItem->strFilePath).IsEmpty())
-					::wcscat_s(m_pDLItem->strFilePath, strExt);
-			} else {
-				return false;
+					::wcscpy_s(m_pDLItem->strFilePath, dlg.m_szFileName);
+					if (Misc::GetFileExt(m_pDLItem->strFilePath).IsEmpty())
+						::wcscat_s(m_pDLItem->strFilePath, strExt);
+				} else {
+					bRet = false;
+				}
 			}
-		}
+			CoUninitialize();
+		});
+		threadFileDialog.join();
+		if (bRet == false)
+			return false;
 	} else {
 		ATLASSERT( m_pDLItem->strFileName[0] != L'\0' );
 		::swprintf_s(m_pDLItem->strFilePath, _T("%s%s"), m_strDefaultDLFolder, m_pDLItem->strFileName);

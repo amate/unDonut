@@ -7,7 +7,10 @@
 #include "../resource.h"
 #include "../MainFrame.h"
 #include "../DonutPFunc.h"
+#include "../dialog/RenameFileDialog.h"
 
+////////////////////////////////////////////////////////////////////
+// CDownloadedListView
 
 void	CDownloadedListView::AddDownloadedItem(DLItem* pItem)
 {
@@ -197,26 +200,54 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 		::GetCursorPos(&pt);
 		CMenu menu;
 		menu.CreatePopupMenu();
-		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_ = 2, ID_COPYURL_ = 3, ID_LAST };
+		enum { ID_OPEN_ITEMSAVEFOLDER = 1, ID_OPEN_REFERER_, ID_COPYURL_, ID_RENAME, ID_LAST };
 
 		menu.InsertMenu( 0, MF_BYPOSITION | MF_ENABLED, ID_OPEN_ITEMSAVEFOLDER, _T("保存先フォルダを開く") );
 		menu.InsertMenu( 1, MF_BYPOSITION | MF_ENABLED, ID_OPEN_REFERER_	  , _T("ダウンロードしたページを表示する") );
 		menu.InsertMenu( 2, MF_BYPOSITION | MF_ENABLED, ID_COPYURL_			  , _T("URLをクリップボードにコピー") );
 
-
 		auto funcExeCommand = [=](int commandID) -> bool {
-			if (commandID == ID_OPEN_ITEMSAVEFOLDER) {
-				OpenFolderAndSelectItem(path);
+			switch (commandID) {
+			case ID_OPEN_ITEMSAVEFOLDER:
+				{
+					CString pathItem = path;
+					boost::thread([pathItem]() {
+						CoInitialize(NULL);
+						OpenFolderAndSelectItem(pathItem);
+						CoUninitialize();
+					}).detach();
+				}
+				break;
 
-			} else if(commandID == ID_OPEN_REFERER_) {
-				if (strReferer.IsEmpty())
-					return true;
-				DonutOpenFile(strReferer, D_OPENFILE_ACTIVATE);
+			case ID_OPEN_REFERER_:
+				if (strReferer.GetLength() > 0)
+					DonutOpenFile(strReferer, D_OPENFILE_ACTIVATE);
+				break;
 
-			} else if (commandID == ID_COPYURL_) {
+			case ID_COPYURL_:
 				MtlSetClipboardText(strURL, NULL);
-		
-			} else {
+				break;
+
+			case ID_RENAME:
+				{
+					CRenameDialog dlg(pItem->strFileName, pItem->strFilePath);
+					if (dlg.DoModal(NULL) == IDOK) {
+						::wcscpy_s(pItem->strFileName, dlg.GetNewFileName());
+						::wcscpy_s(pItem->strFilePath, dlg.GetNewFilePath());
+						int nCount = static_cast<int>(m_vecpDLItem.size());
+						for (int i = 0; i < nCount; ++i) {
+							if (m_vecpDLItem[i].get() == pItem) {
+								SetItemText(i, 1, pItem->strFileName);
+								SetItemText(i, 3, pItem->strFilePath);
+								break;
+							}
+						}
+						
+					}
+				}
+				break;
+
+			default:
 				return false;
 			}
 			return true;
@@ -226,6 +257,9 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 			funcExeCommand(nCmd);
 			return 0;
 		}
+
+		menu.InsertMenu( 2, MF_BYPOSITION | MF_ENABLED, ID_RENAME, _T("名前の変更") );
+		menu.InsertMenu( 3, MF_BYPOSITION | MF_SEPARATOR);
 
 		LPITEMIDLIST pidl = ILCreateFromPath(path);
 		if (pidl) {

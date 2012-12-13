@@ -74,6 +74,8 @@ BEGIN_OBJECT_MAP(ObjectMap)
 END_OBJECT_MAP()
 
 
+
+
 typedef BOOL (WINAPI *MiniDumpWriteDump_fp)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION, PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
 
 MiniDumpWriteDump_fp	funcMiniDumpWriteDump = nullptr;
@@ -744,4 +746,5 @@ void  Donut_ExplorerBar_RefreshFavoriteBar()
 {
 	//CDonutExplorerBar::GetInstance()->RefreshExpBar(0);
 }
+
 

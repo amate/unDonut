@@ -3,6 +3,8 @@
 #pragma once
 
 #include <boost/thread.hpp>
+#include <boost/optional.hpp>
+#include <boost/utility/in_place_factory.hpp>
 #include <atlctrls.h>
 #include <atlscrl.h>
 #include "../MtlDragDrop.h"
@@ -196,7 +198,7 @@ private:
 	CToolTipCtrl			m_ToolTip;
 	bool					m_bTimer;
 	DWORD					m_dwLastTime;
-	DLItem*	m_pItemPopup;
+	boost::optional<DLItem>	m_DLItemForPopup;
 };
 
 

@@ -110,4 +110,5 @@ private:
 	CString			m_strDLFolder;
 	HWND			m_hWndNotify;
 	DWORD			m_dwDLOption;
+	CString			m_strExtentionFromContentType;
 };

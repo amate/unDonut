@@ -12,89 +12,7 @@
 #include "../SharedMemoryUtil.h"
 #include "DLListWindow.h"
 #include "../MainFrame.h"
-
-namespace {
-
-/////////////////////////////////////////////////////////////////
-/// ファイル名変更ダイアログ
-
-class CRenameDialog : public CDialogImpl<CRenameDialog>
-{
-public:
-	enum { IDD = IDD_RENAMEDIALOG };
-
-	enum { WM_SELTEXTWITHOUTEXT = WM_APP + 1 };
-	
-	// Constructor
-	CRenameDialog(LPCTSTR strOldFileName, LPCTSTR strFilePath) : m_strOldFileName(strOldFileName)
-	{
-		m_strFolder = Misc::GetDirName(CString(strFilePath)) + _T("\\");
-	}
-	
-	CString	GetNewFileName() const { return m_strNewFileName; }
-	CString GetNewFilePath() const { return m_strFolder + m_strNewFileName; }
-
-	BEGIN_MSG_MAP( CRenameDialog )
-		MSG_WM_INITDIALOG( OnInitDialog )
-		MESSAGE_HANDLER_EX( WM_SELTEXTWITHOUTEXT, OnSelTextWithoutExt )
-		COMMAND_ID_HANDLER_EX( IDOK, OnOk)
-		COMMAND_ID_HANDLER_EX( IDCANCEL, OnCancel )
-	END_MSG_MAP()
-
-	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
-	{
-		CEdit edit = GetDlgItem(IDC_EDIT);
-		edit.SetWindowText(m_strOldFileName);
-		CString ext = Misc::GetFileExt(m_strOldFileName);
-		if (ext.GetLength() > 0) {
-			int nSel = m_strOldFileName.GetLength() - ext.GetLength() - 1;
-			PostMessage(WM_SELTEXTWITHOUTEXT, nSel);
-		}
-		
-		//WTL::CLogFont	lf;
-		//lf.SetMenuFont();
-		//GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
-		return 0;
-	}
-
-	LRESULT OnSelTextWithoutExt(UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		CEdit edit = GetDlgItem(IDC_EDIT);
-		edit.SetSel(0, (int)wParam, TRUE);
-		return 0;
-	}
-
-	void OnOk(UINT uNotifyCode, int nID, CWindow wndCtl)
-	{
-		m_strNewFileName = MtlGetWindowText(GetDlgItem(IDC_EDIT));
-		if (m_strNewFileName.IsEmpty()) {
-			MessageBox(_T("ファイル名を入力してください。"), NULL, MB_ICONERROR);
-			return ;
-		}
-		if (MtlIsValidateFileName(m_strNewFileName) == false) {
-			MessageBox(_T("有効なファイル名ではありません。\n「\\/:*?\"<>|」はファイル名に含めることはできません。"), NULL, MB_ICONERROR);
-			return ;
-		}
-		if (::PathFileExists(m_strFolder + m_strNewFileName)) {
-			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION | MB_YESNO) != IDYES)
-				return ;
-		}
-		EndDialog(nID);
-	}
-
-	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
-	{
-		EndDialog(nID);
-	}
-
-
-private:
-	CString	m_strOldFileName;
-	CString m_strFolder;
-	CString m_strNewFileName;
-};
-
-};	// namespace
+#include "../dialog/RenameFileDialog.h"
 
 
 ////////////////////////////////////////////////////////////////
@@ -102,8 +20,7 @@ private:
 
 // Constructor/Destructor
 CDownloadingListView::CDownloadingListView() : 
-	m_bTimer(false), 
-	m_pItemPopup(nullptr),
+	m_bTimer(false),
 	m_dwLastTime(0)
 { }
 
@@ -375,10 +292,13 @@ void CDownloadingListView::OnRButtonUp(UINT nFlags, CPoint point)
 	menu.LoadMenu(IDM_DOWNLOADINGLISTVIEW);
 	CMenu	submenu = menu.GetSubMenu(0);
 
-	m_pItemPopup = m_vecDLItemInfo[nIndex].pDLItem;
+	m_DLItemForPopup = boost::in_place(*m_vecDLItemInfo[nIndex].pDLItem);
 	CPoint pt;
 	::GetCursorPos(&pt);
-	submenu.TrackPopupMenu(0, pt.x, pt.y, m_hWnd);
+	int nCmd = submenu.TrackPopupMenu(TPM_RETURNCMD, pt.x, pt.y, m_hWnd);
+	if (nCmd)
+		SendMessage(WM_COMMAND, nCmd);
+	m_DLItemForPopup = boost::none;
 }
 
 
@@ -720,59 +640,46 @@ void CDownloadingListView::OnMouseMove(UINT nFlags, CPoint pt)
 /// DL中のアイテムの名前を変更する
 void	CDownloadingListView::OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	if (m_pItemPopup == nullptr)
-		return;
+	ATLASSERT( m_DLItemForPopup );
 
-	CRenameDialog	dlg(m_pItemPopup->strFileName, m_pItemPopup->strFilePath);
+	CRenameDialog	dlg(m_DLItemForPopup->strFileName, m_DLItemForPopup->strFilePath, false);
 	if (dlg.DoModal(m_hWnd) != IDOK)
 		return;
 
-	CString strOldFilePath = m_pItemPopup->strFilePath;
-	::wcscpy_s(m_pItemPopup->strFileName, dlg.GetNewFileName());
-	::wcscpy_s(m_pItemPopup->strFilePath, dlg.GetNewFilePath());
+	CString strOldFilePath = m_DLItemForPopup->strFilePath;
+	::wcscpy_s(m_DLItemForPopup->strFileName, dlg.GetNewFileName());
+	::wcscpy_s(m_DLItemForPopup->strFilePath, dlg.GetNewFilePath());
 
 	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
-		if (m_pItemPopup == m_vecDLItemInfo[i].pDLItem) {	// まだDL中
+		if (m_DLItemForPopup->unique == m_vecDLItemInfo[i].pDLItem->unique) {	// まだDL中
 			InvalidateRect(_GetItemClientRect(i), FALSE);
-			m_pItemPopup = nullptr;
 			return ;
 		}
 	}
 	
 	// DLは終わっていたので普通にリネーム
-	::MoveFileEx(strOldFilePath, m_pItemPopup->strFilePath, MOVEFILE_REPLACE_EXISTING);
-
-	/* エクスプローラーにファイルの変更通知 */
-	::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, static_cast<LPCTSTR>(strOldFilePath), static_cast<LPCTSTR>(m_pItemPopup->strFilePath));
-	
-	m_pItemPopup = nullptr;
+	dlg.DoRename();	
 }
 
 //---------------------------------------------------------
 /// 保存先のフォルダを開く
 void	CDownloadingListView::OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	if (m_pItemPopup == nullptr)
-		return ;
+	ATLASSERT( m_DLItemForPopup );
 
-	OpenFolderAndSelectItem(m_pItemPopup->strIncompleteFilePath);
-
-	m_pItemPopup = nullptr;
+	OpenFolderAndSelectItem(m_DLItemForPopup->strIncompleteFilePath);
 }
 
 //-------------------------------------------------------------
 /// ダウンロードしたページを表示する
 void	CDownloadingListView::OnOpenReferer(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	if (m_pItemPopup == nullptr)
-		return ;
+	ATLASSERT( m_DLItemForPopup );
 
-	if (m_pItemPopup->strReferer[0] == L'\0')
+	if (m_DLItemForPopup->strReferer[0] == L'\0')
 		return ;
-	DonutOpenFile(m_pItemPopup->strReferer, D_OPENFILE_ACTIVATE);
-
-	m_pItemPopup = nullptr;
+	DonutOpenFile(m_DLItemForPopup->strReferer, D_OPENFILE_ACTIVATE);
 }
 
 //----------------------------------------------

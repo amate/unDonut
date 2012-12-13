@@ -4,6 +4,7 @@
  */
 #include "stdafx.h"
 #include "DebugWindow.h"
+#include <ctime>
 #include <fstream>
 #include <codecvt>
 #include <boost\timer.hpp>
@@ -89,7 +90,11 @@ void	CDebugUtility::Impl::_WriteConsole(LPCTSTR str)
 		std::wfstream	filestream(strFilePath, std::ios::app);
 		if (filestream) {
 			filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-			filestream << str;
+			time_t time = std::time(nullptr);
+			tm* date = std::localtime(&time);
+			WCHAR strtime[128] = L"";
+			std::wcsftime(strtime, _countof(strtime), L"%c | ", date);
+			filestream << strtime << str;
 		}
 		DWORD dwWrite;
 		::WriteConsole(m_hOut, str, lstrlen(str), &dwWrite, NULL);

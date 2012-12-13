@@ -1026,6 +1026,10 @@ bool	GetDonutTempPath(CString& strTempPath)
 /// エクスプローラーを開いてアイテムを選択する
 void	OpenFolderAndSelectItem(const CString& strPath)
 {
+	LPITEMIDLIST	pidl = ::ILCreateFromPath(strPath);
+	HRESULT hr = ::SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
+	::ILFree(pidl);
+#if 0
 	LPITEMIDLIST	pidlFolder = ::ILCreateFromPath(strPath);
 	if (pidlFolder == nullptr) {	// ファイルが消された
 		CString folder = strPath;
@@ -1041,6 +1045,7 @@ void	OpenFolderAndSelectItem(const CString& strPath)
 	HRESULT hr = ::SHOpenFolderAndSelectItems(pidlFolder, 1, pidlchildarr, 0);
 	::ILFree(pidlFolder);
 	::ILFree(pidlChild);
+#endif
 }
 
 ///------------------------------------------

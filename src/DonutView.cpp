@@ -393,8 +393,7 @@ STDMETHODIMP CDonutView::Download(
 			TRACEIN(_T("Download() : _BSCB_Holder_"));
 			// 今度は成功する
 			hr = ::RegisterBindStatusCallback(pbc, (IBindStatusCallback*)pCBSCB, NULL, 0);
-			if (SUCCEEDED(hr)) {				
-				pCBSCB->SetReferer(strReferer);
+			if (SUCCEEDED(hr)) {
 				pCBSCB->SetBSCB(pbscbPrev);
 				pCBSCB->SetBindCtx(pbc);
 			}
@@ -412,7 +411,6 @@ STDMETHODIMP CDonutView::Download(
 #endif
 		if (pszHeaders == nullptr) {
 			TRACEIN(_T("Download() : Referer : %s"), (LPCTSTR)strReferer);
-			pCBSCB->SetReferer(strReferer);
 			IBindCtx* pBC;
 			hr = ::CreateAsyncBindCtx(0, pCBSCB, NULL, &pBC);
 			pbc = pBC;
@@ -455,6 +453,7 @@ STDMETHODIMP CDonutView::Download(
 			GetParent().PostMessage(WM_CLOSE);	// 空のページなので閉じる
 		}
 
+		pCBSCB->SetReferer(strReferer);
 		pCBSCB->SetOption(_T(""), NULL, m_pGlobalConfig->dwDLImageExStyle);
 		pCBSCB->SetThreadId(m_dwCurrentThreadId);
 		GetParent().SendMessage(WM_INCREMENTTHREADREFCOUNT);

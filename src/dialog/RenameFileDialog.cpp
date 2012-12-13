@@ -4,71 +4,82 @@
  */
 #include "stdafx.h"
 #include "RenameFileDialog.h"
+#include "../MtlFile.h"
+#include "../MtlWin.h"
 
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-
-#define RENAMEFILE_BADCHARACTERS	_T("\\:/*?\"<>|")
+/////////////////////////////////////////////////////////////////
+// CRenameDialog
 
 
-
-
-LRESULT CDonutRenameFileDialog::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam*/, BOOL & /*bHandled*/)
+CRenameDialog::CRenameDialog(LPCTSTR strOldFileName, LPCTSTR strFilePath, bool bDoRename /*= true*/) : 
+	m_strOldFileName(strOldFileName), 
+	m_bDoRename(bDoRename)
 {
-	CenterWindow( GetParent() );
-	DoDataExchange(FALSE);
-	return TRUE;
+	m_strFolder = Misc::GetDirName(CString(strFilePath)) + _T("\\");
 }
 
-
-
-LRESULT CDonutRenameFileDialog::OnOkCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+void	CRenameDialog::DoRename() const
 {
-	CString strBuf = m_strName;
+	// リネーム
+	::MoveFileEx(m_strFolder + m_strOldFileName, m_strFolder + m_strNewFileName, MOVEFILE_REPLACE_EXISTING);
 
-	DoDataExchange(TRUE);
+	/* エクスプローラーにファイルの変更通知 */
+	::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, 
+		static_cast<LPCTSTR>(m_strFolder + m_strOldFileName), 
+		static_cast<LPCTSTR>(m_strFolder + m_strNewFileName));
+}
 
-	if ( IsContainBadCharacterForName(m_strName) ) {
-		MessageBox(_T("ファイル名に使用できない文字が使用されています。"), _T("エラー"), MB_OK);
-		m_strName = strBuf;
-		return 0;
+BOOL CRenameDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+{
+	CEdit edit = GetDlgItem(IDC_EDIT);
+	edit.SetWindowText(m_strOldFileName);
+	CString ext = Misc::GetFileExt(m_strOldFileName);
+	if (ext.GetLength() > 0) {
+		int nSel = m_strOldFileName.GetLength() - ext.GetLength() - 1;
+		PostMessage(WM_SELTEXTWITHOUTEXT, nSel);
 	}
-
-	EndDialog(wID);
+		
+	//WTL::CLogFont	lf;
+	//lf.SetMenuFont();
+	//GetDlgItem(IDC_EDIT).SetFont(lf.CreateFontIndirect());
 	return 0;
 }
 
-
-
-LRESULT CDonutRenameFileDialog::OnCloseCmd(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
+LRESULT CRenameDialog::OnSelTextWithoutExt(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	EndDialog(wID);
+	CEdit edit = GetDlgItem(IDC_EDIT);
+	edit.SetSel(0, (int)wParam, TRUE);
 	return 0;
 }
 
-
-
-BOOL CDonutRenameFileDialog::IsContainBadCharacterForName(CString &strFileName)
+void CRenameDialog::OnOk(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
-	return (strFileName.FindOneOf(RENAMEFILE_BADCHARACTERS) != -1) /*? TRUE : FALSE*/;
-}
-
-
-
-void CDonutRenameFileDialog::ReplaceBadCharacterForName(CString &strFileName)
-{
-	TCHAR	buf[2];
-	buf[1] = _T('\0');
-
-	CString strBadChar = RENAMEFILE_BADCHARACTERS;
-	int 	nLen	   = strBadChar.GetLength();
-
-	for (int i = 0; i < nLen; i++) {
-		buf[0] = strBadChar[i];
-		strFileName.Replace( buf, _T("") );
+	m_strNewFileName = MtlGetWindowText(GetDlgItem(IDC_EDIT));
+	if (m_strNewFileName.IsEmpty()) {
+		MessageBox(_T("ファイル名を入力してください。"), NULL, MB_ICONERROR);
+		return ;
 	}
+	if (MtlIsValidateFileName(m_strNewFileName) == false) {
+		MessageBox(_T("有効なファイル名ではありません。\n「\\/:*?\"<>|」はファイル名に含めることはできません。"), NULL, MB_ICONERROR);
+		return ;
+	}
+
+	if (m_strOldFileName != m_strNewFileName) {
+		if (::PathFileExists(m_strFolder + m_strNewFileName)) {
+			if (MessageBox(_T("もう既にファイルが存在します。\n上書きしますか？"), NULL, MB_ICONQUESTION | MB_YESNO) != IDYES)
+				return ;
+		}
+		if (m_bDoRename)
+			DoRename();
+	}
+
+	EndDialog(nID);
 }
+
+
+
+
+
+
+
+
