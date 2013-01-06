@@ -2,6 +2,7 @@
 
 #include "stdafx.h"
 #include "DownloadingListView.h"
+#include <WinInet.h>
 #include "DownloadedListView.h"
 #include "DownloadOptionDialog.h"
 #include "../MtlWin.h"
@@ -317,6 +318,8 @@ void CDownloadingListView::OnTimer(UINT_PTR nIDEvent)
 		for (auto it = m_vecDLItemInfo.begin(); it != m_vecDLItemInfo.end(); ++it) {
 			DLItemInfomation& itemInfo = *it;
 			DLItem& DLItem = *itemInfo.pDLItem;
+			if (DLItem.bTextRefreshStop)
+				continue;
 
 			// (1.2 MB/sec)
 			CString strTransferRate;
@@ -420,21 +423,17 @@ BOOL	CDownloadingListView::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStru
 	if (pCopyDataStruct->dwData == kDownloadingFileExists) {
 		CString strNewFilePath = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
 		for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
-			if (it->pDLItem->unique == (uintptr_t)wnd.m_hWnd)
-				continue;
 			if (::_wcsicmp(it->pDLItem->strFilePath, strNewFilePath) == 0) {
 				TRACEIN(_T("ダウンロード中のファイルと保存先パスがマッチしました"));
-				return 1;
+				return TRUE;
 			}
 		}
 	} else if (pCopyDataStruct->dwData == kDownloadingURLExists) {
 		CString strNewDLURL = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
 		for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
-			if (it->pDLItem->unique == (uintptr_t)wnd.m_hWnd)
-				continue;
 			if (::_wcsicmp(it->pDLItem->strURL, strNewDLURL) == 0) {
 				TRACEIN(_T("ダウンロードしようとするURLとダウンロード中のURLがマッチしました"));
-				return 1;
+				return TRUE;
 			}
 		}
 	}
@@ -446,6 +445,8 @@ BOOL	CDownloadingListView::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStru
 LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	uintptr_t unique = (uintptr_t)wParam;
+
+	enum { kMaxRetryResumeCount = 3 };
 	// vectorから削除する
 	DLItem* pDLItem = nullptr;
 	HANDLE hMap = NULL;
@@ -454,8 +455,27 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 		if (m_vecDLItemInfo[i].pDLItem->unique == unique) {
 			pDLItem = m_vecDLItemInfo[i].pDLItem;
 			hMap = m_vecDLItemInfo[i].hMap;
-			m_vecDLItemInfo.erase(m_vecDLItemInfo.begin() + i);
+			if (pDLItem->bAbort == false && 0 < pDLItem->nDLFailedCount && pDLItem->nDLFailedCount < kMaxRetryResumeCount) {
+				m_vecDLItemInfo[i].strText = _T("DLに失敗。レジュームを試みます...");
+			} else {
+				m_vecDLItemInfo.erase(m_vecDLItemInfo.begin() + i);
+			}
 			break;
+		}
+	}
+
+	// レジュームを試みる
+	if (pDLItem->bAbort == false && 0 < pDLItem->nDLFailedCount) {
+		ATLASSERT( pDLItem );
+		if (pDLItem->nDLFailedCount < kMaxRetryResumeCount) {
+			_DoResume(pDLItem);
+			return 0;
+		} else {
+			// 最大試行回数を超えているので中止する
+			pDLItem->bAbort = true;
+			::DeleteFile(pDLItem->strIncompleteFilePath);
+			::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, pDLItem->strIncompleteFilePath, nullptr);
+			TRACEIN(_T("レジュームの最大試行回数を超えて失敗しました。\n不完全ファイルを削除します。: %s"), pDLItem->strIncompleteFilePath);
 		}
 	}
 
@@ -486,7 +506,6 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	::UnmapViewOfFile(static_cast<LPCVOID>(pDLItem));
 	::CloseHandle(hMap);
 
-
 	/* 全ファイルのDL終了 */
 	if (m_vecDLItemInfo.size() == 0) {
 		KillTimer(1);		// 画面更新タイマーを停止
@@ -496,6 +515,8 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 			::PostMessage(GetTopLevelParent(), WM_CLOSE, 0, 0);	// 全てのDLが終わったので閉じる
 		}
 	}
+	// DLの完了を知らせる
+	CDLOptions::PlaySoundDLFinish();
 
 	return 0;
 }
@@ -505,33 +526,6 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 LRESULT CDownloadingListView::OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	return CDLOptions::bUseSaveFileDialog;
-}
-
-
-//----------------------------------------------------------------------
-/// ファイルの保存先がかぶると true を返す
-LRESULT CDownloadingListView::OnIsDoubleDownloading(UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	uintptr_t unique = static_cast<uintptr_t>(wParam);
-	DLItem* pDLItem = nullptr;
-	for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
-		if (it->pDLItem->unique == unique) {
-			pDLItem = it->pDLItem;
-			break;
-		}
-	}
-	if (pDLItem == nullptr) {
-		return false;
-	}
-
-	for (auto it = m_vecDLItemInfo.cbegin(); it != m_vecDLItemInfo.cend(); ++it) {
-		if (it->pDLItem->unique == unique) 
-			continue;
-
-		if (::_wcsicmp(it->pDLItem->strIncompleteFilePath, pDLItem->strIncompleteFilePath) == 0)
-			return true;
-	}
-	return false;
 }
 
 
@@ -647,12 +641,11 @@ void	CDownloadingListView::OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wnd
 		return;
 
 	CString strOldFilePath = m_DLItemForPopup->strFilePath;
-	::wcscpy_s(m_DLItemForPopup->strFileName, dlg.GetNewFileName());
-	::wcscpy_s(m_DLItemForPopup->strFilePath, dlg.GetNewFilePath());
-
 	int nCount = (int)m_vecDLItemInfo.size();
 	for (int i = 0; i < nCount; ++i) {
 		if (m_DLItemForPopup->unique == m_vecDLItemInfo[i].pDLItem->unique) {	// まだDL中
+			::wcscpy_s(m_vecDLItemInfo[i].pDLItem->strFileName, dlg.GetNewFileName());
+			::wcscpy_s(m_vecDLItemInfo[i].pDLItem->strFilePath, dlg.GetNewFilePath());
 			InvalidateRect(_GetItemClientRect(i), FALSE);
 			return ;
 		}
@@ -668,7 +661,12 @@ void	CDownloadingListView::OnOpenSaveFolder(UINT uNotifyCode, int nID, CWindow w
 {
 	ATLASSERT( m_DLItemForPopup );
 
-	OpenFolderAndSelectItem(m_DLItemForPopup->strIncompleteFilePath);
+	CString pathItem = m_DLItemForPopup->strIncompleteFilePath;
+	boost::thread([pathItem]() {
+		CoInitialize(NULL);
+		OpenFolderAndSelectItem(pathItem);
+		CoUninitialize();
+	}).detach();
 }
 
 //-------------------------------------------------------------
@@ -768,7 +766,115 @@ CRect	CDownloadingListView::_GetItemClientRect(int nIndex)
 }
 
 
+/// レジュームを試みる
+void	CDownloadingListView::_DoResume(DLItem* pDLItem)
+{
+	pDLItem->bTextRefreshStop = true;
+	boost::thread([pDLItem, this]() {			
+		// ファイルの末尾を削る
+		HANDLE hFile = ::CreateFile(pDLItem->strIncompleteFilePath, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+		if (hFile == INVALID_HANDLE_VALUE) {
+			ATLASSERT( FALSE );
+			pDLItem->bAbort = true;
+			/* DLリストから削除 */	
+			::PostMessage(m_hWnd, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)pDLItem->unique, 0);
+			return ;
+		}
+		CoInitialize(NULL);
+		DWORD filesize = ::GetFileSize(hFile, nullptr);
+		enum { kTrimBytes = 4096 };
+		if (0 <= filesize && filesize < kTrimBytes)
+			filesize = 0;
+		else
+			filesize -= kTrimBytes;
+		::SetFilePointer(hFile, filesize, nullptr, FILE_BEGIN);
+		::SetEndOfFile(hFile);
+		pDLItem->filesizeForResume = filesize;
+		pDLItem->nProgress	= filesize;
 
+		::Sleep(5 * 1000);
+		pDLItem->bTextRefreshStop = false;
+
+		char	szDefUserAgent[MAX_PATH] = "\0";
+		DWORD	size = MAX_PATH;
+		::ObtainUserAgentString(0 , szDefUserAgent , &size);
+
+		struct InternetHandleCloser {
+			void operator() (HINTERNET h) const {
+				::InternetCloseHandle(h); 
+			}
+		};
+		typedef unique_ptr<std::remove_pointer<HINTERNET>::type, InternetHandleCloser>	HINTERNETHANDLE;
+		try {
+			HINTERNETHANDLE hInternet(::InternetOpen(CString(szDefUserAgent), INTERNET_OPEN_TYPE_PRECONFIG, nullptr, nullptr, 0));
+			if (hInternet.get() == NULL)
+				throw _T("InternetOpenに失敗");
+
+			URL_COMPONENTS url_components = { sizeof(URL_COMPONENTS) };
+			WCHAR	host[INTERNET_MAX_HOST_NAME_LENGTH] = L"";
+			url_components.lpszHostName	= host;
+			url_components.dwHostNameLength	= INTERNET_MAX_HOST_NAME_LENGTH;
+			WCHAR	urlpath[INTERNET_MAX_PATH_LENGTH] = L"";
+			url_components.lpszUrlPath	= urlpath;
+			url_components.dwUrlPathLength	= INTERNET_MAX_PATH_LENGTH;
+			InternetCrackUrl(pDLItem->strURL, 0, ICU_ESCAPE, &url_components);
+			HINTERNETHANDLE hSession(::InternetConnect(hInternet.get(), host, url_components.nPort, nullptr, nullptr, INTERNET_SERVICE_HTTP, 0, 0)); 
+			if (hSession.get() == NULL)
+				throw _T("InternetConnectに失敗");
+			HINTERNETHANDLE hRequest(::HttpOpenRequest(hSession.get(), _T("GET"), urlpath, _T("HTTP/1.1"), pDLItem->strReferer, nullptr, INTERNET_FLAG_NO_CACHE_WRITE, 0));
+			if (hRequest.get() == NULL)
+				throw _T("HttpOpenRequestに失敗");
+			CString strHeader;
+			strHeader.Format(_T("Range: bytes=%d-"), pDLItem->filesizeForResume);
+			if (::HttpSendRequest(hRequest.get(), strHeader, strHeader.GetLength(), nullptr, 0) == FALSE)
+				throw _T("HttpSendRequestに失敗");
+			DWORD	statuscode = 0;
+			DWORD	buffsize = sizeof(DWORD);
+			if (::HttpQueryInfo(hRequest.get(), HTTP_QUERY_STATUS_CODE | HTTP_QUERY_FLAG_NUMBER, static_cast<LPVOID>(&statuscode), &buffsize, nullptr) == FALSE)
+				throw _T("HttpQueryInfoに失敗");
+			if (statuscode != 206)
+				throw _T("レジュームできません");
+
+			for (;;) {
+				enum { kBuffSize = 5120 };
+				char buff[kBuffSize + 1];
+				DWORD	dwReadSize = 0;
+				BOOL bRet = ::InternetReadFile(hRequest.get(), buff, kBuffSize, &dwReadSize);
+				if (bRet == FALSE || dwReadSize == 0 || pDLItem->bAbort)
+					break;
+				DWORD dwWritten = 0;
+				::WriteFile(hFile, (LPCVOID)buff, dwReadSize, &dwWritten, NULL);
+				ATLASSERT(dwWritten == dwReadSize);
+				pDLItem->nProgress	+= dwReadSize;
+			}
+			if (pDLItem->bAbort == false && pDLItem->nProgress != pDLItem->nProgressMax)
+				throw _T("サイズが一致しません");
+
+			::CloseHandle(hFile);
+			if (pDLItem->bAbort) {
+				::DeleteFile(pDLItem->strIncompleteFilePath);
+				::SHChangeNotify(SHCNE_DELETE, SHCNF_PATH, pDLItem->strIncompleteFilePath, nullptr);
+				TRACEIN(_T("レジュームはユーザーによってキャンセルされました。\n不完全ファイルを削除します。: %s"), pDLItem->strIncompleteFilePath);
+			} else {
+				TRACEIN(_T("レジューム正常終了しました(%s)"), pDLItem->strFileName);
+				::MoveFileEx(pDLItem->strIncompleteFilePath, pDLItem->strFilePath, MOVEFILE_REPLACE_EXISTING);
+				/* エクスプローラーにファイルの変更通知 */
+				::SHChangeNotify(SHCNE_RENAMEITEM, SHCNF_PATH, pDLItem->strIncompleteFilePath, pDLItem->strFilePath);
+				pDLItem->nDLFailedCount = 0;
+			}
+
+		} catch (LPCTSTR strError) {
+			::CloseHandle(hFile);
+			++pDLItem->nDLFailedCount;
+			TRACEIN(_T("レジュームに失敗[failcount(%d)] : %s"), pDLItem->nDLFailedCount, strError);
+		}
+
+		CoUninitialize();
+
+		/* DLリストから削除 */	
+		::PostMessage(m_hWnd, WM_USER_REMOVEFROMDOWNLIST, (WPARAM)pDLItem->unique, 0);
+	}).detach();
+}
 
 
 

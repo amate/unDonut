@@ -47,6 +47,8 @@ struct CDLOptions
 	static vector<CString>	s_vecDLFolderHistory;
 	static vector<CString>	s_vecImageDLFolderHistory;
 
+	static CString	s_strDLFinishSoundFilePath;
+
 	static void	LoadProfile()
 	{
 		s_DLIniFilePath = GetConfigFilePath(_T("Download.ini"));
@@ -80,6 +82,8 @@ struct CDLOptions
 				break;
 			s_vecImageDLFolderHistory.push_back(strFolder);
 		}
+
+		s_strDLFinishSoundFilePath = pr.GetString(_T("DLFinishSoundFilePath"));
 	}
 
 	static void	SaveProfile()
@@ -113,6 +117,8 @@ struct CDLOptions
 				pr.SetString(s_vecImageDLFolderHistory[i], strName);
 			}
 		}
+
+		pr.SetString(s_strDLFinishSoundFilePath, _T("DLFinishSoundFilePath"));
 	}
 
 	static void _SavePathHistory(CString strPath, vector<CString>& vecPathHistory)
@@ -126,6 +132,12 @@ struct CDLOptions
 			}
 		}
 		vecPathHistory.insert(vecPathHistory.begin(), strPath);
+	}
+
+	static void PlaySoundDLFinish()
+	{
+		if (::PathFileExists(s_strDLFinishSoundFilePath))
+			::PlaySound(s_strDLFinishSoundFilePath, NULL, SND_ASYNC | SND_FILENAME);
 	}
 };
 
@@ -143,6 +155,7 @@ __declspec(selectany) DWORD		CDLOptions::dwImgExStyle = DLO_OVERWRITEPROMPT;
 __declspec(selectany) vector<CString>	CDLOptions::s_vecDLFolderHistory;
 __declspec(selectany) vector<CString>	CDLOptions::s_vecImageDLFolderHistory;
 
+__declspec(selectany) CString	CDLOptions::s_strDLFinishSoundFilePath;
 
 ///////////////////////////////////////////////////////
 // COptionDialog
@@ -169,6 +182,7 @@ public:
 		DDX_CHECK(IDC_CHECK_SHOWWINDOW_ONDL		, bShowWindowOnDL)
 		DDX_TEXT(IDC_CMB_IMGDOWNLOADFOLDER		, strImgDLFolderPath)
 		DDX_RADIO(IDC_RADIO_OVERWRITEPROMPT		, m_nRadioImg)
+		DDX_TEXT(IDC_EDIT_SOUNDFILEPATH			, m_strDLFinishSoundFilePath)
     END_DDX_MAP()
 
 	BEGIN_MSG_MAP(CDLOptionDialog)
@@ -177,6 +191,8 @@ public:
 		COMMAND_ID_HANDLER_EX(IDCANCEL	, OnCancel)
 		COMMAND_ID_HANDLER_EX(IDC_BUTTON_FOLDERSELECT, OnFolderSelect )
 		COMMAND_ID_HANDLER_EX(IDC_BUTTON_IMGFOLDERSELECT, OnFolderSelect )
+		COMMAND_ID_HANDLER_EX(IDC_BUTTON_SOUNDFILESELECT, OnSoundFileSelect )
+		COMMAND_ID_HANDLER_EX(IDC_BUTTON_PLAYSOUND	, OnPlaySound )
 	END_MSG_MAP()
 
 
@@ -186,6 +202,8 @@ public:
 
 		if (dwImgExStyle == DLO_USEUNIQUENUMBER)
 			m_nRadioImg = 1;
+
+		m_strDLFinishSoundFilePath = s_strDLFinishSoundFilePath;
 
 		DoDataExchange(DDX_LOAD);
 
@@ -224,6 +242,8 @@ public:
 			dwImgExStyle	= DLO_OVERWRITEPROMPT;
 		else 
 			dwImgExStyle	= DLO_USEUNIQUENUMBER;
+
+		s_strDLFinishSoundFilePath	= m_strDLFinishSoundFilePath;
 
 		SaveProfile();	// ê›íËÇï€ë∂
 
@@ -266,8 +286,26 @@ public:
 		}
 	}
 
+	void OnSoundFileSelect(UINT uNotifyCode, int nID, CWindow wndCtl)
+	{
+		CFileDialog	dlg(TRUE, _T("wav"), nullptr, 6UL, _T("wavÉtÉ@ÉCÉã (*.wav)\0*.wav\0"));
+		if (dlg.DoModal(m_hWnd) == IDOK) {
+			m_strDLFinishSoundFilePath = dlg.m_szFileName;
+			DoDataExchange(DDX_LOAD, IDC_EDIT_SOUNDFILEPATH);
+		}
+	}
+
+	void OnPlaySound(UINT uNotifyCode, int nID, CWindow wndCtl)
+	{
+		CString temp = s_strDLFinishSoundFilePath;
+		s_strDLFinishSoundFilePath = m_strDLFinishSoundFilePath;
+		PlaySoundDLFinish();
+		s_strDLFinishSoundFilePath = temp;
+	}
+
 private:
 	int	m_nRadioImg;
+	CString	m_strDLFinishSoundFilePath;
 
 };
 

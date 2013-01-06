@@ -137,6 +137,8 @@ const CString	GetFileNameNoExt(const CString& strFileName);
 //+++ ttp://にhを足したり、両端の空白を削除したりする(SearchBar.hの関数から分離改造したもの)
 void	StrToNormalUrl(CString& strUrl);
 
+/// 被らないファイルパスにして返す
+int	GetUniqueFilePath(CString& filepath, int nStart = 1);
 
 
 // ==========================================================================

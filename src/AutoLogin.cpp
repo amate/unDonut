@@ -81,7 +81,7 @@ bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2
 						if (strType == nullptr)
 							return true;
 						strType.ToLower();
-						if (strType == L"text" || strType == L"password") {
+						if (strType == L"text" || strType == L"email" || strType == L"password") {
 							CComBSTR	strName;
 							spInput->get_name(&strName);
 							if (strName.m_str) {

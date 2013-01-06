@@ -993,8 +993,8 @@ CString	GetLastErrorString(HRESULT hr)
 	if (hr == -1)
 		hr = AtlHresultFromLastError();//GetLastError();
 	LPVOID lpMsgBuf;
-	ATLVERIFY(FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL));
+	FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		NULL, hr, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL);
 	CString strError;
 	strError.Format(_T("ErrorCode : 0x%08x\n%s"), hr, (LPCTSTR)lpMsgBuf);
 	LocalFree(lpMsgBuf);
@@ -1026,10 +1026,18 @@ bool	GetDonutTempPath(CString& strTempPath)
 /// エクスプローラーを開いてアイテムを選択する
 void	OpenFolderAndSelectItem(const CString& strPath)
 {
+#if 1
 	LPITEMIDLIST	pidl = ::ILCreateFromPath(strPath);
+	if (pidl == nullptr) {	// ファイルが消された
+		CString folder = strPath;
+		::PathRemoveFileSpec(folder.GetBuffer(MAX_PATH));
+		folder.ReleaseBuffer();
+		::ShellExecute(NULL, NULL, folder, NULL, NULL, SW_NORMAL);
+		return ;
+	}
 	HRESULT hr = ::SHOpenFolderAndSelectItems(pidl, 0, nullptr, 0);
 	::ILFree(pidl);
-#if 0
+#else
 	LPITEMIDLIST	pidlFolder = ::ILCreateFromPath(strPath);
 	if (pidlFolder == nullptr) {	// ファイルが消された
 		CString folder = strPath;

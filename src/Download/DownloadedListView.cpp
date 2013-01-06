@@ -258,8 +258,8 @@ LRESULT CDownloadedListView::OnListRClick(LPNMHDR pnmh)
 			return 0;
 		}
 
-		menu.InsertMenu( 2, MF_BYPOSITION | MF_ENABLED, ID_RENAME, _T("名前の変更") );
-		menu.InsertMenu( 3, MF_BYPOSITION | MF_SEPARATOR);
+		menu.InsertMenu( 3, MF_BYPOSITION | MF_ENABLED, ID_RENAME, _T("名前の変更") );
+		menu.InsertMenu( 4, MF_BYPOSITION | MF_SEPARATOR);
 
 		LPITEMIDLIST pidl = ILCreateFromPath(path);
 		if (pidl) {

@@ -32,7 +32,10 @@ struct DLItem
 
 	int		nProgress;
 	int		nProgressMax;
-	bool	bAbort;
+	bool	bAbort;				// Ž©•ª‚ÅDL‚ð’†Ž~‚µ‚½
+	int		nDLFailedCount;
+	bool	bTextRefreshStop;
+	DWORD	filesizeForResume;
 	uintptr_t unique;
 	HANDLE	hMapForClose;
 	DWORD	dwThreadId;
@@ -41,6 +44,9 @@ struct DLItem
 		: nProgress(0)
 		, nProgressMax(0)		
 		, bAbort(false)
+		, nDLFailedCount(0)
+		, bTextRefreshStop(false)
+		, filesizeForResume(0)
 		, unique(0)
 		, hMapForClose(NULL)
 		, dwThreadId(0)
@@ -64,6 +70,9 @@ struct DLItem
 		nProgress	= item.nProgress;
 		nProgressMax= item.nProgressMax;
 		bAbort	= item.bAbort;
+		nDLFailedCount = item.nDLFailedCount;
+		bTextRefreshStop	= item.bTextRefreshStop;
+		filesizeForResume	= item.filesizeForResume;
 		unique	= item.unique;
 		hMapForClose	= item.hMapForClose;
 		dwThreadId		= item.dwThreadId;
@@ -149,7 +158,6 @@ public:
 		MESSAGE_HANDLER_EX( WM_USER_ADDTODOWNLOADLIST , OnAddToList	)
 		MESSAGE_HANDLER_EX( WM_USER_REMOVEFROMDOWNLIST, OnRemoveFromList )
 		MESSAGE_HANDLER_EX( WM_USER_USESAVEFILEDIALOG , OnUseSaveFileDialog )
-		MESSAGE_HANDLER_EX( WM_USER_ISDOUBLEDOWNLOADING, OnIsDoubleDownloading )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MSG_WM_MOUSEMOVE	( OnMouseMove )
 		COMMAND_ID_HANDLER_EX( ID_RENAME_DLITEM		, OnRenameDLItem )
@@ -172,7 +180,6 @@ public:
 	LRESULT OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnUseSaveFileDialog(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT OnIsDoubleDownloading(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	void	OnMouseMove(UINT nFlags, CPoint point);
 	void	OnRenameDLItem(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -185,6 +192,7 @@ private:
 	void	_RefreshList();
 	int		_HitTest(CPoint pt);
 	CRect	_GetItemClientRect(int nIndex);
+	void	_DoResume(DLItem* pDLItem);
 
 	// Data members
 	std::vector<DLItemInfomation>	m_vecDLItemInfo;

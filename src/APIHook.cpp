@@ -297,6 +297,26 @@ HINTERNET WINAPI HookInternetConnectW(
 	return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
 }
 
+#if 0
+typedef BOOL (WINAPI* FuncInternetReadFile)(
+    _In_ HINTERNET hFile,
+    _Out_writes_bytes_(dwNumberOfBytesToRead) __out_data_source(NETWORK) LPVOID lpBuffer,
+    _In_ DWORD dwNumberOfBytesToRead,
+    _Out_ LPDWORD lpdwNumberOfBytesRead
+    );
+FuncInternetReadFile	pfOrgInternetReadFile = nullptr;
+
+BOOL WINAPI HookInternetReadFile(
+    _In_ HINTERNET hFile,
+    _Out_writes_bytes_(dwNumberOfBytesToRead) __out_data_source(NETWORK) LPVOID lpBuffer,
+    _In_ DWORD dwNumberOfBytesToRead,
+    _Out_ LPDWORD lpdwNumberOfBytesRead
+    )
+{
+	return pfOrgInternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, lpdwNumberOfBytesRead);
+}
+#endif
+
 }	// namespace
 
 
@@ -306,5 +326,7 @@ void	DoHookInternetConnect()
 {
 	APIHook("wininet.dll", "InternetConnectW", (PROC)&HookInternetConnectW, (PROC*)&pfOrgInternetConnectW);
 	matchtest.StartWatch();
+
+	//APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
 }
 

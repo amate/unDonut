@@ -1074,6 +1074,30 @@ void	StrToNormalUrl(CString& strUrl)
 }
 
 
+/// 被らないファイルパスにして返す
+int	GetUniqueFilePath(CString& filepath, int nStart /*= 1*/)
+{
+	if (::PathFileExists(filepath) == FALSE)
+		return 0;
+
+	CString basepath;
+	CString ext;
+	int nExt = filepath.ReverseFind(_T('.'));
+	if (nExt != -1) {
+		basepath = filepath.Left(nExt);
+		ext		= filepath.Mid(nExt);
+	} else {
+		basepath = filepath;
+	}
+	for (;;) {
+		filepath.Format(_T("%s_[%d]%s"), basepath, nStart, ext);
+		if (::PathFileExists(filepath) == FALSE)
+			return nStart;
+		++nStart;
+	}
+}
+
+
 
 // ==========================================================================
 
