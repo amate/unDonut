@@ -114,13 +114,8 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 						wptree& ptItem = it->second;
 						CString title = ptItem.get(L"<xmlattr>.title", L"").c_str();
 						CString url = ptItem.get(L"<xmlattr>.url", L"").c_str();
-						listview.InsertItem(0, title);
-
-						LVITEM	Item = { 0 };
-						Item.mask		= LVIF_TEXT;
-						Item.iSubItem	= 1;
-						Item.pszText	= (LPWSTR)(LPCTSTR)url;
-						listview.SetItem(&Item);
+						int nInsertPos = listview.AddItem(listview.GetItemCount(), 0, title);
+						listview.AddItem(nInsertPos, 1, url);
 					}
 				} catch (...) {
 					return ;
