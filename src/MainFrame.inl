@@ -40,7 +40,7 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 
 	CString	TabList;
 	if (strFilePath == NULL) {
-		TabList = GetConfigFilePath(_T("TabList.xml"));
+		TabList = GetConfigFilePath(_T("TabList.donutTabList"));
 	} else {
 		TabList = strFilePath;
 	}
@@ -150,7 +150,7 @@ void	CMainFrame::Impl::SaveAllTab()
 	};
 	m_TabBar.ForEachWindow(CollectChildFrameData);
 
-	/* TabList.xml に保存する */
+	/* TabList.donutTabList に保存する */
 	try {
 		using boost::property_tree::wptree;
 
@@ -184,9 +184,9 @@ void	CMainFrame::Impl::SaveAllTab()
 		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
 		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
 
-		CString	TabList = GetConfigFilePath(_T("TabList.xml"));
+		CString	TabList = GetConfigFilePath(_T("TabList.donutTabList"));
 		if (::PathFileExists(TabList)) {
-			CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.xml");
+			CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.donutTabList");
 			::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
 		}
 		filestream.close();
@@ -218,6 +218,11 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 			TRACEIN(_T("UseOpenFile(), .urlファイルからURLが取得できませんでした : %s"), strFileOrURL);
 			return ;
 		}
+	}
+
+	if ( MtlIsExt(strFileOrURL, _T(".donutTabList")) && ::PathFileExists(strFileOrURL) ) {
+		RestoreAllTab(strFileOrURL, (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG) == 0);
+		return ;
 	}
 
 	bool bJavascript = false;
@@ -519,9 +524,6 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	RegisterDragDrop();
 
-	if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP)
-		SetTimer(kAutoBackupTimerId, CMainOption::s_dwBackUpTime * 60000);
-
 	TIMERSTOP(L"メインフレームのOnCreateにかかった時間");
 	return 0;
 }
@@ -718,7 +720,7 @@ void	CMainFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 	if (nIDEvent == kAutoBackupTimerId) {
 		TIMERSTART();
 		SaveAllTab();
-		TIMERSTOP(L"定期TabList.xmlセーブ");
+		TIMERSTOP(L"定期TabList.donutTabListセーブ");
 	}
 }
 
@@ -1342,6 +1344,10 @@ void	CMainFrame::Impl::OnInitProcessFinished(bool bHome)
 			_NewDonutInstance(g_commandline);
 			CMainOption::s_bExternalNewTabActive = bSaveFlag;
 		}
+		// タブリストの定期保存を開始
+		if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP)
+			SetTimer(kAutoBackupTimerId, CMainOption::s_dwBackUpTime * 60000);
+
 		s_bInit = true;
 	}
 }
@@ -1551,7 +1557,7 @@ void	CMainFrame::Impl::OnFileOpen(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 	case ID_FILE_OPEN_TABLIST:
 		{
-			CString strPath = GetConfigFilePath(_T("TabList.xml"));
+			CString strPath = GetConfigFilePath(_T("TabList.donutTabList"));
 			UserOpenFile( strPath, DonutGetStdOpenActivateFlag() );
 		}
 		break;

@@ -29,6 +29,7 @@ void	CVersionControl::Run()
 		case 5: _5to6();
 		case 6: _6to7();
 		case 7: _7to8();
+		case 8: _8to9();
 			break;
 		}
 	}
@@ -176,8 +177,12 @@ void	CVersionControl::_7to8()
 	funcMoveFileToConfigFolder(_T("UserDefinedJavascriptConfig.xml"));
 }
 
-
-
+/// TabList.xml -> TabList.donutTabList
+void	CVersionControl::_8to9()
+{
+	::MoveFileEx(GetConfigFilePath(_T("TabList.xml")), GetConfigFilePath(_T("TabList.donutTabList")), MOVEFILE_REPLACE_EXISTING);
+	::MoveFileEx(GetConfigFilePath(_T("TabList.bak.xml")), GetConfigFilePath(_T("TabList.bak.donutTabList")), MOVEFILE_REPLACE_EXISTING);
+}
 
 
 

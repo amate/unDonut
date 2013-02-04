@@ -10,6 +10,7 @@
 #include "option/AddressBarPropertyPage.h"
 #include "FlatComboBox.h"
 #include "MainFrame.h"
+#include "Download\DownloadManager.h"
 
 
 //////////////////////////////////////////////////////////////
@@ -929,7 +930,11 @@ void	CDonutAddressBar::Impl::OnGoRButtonDown(UINT nFlags, CPoint point)
 	CString strURL = MtlGetClipboardText();
 	if (strURL.IsEmpty() == FALSE) {
 		_ComplementURL(strURL);
-		OnItemSelected(strURL);
+		if (::GetAsyncKeyState(VK_CONTROL) < 0) {	// ダウンロードマネージャーに送る
+			CDownloadManager::GetInstance()->DownloadStart(strURL);
+		} else {
+			OnItemSelected(strURL);
+		}
 	}
 }
 

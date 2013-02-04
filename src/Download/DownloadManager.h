@@ -52,7 +52,7 @@ public:
 	static CCustomBindStatusCallBack*	CreateCustomBindStatusCallBack(HWND hWndMainFrame, LPCTSTR defaultDLFolder);
 	static void	StartTheDownload(LPCTSTR strURL, IBindStatusCallback* pcbsc);
 
-	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = DLO_OVERWRITEPROMPT );
+	void	DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder = NULL, HWND hWnd = NULL, DWORD dwDLOption = -1);
 	int		GetDownloadingCount() const;
 
 	// Message map and Handler

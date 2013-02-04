@@ -6,6 +6,11 @@
 
 #include "../resource.h"
 
+// 前方宣言
+class CMainFrame;
+
+//////////////////////////////////////////////////////////
+// CStartUpOption
 
 class CStartUpOption {
 	friend class CStartUpPropertyPage;
@@ -35,8 +40,8 @@ public:
 	static void 	GetProfile();
 	static void 	WriteProfile();
 
-	template <class _MainFrame>
-	static void 	StartUp(_MainFrame &__frame);
+	static void 	StartUp(CMainFrame& __frame);
+	static void		EndFinish();
 
 	static CString	GetDefaultDFGFilePath();
 
@@ -97,36 +102,3 @@ private:
 
 
 
-
-//テンプレートメンバ関数の定義
-template <class _MainFrame>
-void CStartUpOption::StartUp(_MainFrame &__frame)
-{
-	switch (s_dwFlags) {
-	case STARTUP_NOINITWIN:
-		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
-		break;
-
-	case STARTUP_GOHOME:
-		::PostMessage(__frame.GetHWND(), WM_COMMAND, ID_FILE_NEW_HOME, 0);
-		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, true, 0);
-		break;
-
-	case STARTUP_LATEST:
-		__frame.RestoreAllTab();
-		break;
-
-	//case STARTUP_DFG:
-	//	{
-	//		CString 	strPath(s_szDfgPath);
-	//		if ( !strPath.IsEmpty() )
-	//			__frame.UserOpenFile(s_szDfgPath, 0);
-	//	}
-	//	__frame.PostMessage(WM_INITPROCESSFINISHED);
-	//	break;
-
-	default:
-		ATLASSERT(FALSE);
-		break;
-	}
-}

@@ -147,6 +147,7 @@
 #define IDD_DIALOG1                     329
 #define IDD_PROCESS_MONITOR             329
 #define IDD_LOGININFOEDITOR             330
+#define IDD_RESTORE_TABLIST_SELECTOR	331
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -972,6 +973,10 @@
 #define IDC_EDIT_SOUNDFILEPATH			33235
 #define IDC_BUTTON_SOUNDFILESELECT		33236
 #define IDC_BUTTON_PLAYSOUND			33237
+#define IDC_LIST_TABLISTXML				33238
+#define IDC_LIST_TABLISTBAKXML			33239
+#define IDC_BUTTON_TABLISTXML			33240
+#define IDC_BUTTON_TABLISTBAKXML		33241
 #define ID_PLUGIN_COMMAND               33333
 #define COMMAND_RANGE_END               34000
 #define ID_INSERTPOINT_CSSMENU          35000
@@ -1015,8 +1020,8 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        331
-#define _APS_NEXT_COMMAND_VALUE         33238
+#define _APS_NEXT_RESOURCE_VALUE        332
+#define _APS_NEXT_COMMAND_VALUE         33242
 #define _APS_NEXT_CONTROL_VALUE         1457
 #define _APS_NEXT_SYMED_VALUE           130
 #endif

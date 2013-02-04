@@ -4,9 +4,14 @@
  */
 #include "stdafx.h"
 #include "StartUpOption.h"
+#include <fstream>
+#include <clocale>
+#include <codecvt>
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
 #include "../IniFile.h"
 #include "../DonutFavoritesMenu.h"
-
+#include "../MainFrame.h"
 
 #if defined USE_ATLDBGMEM
 #define new DEBUG_NEW
@@ -61,6 +66,131 @@ void CStartUpOption::WriteProfile()
 	pr.SetValue   ( s_dwActivate   , _T("StartUp_Activate"  ) );							// UDT DGSTR ( dai
 }
 
+
+
+
+void CStartUpOption::StartUp(CMainFrame& __frame)
+{
+	class CRestoreTabListSelector : public CDialogImpl<CRestoreTabListSelector>
+	{
+	public:
+		enum { IDD = IDD_RESTORE_TABLIST_SELECTOR };
+
+		BEGIN_MSG_MAP_EX( CRestoreTabListSelector )
+			MSG_WM_INITDIALOG( OnInitDialog )
+			COMMAND_ID_HANDLER_EX(IDC_BUTTON_TABLISTXML, OnCommand )
+			COMMAND_ID_HANDLER_EX(IDC_BUTTON_TABLISTBAKXML, OnCommand )
+		END_MSG_MAP()
+
+		BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
+		{
+			CenterWindow(GetParent());
+
+			m_listTabList		= GetDlgItem(IDC_LIST_TABLISTXML);
+			m_listTabListBak	= GetDlgItem(IDC_LIST_TABLISTBAKXML);
+
+			m_listTabList.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 100);
+			m_listTabList.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 200);
+			m_listTabListBak.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 100);
+			m_listTabListBak.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 200);
+
+			auto funcInsertItemToListView = [](CListViewCtrl listview, const CString& TabList) {
+				try {
+					using boost::property_tree::wptree;
+
+					std::wifstream	filestream(TabList);
+					if (!filestream) {
+						return ;
+					}
+					filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
+
+					wptree	pt;
+					boost::property_tree::read_xml(filestream, pt);
+
+					wptree&	ptChild = pt.get_child(L"TabList");
+					auto it = ptChild.begin();
+					++it;
+					for (; it != ptChild.end(); ++it) {
+						wptree& ptItem = it->second;
+						CString title = ptItem.get(L"<xmlattr>.title", L"").c_str();
+						CString url = ptItem.get(L"<xmlattr>.url", L"").c_str();
+						listview.InsertItem(0, title);
+
+						LVITEM	Item = { 0 };
+						Item.mask		= LVIF_TEXT;
+						Item.iSubItem	= 1;
+						Item.pszText	= (LPWSTR)(LPCTSTR)url;
+						listview.SetItem(&Item);
+					}
+				} catch (...) {
+					return ;
+				}
+			};
+			funcInsertItemToListView(m_listTabList, GetConfigFilePath(_T("TabList.donutTabList")));
+			funcInsertItemToListView(m_listTabListBak, GetConfigFilePath(_T("TabList.bak.donutTabList")));
+
+			return TRUE;
+		}
+
+		void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
+		{
+			EndDialog(nID);
+		}
+
+	private:
+		// Data members
+		CListViewCtrl	m_listTabList;
+		CListViewCtrl	m_listTabListBak;
+	};
+
+	switch (s_dwFlags) {
+	case STARTUP_NOINITWIN:
+		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, 0, 0);
+		break;
+
+	case STARTUP_GOHOME:
+		::PostMessage(__frame.GetHWND(), WM_COMMAND, ID_FILE_NEW_HOME, 0);
+		::PostMessage(__frame.GetHWND(), WM_INITPROCESSFINISHED, true, 0);
+		break;
+
+	case STARTUP_LATEST:
+		if (::PathFileExists(GetConfigFilePath(_T("#lock")))) {
+			CRestoreTabListSelector	dlg;
+			CString tabListXmlPath;
+			switch (dlg.DoModal(__frame.GetHWND())) {
+			case IDC_BUTTON_TABLISTXML:		tabListXmlPath = GetConfigFilePath(_T("TabList.donutTabList"));	break;
+			case IDC_BUTTON_TABLISTBAKXML:	tabListXmlPath = GetConfigFilePath(_T("TabList.bak.donutTabList"));	break;
+			default:
+				ATLASSERT( FALSE );
+			}
+			__frame.RestoreAllTab(tabListXmlPath);
+		} else {
+			__frame.RestoreAllTab();
+		}
+		break;
+
+	//case STARTUP_DFG:
+	//	{
+	//		CString 	strPath(s_szDfgPath);
+	//		if ( !strPath.IsEmpty() )
+	//			__frame.UserOpenFile(s_szDfgPath, 0);
+	//	}
+	//	__frame.PostMessage(WM_INITPROCESSFINISHED);
+	//	break;
+
+	default:
+		ATLASSERT(FALSE);
+		break;
+	}
+	std::ofstream fs(GetConfigFilePath(_T("#lock")));
+}
+
+
+
+void	CStartUpOption::EndFinish()
+{
+	::DeleteFile(GetConfigFilePath(_T("#lock")));
+}
 
 
 CString CStartUpOption::GetDefaultDFGFilePath()

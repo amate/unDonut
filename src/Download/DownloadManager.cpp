@@ -66,10 +66,13 @@ void	CDownloadManager::StartTheDownload(LPCTSTR strURL, IBindStatusCallback* pcb
 
 //-------------------------------
 /// strURLをダウンロードする
-void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND hWnd, DWORD dwDLOption)
+void	CDownloadManager::DownloadStart(LPCTSTR strURL, LPCTSTR strDLFolder, HWND hWnd, DWORD dwDLOption /* = -1 */)
 {
 	if (CDLControlOption::s_bUseDLManager == false)
 		return ;
+	if (dwDLOption == -1)
+		dwDLOption = CDLOptions::dwImgExStyle;
+
 	if (dwDLOption & DLO_SAVEIMAGE) {
 		strDLFolder = static_cast<LPCTSTR>(CDLOptions::strImgDLFolderPath);
 		dwDLOption	|= CDLOptions::dwImgExStyle;

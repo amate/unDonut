@@ -1081,8 +1081,6 @@ void	CChildFrame::Impl::OnDestroy()
 
 	WebBrowserEvents2Unadvise();
 
-	m_spBrowser.Release();
-
 	m_view.DestroyWindow();
 
 	--(*m_pThreadRefCount);
@@ -1093,6 +1091,8 @@ void	CChildFrame::Impl::OnDestroy()
 
 	m_UIChange.RemoveCommandUIMap();
 	CloseGlobalConfig(&m_GlobalConfigManageData);
+
+	m_spBrowser.Release();
 }
 
 void	CChildFrame::Impl::OnClose()

@@ -73,7 +73,7 @@ struct ChildFrameDataOnClose {
 	vector<std::pair<CString, CString> > TravelLogFore;
 	vector<std::pair<CString, CString> > TravelLogBack;
 	DWORD	dwDLCtrl;
-	DWORD	dwExStyle;			// TabList.xml—p
+	DWORD	dwExStyle;			// TabList.donutTabList—p
 	DWORD	dwAutoRefreshStyle;	// 
 
 	ChildFrameDataOnClose() : dwDLCtrl(0), dwExStyle(0), dwAutoRefreshStyle(0)
