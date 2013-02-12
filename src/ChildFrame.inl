@@ -1573,7 +1573,7 @@ HANDLE	CChildFrame::Impl::OnGetLoginInfomation(HANDLE hMapForClose)
 								if (strType == nullptr)
 									return true;
 								strType.ToLower();
-								if (strType == L"text" || strType == L"password") {
+								if (strType == L"text" || strType == L"email" || strType == L"password") {
 									CComBSTR	strName;
 									spInput->get_name(&strName);
 									CComBSTR	strValue;
@@ -3507,6 +3507,7 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 		void OnDestroy()
 		{
 			m_Edit.DestroyWindow();
+			PostQuitMessage(0);
 		}
 
 		void OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther)
@@ -3539,6 +3540,9 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 	window->Create(m_hWnd);
 	//window->MoveWindow(&rcWindow);
 	window->ShowWindow(TRUE);
+
+	CMessageLoop loop;
+	loop.Run();
 
 	return true;
 }
