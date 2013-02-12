@@ -524,6 +524,10 @@ BOOL CChildFrame::Impl::OnRButtonHook(MSG* pMsg)
 	if ( !(m_view.GetExStyle() & DVS_EX_MOUSE_GESTURE) )
 		return FALSE;
 
+	HWND hWndFocus = ::GetFocus();
+	if (hWndFocus != m_hWnd && IsChild(hWndFocus) == FALSE)
+		return FALSE;
+
 	MouseGestureData	data;
 	data.hwnd	= pMsg->hwnd;
 	data.wParam	= pMsg->wParam;
@@ -898,8 +902,13 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	}
 
 	// Ctrl + Tab
-	if((pMsg->message == WM_KEYDOWN) && (pMsg->wParam == VK_TAB) && ::GetKeyState(VK_CONTROL) < 0) {
-		GetTopLevelWindow().PostMessage(WM_COMMAND, ::GetKeyState(VK_SHIFT) < 0 ? ID_TAB_LEFT : ID_TAB_RIGHT);
+	if((pMsg->message == WM_KEYDOWN) && (pMsg->wParam == VK_TAB) && ::GetAsyncKeyState(VK_CONTROL) < 0) {
+		GetTopLevelWindow().PostMessage(WM_COMMAND, ::GetAsyncKeyState(VK_SHIFT) < 0 ? ID_TAB_LEFT : ID_TAB_RIGHT);
+		return TRUE;
+	}
+
+	// ƒŠƒ“ƒN‚ðAlt + Click
+	if (pMsg->message == WM_LBUTTONDOWN && ::GetAsyncKeyState(VK_MENU) < 0 && _ShowLinkTextSelectWindow(pMsg)) {
 		return TRUE;
 	}
 
@@ -1059,8 +1068,8 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 		ATLVERIFY(::CoMarshalInterThreadInterfaceInStream(IID_IDispatch, pDisp, &pStream) == S_OK);
 		::PostThreadMessage(m_dwThreadIdFromNewWindow, WM_GETMARSHALIDISPATCHINTERFACE, (WPARAM)pStream, 0);
 	}
-
-	SetRegisterAsBrowser(true);
+	if (m_pGlobalConfig->dwMainExtendedStyle & MAIN_EX_REGISTER_AS_BROWSER)
+		SetRegisterAsBrowser(true);
 	SetVisible(true);
 
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
@@ -1276,6 +1285,16 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 	}
 
 	return 0;
+}
+
+LRESULT CChildFrame::Impl::OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	if (m_bNowActive) {
+		HWND hWndFocus = ::GetFocus();
+		if (hWndFocus == m_hWnd || IsChild(hWndFocus))
+			return TRUE;
+	}
+	return FALSE;
 }
 
 
@@ -1846,42 +1865,6 @@ void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 	if (nID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
 		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
-			auto funcGetIFrameAbsolutePosition = [](CComQIPtr<IHTMLElement>	spIFrame) -> CRect {
-				CRect rc;
-				spIFrame->get_offsetHeight(&rc.bottom);
-				spIFrame->get_offsetWidth(&rc.right);
-				CComPtr<IHTMLElement>	spCurElement = spIFrame;
-				do {
-					CPoint temp;
-					spCurElement->get_offsetTop(&temp.y);
-					spCurElement->get_offsetLeft(&temp.x);
-					rc += temp;
-					CComPtr<IHTMLElement>	spTemp;
-					spCurElement->get_offsetParent(&spTemp);
-					spCurElement.Release();
-					spCurElement = spTemp;
-				} while (spCurElement.p);
-				
-				return rc;
-			};
-			auto funcGetScrollPosition = [](CComQIPtr<IHTMLDocument2> spDoc2) -> CPoint {
-				CPoint ptScroll;
-				CComPtr<IHTMLElement>	spBody;
-				spDoc2->get_body(&spBody);
-				CComQIPtr<IHTMLElement2>	spBody2 = spBody;
-				spBody2->get_scrollTop(&ptScroll.y);
-				spBody2->get_scrollLeft(&ptScroll.x);
-				if (ptScroll == CPoint(0, 0)) {
-					CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
-					CComPtr<IHTMLElement>	spDocumentElement;
-					spDoc3->get_documentElement(&spDocumentElement);
-					CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
-					spDocumentElement2->get_scrollTop(&ptScroll.y);
-					spDocumentElement2->get_scrollLeft(&ptScroll.x);
-				}
-				return ptScroll;
-			};
-
 			HRESULT hr = S_OK;
 			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
 
@@ -1903,8 +1886,8 @@ void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
 					CComVariant vIndex(i);
 					CComPtr<IDispatch>	spDisp2;
 					spIFrameCol->item(vIndex, vIndex, &spDisp2);
-					CRect rcAbsolute = funcGetIFrameAbsolutePosition(spDisp2.p);
-					CPoint ptScroll = funcGetScrollPosition(spDoc2);
+					CRect rcAbsolute = GetIFrameAbsolutePosition(spDisp2.p);
+					CPoint ptScroll = GetScrollPosition(spDoc2);
 					CRect rc = rcAbsolute - ptScroll;
 					if (rc.PtInRect(pt)) {
 						CComVariant vResult;
@@ -3429,5 +3412,137 @@ void	CChildFrame::Impl::_SetFocusToHTML()
 		HRESULT hr = spOleObj->DoVerb(OLEIVERB_UIACTIVATE, NULL, spClientSite, 0, m_hWnd, &rcClient);
 	}
 }
+
+
+bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
+{
+	CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+	ATLASSERT( m_spBrowser );
+	CComPtr<IDispatch> spDisp;
+	m_spBrowser->get_Document(&spDisp);
+	CComQIPtr<IHTMLDocument2> spDoc = spDisp;
+	if (spDoc == nullptr)
+		return false;
+
+	CComPtr<IHTMLElement> spElmHit;
+	spDoc->elementFromPoint(pt.x, pt.y, &spElmHit);
+	if (spElmHit == nullptr)
+		return false;
+
+	CComPtr<IHTMLElement> spElmTemp = spElmHit;
+	CComPtr<IHTMLElement> spElmAnchor;
+	for (;;) {
+		CComBSTR tagname;
+		spElmTemp->get_tagName(&tagname);
+		if (tagname == nullptr)
+			return false;
+		if (tagname == L"A") {
+			spElmAnchor = spElmTemp;
+			break;
+		}
+		CComPtr<IHTMLElement> spElmParent;
+		spElmTemp->get_parentElement(&spElmParent);
+		spElmTemp.Release();
+		spElmTemp = spElmParent;
+		if (spElmTemp == nullptr)
+			return false;
+	}
+	ATLASSERT( spElmAnchor );
+
+	CComBSTR text;
+	spElmAnchor->get_innerText(&text);
+	if (text.Length() == 0)
+		return true;
+	
+	CRect rcAbsolute = GetIFrameAbsolutePosition(spElmAnchor.p);
+	CPoint ptScroll = GetScrollPosition(spDoc);
+	CRect rc = rcAbsolute - ptScroll;
+	ClientToScreen(&rc);
+
+	///////////////////////////////////////////////////
+	// CTextWindow
+
+	class CTextWindow : 
+		public CWindowImpl<CTextWindow, CWindow, CWinTraits<WS_POPUP | WS_DLGFRAME | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW | WS_EX_TOPMOST> >
+	{
+	public:
+		CTextWindow(LPCWSTR text, CPoint pt) : m_strWord(text), m_ptTopLeft(pt)
+		{ }
+
+		void	OnFinalMessage(HWND /*hWnd*/) { delete this; }
+
+		BEGIN_MSG_MAP( CTextWindow )
+			MSG_WM_CREATE( OnCreate )
+			MSG_WM_DESTROY( OnDestroy )
+			MSG_WM_ACTIVATE( OnActivate )
+			MSG_WM_SIZE( OnSize )
+		END_MSG_MAP()
+
+		int OnCreate(LPCREATESTRUCT lpCreateStruct)
+		{
+			WTL::CLogFont	lf;
+			lf.SetMenuFont();
+			m_Edit.Create(m_hWnd, 0, NULL, WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL /*| WS_VSCROLL*/);
+			CFontHandle font = lf.CreateFontIndirect();
+			m_Edit.SetFont(font);
+			//m_Edit.MoveWindow(0, 0, 250, 270);
+			m_Edit.ShowWindow(SW_SHOWNOACTIVATE);
+			m_Edit.AppendText(m_strWord, TRUE);
+
+			CRect rcText = MtlComputeRectOfText(m_strWord, font);
+			BOOL b = ::AdjustWindowRectEx(&rcText, WS_POPUP | WS_DLGFRAME, FALSE, WS_EX_TOOLWINDOW | WS_EX_TOPMOST);
+			enum { kSpacing = 10 };
+
+			CRect rcWindow;
+			rcWindow.top	= m_ptTopLeft.y - rcText.Height() - kSpacing;
+			rcWindow.left	= m_ptTopLeft.x;
+			rcWindow.right	= rcWindow.left + rcText.Width() + ::GetSystemMetrics(SM_CXVSCROLL);
+			rcWindow.bottom	= rcWindow.top + rcText.Height();
+			
+			MoveWindow(&rcWindow);
+			
+			return 0;
+		}
+
+		void OnDestroy()
+		{
+			m_Edit.DestroyWindow();
+		}
+
+		void OnActivate(UINT nState, BOOL bMinimized, CWindow wndOther)
+		{
+			if (nState == WA_INACTIVE)
+				PostMessage(WM_CLOSE);
+		}
+
+		void OnSize(UINT nType, CSize size)
+		{
+			if (size.cx != 0 && size.cy !=0) {
+				CRect rc;
+				GetWindowRect(&rc);
+				//AdjustWindowRectEx(&rc, WS_THICKFRAME, FALSE, WS_EX_TOOLWINDOW);
+				m_Size.SetSize(rc.Width(), rc.Height());
+			}
+			if (m_Edit.IsWindow())
+				m_Edit.MoveWindow(0, 0, size.cx, size.cy);
+		}
+
+
+	private:
+		CEdit	m_Edit;
+		CString m_strWord;
+		CPoint	m_ptTopLeft;
+		CSize	m_Size;
+	};
+
+	auto window = new CTextWindow(text, rc.TopLeft());
+	window->Create(m_hWnd);
+	//window->MoveWindow(&rcWindow);
+	window->ShowWindow(TRUE);
+
+	return true;
+}
+
+
 
 

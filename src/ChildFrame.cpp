@@ -272,6 +272,46 @@ void	OpenMultiUrl(const std::pair<std::unique_ptr<WCHAR[]>, int>& pair, CWindow 
 }
 
 
+CRect GetIFrameAbsolutePosition(CComQIPtr<IHTMLElement>	spIFrame)
+{
+	CRect rc;
+	spIFrame->get_offsetHeight(&rc.bottom);
+	spIFrame->get_offsetWidth(&rc.right);
+	CComPtr<IHTMLElement>	spCurElement = spIFrame;
+	do {
+		CPoint temp;
+		spCurElement->get_offsetTop(&temp.y);
+		spCurElement->get_offsetLeft(&temp.x);
+		rc += temp;
+		CComPtr<IHTMLElement>	spTemp;
+		spCurElement->get_offsetParent(&spTemp);
+		spCurElement.Release();
+		spCurElement = spTemp;
+	} while (spCurElement.p);
+				
+	return rc;
+};
+
+CPoint GetScrollPosition(CComQIPtr<IHTMLDocument2> spDoc2)
+{
+	CPoint ptScroll;
+	CComPtr<IHTMLElement>	spBody;
+	spDoc2->get_body(&spBody);
+	CComQIPtr<IHTMLElement2>	spBody2 = spBody;
+	spBody2->get_scrollTop(&ptScroll.y);
+	spBody2->get_scrollLeft(&ptScroll.x);
+	if (ptScroll == CPoint(0, 0)) {
+		CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc2;
+		CComPtr<IHTMLElement>	spDocumentElement;
+		spDoc3->get_documentElement(&spDocumentElement);
+		CComQIPtr<IHTMLElement2>	spDocumentElement2 = spDocumentElement;
+		spDocumentElement2->get_scrollTop(&ptScroll.y);
+		spDocumentElement2->get_scrollLeft(&ptScroll.x);
+	}
+	return ptScroll;
+};
+
+
 };	// namespace
 
 /////////////////////////////////////////////////////////////
@@ -456,7 +496,7 @@ public:
 	void	OnTimer(UINT_PTR nIDEvent);
 
 	LRESULT OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam);
-	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam) { return m_bNowActive; }
+	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// É^ÉuÇÃêÿÇËë÷Ç¶Ç™í ímÇ≥ÇÍÇÈ
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
 	void	OnGetChildFrameData(bool bCreateData);
@@ -537,6 +577,7 @@ private:
 	void	_ExecuteUserJavascript(const CString& strScriptText);
 	int		_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 	void	_SetFocusToHTML();
+	bool	_ShowLinkTextSelectWindow(MSG* pMsg);
 
 	// Data members
 	CChildFrame*	m_pParentChild;

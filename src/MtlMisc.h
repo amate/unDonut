@@ -61,6 +61,23 @@ inline int MtlComputeWidthOfText(const CString &strText, HFONT hFont)
 	return rcText.Width();
 }
 
+inline CRect MtlComputeRectOfText(const CString &strText, HFONT hFont)
+{
+	if ( strText.IsEmpty() )
+		return CRect();
+
+	CString str = strText;	//+++
+	str.Remove(_T('&'));	//+++
+
+	CWindowDC dc(NULL);
+	CRect	  rcText;
+	HFONT	  hOldFont = dc.SelectFont(hFont);
+	dc.DrawText(str, -1, &rcText, DT_CALCRECT);
+	dc.SelectFont(hOldFont);
+
+	return rcText;
+}
+
 
 
 /////////////////////////////////////////////////////////////////////////////

@@ -235,8 +235,6 @@ BEGIN
             MENUITEM SEPARATOR
             MENUITEM "新規を非アクティブ(&A)",               ID_MAIN_EX_NOACTIVATE
             MENUITEM "リンクを非アクティブ(&L)",              ID_MAIN_EX_NOACTIVATE_NEWWIN
-            MENUITEM SEPARATOR
-            MENUITEM "ターゲット名の考慮(&T)",               ID_REGISTER_AS_BROWSER
         END
         POPUP "抑止(&E)"
         BEGIN
@@ -971,7 +969,7 @@ BEGIN
     AUTOCHECKBOX    "お気に入りグループを開くとき、他のウィンドウを閉じない(&D)", IDC_CHECK_MAIN_NOCLOSEDFG, 8, 76, 182, 10, BS_FLAT
     AUTOCHECKBOX    "お気に入りの追加に、コモンダイアログボックスを使う(&C)", IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL, 8, 88, 177, 10, BS_FLAT
     AUTOCHECKBOX    "お気に入りの整理に、エクスプローラを使う(&E)", IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL, 8, 100, 147, 10, BS_FLAT
-    AUTOCHECKBOX    "リンクのターゲット名を考慮する(&M)", IDC_CHECK_MAIN_REGISTER_AS_BROWSER, 8, 112, 117, 10, BS_FLAT
+    AUTOCHECKBOX    "リンクのターゲット名を考慮する(&M) ※新規タブより有効", IDC_CHECK_MAIN_REGISTER_AS_BROWSER, 8, 112, 171, 10, BS_FLAT
     AUTOCHECKBOX    "複数起動を許可しない(&O)", IDC_CHECK_ONEINSTANCE, 8, 164, 85, 10, BS_FLAT
     AUTOCHECKBOX    "状態をTabList.donutTabListへ定期的に保存する(&S):", IDC_CHECK_MAIN_BACKUP, 8, 204, 149, 10, BS_FLAT
     EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME, 159, 204, 25, 12, ES_AUTOHSCROLL
