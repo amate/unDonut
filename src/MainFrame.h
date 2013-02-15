@@ -19,6 +19,8 @@ public:
 
 	CChildFrameClient();
 
+	void	SetGetSearchStringFunc(function<bool (CString&)> func) { m_funcGetSearchString = func; }
+
 	HWND	Create(HWND hWndMainFrame);
 
 	void	SetChildFrameWindow(HWND hWndChildFrame);
@@ -36,6 +38,7 @@ public:
 private:
 	// Data members
 	HWND	m_hWndChildFrame;
+	function<bool (CString&)>	m_funcGetSearchString;
 	CBitmap	m_bmpBackground;
 };
 

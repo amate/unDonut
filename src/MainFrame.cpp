@@ -156,61 +156,32 @@ HWND	CChildFrameClient::Create(HWND hWndMainFrame)
 
 void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 {
-#if 0	/* 前のウィンドウの画面を更新しておく */
-	if (   m_hWndChildFrame && hWndChildFrame
-		&& Misc::IsGpuRendering() 
-		&& CDLControlOption::s_nGPURenderStyle != CDLControlOption::GPURENDER_NONE)
-	{
-		static CBitmap	bmpPage;
-		if (bmpPage.IsNull() == false)
-			bmpPage.DeleteObject();
-//		CClientDC	dc(m_hWndChildFrame);
-		//CClientDC	dc2(hWndChildFrame);
-		RECT rect;
-		::GetClientRect(m_hWndChildFrame, &rect);
-		CDC Desktopdc = ::GetDC(NULL);
-		bmpPage.CreateCompatibleBitmap(Desktopdc, rect.right, rect.bottom);
-		CDC	memDC = CreateCompatibleDC(Desktopdc);
-		HBITMAP bmpPrev = memDC.SelectBitmap(bmpPage);
-
-		/* ページのビットマップを取得 */
-		memDC.FillSolidRect(&rect, RGB(255, 255, 255));
-		::SendMessage(hWndChildFrame, WM_DRAWCHILDFRAMEPAGE, (WPARAM)memDC.m_hDC, 0);
-
-//		dc.BitBlt(0, 0, rect.right, rect.bottom, memDC, rect.right, rect.bottom, SRCCOPY);
-		//dc2.BitBlt(0, 0, rect.right, rect.bottom, memDC, rect.right, rect.bottom, SRCCOPY);	//
-		memDC.SelectBitmap(bmpPrev);
-
-		::SendMessage(hWndChildFrame, WM_SETPAGEBITMAP, (WPARAM)&bmpPage.m_hBitmap, 0);
-		::SendMessage(m_hWndChildFrame, WM_SETPAGEBITMAP, (WPARAM)&bmpPage.m_hBitmap, 0);
-
-		::InvalidateRect(m_hWndChildFrame, NULL, FALSE);
-		::UpdateWindow(m_hWndChildFrame);
-	}
-#endif
-	//SetRedraw(FALSE);
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
-		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
-		//::ShowWindowAsync(m_hWndChildFrame, FALSE);
+		// タブに検索テキストを設定する
+		CString text;
+		if (m_funcGetSearchString(text)) {
+			COPYDATASTRUCT cds = {};
+			cds.dwData	= kSetSearchText;
+			cds.lpData	= static_cast<LPVOID>(text.GetBuffer(0));
+			cds.cbData	= (text.GetLength() + 1) * sizeof(TCHAR);
+			::SendMessage(m_hWndChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+		}
 	}
-	
+#if 0
+	if (m_hWndChildFrame && ::IsWindow(m_hWndChildFrame)) {
+		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
+	} else if (hWndChildFrame) {
+		::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);	
+	}
+#endif
 	if (hWndChildFrame) {
-		::PostMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
-		RECT rcClient;
-		GetClientRect(&rcClient);
-		//::SetWindowPos(hWndChildFrame, NULL, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | */SWP_NOZORDER | /*SWP_SHOWWINDOW | */SWP_NOREDRAW);
-		//::ShowWindowAsync(hWndChildFrame, TRUE);
-		//::RedrawWindow(hWndChildFrame, NULL, NULL, RDW_FRAME | RDW_INVALIDATE/* | RDW_UPDATENOW*/ | RDW_ALLCHILDREN);
-		//::BringWindowToTop(hWndChildFrame);
+		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
 	} else {
 		InvalidateRect(NULL);
 	}
 
 	m_hWndChildFrame = hWndChildFrame;
-		
-	//SetRedraw(TRUE);
-	//RedrawWindow(NULL, NULL, RDW_FRAME | RDW_ERASE | RDW_ERASENOW | RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
 }
 
 

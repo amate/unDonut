@@ -1290,9 +1290,13 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 LRESULT CChildFrame::Impl::OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	if (m_bNowActive) {
+		if (MtlIsApplicationActive(m_hWnd))
+			return TRUE;
+#if 0
 		HWND hWndFocus = ::GetFocus();
 		if (hWndFocus == m_hWnd || IsChild(hWndFocus))
 			return TRUE;
+#endif
 	}
 	return FALSE;
 }
@@ -1307,6 +1311,7 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			_SetFocusToHTML();
 		}
 
+		// タブごとに検索文字列を保存する
 		if (m_pGlobalConfig->bSaveSearchWord) {
 			CString str;
 			str.Format(_T("%d%s"), m_bNowHilight, m_strSearchWord);
@@ -1314,30 +1319,27 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			cds.dwData	= kSetSearchText;
 			cds.lpData	= static_cast<LPVOID>(str.GetBuffer(0));
 			cds.cbData	= (str.GetLength() + 1) * sizeof(WCHAR);
-			GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
-		//	//CDonutSearchBar::GetInstance()->SetSearchStr(m_strSearchWord); //\\ 保存しておいた文字列を検索バーに戻す
-		//	//CDonutSearchBar::GetInstance()->ForceSetHilightBtnOn(m_bNowHilight);
+			GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);  //\\ 保存しておいた文字列を検索バーに戻す
 		} else {
 			m_pGlobalConfig->bSaveSearchWord = m_pGlobalConfig->bSaveSearchWordOrg;
 		}
 
 
 		if (Misc::IsGpuRendering()) {
-			//SetRedraw(FALSE);
+			GetParent().SetRedraw(FALSE);
 			RECT rcClient;
 			GetParent().GetClientRect(&rcClient);
-			::SetWindowPos(m_hWnd, HWND_BOTTOM, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_NOREDRAW);
+			//::SetWindowPos(m_hWnd, HWND_BOTTOM, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_NOREDRAW);
+			MoveWindow(&rcClient);
 			::ShowWindow(m_hWnd, TRUE);
 			//::BringWindowToTop(m_hWnd);
 
 			if (hWndDeact) {
-				::ShowWindowAsync(hWndDeact, FALSE);
+				::ShowWindow/*Async*/(hWndDeact, FALSE);
 			}
-			//m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-			//SetRedraw(TRUE);
-			//PostMessage(WM_APP + 123);
-			//m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
+			GetParent().SetRedraw(TRUE);
+			m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
+
 		} else {	// no GPU で成功！
 			GetParent().SetRedraw(FALSE);
 			RECT rcClient;
@@ -1351,24 +1353,12 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			}
 			GetParent().SetRedraw(TRUE);
 			m_view.GetWindow(GW_CHILD).RedrawWindow(NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
 		}
-#if 0
-		{	// アクティブ先のウィンドウが表示されない...
-			GetParent().SetRedraw(FALSE);
-			RECT rcClient;
-			GetParent().GetClientRect(&rcClient);
-			::SetWindowPos(m_hWnd, hWndDeact, 0, 0, rcClient.right, rcClient.bottom, /*SWP_ASYNCWINDOWPOS | *//*SWP_NOZORDER |*/ SWP_SHOWWINDOW/* | SWP_NOREDRAW*/);
-			//::ShowWindow(m_hWnd, TRUE);
-			::BringWindowToTop(m_hWnd);
-			if (hWndDeact)
-				::ShowWindow/*Async*/(hWndDeact, FALSE);
-			GetParent().SetRedraw(TRUE);
-			//GetParent().RedrawWindow(NULL, NULL, /*RDW_FRAME | RDW_ERASE | RDW_ERASENOW | */RDW_INVALIDATE/* | RDW_UPDATENOW */| RDW_ALLCHILDREN);
-		}
-#endif
+		::PostMessage(hWndDeact, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndAct, (LPARAM)hWndDeact);
+
 	} else if (hWndDeact == m_hWnd) {
 		m_bNowActive = false;
+
 		// _KillFocusToHTML
 		HRESULT	hr = E_FAIL;
 		CComQIPtr<IOleInPlaceObject> spIOleInPlaceObject = m_spBrowser;
@@ -1376,29 +1366,21 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 			hr = spIOleInPlaceObject->UIDeactivate(); // IEのUIを無効化
 		}
 
-		if(m_pGlobalConfig->bSaveSearchWord){	//\\ 現在、検索バーにある文字列を取っておく
+#if 0	// ChildFrameClient側でするようにした
+		if (m_pGlobalConfig->bSaveSearchWord){	//\\ 現在、検索バーにある文字列を取っておく
 			::SendMessage(m_pGlobalConfig->SearchEditHWND, WM_GETTEXT, 1024, (LPARAM)m_strSearchWord.GetBuffer(1024));
 			m_strSearchWord.ReleaseBuffer();
 		}
-
-#if 0
-		{
-			CComQIPtr<IViewObject>	spViewObject = m_spBrowser;
-			if (spViewObject == nullptr)
-				return ;
-
-			RECT rc;
-			GetClientRect(&rc);
-			if (m_bmpPage.IsNull() == false)
-				m_bmpPage.DeleteObject();
-
-			CDC dc = GetDC();
-			m_bmpPage.CreateCompatibleBitmap(dc, rc.right, rc.bottom);
-			CDC	memDC = CreateCompatibleDC(dc);
-			CBitmap bmpPrev = memDC.SelectBitmap(m_bmpPage);
-			spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, memDC, (RECTL*)&rc, (RECTL*)&rc, NULL, NULL);
-		}
 #endif
+
+		// ウィンドウ表示はhWndActに任せる
+		if (hWndAct) {
+			//::SendMessage(hWndAct, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndAct, (LPARAM)hWndDeact);
+			//ShowWindow(FALSE);
+		} else {
+			// 自分が最後のタブなので自分で非表示にする
+			ShowWindow(FALSE);
+		}
 	}
 }
 

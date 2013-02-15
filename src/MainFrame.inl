@@ -916,6 +916,14 @@ void	CMainFrame::Impl::_initChildFrameClient()
 {
 	m_ChildFrameClient.Create(m_hWndClient);
 	ATLASSERT( m_ChildFrameClient.IsWindow() );
+	m_ChildFrameClient.SetGetSearchStringFunc([this](CString& text)-> bool {
+		if (m_GlobalConfigManageData.pGlobalConfig->bSaveSearchWord == false)
+			return false;
+
+		m_SearchBar.GetEditCtrl().GetWindowText(text.GetBuffer(1024 + 1), 1024);
+		text.ReleaseBuffer();
+		return true;
+	});
 
 	m_TabBar.SetChildFrameClient(&m_ChildFrameClient);
 }
@@ -1741,6 +1749,8 @@ void	CMainFrame::Impl::OnAutoLoginEdit(UINT uNotifyCode, int nID, CWindow wndCtl
 	dlg.SetAutoLoginfunc(funcRefresh);
 	dlg.SetTabBarForEach(std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
 	dlg.DoModal(m_hWnd);
+
+	::SetFocus(m_ChildFrameClient.GetActiveChildFrameWindow());
 }
 
 void	CMainFrame::Impl::OnSetFocusToBar(UINT uNotifyCode, int nID, CWindow wndCtl)
@@ -2382,9 +2392,9 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 		}
 
 		if ( bNoting && strMove.IsEmpty() ) {	// 右クリックメニューを出す
+			::GetCursorPos(&ptLast);
 			::ScreenToClient(data.hwnd, &ptLast);
 			data.lParam = MAKELONG(ptLast.x, ptLast.y);
-			DWORD_PTR dwResult = 0;
 			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONDOWN, data.wParam, data.lParam);
 			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONUP, data.wParam, data.lParam);
 		}
