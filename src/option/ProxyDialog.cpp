@@ -173,6 +173,8 @@ void CProxyPropertyPage::_GetData()
 	// プロキシ
 	{
 		CIniFileO	pr( strFile, _T("PROXY") );
+		pr.DeleteSection();
+
 		int 		nLineCnt = m_editPrx.GetLineCount();
 		pr.SetValue( (DWORD) nLineCnt, _T("MAX") );
 
@@ -213,6 +215,8 @@ void CProxyPropertyPage::_GetData()
 	// 非プロキシ
 	{
 		CIniFileO	pr( strFile, _T("NOPROXY") );
+		pr.DeleteSection();
+
 		int 		nLineCnt = m_editNoPrx.GetLineCount();
 		pr.SetValue( (DWORD) nLineCnt, _T("MAX") );
 

@@ -19,6 +19,16 @@ static const int aryID[] = {
 	ID_VIEW_PLUGINBAR
 };
 
+inline int GetIndexFromID(int nID)
+{
+	for (int i = 0; i < _countof(aryID); ++i) {
+		if (aryID[i] == nID)
+			return i;
+	}
+	ATLASSERT( FALSE );
+	return -1;
+}
+
 void CDonutExplorerBar::UpdateLayout(int cxWidth, int cyHeight)
 {
 	cyHeight -= kBottomHeight;
@@ -105,9 +115,44 @@ int CDonutExplorerBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	return 0;
 }
 
+int		CDonutExplorerBar::_HitTestTab(const CPoint& pt)
+{
+	RECT  rcClient;
+	GetClientRect(&rcClient);
+
+	rcClient.top = rcClient.bottom - kBottomHeight;
+
+	int   nTabWidth = (int) (kBottomHeight * 1.5);
+	CRect rcTab(rcClient);
+	rcTab.top	-= 1;
+	rcTab.left	+= 2;
+	rcTab.right  = rcTab.left + nTabWidth;
+
+	for (int nIndex = 0; nIndex < _countof(aryID); ++nIndex) {
+		if (rcTab.PtInRect(pt))
+			return nIndex;
+
+		rcTab.left	+= nTabWidth;
+		rcTab.right += nTabWidth;
+	}
+	return -1;
+}
+
+// タブがクリックされたらパネルを切り替える
+void CDonutExplorerBar::OnLButtonDown(UINT nFlags, CPoint point)
+{
+	int nIndex = _HitTestTab(point);
+	if (nIndex == -1 || nIndex == m_nIndexAct)
+		return ;
+	if (_IsBarVisible(aryID[nIndex]))
+		return ;
+	OnViewBar(0, aryID[nIndex], NULL);
+}
+
 void CDonutExplorerBar::OnPaneClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	m_funcSetSinglePaneMode();
+	::ShowWindow(GetClient(), FALSE);
 }
 
 
@@ -117,8 +162,16 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 	HWND hWndClient = GetClient();
 	CWindow wndTarget;
 	std::function<HWND ()>	funcCreateWindow;
+
 	switch (nID) {
 	case ID_VIEW_FAVEXPBAR:
+		wndTarget = m_donutFavoriteTreeView;
+		funcCreateWindow = [this] () -> HWND {
+			m_donutFavoriteTreeView.Create(m_hWnd);
+			return m_donutFavoriteTreeView.m_hWnd;
+		};
+		break;
+
 	case ID_VIEW_FAVEXPBAR_HIST:
 	case ID_VIEW_FAVEXPBAR_GROUP:
 		wndTarget = m_FavBar;
@@ -146,9 +199,13 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 	}
 
 	if (_IsBarVisible(nID)) {
+		// エクスプローラーバーを隠す
 		m_rSplitWindow.SetSinglePaneMode(SPLIT_PANE_RIGHT);
 		wndTarget.ShowWindow(FALSE);
 	} else {
+		m_nIndexAct = GetIndexFromID(nID);
+		Invalidate(FALSE);
+
 		if (hWndClient)
 			::ShowWindow(hWndClient, FALSE);
 		
@@ -156,7 +213,7 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 			wndTarget = funcCreateWindow();
 		}
 		if (nID == ID_VIEW_FAVEXPBAR) {
-			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
+			//m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
 		} else if (nID == ID_VIEW_FAVEXPBAR_HIST) {
 			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
 		} else if (nID == ID_VIEW_FAVEXPBAR_GROUP) {
@@ -166,6 +223,7 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		SetTitle( MtlGetWindowText(wndTarget) );
 		SetClient(wndTarget);
 		
+		// スプリット表示にする
 		m_rSplitWindow.SetSinglePaneMode();
 		m_rSplitWindow.SetSplitterPos(240);
 	}
@@ -187,9 +245,7 @@ bool	CDonutExplorerBar::_IsBarVisible(int nID)
 	HWND hWndBar = NULL;
 	bool bFavEx = true;
 	switch (nID) {
-	case ID_VIEW_FAVEXPBAR:			hWndBar = m_FavBar;
-		bFavEx = (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITES) != 0;
-		break;
+	case ID_VIEW_FAVEXPBAR:			hWndBar = m_donutFavoriteTreeView;	break;
 
 	case ID_VIEW_FAVEXPBAR_HIST:	hWndBar = m_FavBar;	
 		bFavEx = (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != 0;

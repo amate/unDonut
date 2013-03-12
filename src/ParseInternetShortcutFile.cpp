@@ -11,7 +11,6 @@
 #include "stdafx.h"
 #include "DonutPFunc.h"
 #include "DonutViewOption.h"
-#include "FavoritesMenu.h"
 #include "MtlDragDrop.h"
 #include "HlinkDataObject.h"
 #include "MenuDropTargetWindow.h"

@@ -197,9 +197,6 @@
     <ClCompile Include="MainFrame.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="DonutClipboardBar.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
-    </ClCompile>
     <ClCompile Include="FavTreeViewCtrl.cpp">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClCompile>
@@ -235,9 +232,6 @@
     </ClCompile>
     <ClCompile Include="option\UrlSecurityExPropDialog.cpp">
       <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="FavoritesMenu.cpp">
-      <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="BingTranslatorMenu.cpp">
       <Filter>Source Files</Filter>
@@ -443,6 +437,12 @@
     <ClCompile Include="DonutExplorerBar.cpp">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClCompile>
+    <ClCompile Include="DonutFavoriteTreeView.cpp">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutClipboardBar.cpp">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -493,9 +493,6 @@
     <ClInclude Include="ExMenu.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="ExplorerToolBarCtrl.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="ExplorerTreeViewCtrl.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -503,9 +500,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="FavoriteOrder.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="FavoritesMenu.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="FlatComboBox.h">
@@ -530,9 +524,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="MenuDropTargetWindow.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="OleDragDropExpToolBarCtrl.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h">
@@ -940,6 +931,7 @@
     <ClInclude Include="option\SupressPopupOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
+    <ClInclude Include="DonutFavoriteTreeView.h" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

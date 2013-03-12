@@ -526,11 +526,15 @@ CCriticalSection				CRootFavoritePopupMenu::s_csBookmarkLock;
 bool							CRootFavoritePopupMenu::s_bSaveBookmark = false;
 boost::thread					CRootFavoritePopupMenu::s_SaveBookmarkListThread;
 bool							CRootFavoritePopupMenu::s_bBookmarkLoading = false;
+
 #if _MSC_VER >= 1700
 std::atomic<bool>				CRootFavoritePopupMenu::s_bCancel(false);
 #else
 bool							CRootFavoritePopupMenu::s_bCancel = false;
 #endif
+
+std::vector<std::pair<HWND, std::function<void ()>>>		CRootFavoritePopupMenu::s_vecfuncRefreshNotify;
+
 
 void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
@@ -690,6 +694,27 @@ void CRootFavoritePopupMenu::JoinSaveBookmarkThread()
 {
 	if (s_SaveBookmarkListThread.joinable())
 		s_SaveBookmarkListThread.join();
+}
+
+void CRootFavoritePopupMenu::SetRefreshNotify(HWND hWnd, std::function<void ()> callback, bool bRegister)
+{
+	if (bRegister) {
+		s_vecfuncRefreshNotify.push_back(std::make_pair(hWnd, callback));
+	} else {
+		for (auto it = s_vecfuncRefreshNotify.begin(); it != s_vecfuncRefreshNotify.end(); ++it) {
+			if (it->first == hWnd) {
+				s_vecfuncRefreshNotify.erase(it);
+				break;
+			}
+		}
+	}
+}
+
+/// お気に入りリストの変化を通知する
+void CRootFavoritePopupMenu::NotifyRefresh()
+{
+	for (auto& callback : s_vecfuncRefreshNotify)
+		callback.second();
 }
 
 void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent)
@@ -885,7 +910,9 @@ LRESULT CRootFavoritePopupMenu::OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wP
 
 LRESULT CRootFavoritePopupMenu::OnSaveLinkBookmark(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
-	s_bSaveBookmark = true;	
+	s_bSaveBookmark = true;
+
+	NotifyRefresh();
 	return 0;
 }
 

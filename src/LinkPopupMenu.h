@@ -222,7 +222,7 @@ public:
 
 	static void	OpenLink(const LinkItem& item, DWORD openFlag);
 	static void OpenMultiLink(LinkFolderPtr pFolder);
-	static void	ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd);
+	static int	ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd);
 	static bool	s_bNowShowRClickMenu;
 	static void SaveLinkBookmark();
 	static void SortByName(LinkFolderPtr pFolder);

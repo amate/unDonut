@@ -286,7 +286,7 @@ void CDonutClipboardBar::_SetData()
 
 void CDonutClipboardBar::_GetProfile()
 {
-	CIniFileI	pr( MtlGetChangedExtFromModuleName( _T(".ini") ), _T("ClipboardBar") );
+	CIniFileI	pr( g_szIniFileName, _T("ClipboardBar") );
 	pr.QueryValue( m_dwExStyle, _T("Extended_Style") );
 
 	m_strExts = pr.GetString( _T("Ext_List"), _T("/;html;htm;shtml;cgi;asp;com;net;jp;lnk;url;") ); //+++ "Ext_List"‚ª‚ ‚ê‚Î‚»‚Ì’†g‚ğA‚È‚¯‚ê‚Î‘æ‚Qˆø”‚ğ’l‚Æ‚·‚é.
@@ -299,7 +299,7 @@ void CDonutClipboardBar::_GetProfile()
 
 void CDonutClipboardBar::_WriteProfile()
 {
-	CIniFileO	pr( MtlGetChangedExtFromModuleName( _T(".ini") ), _T("ClipboardBar") );
+	CIniFileO	pr( g_szIniFileName, _T("ClipboardBar") );
 	pr.SetValue ( m_dwExStyle, _T("Extended_Style") );
 	pr.SetString( m_strExts	 , _T("Ext_List")	   );
 	pr.Close();

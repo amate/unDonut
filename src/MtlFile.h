@@ -117,35 +117,6 @@ inline bool MtlIsValidateFileName(const CString& strFileName)
 }
 
 
-
-inline CItemIDList MtlGetHtmlFileIDList()
-{
-	// strNewFile == .../unDonut.html
-	CString strNewFile = MtlGetChangedExtFromModuleName( _T(".html") );
-
-	if ( strNewFile.IsEmpty() )
-		return CItemIDList();
-
-	HANDLE	h	= ::CreateFile(strNewFile, GENERIC_WRITE, 0, NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	if (h == INVALID_HANDLE_VALUE)
-		return CItemIDList();
-
-	::CloseHandle(h);
-
-	return (LPCTSTR) strNewFile;
-}
-
-
-
-inline void MtlDeleteHtmlFileIDList()
-{
-	CItemIDList idl = MtlGetChangedExtFromModuleName( _T(".html") );
-
-	::DeleteFile( idl.GetPath() );
-}
-
-
-
 inline int MtlGetNormalIconIndex(LPCITEMIDLIST pidl, LPCITEMIDLIST pidlHtm = NULL)
 {
 	if ( pidlHtm != NULL && MtlIsTooSlowIDList(pidl) ) {

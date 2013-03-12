@@ -6,6 +6,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <atlsync.h>
 
 
@@ -47,6 +48,7 @@ private:
 	// Data members
 	static HWND	s_hWndTabBar;
 	static std::unordered_map<std::wstring, CIcon>	s_mapIcon;	// key:favicon‚ÌURL ’l:icon
+	static std::unordered_set<std::wstring>	s_setNotFoundFaviconURL;
 	static CCriticalSection	s_cs;
 };
 

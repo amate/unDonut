@@ -24,51 +24,26 @@ BOOL CFavoriteEditDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	DoDataExchange(DDX_LOAD);
 
+	CRect rcTree;
+	GetDlgItem(IDC_TREE).GetClientRect(&rcTree);
+	GetDlgItem(IDC_TREE).MapWindowPoints(m_hWnd, &rcTree);
+	GetDlgItem(IDC_TREE).ShowWindow(FALSE);
+	GetDlgItem(IDC_TREE).SetDlgCtrlID(0);
+
+	m_tree.Create(m_hWnd);
+	m_tree.MoveWindow(&rcTree);
+	m_tree.SetDlgCtrlID(IDC_TREE);
+	m_tree.SetItemClickFunc([this](LinkItem* pLinkItem) {
+		m_strName	= pLinkItem->strName;
+		m_strURL	= pLinkItem->strUrl;
+		if (m_bFavoriteAdd)
+			return ;
+		DoDataExchange(DDX_LOAD);
+	});
+
 	DlgResize_Init(true, true, WS_THICKFRAME | WS_CLIPCHILDREN);
 
-	m_pBookmarkList = CRootFavoritePopupMenu::GetBookmarkListPtr();
-	
-	m_image_list.Create(16, 16, ILC_COLOR32 | ILC_MASK, 100, 100);
-	
-	m_image_list.AddIcon(CLinkPopupMenu::s_iconFolder);
-	m_image_list.AddIcon(CLinkPopupMenu::s_iconLink);
-	enum { kFolderIcon = 0, kLinkIcon = 1 };
-	
-	m_tree.SetImageList(m_image_list, TVSIL_NORMAL);
-	
 	m_tree.SetFocus();
-
-	function<void (HTREEITEM, LinkFolderPtr)> funcInsertItemFromFolder;
-	CTreeViewCtrl	tree = m_tree;
-	bool			bFavoriteAdd = m_bFavoriteAdd;
-	funcInsertItemFromFolder = [&](HTREEITEM hParent, LinkFolderPtr pFolder) {
-		enum { kFolderIcon = 0, kLinkIcon = 1 };
-		for (auto it = pFolder->cbegin(); it != pFolder->cend(); ++it) {
-			LinkItem& item = *it->get();
-			int nImageIndex;
-			if (item.icon.m_hIcon) {
-				if (bFavoriteAdd)
-					continue;
-				nImageIndex = m_image_list.AddIcon(item.icon);
-			} else if (item.pFolder) {
-				nImageIndex = kFolderIcon;
-			} else {
-				if (bFavoriteAdd)
-					continue;
-				nImageIndex = kLinkIcon;
-			}
-			HTREEITEM hItem = tree.InsertItem(item.strName, nImageIndex, nImageIndex, hParent, TVI_LAST);
-			tree.SetItemData(hItem, reinterpret_cast<DWORD_PTR>(it->get()));
-			if (item.pFolder)
-				funcInsertItemFromFolder(hItem, item.pFolder);
-		}
-	};
-	HTREEITEM hRoot = TVI_ROOT;
-	if (m_bFavoriteAdd)
-		hRoot = m_tree.InsertItem(_T("‚¨‹C‚É“ü‚è"), kFolderIcon, kFolderIcon, TVI_ROOT, TVI_LAST);
-	funcInsertItemFromFolder(hRoot, static_cast<LinkFolderPtr>(m_pBookmarkList));	
-	if (m_bFavoriteAdd)
-		m_tree.Expand(hRoot);
 
 	CIniFileI pr(g_szIniFileName, _T("FavoriteEditDialog"));
 	CRect rc;
@@ -102,9 +77,13 @@ void CFavoriteEditDialog::OnApply(UINT uNotifyCode, int nID, CWindow wndCtl)
 		};
 		LinkItem* pItem = reinterpret_cast<LinkItem*>(m_tree.GetItemData(htItem));
 		if (htItem == NULL || pItem == nullptr) {
-			funcAddLink(m_pBookmarkList);
-		} else {			
-			funcAddLink(pItem->pFolder);
+			funcAddLink(CRootFavoritePopupMenu::GetBookmarkListPtr());
+		} else {
+			if (pItem->pFolder) {
+				funcAddLink(pItem->pFolder);
+			} else {
+				funcAddLink(m_tree.GetParentLinkFolderPtr(htItem));
+			}
 		}
 		m_bSave = true;
 		OnCancel(0, IDCANCEL, NULL);
@@ -146,7 +125,7 @@ void CFavoriteEditDialog::OnCreateFolder(UINT uNotifyCode, int nID, CWindow wndC
 	};
 	HTREEITEM htItem = m_tree.GetSelectedItem();
 	if (htItem == NULL) {
-		funcAddFolder(TVI_ROOT, m_pBookmarkList);
+		funcAddFolder(TVI_ROOT, CRootFavoritePopupMenu::GetBookmarkListPtr());
 	} else {
 		LinkItem* pItem = reinterpret_cast<LinkItem*>(m_tree.GetItemData(htItem));
 		if (pItem->pFolder) {
@@ -163,7 +142,7 @@ void CFavoriteEditDialog::OnCreateFolder(UINT uNotifyCode, int nID, CWindow wndC
 					}
 				}
 			};
-			funcFindInsertFolder(m_pBookmarkList);
+			funcFindInsertFolder(CRootFavoritePopupMenu::GetBookmarkListPtr());
 		}
 	}
 	m_bSave = true;
@@ -188,7 +167,7 @@ void CFavoriteEditDialog::OnDelete(UINT uNotifyCode, int nID, CWindow wndCtl)
 			}
 		}
 	};
-	funcDeleteItem(m_pBookmarkList);
+	funcDeleteItem(CRootFavoritePopupMenu::GetBookmarkListPtr());
 	m_bSave = true;
 }
 
@@ -200,70 +179,11 @@ void CFavoriteEditDialog::OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl)
 	pr.SetValue(rc.Width()	, _T("Width"));
 	pr.SetValue(rc.Height()	, _T("Height"));
 
-	m_image_list.Destroy();
 	if (m_bSave)
 		CRootFavoritePopupMenu::SaveFavoriteBookmark();
+
+	m_tree.DestroyWindow();
+	CRootFavoritePopupMenu::NotifyRefresh();
+
 	EndDialog(nID);
 }
-
-
-LRESULT CFavoriteEditDialog::OnTreeSelChanged(LPNMHDR pnmh)
-{
-	LPNMTREEVIEW pnmtv = reinterpret_cast<LPNMTREEVIEW>(pnmh);
-	LinkItem* pItem = reinterpret_cast<LinkItem*>(pnmtv->itemNew.lParam);
-	if (pItem) {
-		m_strName	= pItem->strName;
-		m_strURL	= pItem->strUrl;
-		if (pItem->pFolder)
-			m_tree.Expand(pnmtv->itemNew.hItem);
-	} else {
-		m_strName	= _T("");
-		m_strURL	= _T("");
-	}
-	if (m_bFavoriteAdd)
-		return 0;
-	DoDataExchange(DDX_LOAD);
-	return 0;
-}
-
-#if 0
-LRESULT CFavoriteEditDialog::OnTreeBeginDrag(LPNMHDR pnmh)
-{
-	LPNMTREEVIEW pnmtv = reinterpret_cast<LPNMTREEVIEW>(pnmh);
-	m_dragimage_list = m_tree.CreateDragImage(pnmtv->itemNew.hItem);
-	m_dragimage_list.BeginDrag(0, 0, 0);
-	ShowCursor(FALSE);
-	SetCapture();
-	m_tree.ClientToScreen(&pnmtv->ptDrag);
-	m_dragimage_list.DragEnter(m_hWnd, pnmtv->ptDrag);
-	return 0;
-}
-
-void CFavoriteEditDialog::OnMouseMove(UINT nFlags, CPoint point)
-{
-	if (GetCapture() == m_hWnd) {
-		//m_dragimage_list.DragLeave(NULL);
-		UINT flags = TVHT_ONITEM;
-		HTREEITEM htItem = m_tree.HitTest(point, &flags);
-		if (htItem)
-			m_tree.SelectDropTarget(htItem);
-		m_dragimage_list.DragMove(point);
-		//m_dragimage_list.DragEnter(NULL, point);
-	}
-}
-
-void CFavoriteEditDialog::OnLButtonUp(UINT nFlags, CPoint point)
-{
-	if (GetCapture() == m_hWnd) {
-		m_dragimage_list.DragLeave(m_hWnd);
-		m_dragimage_list.EndDrag();
-		ReleaseCapture();
-		ShowCursor(TRUE);
-		UINT flags = TVHT_ONITEM;
-		HTREEITEM htItem = m_tree.HitTest(point, &flags);
-
-	}
-}
-
-#endif
-

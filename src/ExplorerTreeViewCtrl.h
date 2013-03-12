@@ -80,13 +80,13 @@ public:
 		, m_bOrgImage(0)				//+++
 		, m_bSettingFocus(FALSE)
 	{
-		m_idlHtm = MtlGetHtmlFileIDList();
+		//m_idlHtm = MtlGetHtmlFileIDList();
 	}
 
 
 	~CExplorerTreeViewCtrlImpl()
 	{
-		MtlDeleteHtmlFileIDList();
+		//MtlDeleteHtmlFileIDList();
 	}
 
 

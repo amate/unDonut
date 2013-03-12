@@ -6,7 +6,6 @@
 #pragma once
 
 #include "option/FavoriteMenuDialog.h"
-#include "FavoritesMenu.h"
 #include "IniFile.h"
 #include "MtlWeb.h"
 

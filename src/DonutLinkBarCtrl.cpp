@@ -181,6 +181,7 @@ private:
 	std::pair<LinkFolderPtr, int>	m_DragItemData;
 	bool	m_bAcceptDrag;
 	bool	m_bDragItemIsLinkFile;
+	int		m_nBeforeBookmarkListSize;
 
 	CToolTipCtrl	m_tip;
 	CString			m_strTipText;

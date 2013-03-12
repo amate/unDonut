@@ -1483,11 +1483,15 @@ void	CDonutLinkBarCtrl::Impl::_DoDragDrop(const CPoint& pt, UINT nFlags, int nIn
 						bmp.DeleteObject();
 				}
 			}
+			m_nBeforeBookmarkListSize = m_BookmarkList.size();
 			m_nNowDragItemIndex = nIndex;
 			//m_bDragFromItself = true;
 			DROPEFFECT dropEffect = DoDragDrop(spDataObject, DROPEFFECT_MOVE | DROPEFFECT_COPY | DROPEFFECT_LINK);
 			//m_bDragFromItself = false;
 			m_nNowDragItemIndex = -1;
+			// äOïîÇ…à⁄ìÆÇ≥ÇÍÇΩÇÃÇ≈çXêVÇ∑ÇÈ
+			if (m_nBeforeBookmarkListSize != m_BookmarkList.size())
+				_UpdateItemPosition();
 			_CloseSubMenu();
 		}
 		_PressItem(-1);

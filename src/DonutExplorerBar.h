@@ -14,6 +14,7 @@
 //#include "DonutPanelBar.h"
 #include "DonutPFunc.h"
 #include "PluginBar.h"
+#include "DonutFavoriteTreeView.h"
 
 class CDonutExplorerBar	: 
 	public CPaneContainerImpl<CDonutExplorerBar>,
@@ -37,8 +38,10 @@ public:
 
 	BEGIN_MSG_MAP( CDonutExplorerBar )
 		MSG_WM_CREATE	( OnCreate	)
+		MSG_WM_LBUTTONDOWN( OnLButtonDown )
 		COMMAND_ID_HANDLER_EX( ID_PANE_CLOSE	, OnPaneClose 		)
 		CHAIN_MSG_MAP( CPaneContainerImpl<CDonutExplorerBar> )
+		REFLECT_NOTIFICATIONS()
 	ALT_MSG_MAP(1)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR		, OnViewBar	)
 		COMMAND_ID_HANDLER_EX( ID_VIEW_FAVEXPBAR_HIST	, OnViewBar	)
@@ -97,6 +100,7 @@ public:
 
 
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnPaneClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -104,12 +108,14 @@ public:
 
 private:
 	bool	_IsBarVisible(int nID);
+	int		_HitTestTab(const CPoint& pt);
 
 	// Data members
 	CSplitterWindow&	m_rSplitWindow;
 
 	CDonutFavoritesBar	m_FavBar;
 	CDonutClipboardBar	m_ClipBar;
+	CDonutFavoriteTreeView	m_donutFavoriteTreeView;
 
 	function<bool ()>	m_funcSetSinglePaneMode;
 	CImageList	m_imgs;

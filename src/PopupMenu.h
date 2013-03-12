@@ -844,7 +844,15 @@ public:
 	static vector<unique_ptr<LinkItem> >* GetBookmarkListPtr() {
 		return &s_BookmarkList;
 	}
+	static CCriticalSection&	GetBookmarkListCriticalSection() { 
+		return s_csBookmarkLock;
+	}
+	static bool IsLoadingBookmarkList() { return s_bBookmarkLoading; }
+
 	static void SaveFavoriteBookmark() { _SaveFavoriteBookmark(); }
+
+	static void SetRefreshNotify(HWND hWnd, std::function<void ()> callback, bool bRegister);
+	static void NotifyRefresh();
 
 	// ƒIƒvƒVƒ‡ƒ“‚©‚çŒÄ‚Î‚ê‚é
 	static void LinkImportFromFolder(LPCTSTR folder);
@@ -887,6 +895,8 @@ private:
 #else
 	static bool	s_bCancel;
 #endif
+	static std::vector<std::pair<HWND, std::function<void ()>>>		s_vecfuncRefreshNotify;
+
 	CLinkPopupMenu*	m_pLinkSubMenu;
 	HWND	m_hWndLinkBar;
 

@@ -446,7 +446,7 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 {
 	uintptr_t unique = (uintptr_t)wParam;
 
-	enum { kMaxRetryResumeCount = 3 };
+	enum { kMaxRetryResumeCount = 7 };
 	// vectorÇ©ÇÁçÌèúÇ∑ÇÈ
 	DLItem* pDLItem = nullptr;
 	HANDLE hMap = NULL;

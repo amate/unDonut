@@ -6,7 +6,95 @@
 #pragma once
 
 #include "CmbboxPrxy.h"
-#include "FavoritesMenu.h"
+
+
+//////////////////////////////////////////////////////////////
+// CCrasyMap	: be care, if no element, &array[0] is invalid.
+
+template <class _Key, class _Val>
+class CCrasyMap : public CSimpleArray< std::pair<_Key, _Val> > 
+{
+public:
+	bool FindKey(const _Key &__key)
+	{
+		if (GetSize() == 0)
+			return false;
+
+		return end() != std::find_if( begin(), end(), _Finder(__key) );
+	}
+
+
+	void Add(const _Key &__key, const _Val &__val)
+	{
+		if (GetSize() == 0) {
+			CSimpleArray< std::pair<_Key, _Val> >::Add( std::make_pair(__key, __val) );
+			return;
+		}
+
+		std::pair<_Key, _Val>*p = std::find_if( begin(), end(), _Finder(__key) );
+
+		if ( p == end() )
+			CSimpleArray< std::pair<_Key, _Val> >::Add( std::make_pair(__key, __val) );
+		else
+			(*p).second = __val;
+	}
+
+
+	_Val Lookup(const _Key &__key)
+	{
+		if (GetSize() == 0)
+			return _Val();
+
+		std::pair<_Key, _Val>*p = std::find_if( begin(), end(), _Finder(__key) );
+
+		if ( p != end() )
+			return p->second;
+		else
+			return _Val();
+	}
+
+
+	void Sort()
+	{
+		if (GetSize() == 0)
+			return;
+
+		std::sort( begin(), end(), _Compare() );
+	}
+
+
+	std::pair<_Key, _Val>* begin()
+	{
+		return &(*this)[0];
+	}
+
+
+	std::pair<_Key, _Val>* end()
+	{
+		return &(*this)[0] + GetSize();
+	}
+
+
+	//	template <class _Key, class _Val>
+	struct _Finder {
+		_Key __aKey;
+		_Finder(_Key __key) : __aKey(__key) { }
+		bool operator ()(const std::pair<_Key, _Val> &src)
+		{
+			return (__aKey == src.first);
+		}
+	};
+
+	//	template <class _Key, class _Val>
+	struct _Compare {
+		bool operator ()(const std::pair<_Key, _Val> &x, const std::pair<_Key, _Val> &y)
+		{
+			return x.second < y.second;
+		}
+	};
+};
+
+
 
 //////////////////////////////////////////////////////////////////////////
 // CDonutStatusBarCtrl

@@ -567,7 +567,11 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 			if (s_bFiltering)
 				FilterString(str);
 			_EncodeString(str, ENCODE_UTF8);
-			DonutOpenFile(_T("http://www.google.co.jp/search?num=100&q=") + str, 0);
+
+			DWORD	dwOpenFlags = D_OPENFILE_ACTIVATE;
+			if (s_bActiveWindow) 
+				dwOpenFlags |= D_OPENFILE_NOCREATE;
+			DonutOpenFile(_T("http://www.google.co.jp/search?num=100&q=") + str, dwOpenFlags);
 			return;
 		}
 

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "resource.h"
+#include "DonutFavoriteTreeView.h"
 
 // ëOï˚êÈåæ
 struct LinkItem;
@@ -40,7 +41,6 @@ public:
 	END_DLGRESIZE_MAP()
 
 	BEGIN_DDX_MAP( CFavoriteEditDialog )
-		DDX_CONTROL_HANDLE( IDC_TREE	, m_tree	)
 		DDX_TEXT( IDC_EDIT_NAME	, m_strName	)
 		DDX_TEXT( IDC_EDIT_URL	, m_strURL	)
 	END_DDX_MAP()
@@ -51,11 +51,8 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_CREATE_FOLDER	, OnCreateFolder	)
 		COMMAND_ID_HANDLER_EX( ID_DELETE	, OnDelete )
 		COMMAND_ID_HANDLER_EX( IDCANCEL	, OnCancel	)
-		NOTIFY_HANDLER_EX( IDC_TREE, TVN_SELCHANGED	, OnTreeSelChanged	)
-		//NOTIFY_HANDLER_EX( IDC_TREE, TVN_BEGINDRAG	, OnTreeBeginDrag	)
-		//MSG_WM_MOUSEMOVE( OnMouseMove	)
-		//MSG_WM_LBUTTONUP( OnLButtonUp	)
 		CHAIN_MSG_MAP( CDialogResize<CFavoriteEditDialog> ) 
+		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
 	BOOL OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
@@ -63,19 +60,13 @@ public:
 	void OnCreateFolder(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnDelete(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnCancel(UINT uNotifyCode, int nID, CWindow wndCtl);
-	LRESULT OnTreeSelChanged(LPNMHDR pnmh);
-	//LRESULT OnTreeBeginDrag(LPNMHDR pnmh);
-	//void OnMouseMove(UINT nFlags, CPoint point);
-	//void OnLButtonUp(UINT nFlags, CPoint point);
 
 private:
 	// Data members
 	bool	m_bFavoriteAdd;
 	bool	m_bSave;
-	CTreeViewCtrl	m_tree;
-	CImageList		m_image_list;
-	//CImageList		m_dragimage_list;
-	vector<unique_ptr<LinkItem> >*	m_pBookmarkList;
+	CDonutFavoriteTreeView	m_tree;
+
 	CString	m_strName;
 	CString	m_strURL;
 	CIconHandle	m_favicon;

@@ -717,7 +717,7 @@ void	CLinkPopupMenu::OpenMultiLink(LinkFolderPtr pFolder)
 	g_pMainWnd->UserOpenMultiFile(vecData);
 }
 
-void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd)
+int	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem* pLinkItem, HWND hwnd)
 {
 	s_bNowShowRClickMenu = true;
 
@@ -902,6 +902,7 @@ void	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkIte
 		break;
 	}
 	s_bNowShowRClickMenu = false;
+	return nCmd;
 }
 
 bool	CLinkPopupMenu::s_bNowShowRClickMenu = false;

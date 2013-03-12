@@ -22,6 +22,7 @@ using std::unordered_map;
 // Data members
 HWND	CFaviconManager::s_hWndTabBar = NULL;
 unordered_map<std::wstring, CIcon>	CFaviconManager::s_mapIcon;	// key:favicon‚ÌURL ’l:icon
+std::unordered_set<std::wstring>	CFaviconManager::s_setNotFoundFaviconURL;
 CCriticalSection	CFaviconManager::s_cs;
 
 
@@ -60,7 +61,7 @@ HICON CFaviconManager::GetFavicon(LPCTSTR strFaviconURL)
 	HICON	hFavicon = NULL;
 	auto it = s_mapIcon.find(std::wstring(strFaviconURL));
 	if (it != s_mapIcon.end()) 
-		hFavicon = it->second;
+		hFavicon = it->second;	
 	return hFavicon;
 }
 
@@ -137,6 +138,9 @@ void CFaviconManager::_DLIconAndRegister(CString strFaviconURL, HWND hWnd)
 
 HICON	CFaviconManager::_DownloadFavicon(LPCTSTR FaviconURL)
 {
+	if (s_setNotFoundFaviconURL.find(FaviconURL) != s_setNotFoundFaviconURL.end()) 
+		return NULL;
+
 	CoInitialize(NULL);
 
 	CString strSaveIconPath;
@@ -150,10 +154,13 @@ HICON	CFaviconManager::_DownloadFavicon(LPCTSTR FaviconURL)
 	HICON hIcon = NULL;
 	if (strExt == _T("png") || strExt == _T("gif") || strExt == _T("ico")) {
 		unique_ptr<Gdiplus::Bitmap>	pbmp(Gdiplus::Bitmap::FromFile(strSaveIconPath));
-		if (pbmp)
+		if (pbmp) {
 			pbmp->GetHICON(&hIcon);
+			return hIcon;
+		}
 	}
-	return hIcon;
+	s_setNotFoundFaviconURL.insert(FaviconURL);
+	return NULL;
 }
 
 

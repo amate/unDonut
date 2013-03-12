@@ -1172,6 +1172,7 @@
     <ClCompile Include="DonutClipboardBar.cpp" />
     <ClCompile Include="DonutCommandBar.cpp" />
     <ClCompile Include="DonutExplorerBar.cpp" />
+    <ClCompile Include="DonutFavoriteTreeView.cpp" />
     <ClCompile Include="DonutLinkBarCtrl.cpp" />
     <ClCompile Include="DonutOption.cpp" />
     <ClCompile Include="DonutPFunc.cpp" />
@@ -1188,10 +1189,6 @@
     <ClCompile Include="Download\DownloadManager.cpp" />
     <ClCompile Include="FavoriteEditDialog.cpp" />
     <ClCompile Include="FavoriteOrder.cpp" />
-    <ClCompile Include="FavoritesMenu.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="FavTreeViewCtrl.cpp" />
     <ClCompile Include="FindBar.cpp" />
     <ClCompile Include="GdiplusUtil.cpp" />
@@ -1353,6 +1350,7 @@
     <ClInclude Include="DonutDefine.h" />
     <ClInclude Include="DonutExplorerBar.h" />
     <ClInclude Include="DonutFavoritesMenu.h" />
+    <ClInclude Include="DonutFavoriteTreeView.h" />
     <ClInclude Include="DonutLinkBarCtrl.h" />
     <ClInclude Include="DonutOptions.h" />
     <ClInclude Include="DonutPanelBar.h" />
@@ -1375,13 +1373,11 @@
     <ClInclude Include="Download\DownloadOptionDialog.h" />
     <ClInclude Include="DropDownButton.h" />
     <ClInclude Include="ExMenu.h" />
-    <ClInclude Include="ExplorerToolBarCtrl.h" />
     <ClInclude Include="ExplorerTreeViewCtrl.h" />
     <ClInclude Include="ExStyle.h" />
     <ClInclude Include="FaviconManager.h" />
     <ClInclude Include="FavoriteEditDialog.h" />
     <ClInclude Include="FavoriteOrder.h" />
-    <ClInclude Include="FavoritesMenu.h" />
     <ClInclude Include="FavTreeViewCtrl.h" />
     <ClInclude Include="FileNotification.h" />
     <ClInclude Include="FindBar.h" />
@@ -1402,7 +1398,6 @@
     <ClInclude Include="MenuDropTargetWindow.h" />
     <ClInclude Include="Misc.h" />
     <ClInclude Include="MultiThreadManager.h" />
-    <ClInclude Include="OleDragDropExpToolBarCtrl.h" />
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h" />
     <ClInclude Include="option\RightClickMenuDialog.h" />
     <ClInclude Include="option\UrlSecurityExPropDialog.h" />
