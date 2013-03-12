@@ -8,13 +8,18 @@
 #define CHAIN_COMMANDS_TO_EXPLORERBAR(x)		CHAIN_COMMANDS_ALT_MEMBER(x, 1)
 
 #include <atlsplit.h>
-#include "option/ExplorerBarDialog.h"
+
 #include "FavTreeViewCtrl.h"
 #include "DonutClipboardBar.h"
 //#include "DonutPanelBar.h"
 #include "DonutPFunc.h"
 #include "PluginBar.h"
 #include "DonutFavoriteTreeView.h"
+
+#include "option/ExplorerBarDialog.h"
+
+//////////////////////////////////////////////////////////////
+// CDonutExplorerBar
 
 class CDonutExplorerBar	: 
 	public CPaneContainerImpl<CDonutExplorerBar>,
@@ -24,12 +29,24 @@ public:
 	DECLARE_WND_CLASS_EX(_T("Donut_ExplorerBar"), 0, -1)
 
 	// Constants
-	enum { kBottomHeight = 20, kcyIcon = 16, };
+	enum { 
+		kBottomHeight = 20, kcyIcon = 16,
+	
+		kAutoShowVlidWidth = 15,	// 自動表示に使う左端からの幅
+		kAutoShowRightMargin = 10,	// ドラッグすると消えちゃうので
+		kAutoShowTimerId = 1,
+		kAutoShowTimerInterval = 500,
+		kAutoHideTimerId = 2,
+		kAutoHideTimerInterval = 500,
+	};
 
-	CDonutExplorerBar(CSplitterWindow& SplitWindow) : m_rSplitWindow(SplitWindow)
-	{	}
+	CDonutExplorerBar(CSplitterWindow& SplitWindow);
 
 	void SetFuncSinglePaneMode(function<bool ()> func) { m_funcSetSinglePaneMode = func; }
+
+	void InitPane();
+
+	void HookMouseMoveForAutoShow(bool bHook);
 
 	// Overrides
 	void UpdateLayout() { __super::UpdateLayout(); }
@@ -38,6 +55,8 @@ public:
 
 	BEGIN_MSG_MAP( CDonutExplorerBar )
 		MSG_WM_CREATE	( OnCreate	)
+		MSG_WM_DESTROY	( OnDestroy )
+		MSG_WM_TIMER	( OnTimer )
 		MSG_WM_LBUTTONDOWN( OnLButtonDown )
 		COMMAND_ID_HANDLER_EX( ID_PANE_CLOSE	, OnPaneClose 		)
 		CHAIN_MSG_MAP( CPaneContainerImpl<CDonutExplorerBar> )
@@ -59,32 +78,12 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_USER 		, OnFavoriteExpBar )
 		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_MYCOMPUTER, OnFavoriteExpBar )
 		COMMAND_ID_HANDLER_EX( ID_FAVTREE_BAR_HISTORY	, OnFavoriteExpBar )
-
+		COMMAND_ID_HANDLER_EX( ID_EXPLORERBAR_AUTOSHOW	, OnExplorerBarAutoShow )
 		//USER_MSG_WM_OPEN_EXPFAVMENU( OnOpenFavExpMenu )
 	END_MSG_MAP()
 
 	// Update command UI and handlers
 	BEGIN_UPDATE_COMMAND_UI_MAP( CDonutExplorerBar )
-#if 0
-		for (int ii = 0; ii < (int) m_aryID.size(); ii++) {
-			int nIndexAct = m_nIndexAct;
-
-			switch (m_aryID[ii]) {
-			case ID_VIEW_FAVEXPBAR: 		if ( IsFavBarVisibleNormal() )	m_nIndexAct = ii;	break;
-			case ID_VIEW_FAVEXPBAR_HIST:	if ( IsFavBarVisibleHist()	 )	m_nIndexAct = ii;	break;
-			case ID_VIEW_FAVEXPBAR_GROUP:	if ( IsFavBarVisibleGroup()  )	m_nIndexAct = ii;	break;
-			case ID_VIEW_FAVEXPBAR_USER:	if ( IsFavBarVisibleUser()	 )	m_nIndexAct = ii;	break;
-			case ID_VIEW_FAVEXPBAR_SCRIPT:	if ( IsFavBarVisibleScript() )	m_nIndexAct = ii;	break;
-			case ID_VIEW_CLIPBOARDBAR:		if ( IsClipboardBarVisible() )	m_nIndexAct = ii;	break;
-			case ID_VIEW_PANELBAR:			if ( IsPanelBarVisible()	 )	m_nIndexAct = ii;	break;
-			case ID_VIEW_PLUGINBAR: 		if ( IsPluginBarVisible()	 )	m_nIndexAct = ii;	break;
-			}
-			if (nIndexAct != m_nIndexAct) {
-				Invalidate(FALSE);
-				break;
-			}
-		}
-#endif
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR		, _IsBarVisible(nID)	)
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_HIST	, _IsBarVisible(nID)	)
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_FAVEXPBAR_GROUP	, _IsBarVisible(nID)	)
@@ -95,20 +94,29 @@ public:
 		//UPDATE_COMMAND_UI_SETCHECK_IF( ID_VIEW_PLUGINBAR		, _IsBarVisible(nID)	)
 		UPDATE_COMMAND_UI_SETCHECK_IF( ID_EXPLORERBAR			, _IsBarVisible(nID)	)	// IsFavBarVisible())
 //		UPDATE_COMMAND_UI_SETCHECK_IF_PASS( ID_VIEW_EXPLORERBAR_TAB, !m_bHideTab )
+		UPDATE_COMMAND_UI_SETCHECK_FLAG ( ID_EXPLORERBAR_AUTOSHOW, EXPLORERBAROPTION_AUTOSHOW, CExplorerBarOption::s_dwExplorerBarStyle )
+
 //		CHAIN_UPDATE_COMMAND_UI_MEMBER(m_FavBar)
 	END_UPDATE_COMMAND_UI_MAP()
 
 
 	int OnCreate(LPCREATESTRUCT lpCreateStruct);
+	void OnDestroy();
+	void OnTimer(UINT_PTR nIDEvent);
 	void OnLButtonDown(UINT nFlags, CPoint point);
 	void OnPaneClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void OnFavoriteExpBar(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void OnExplorerBarAutoShow(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 private:
 	bool	_IsBarVisible(int nID);
 	int		_HitTestTab(const CPoint& pt);
+	
+	static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
+
+
 
 	// Data members
 	CSplitterWindow&	m_rSplitWindow;
@@ -120,6 +128,13 @@ private:
 	function<bool ()>	m_funcSetSinglePaneMode;
 	CImageList	m_imgs;
 	int		m_nIndexAct;
+	int		m_nShowPaneID;
+
+	static HHOOK	s_hHook;
+	static function<void (const CPoint&)>	s_funcAutoShowHide;
+	bool		m_bAutoShowTimer;
+	bool		m_bAutoHideTimer;
+	bool		m_bExplicitShowBar;
 };
 
 #if 0

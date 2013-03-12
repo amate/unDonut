@@ -21,7 +21,6 @@ DWORD		CMainOption::s_dwMainExtendedStyle		=
 	| MAIN_EX_EXTERNALNEWTABACTIVE;
 
 DWORD		CMainOption::s_dwMainExtendedStyle2 	= 0;
-DWORD		CMainOption::s_dwExplorerBarStyle		= 0;
 DWORD		CMainOption::s_dwBackUpTime 			= 1;
 DWORD		CMainOption::s_dwAutoRefreshTime		= 10;
 
@@ -65,7 +64,6 @@ void CMainOption::GetProfile()
 		pr.QueryValue( s_dwMainExtendedStyle2	, _T("Extended_Style2") 	);
 		pr.QueryValue( s_dwBackUpTime			, _T("BackUp_Time") 		);
 		pr.QueryValue( s_dwAutoRefreshTime		, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
-		pr.QueryValue( s_dwExplorerBarStyle 	, _T("ExplorerBar_Style")	);	// UH
 		pr.QueryValue( s_dwErrorBlock			, _T("ErrorBlock")			);	//minit
 		s_bTravelLogGroup	= pr.GetValue(_T("TravelLogGroup"), s_bTravelLogGroup) != 0;
 		s_bTravelLogClose	= pr.GetValue(_T("TravelLogClose"), s_bTravelLogClose) != 0;
@@ -98,7 +96,6 @@ void CMainOption::WriteProfile()
 	{
 		pr.SetValue( s_dwMainExtendedStyle	, _T("Extended_Style")		);
 		pr.SetValue( s_dwMainExtendedStyle2 , _T("Extended_Style2") 	);
-		pr.SetValue( s_dwExplorerBarStyle	, _T("ExplorerBar_Style")	);	// UDT DGSTR ( dai
 		pr.SetValue( s_dwBackUpTime 		, _T("BackUp_Time") 		);
 		pr.SetValue( s_dwAutoRefreshTime	, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
 		pr.SetValue( s_bTravelLogGroup		, _T("TravelLogGroup")		);

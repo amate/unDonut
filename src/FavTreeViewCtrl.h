@@ -446,13 +446,13 @@ public:
 						| TVS_SINGLEEXPAND | TVS_FULLROWSELECT | TVS_TRACKSELECT   ;
 
 		//水平スクロールを使用するかどうか
-		if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_HSCROLL) != MAIN_EXPLORER_HSCROLL )
-			dwStyle |= TVS_NOHSCROLL;
+		//if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_HSCROLL) != MAIN_EXPLORER_HSCROLL )
+		//	dwStyle |= TVS_NOHSCROLL;
 
-		//ドラッグ＆ドロップを使用するかどうか
-		if (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_NODRAGDROP)
-			m_view.m_bDragDrop = FALSE;
-		else
+		////ドラッグ＆ドロップを使用するかどうか
+		//if (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_NODRAGDROP)
+		//	m_view.m_bDragDrop = FALSE;
+		//else
 			m_view.m_bDragDrop = TRUE;
 
 		m_view.Create(m_hWnd, rcDefault, NULL, dwStyle, 0); //WS_EX_STATICEDGE);

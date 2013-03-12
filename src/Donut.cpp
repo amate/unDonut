@@ -254,6 +254,7 @@ static bool _PrivateInit()
 	CSearchBarOption::GetProfile();		// 検索バー
 	CMenuOption::GetProfile();			// メニュー
 	CLinkBarOption::GetProfile();		// リンクバー
+	CExplorerBarOption::GetProfile();	// Explorerバー
 	CCustomContextMenuOption::GetProfile();
 	CDLControlOption::GetProfile();
 	CFileNewOption::GetProfile();

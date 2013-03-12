@@ -269,7 +269,7 @@ public:
 	{
 		etvTRACE( _T("OnCreate in\n") );
 		LRESULT lRet = DefWindowProc();
-		m_bOrgImage = (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_FAV_ORGIMG) != 0 /*? true : false*/;
+		m_bOrgImage = false;//(CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_FAV_ORGIMG) != 0 /*? true : false*/;
 
 		_SetSystemImageList();
 
@@ -285,8 +285,8 @@ public:
 
 		_InitRootTree();
 
-		if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_NOSPACE) != MAIN_EXPLORER_NOSPACE )
-			SetItemHeight(GetItemHeight() + s_kcxItemGap);
+		//if ( (CMainOption::s_dwExplorerBarStyle & MAIN_EXPLORER_NOSPACE) != MAIN_EXPLORER_NOSPACE )
+		//	SetItemHeight(GetItemHeight() + s_kcxItemGap);
 
 		etvTRACE( _T("OnCreate out\n") );
 		return lRet;

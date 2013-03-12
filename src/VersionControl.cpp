@@ -30,6 +30,7 @@ void	CVersionControl::Run()
 		case 6: _6to7();
 		case 7: _7to8();
 		case 8: _8to9();
+		case 9: _9to10();
 			break;
 		}
 	}
@@ -185,7 +186,28 @@ void	CVersionControl::_8to9()
 }
 
 
+void	CVersionControl::_9to10()
+{
+	enum {
+		MAIN_EXPLORER_HSCROLL		= 0x00000001L,
+		MAIN_EXPLORER_NOSPACE		= 0x00000002L,
+		MAIN_EXPLORER_FAV_ORGIMG	= 0x00000004L,
+		MAIN_EXPLORER_NODRAGDROP	= 0x00000008L,
+		MAIN_EXPLORER_AUTOSHOW		= 0x00000010L,
+	};
+	CIniFileIO	pr( g_szIniFileName, _T("Main") );
+	DWORD dwExplorerBarStyle = 0;
+	pr.QueryValue( dwExplorerBarStyle 	, _T("ExplorerBar_Style")	);	// UH
+	if (dwExplorerBarStyle & MAIN_EXPLORER_AUTOSHOW)
+		dwExplorerBarStyle = EXPLORERBAROPTION_AUTOSHOW;
+	pr.DeleteValue(_T("ExplorerBar_Style"));
 
+	pr.ChangeSectionName(_T("ExplorerBar"));
+	pr.SetValue(dwExplorerBarStyle, _T("ExplorerBar_Style"));
+
+	pr.ChangeSectionName(_T("Explorer_Bar"));
+	pr.DeleteSection();
+}
 
 
 

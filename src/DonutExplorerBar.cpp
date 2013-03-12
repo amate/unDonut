@@ -6,7 +6,6 @@
 #include "stdafx.h"
 #include "DonutExplorerBar.h"
 
-
 ///////////////////////////////////////////////////////////////////////
 // CDonutExplorerBar
 
@@ -28,6 +27,34 @@ inline int GetIndexFromID(int nID)
 	ATLASSERT( FALSE );
 	return -1;
 }
+
+CDonutExplorerBar::CDonutExplorerBar(CSplitterWindow& SplitWindow) : 
+	m_rSplitWindow(SplitWindow), 
+	m_nShowPaneID(ID_VIEW_FAVEXPBAR),
+	m_bAutoShowTimer(false), m_bAutoHideTimer(false), m_bExplicitShowBar(false)
+
+{	}
+
+
+void CDonutExplorerBar::InitPane()
+{
+	CIniFileI	pr( g_szIniFileName, _T("ExplorerBar") );
+	int cxLeftSplitter  = pr.GetValuei(_T("cxLeftSplitter"), 200);
+
+	m_rSplitWindow.SetSplitterPos(cxLeftSplitter);
+
+	bool bExplorerBarVisible = pr.GetValue(_T("ExplorerBarVisible"), FALSE) != 0;
+	m_nShowPaneID = pr.GetValue(_T("LastShowPaneID"), ID_VIEW_FAVEXPBAR);
+
+	pr.Close();
+
+	if (bExplorerBarVisible && (CExplorerBarOption::s_dwExplorerBarStyle & EXPLORERBAROPTION_AUTOSHOW) == 0) {
+		OnViewBar(0, m_nShowPaneID, NULL);
+	} else {
+		m_funcSetSinglePaneMode();
+	}
+}
+
 
 void CDonutExplorerBar::UpdateLayout(int cxWidth, int cyHeight)
 {
@@ -96,23 +123,21 @@ int CDonutExplorerBar::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		bmp.LoadBitmap(IDB_EXPBAR);		//+++	スキンになければデフォルトを使う.
 	m_imgs.Create(kcyIcon, kcyIcon, ILC_COLOR24 | ILC_MASK, _countof(aryID), 1);
 	m_imgs.Add( bmp, RGB(255, 0, 255) );
-#if 0
-	m_ClipBar.Create(m_hWnd);
-	m_ClipBar.SetWindowText(_T("クリップボード"));
-	m_ClipBar.ShowWindow(SW_SHOW);
-	SetClient(m_ClipBar);
-	SetTitle( MtlGetWindowText(m_ClipBar) );
-#endif
-#if 0
-	m_FavBar.Create(m_hWnd);
-	m_FavBar.SetWindowText(_T("お気に入り"));
-	m_FavBar.InitToolBar( ID_FAVORITE_ADD, ID_FAVORITE_ORGANIZE, ID_FAVORITE_PLACEMENT, IDB_FAVBAR, IDB_FAVBAR_HOT,
-						 16, 16, RGB(255, 0, 255) );
-	m_FavBar.ShowWindow(SW_SHOW);
-	SetClient(m_FavBar);
-	SetTitle( MtlGetWindowText(m_FavBar) );
-#endif
+
+	if (CExplorerBarOption::s_dwExplorerBarStyle & EXPLORERBAROPTION_AUTOSHOW)
+		HookMouseMoveForAutoShow(true);
+
 	return 0;
+}
+
+void CDonutExplorerBar::OnDestroy()
+{
+	CIniFileIO	pr( g_szIniFileName, _T("ExplorerBar") );
+	pr.SetValue( m_rSplitWindow.GetSplitterPos(), _T("cxLeftSplitter") );
+	bool bVisible = m_rSplitWindow.GetSinglePaneMode() == SPLIT_PANE_NONE;
+	pr.SetValue(bVisible, _T("ExplorerBarVisible"));
+
+	HookMouseMoveForAutoShow(false);
 }
 
 int		CDonutExplorerBar::_HitTestTab(const CPoint& pt)
@@ -153,6 +178,7 @@ void CDonutExplorerBar::OnPaneClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
 	m_funcSetSinglePaneMode();
 	::ShowWindow(GetClient(), FALSE);
+	m_bExplicitShowBar = false;
 }
 
 
@@ -204,7 +230,9 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		wndTarget.ShowWindow(FALSE);
 	} else {
 		m_nIndexAct = GetIndexFromID(nID);
+		m_nShowPaneID = nID;
 		Invalidate(FALSE);
+		m_bExplicitShowBar = true;
 
 		if (hWndClient)
 			::ShowWindow(hWndClient, FALSE);
@@ -225,7 +253,9 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		
 		// スプリット表示にする
 		m_rSplitWindow.SetSinglePaneMode();
-		m_rSplitWindow.SetSplitterPos(240);
+
+		CIniFileIO	pr( g_szIniFileName, _T("ExplorerBar") );
+		pr.SetValue(nID, _T("LastShowPaneID"));
 	}
 }
 
@@ -235,6 +265,119 @@ void CDonutExplorerBar::OnFavoriteExpBar(UINT uNotifyCode, int nID, CWindow wndC
 	m_FavBar.SendMessage(WM_COMMAND, nID);
 
 	m_rSplitWindow.SetSinglePaneMode();
+}
+
+
+void CDonutExplorerBar::OnTimer(UINT_PTR nIDEvent)
+{
+	if (nIDEvent == kAutoShowTimerId) {
+		if (m_nIndexAct == -1) {
+			OnViewBar(NULL, m_nShowPaneID, NULL);
+		} else {
+			OnViewBar(NULL, aryID[m_nIndexAct], NULL);
+		}
+		
+		m_bExplicitShowBar = false;
+		KillTimer(kAutoShowTimerId);
+		m_bAutoShowTimer = false;
+	} else if (nIDEvent == kAutoHideTimerId) {
+		OnPaneClose(0, 0, NULL);
+		KillTimer(kAutoHideTimerId);
+		m_bAutoHideTimer = false;
+	}
+}
+
+// 定義
+HHOOK	CDonutExplorerBar::s_hHook = NULL;
+function<void (const CPoint&)>	CDonutExplorerBar::s_funcAutoShowHide;
+
+LRESULT CALLBACK CDonutExplorerBar::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam)
+{
+	if (nCode == HC_ACTION) {
+		if (wParam == WM_MOUSEMOVE) {
+			 auto msllhk = (MSLLHOOKSTRUCT*)lParam;
+			 s_funcAutoShowHide(msllhk->pt);
+		}
+	}
+	return CallNextHookEx(s_hHook, nCode, wParam, lParam);
+}
+
+void	CDonutExplorerBar::HookMouseMoveForAutoShow(bool bHook)
+{
+	if (bHook) {
+		if (s_hHook)
+			return ;
+
+		ATLVERIFY(s_hHook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, _Module.GetModuleInstance(), 0));
+
+		s_funcAutoShowHide = [this](const CPoint& pt) {
+			HWND hWndForeground = ::GetForegroundWindow();
+			if (hWndForeground != GetTopLevelWindow()) 
+				return ;	// unDonutがフォアグラウンドになっていないと帰る
+			
+			if (IsWindowVisible() == false) {
+				CWindow wndSplitter = GetParent();
+				CRect rcSplitter;
+				wndSplitter.GetClientRect(&rcSplitter);
+				wndSplitter.ClientToScreen(&rcSplitter);
+				rcSplitter.right = rcSplitter.left + kAutoShowVlidWidth;
+				if (rcSplitter.PtInRect(pt)) {
+					// 一定時間たったあとに表示する
+					if (m_bAutoShowTimer == false) {
+						SetTimer(kAutoShowTimerId, kAutoShowTimerInterval);
+						m_bAutoShowTimer = true;
+					} 
+				} else {
+					// 表示判定ポイントから外れたのでタイマーを止める
+					if (m_bAutoShowTimer) {
+						KillTimer(kAutoShowTimerId);
+						m_bAutoShowTimer = false;
+					}
+				}
+			} else {
+				// 自動で消す
+				CRect rcThis;
+				GetClientRect(&rcThis);
+				ClientToScreen(&rcThis);
+				rcThis.right += kAutoShowRightMargin;
+				if (rcThis.PtInRect(pt) == false) {
+					if (m_bExplicitShowBar)
+						return ;	// 明示的に表示させたので一度クライアント領域に入るまで閉じない
+					// 一定時間後隠す
+					if (m_bAutoHideTimer == false) {
+						SetTimer(kAutoHideTimerId, kAutoHideTimerInterval);
+						m_bAutoHideTimer = true;
+					}
+				} else {
+					m_bExplicitShowBar = false;
+					// クライアント領域に入ったのでタイマーを止める
+					if (m_bAutoHideTimer) {
+						KillTimer(kAutoHideTimerId);
+						m_bAutoHideTimer = false;
+					}
+				}
+			}
+		};
+	} else {
+		if (s_hHook) {
+			ATLVERIFY(UnhookWindowsHookEx(s_hHook));
+			s_hHook = NULL;
+		}
+	}
+}
+
+/// エクスプローラーバーを自動で表示
+void CDonutExplorerBar::OnExplorerBarAutoShow(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	// トグル
+	if (CExplorerBarOption::s_dwExplorerBarStyle & EXPLORERBAROPTION_AUTOSHOW) {
+		CExplorerBarOption::s_dwExplorerBarStyle &= ~EXPLORERBAROPTION_AUTOSHOW;
+		HookMouseMoveForAutoShow(false);
+	} else {
+		CExplorerBarOption::s_dwExplorerBarStyle |= EXPLORERBAROPTION_AUTOSHOW;
+		HookMouseMoveForAutoShow(true);
+	}
+	CExplorerBarOption::WriteProfile();
 }
 
 

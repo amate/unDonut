@@ -409,6 +409,27 @@ void CMainFrame::Impl::UpdateLayout(BOOL bResizeBars /*= TRUE*/)
 
 BOOL CMainFrame::Impl::PreTranslateMessage(MSG* pMsg)
 {
+	// 検索バー
+	BOOL ptFlag = m_SearchBar.PreTranslateMessage(pMsg);
+	if (ptFlag == _MTL_TRANSLATE_HANDLE) {
+		return TRUE;
+	} else if (ptFlag == _MTL_TRANSLATE_WANT) {
+		return FALSE;
+	}
+
+	// マウスジェスチャー
+	if (pMsg->message == WM_RBUTTONDOWN) {
+		if (CDLControlOption::s_dwExtendedStyleFlags & DVS_EX_MOUSE_GESTURE) {
+			MouseGestureData	data;
+			data.hwnd = pMsg->hwnd;
+			data.wParam	= pMsg->wParam;
+			data.lParam = pMsg->lParam;
+			data.bCursorOnSelectedText = false;
+			if (_RButtonHook(data))
+				return TRUE;
+		}
+	}
+
 	return CFrameWindowImpl<CMainFrame::Impl>::PreTranslateMessage(pMsg);
 }
 
@@ -934,13 +955,12 @@ void	CMainFrame::Impl::_initExplorerBar()
 	ATLASSERT( m_ExplorerBar.IsWindow() );
 
 	m_ExplorerBar.SetFuncSinglePaneMode(std::bind(&CSplitterWindow::SetSinglePaneMode, &m_SplitterWindow, SPLIT_PANE_RIGHT));
-//	m_ExplorerBar.Init(m_ChildFrameClient);	// スプリットバーの状態も設定される
 
 	m_SplitterWindow.SetSplitterPanes(m_ExplorerBar, m_ChildFrameClient);
 
 	UpdateLayout();
-	//m_SplitterWindow.SetSplitterPos(240);
-	m_SplitterWindow.SetSinglePaneMode(SPLIT_PANE_RIGHT);
+
+	m_ExplorerBar.InitPane();
 }
 
 void	CMainFrame::Impl::_initSkin()
@@ -1874,7 +1894,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CSearchPropertyPage 			pageSearch;
 	CMenuPropertyPage				pageMenu(menu.m_hMenu);
 	CRightClickPropertyPage			pageRightMenu(menu, m_hWnd);
-	CExplorerPropertyPage			pageExplorer;
+	CExplorerBarPropertyPage		pageExplorerBar(std::bind(&CDonutExplorerBar::HookMouseMoveForAutoShow, &m_ExplorerBar, std::placeholders::_1));
 	CDestroyPropertyPage			pageDestroy;
 	CSkinPropertyPage				pageSkin(m_hWnd, &bSkinChange);
 	CLinkBarPropertyPage			pageLinks(m_LinkBar);
@@ -1903,7 +1923,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	sheet.AddPage( pageAddress	 , FALSE );
 	sheet.AddPage( pageSearch	 , FALSE );
 	sheet.AddPage( pageLinks	 , FALSE );
-	sheet.AddPage( pageExplorer			 );
+	sheet.AddPage( pageExplorerBar		 );
 	sheet.AddPage( pageMenu				 );
 	sheet.AddPage( pageRightMenu , TRUE  );
 	sheet.AddPage( pageFav		 , FALSE );
@@ -2187,6 +2207,217 @@ static int PointDistance(const CPoint& pt1, const CPoint& pt2)
 	return (int)sqrt( pow(float (pt1.x - pt2.x), 2.0f) + pow(float (pt1.y - pt2.y), 2.0f) );
 }
 
+bool	CMainFrame::Impl::_RButtonHook(MouseGestureData data)
+{
+	CString StatusText;
+	auto funcSetStatusText = [&StatusText, this](LPCTSTR text) {
+		if (StatusText != text) {
+			StatusText = text;
+			m_StatusBar.SetWindowText(text);
+		}
+	};
+
+	::SetCapture(m_hWnd);
+
+	CPoint	ptDown(GET_X_LPARAM(data.lParam), GET_Y_LPARAM(data.lParam));
+	::ClientToScreen(data.hwnd, &ptDown);
+	CPoint	ptLast = ptDown;
+
+	HMODULE	hModule	= ::LoadLibrary(_T("ole32.dll"));
+	CCursor cursor	= ::LoadCursor(hModule, MAKEINTRESOURCE(3));
+	CString	strSearchEngine;
+	CString strLastMark;
+	CString strMove;
+	DWORD	dwTime = 0;
+	int		nDistance = 0;
+	bool	bNoting = true;	// 何もしなかった
+	bool	bCancelRButtonUp = false;
+	MSG msg = { 0 };
+	do {
+		BOOL nRet = GetMessage(&msg, NULL, 0, 0);
+		if (nRet == 0 || nRet == -1 || GetCapture() != m_hWnd)
+			break;
+		if (GetAsyncKeyState(VK_RBUTTON) > 0) {		// 右ボタンが離された
+			funcSetStatusText(_T(""));
+			break;
+		}
+
+		DWORD dwCommand = 0;
+		switch (msg.message) {
+		case WM_MOUSEWHEEL:
+		case WM_LBUTTONUP:
+		case WM_MBUTTONUP:
+		case WM_XBUTTONUP:
+			dwCommand = GetMouseButtonCommand(msg);
+			break;
+
+		case WM_MOUSEMOVE: {
+			SetCursor(::LoadCursor(NULL, IDC_ARROW));
+			if (bNoting == false)	// 他のコマンドを実行済み
+				break;
+			CPoint	ptNow(GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam));
+			::ClientToScreen(msg.hwnd, &ptNow);
+			if (data.bCursorOnSelectedText) {
+				if (nDistance < 10) {
+					nDistance = PointDistance(ptDown, ptNow);	// 距離を求める
+					if (nDistance < 10)
+						break;
+				}
+				SetCursor(cursor);	// カーソルを変更する
+
+				CString strMark;
+				if (m_GlobalConfigManageData.pGlobalConfig->bUseRect) {
+					int nAng  = (int) _GetAngle(ptDown, ptNow);	// 角度を求める
+					if		  (nAng <  45 || nAng >  315) {
+						strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strREngine;	
+						strMark = _T("[→] ");
+					} else if (nAng >= 45 && nAng <= 135) {
+						strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strTEngine;	
+						strMark = _T("[↑] ");
+					} else if (nAng > 135 && nAng <  225) {
+						strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strLEngine;	
+						strMark = _T("[←] ");
+					} else if (nAng >= 225 && nAng <= 315) {
+						strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strBEngine;
+						strMark = _T("[↓] ");
+					}
+				} else {
+					strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strCEngine;
+				}
+				if (strSearchEngine.IsEmpty() == FALSE) {
+					CString strMsg;
+					strMsg.Format(_T("検索 %s: %s"), strMark, strSearchEngine);
+					funcSetStatusText(strMsg);
+				} else {
+					funcSetStatusText(_T(""));
+				}
+			} else {
+				nDistance = PointDistance(ptLast, ptNow);	// 距離を求める
+				if (nDistance < 10)
+					break;
+				
+				CString strMark1;
+				int nAng1  = (int) _GetAngle(ptLast, ptNow);	// 角度を求める
+				if		(nAng1 <  45 || nAng1 >  315)
+					strMark1 = _T("→");
+				else if (nAng1 >= 45 && nAng1 <= 135)
+					strMark1 = _T("↑");
+				else if (nAng1 > 135 && nAng1 <  225)
+					strMark1 = _T("←");
+				else if (nAng1 >= 225 && nAng1 <= 315)
+					strMark1 = _T("↓");
+
+				if (strMark1 == strLastMark) {					// 同じ方向に動かして、かつ300ms以上経ったなら有効		
+					DWORD dwTimeNow = ::GetTickCount();
+					if ( (dwTimeNow - dwTime) > 300 ) {
+						strLastMark = _T("");
+						dwTime	 = dwTimeNow;
+					}
+				}
+				if (strMark1 != strLastMark) {
+					strMove	+= strMark1;	// 方向を追加
+					strLastMark = strMark1;	
+
+					CString strCmdName;
+					CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+					DWORD	dwCommand = pr.GetValue(strMove);
+					if (dwCommand) {
+						// 合致するコマンドがあれば表示
+						CString strTemp;
+						CToolTipManager::LoadToolTipText(dwCommand, strTemp);
+						strCmdName.Format(_T("[ %s ]"), strTemp);
+					}
+
+					// ステータスバーに表示
+					CString 	strMsg;
+					strMsg.Format(_T("ジェスチャー : %s %s"), strMove, strCmdName);
+					funcSetStatusText(strMsg);
+				}
+				dwTime = ::GetTickCount();
+			}
+			ptLast = ptNow;
+			break;
+							}
+
+		case WM_LBUTTONDOWN:
+			if (data.bCursorOnSelectedText && nDistance >= 10) {	// 右ボタンドラッグをキャンセルする
+				bCancelRButtonUp = true;
+				msg.message = WM_RBUTTONUP;
+				funcSetStatusText(_T(""));
+			}
+			break;
+
+		default:
+			::DispatchMessage(&msg);
+			break;
+		}	// switch
+
+		switch (dwCommand) {
+		case 0:	
+			break;
+			
+		case ID_FILE_CLOSE:
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_CLOSE, 0, 0);	// これだけじゃたぶんダメ
+			//msg.message = WM_RBUTTONUP;
+			//::PostMessage(m_hWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
+			//::PostMessage(hWnd, WM_CLOSE, 0, 0);
+			bNoting    = false;
+			funcSetStatusText(_T(""));
+			break;
+
+		default:
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, dwCommand, 0);
+			bNoting    = false;
+			funcSetStatusText(_T(""));
+			break;
+		}
+
+	} while (msg.message != WM_RBUTTONUP);
+
+	ReleaseCapture();
+	::FreeLibrary(hModule);
+	if (data.bCursorOnSelectedText) {
+		SetCursor(::LoadCursor(NULL, IDC_ARROW));	// カーソルを元に戻す
+		if (bCancelRButtonUp)
+			return TRUE;
+		if (strSearchEngine.GetLength() > 0) {	// 右ボタンドラッグ実行
+			funcSetStatusText(_T(""));
+			m_SearchBar.SearchWebWithEngine(data.strSelectedTextLine, strSearchEngine);
+			bNoting = false;
+		}
+	}
+
+	/* マウスジェスチャーコマンド実行 */
+	if (bNoting) {
+		ptLast.SetPoint(GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam));
+		::ClientToScreen(msg.hwnd, &ptLast);
+
+		funcSetStatusText(_T(""));
+
+		CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
+		DWORD dwCommand = pr.GetValue(strMove);
+		if (dwCommand) {
+			::SendMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
+			bNoting = false;
+		} else if (dwCommand == -1)
+			return TRUE;
+	}
+
+	if ( bNoting && strMove.IsEmpty() ) {	// 右クリックメニューを出す
+		::GetCursorPos(&ptLast);
+		::ScreenToClient(data.hwnd, &ptLast);
+		data.lParam = MAKELONG(ptLast.x, ptLast.y);
+		if (m_ChildFrameClient.GetActiveChildFrameWindow() == data.hwnd || ::IsChild(m_ChildFrameClient.GetActiveChildFrameWindow(), data.hwnd)) {
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONDOWN, data.wParam, data.lParam);
+			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONUP, data.wParam, data.lParam);
+		} else {
+			//::PostMessage(data.hwnd, WM_RBUTTONDOWN, data.wParam, data.lParam);
+			::PostMessage(data.hwnd, WM_RBUTTONUP, data.wParam, data.lParam);
+		}
+	}
+	return !bNoting;
+}
+
 void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 {
 	MouseGestureData	data;
@@ -2197,215 +2428,7 @@ void CMainFrame::Impl::OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 
 	::PostMessage(hWndChildFrame, WM_CLOSEHANDLEFORSHAREDMEM, (WPARAM)hMapForClose, 0);
 
-	CString StatusText;
-	auto funcSetStatusText = [&StatusText, this](LPCTSTR text) {
-		if (StatusText != text) {
-			StatusText = text;
-			m_StatusBar.SetWindowText(text);
-		}
-	};
-	auto funcRButtonHook = [&,this]() -> BOOL {
-		::SetCapture(m_hWnd);
-
-		CPoint	ptDown(GET_X_LPARAM(data.lParam), GET_Y_LPARAM(data.lParam));
-		::ClientToScreen(data.hwnd, &ptDown);
-		CPoint	ptLast = ptDown;
-
-		HMODULE	hModule	= ::LoadLibrary(_T("ole32.dll"));
-		CCursor cursor	= ::LoadCursor(hModule, MAKEINTRESOURCE(3));
-		CString	strSearchEngine;
-		CString strLastMark;
-		CString strMove;
-		DWORD	dwTime = 0;
-		int		nDistance = 0;
-		bool	bNoting = true;	// 何もしなかった
-		bool	bCancelRButtonUp = false;
-		MSG msg = { 0 };
-		do {
-			BOOL nRet = GetMessage(&msg, NULL, 0, 0);
-			if (nRet == 0 || nRet == -1 || GetCapture() != m_hWnd)
-				break;
-			if (GetAsyncKeyState(VK_RBUTTON) > 0) {		// 右ボタンが離された
-				funcSetStatusText(_T(""));
-				break;
-			}
-
-			DWORD dwCommand = 0;
-			switch (msg.message) {
-			case WM_MOUSEWHEEL:
-			case WM_LBUTTONUP:
-			case WM_MBUTTONUP:
-			case WM_XBUTTONUP:
-				dwCommand = GetMouseButtonCommand(msg);
-				break;
-
-			case WM_MOUSEMOVE: {
-				SetCursor(::LoadCursor(NULL, IDC_ARROW));
-				if (bNoting == false)	// 他のコマンドを実行済み
-					break;
-				CPoint	ptNow(GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam));
-				::ClientToScreen(msg.hwnd, &ptNow);
-				if (data.bCursorOnSelectedText) {
-					if (nDistance < 10) {
-						nDistance = PointDistance(ptDown, ptNow);	// 距離を求める
-						if (nDistance < 10)
-							break;
-					}
-					SetCursor(cursor);	// カーソルを変更する
-
-					CString strMark;
-					if (m_GlobalConfigManageData.pGlobalConfig->bUseRect) {
-						int nAng  = (int) _GetAngle(ptDown, ptNow);	// 角度を求める
-						if		  (nAng <  45 || nAng >  315) {
-							strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strREngine;	
-							strMark = _T("[→] ");
-						} else if (nAng >= 45 && nAng <= 135) {
-							strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strTEngine;	
-							strMark = _T("[↑] ");
-						} else if (nAng > 135 && nAng <  225) {
-							strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strLEngine;	
-							strMark = _T("[←] ");
-						} else if (nAng >= 225 && nAng <= 315) {
-							strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strBEngine;
-							strMark = _T("[↓] ");
-						}
-					} else {
-						strSearchEngine = m_GlobalConfigManageData.pGlobalConfig->strCEngine;
-					}
-					if (strSearchEngine.IsEmpty() == FALSE) {
-						CString strMsg;
-						strMsg.Format(_T("検索 %s: %s"), strMark, strSearchEngine);
-						funcSetStatusText(strMsg);
-					} else {
-						funcSetStatusText(_T(""));
-					}
-				} else {
-					nDistance = PointDistance(ptLast, ptNow);	// 距離を求める
-					if (nDistance < 10)
-						break;
-				
-					CString strMark1;
-					int nAng1  = (int) _GetAngle(ptLast, ptNow);	// 角度を求める
-					if		(nAng1 <  45 || nAng1 >  315)
-						strMark1 = _T("→");
-					else if (nAng1 >= 45 && nAng1 <= 135)
-						strMark1 = _T("↑");
-					else if (nAng1 > 135 && nAng1 <  225)
-						strMark1 = _T("←");
-					else if (nAng1 >= 225 && nAng1 <= 315)
-						strMark1 = _T("↓");
-
-					if (strMark1 == strLastMark) {					// 同じ方向に動かして、かつ300ms以上経ったなら有効		
-						DWORD dwTimeNow = ::GetTickCount();
-						if ( (dwTimeNow - dwTime) > 300 ) {
-							strLastMark = _T("");
-							dwTime	 = dwTimeNow;
-						}
-					}
-					if (strMark1 != strLastMark) {
-						strMove	+= strMark1;	// 方向を追加
-						strLastMark = strMark1;	
-
-						CString strCmdName;
-						CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-						DWORD	dwCommand = pr.GetValue(strMove);
-						if (dwCommand) {
-							// 合致するコマンドがあれば表示
-							CString strTemp;
-							CToolTipManager::LoadToolTipText(dwCommand, strTemp);
-							strCmdName.Format(_T("[ %s ]"), strTemp);
-						}
-
-						// ステータスバーに表示
-						CString 	strMsg;
-						strMsg.Format(_T("ジェスチャー : %s %s"), strMove, strCmdName);
-						funcSetStatusText(strMsg);
-					}
-					dwTime = ::GetTickCount();
-				}
-				ptLast = ptNow;
-				break;
-							   }
-
-			case WM_LBUTTONDOWN:
-				if (data.bCursorOnSelectedText && nDistance >= 10) {	// 右ボタンドラッグをキャンセルする
-					bCancelRButtonUp = true;
-					msg.message = WM_RBUTTONUP;
-					funcSetStatusText(_T(""));
-				}
-				break;
-
-			default:
-				::DispatchMessage(&msg);
-				break;
-			}	// switch
-
-			switch (dwCommand) {
-			case 0:	
-				break;
-			
-			case ID_FILE_CLOSE:
-				::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_CLOSE, 0, 0);	// これだけじゃたぶんダメ
-				//msg.message = WM_RBUTTONUP;
-				//::PostMessage(m_hWnd, WM_COMMAND, ID_FILE_CLOSE, 0);
-				//::PostMessage(hWnd, WM_CLOSE, 0, 0);
-				bNoting    = false;
-				funcSetStatusText(_T(""));
-				break;
-
-			default:
-				::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_COMMAND, dwCommand, 0);
-				bNoting    = false;
-				funcSetStatusText(_T(""));
-				break;
-			}
-
-		} while (msg.message != WM_RBUTTONUP);
-
-		ReleaseCapture();
-		::FreeLibrary(hModule);
-		if (data.bCursorOnSelectedText) {
-			SetCursor(::LoadCursor(NULL, IDC_ARROW));	// カーソルを元に戻す
-			if (bCancelRButtonUp)
-				return TRUE;
-			if (strSearchEngine.GetLength() > 0) {	// 右ボタンドラッグ実行
-				funcSetStatusText(_T(""));
-				m_SearchBar.SearchWebWithEngine(data.strSelectedTextLine, strSearchEngine);
-				bNoting = false;
-			}
-		}
-
-		/* マウスジェスチャーコマンド実行 */
-		if (bNoting) {
-			ptLast.SetPoint(GET_X_LPARAM(msg.lParam), GET_Y_LPARAM(msg.lParam));
-			::ClientToScreen(msg.hwnd, &ptLast);
-
-			funcSetStatusText(_T(""));
-
-			CIniFileI	pr( GetConfigFilePath( _T("MouseEdit.ini") ), _T("MouseCtrl") );
-			DWORD dwCommand = pr.GetValue(strMove);
-			if (dwCommand) {
-				::SendMessage(m_hWnd, WM_COMMAND, dwCommand, 0);
-				bNoting = false;
-			} else if (dwCommand == -1)
-				return TRUE;
-		}
-
-		if ( bNoting && strMove.IsEmpty() ) {	// 右クリックメニューを出す
-			::GetCursorPos(&ptLast);
-			::ScreenToClient(data.hwnd, &ptLast);
-			data.lParam = MAKELONG(ptLast.x, ptLast.y);
-			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONDOWN, data.wParam, data.lParam);
-			::PostMessage(m_ChildFrameClient.GetActiveChildFrameWindow(), WM_DEFAULTRBUTTONUP, data.wParam, data.lParam);
-		}
-		return !bNoting;
-	};
-
-	funcRButtonHook();
-
-	//HWND hWndActiveChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
-	//if (hWndActiveChildFrame)
-	//	::SetFocus(hWndActiveChildFrame);
+	_RButtonHook(data);
 }
 
 

@@ -85,7 +85,6 @@ class CMainOption {
 public:
 	static DWORD	s_dwMainExtendedStyle;
 	static DWORD	s_dwMainExtendedStyle2;
-	static DWORD	s_dwExplorerBarStyle;
 
 	static DWORD	s_dwBackUpTime;
 	static DWORD	s_dwAutoRefreshTime;
