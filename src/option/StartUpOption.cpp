@@ -5,19 +5,10 @@
 #include "stdafx.h"
 #include "StartUpOption.h"
 #include <fstream>
-#include <clocale>
-#include <codecvt>
-#include <boost\property_tree\ptree.hpp>
-#include <boost\property_tree\xml_parser.hpp>
-#include "../IniFile.h"
-#include "../DonutFavoritesMenu.h"
-#include "../MainFrame.h"
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include "..\IniFile.h"
+#include "..\DonutFavoritesMenu.h"
+#include "..\MainFrame.h"
+#include "..\DonutTabList.h"
 
 
 using namespace MTL;
@@ -78,6 +69,8 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 
 		BEGIN_MSG_MAP_EX( CRestoreTabListSelector )
 			MSG_WM_INITDIALOG( OnInitDialog )
+			NOTIFY_CODE_HANDLER_EX( LVN_KEYDOWN, OnListViewKeyDown )
+			COMMAND_ID_HANDLER_EX(IDCANCEL, OnCommand )
 			COMMAND_ID_HANDLER_EX(IDC_BUTTON_TABLISTXML, OnCommand )
 			COMMAND_ID_HANDLER_EX(IDC_BUTTON_TABLISTBAKXML, OnCommand )
 		END_MSG_MAP()
@@ -86,49 +79,72 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 		{
 			CenterWindow(GetParent());
 
+			m_bTabListChanged = false;
+
 			m_listTabList		= GetDlgItem(IDC_LIST_TABLISTXML);
 			m_listTabListBak	= GetDlgItem(IDC_LIST_TABLISTBAKXML);
 
-			m_listTabList.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 100);
-			m_listTabList.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 200);
-			m_listTabListBak.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 100);
-			m_listTabListBak.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 200);
+			m_listTabList.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
+			m_listTabListBak.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER);
 
-			auto funcInsertItemToListView = [](CListViewCtrl listview, const CString& TabList) {
-				try {
-					using boost::property_tree::wptree;
+			m_listTabList.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 170);
+			m_listTabList.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 400);
+			m_listTabListBak.InsertColumn(0, _T("タイトル"), LVCFMT_LEFT, 170);
+			m_listTabListBak.InsertColumn(1, _T("URL"), LVCFMT_LEFT, 400);
 
-					std::wifstream	filestream(TabList);
-					if (!filestream) {
-						return ;
-					}
-					filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-
-					wptree	pt;
-					boost::property_tree::read_xml(filestream, pt);
-
-					wptree&	ptChild = pt.get_child(L"TabList");
-					auto it = ptChild.begin();
-					++it;
-					for (; it != ptChild.end(); ++it) {
-						wptree& ptItem = it->second;
-						CString title = ptItem.get(L"<xmlattr>.title", L"").c_str();
-						CString url = ptItem.get(L"<xmlattr>.url", L"").c_str();
+			auto funcInsertItemToListView = [](CListViewCtrl listview, const CString& TabListPath, CDonutTabList& tabList) {
+				if (tabList.Load(TabListPath)) {
+					int nCount = tabList.GetCount();
+					for (int i = 0; i < nCount; ++i) {
+						CString title = tabList.At(i)->strTitle;
+						CString url = tabList.At(i)->strURL;
 						int nInsertPos = listview.AddItem(listview.GetItemCount(), 0, title);
 						listview.AddItem(nInsertPos, 1, url);
 					}
-				} catch (...) {
-					return ;
 				}
 			};
-			funcInsertItemToListView(m_listTabList, GetConfigFilePath(_T("TabList.donutTabList")));
-			funcInsertItemToListView(m_listTabListBak, GetConfigFilePath(_T("TabList.bak.donutTabList")));
+			funcInsertItemToListView(m_listTabList, GetConfigFilePath(_T("TabList.donutTabList")), m_tabList);
+			funcInsertItemToListView(m_listTabListBak, GetConfigFilePath(_T("TabList.bak.donutTabList")), m_tabListBak);
 
 			return TRUE;
 		}
 
+		LRESULT OnListViewKeyDown(LPNMHDR pnmh)
+		{
+			auto pnkd = (LPNMLVKEYDOWN)pnmh;
+			if (pnkd->wVKey == VK_DELETE) {
+				CDonutTabList*	pTabList = nullptr;
+				CListViewCtrl	listView;
+				if (pnkd->hdr.idFrom == IDC_LIST_TABLISTXML) {
+					pTabList = &m_tabList;
+					listView = m_listTabList;
+				} else {
+					pTabList = &m_tabListBak;
+					listView = m_listTabListBak;
+				}
+				int nIndex = listView.GetSelectedIndex();
+				if (nIndex == -1)
+					return 0;
+				pTabList->Delete(nIndex);
+				listView.DeleteItem(nIndex);
+				if (listView.GetItemCount() <= nIndex)
+					--nIndex;
+				listView.SelectItem(nIndex);
+
+				m_bTabListChanged = true;
+			}
+
+
+		}
+
 		void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
 		{
+			if (m_bTabListChanged) {
+				if (nID == IDC_BUTTON_TABLISTXML)
+					m_tabList.Save(GetConfigFilePath(_T("TabList.donutTabList")), false);
+				else if (nID == IDC_BUTTON_TABLISTBAKXML)
+					m_tabListBak.Save(GetConfigFilePath(_T("TabList.bak.donutTabList")), false);
+			}
 			EndDialog(nID);
 		}
 
@@ -136,6 +152,9 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 		// Data members
 		CListViewCtrl	m_listTabList;
 		CListViewCtrl	m_listTabListBak;
+		CDonutTabList	m_tabList;
+		CDonutTabList	m_tabListBak;
+		bool			m_bTabListChanged;
 	};
 
 	switch (s_dwFlags) {
@@ -156,9 +175,10 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 			case IDC_BUTTON_TABLISTXML:		tabListXmlPath = GetConfigFilePath(_T("TabList.donutTabList"));	break;
 			case IDC_BUTTON_TABLISTBAKXML:	tabListXmlPath = GetConfigFilePath(_T("TabList.bak.donutTabList"));	break;
 			default:
-				ATLASSERT( FALSE );
+				break;
 			}
-			__frame.RestoreAllTab(tabListXmlPath);
+			if (tabListXmlPath.GetLength() > 0)
+				__frame.RestoreAllTab(tabListXmlPath);
 		} else {
 			__frame.RestoreAllTab();
 		}

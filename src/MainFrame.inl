@@ -672,6 +672,8 @@ void	CMainFrame::Impl::OnDestroy()
 
 	_DeleteCacheAndCookie();
 	_DeleteHistory();
+
+	CStartUpOption::EndFinish();
 }
 
 /// Windowsが終了前に呼ばれる　ファイルがダウンロード中なら中止するかどうか確認する

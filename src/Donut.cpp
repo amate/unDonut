@@ -478,8 +478,6 @@ static int RunMainFrame(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 		// ÀÛ‚ÌƒƒCƒ“ƒ‹[ƒv.
 		nRet = theLoop.Run();
 
-		CStartUpOption::EndFinish();
-
 		_Module.RemoveMessageLoop();
 	}
 
