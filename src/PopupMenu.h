@@ -216,6 +216,12 @@ public:
 						DrawThemeBackground(memDC, MENU_POPUPSUBMENU, nState, &rcArrow);
 					}
 				}
+				if (item.icon) {
+					POINT ptIcon;
+					ptIcon.x	= kLeftIconMargin;
+					ptIcon.y	= item.rect.top + kTopIconMargin;
+					item.icon.DrawIconEx(memDC, ptIcon, CSize(kcxIcon, kcyIcon));
+				}
 				if (item.bChecked) {
 					CRect rcCheck = item.rect;
 					rcCheck.right	= rcCheck.left + kCheckWidth;
@@ -223,22 +229,6 @@ public:
 					DrawThemeBackground(memDC, MENU_POPUPCHECK, MC_CHECKMARKNORMAL, &rcCheck);
 				}
 			}
-			//if (m_bDrawDisableHot) {
-			//	CRect rcNone = rcClient;
-			//	rcNone.DeflateRect(kBoundMargin, kBoundMargin);
-			//	DrawThemeBackground(memDC, MENU_POPUPITEM, MPI_DISABLEDHOT, &rcNone);
-			//}
-
-			//if (m_pFolder->size() == 0) {
-			//	CRect	rcText;
-			//	rcText.top	= kBoundMargin;
-			//	rcText.left	= kLeftTextPos;
-			//	rcText.right	= rcClient.right;
-			//	rcText.bottom	= rcText.top + kItemHeight;
-
-			//	LPCTSTR strNone = _T("(なし)");
-			//	DrawThemeText(memDC, MENU_POPUPITEM, MPI_DISABLED, strNone, ::lstrlen(strNone), DT_SINGLELINE | DT_VCENTER, 0, &rcText);
-			//}
 		} else {
 			memDC.FillRect(rcClient, COLOR_3DFACE);
 
@@ -246,18 +236,12 @@ public:
 				MenuItem& item = *it;
 				item.rect.right = rcClient.right - kBoundMargin;
 
-				//POINT ptIcon;
-				//ptIcon.x	= kLeftIconMargin;
-				//ptIcon.y	= item.rcItem.top + kTopIconMargin;
-				//CIconHandle icon;
-				//if (item.pFolder) {
-				//	icon = CLinkPopupMenu::s_iconFolder;
-				//} else {
-				//	icon = item.icon;
-				//	if (icon == NULL)
-				//		icon = CLinkPopupMenu::s_iconLink;
-				//}
-				//icon.DrawIconEx(memDC, ptIcon, CSize(kcxIcon, kcyIcon));
+				if (item.icon) {
+					POINT ptIcon;
+					ptIcon.x	= kLeftIconMargin;
+					ptIcon.y	= item.rect.top + kTopIconMargin;
+					item.icon.DrawIconEx(memDC, ptIcon, CSize(kcxIcon, kcyIcon));
+				}
 				if (item.bSeparator) {
 					RECT rc = item.rect;
 					rc.top += (rc.bottom - rc.top) / 2;      // vertical center
@@ -311,16 +295,6 @@ public:
 					}
 				}
 			}
-			//if (m_pFolder->size() == 0) {
-			//	CRect	rcText;
-			//	rcText.top	= kBoundMargin;
-			//	rcText.left	= kLeftTextPos;
-			//	rcText.right	= rcClient.right;
-			//	rcText.bottom	= rcText.top + kItemHeight;
-
-			//	LPCTSTR strNone = _T("(なし)");
-			//	memDC.DrawText(strNone, ::lstrlen(strNone), rcText, DT_SINGLELINE | DT_VCENTER);
-			//}
 		}
 
 
@@ -529,7 +503,7 @@ protected:
 		return rcClientRect;
 	}
 
-	void	_DoExec(const CPoint& pt, bool bLButtonUp = false)
+	virtual void	_DoExec(const CPoint& pt, bool bLButtonUp = false)
 	{
 		int nIndex = _HitTest(pt);
 		if (nIndex == -1)
@@ -592,24 +566,6 @@ protected:
 			rcDest.top = rc.top + (rc.bottom - rc.top - size.cy) / 2;
 			rcDest.bottom = rcDest.top + size.cy;
 		}
-		// paint background
-		//if(!m_bFlatMenus)
-		//{
-		//	if(bSelected && !bDisabled)
-		//	{
-		//		dc.FillRect(&rcDest, COLOR_MENU);
-		//	}
-		//	else
-		//	{
-		//		COLORREF clrTextOld = dc.SetTextColor(::GetSysColor(COLOR_BTNFACE));
-		//		COLORREF clrBkOld = dc.SetBkColor(::GetSysColor(COLOR_BTNHILIGHT));
-		//		CBrush hbr(CDCHandle::GetHalftoneBrush());
-		//		dc.SetBrushOrg(rcDest.left, rcDest.top);
-		//		dc.FillRect(&rcDest, hbr);
-		//		dc.SetTextColor(clrTextOld);
-		//		dc.SetBkColor(clrBkOld);
-		//	}
-		//}
 
 		// create source image
 		CDC dcSource;
@@ -630,19 +586,7 @@ protected:
 		// draw the checkmark transparently
 		int cx = rcDest.right - rcDest.left;
 		int cy = rcDest.bottom - rcDest.top;
-		//if(hBmpCheck != NULL)
-		//{
-		//	// build mask based on transparent color	
-		//	dcSource.SetBkColor(m_clrMask);
-		//	dcMask.SetBkColor(clrBlack);
-		//	dcMask.SetTextColor(clrWhite);
-		//	dcMask.BitBlt(0, 0, size.cx, size.cy, dcSource, 0, 0, SRCCOPY);
-		//	// draw bitmap using the mask
-		//	dc.BitBlt(rcDest.left, rcDest.top, cx, cy, dcSource, 0, 0, SRCINVERT);
-		//	dc.BitBlt(rcDest.left, rcDest.top, cx, cy, dcMask, 0, 0, SRCAND);
-		//	dc.BitBlt(rcDest.left, rcDest.top, cx, cy, dcSource, 0, 0, SRCINVERT);
-		//}
-		//else
+
 		{
 			const DWORD ROP_DSno = 0x00BB0226L;
 			const DWORD ROP_DSa = 0x008800C6L;
@@ -652,35 +596,6 @@ protected:
 			// draw mask
 			RECT rcSource = { 0, 0, min(size.cx, rc.right - rc.left), min(size.cy, rc.bottom - rc.top) };
 			dcMask.DrawFrameControl(&rcSource, DFC_MENU, bRadio ? DFCS_MENUBULLET : DFCS_MENUCHECK);
-
-			// draw shadow if disabled
-			//if(!m_bFlatMenus && bDisabled)
-			//{
-			//	// offset by one pixel
-			//	int x = rcDest.left + 1;
-			//	int y = rcDest.top + 1;
-			//	// paint source bitmap
-			//	const int nColor = COLOR_3DHILIGHT;
-			//	dcSource.FillRect(&rcSource, nColor);
-			//	// draw checkmark - special case black and white colors
-			//	COLORREF clrCheck = ::GetSysColor(nColor);
-			//	if(clrCheck == clrWhite)
-			//	{
-			//		dc.BitBlt(x, y, cx, cy, dcMask,  0, 0,   ROP_DSno);
-			//		dc.BitBlt(x, y, cx, cy, dcSource, 0, 0, ROP_DSa);
-			//	}
-			//	else
-			//	{
-			//		if(clrCheck != clrBlack)
-			//		{
-			//			ATLASSERT(dcSource.GetTextColor() == clrBlack);
-			//			ATLASSERT(dcSource.GetBkColor() == clrWhite);
-			//			dcSource.BitBlt(0, 0, size.cx, size.cy, dcMask, 0, 0, ROP_DSna);
-			//		}
-			//		dc.BitBlt(x, y, cx, cy, dcMask,  0,  0,  ROP_DSa);
-			//		dc.BitBlt(x, y, cx, cy, dcSource, 0, 0, ROP_DSo);
-			//	}
-			//}
 
 			// paint source bitmap
 			const int nColor = bDisabled ? COLOR_BTNSHADOW : COLOR_MENUTEXT;
@@ -711,13 +626,6 @@ protected:
 		dcMask.SelectBitmap(hBmpOld1);
 		if(hBmpCheck == NULL)
 			bmp.DeleteObject();
-		// draw pushed-in hilight
-		//if(!m_bFlatMenus && !bDisabled)
-		//{
-		//	if(rc.right - rc.left > size.cx)
-		//		::InflateRect(&rcDest, 1,1);   // inflate checkmark by one pixel all around
-		//	dc.DrawEdge(&rcDest, BDR_SUNKENOUTER, BF_RECT);
-		//}
 
 		return TRUE;
 	}
@@ -731,6 +639,7 @@ protected:
 		CMenuHandle submenu;
 		bool	bChecked;
 		void*	pUserData;
+		CIcon	icon;
 
 		MenuItem(CString str, UINT id, CRect rc, bool bSep = false, CMenuHandle menu = NULL) : name(str), nID(id), rect(rc), state(POPUPITEMSTATES::MPI_NORMAL), bSeparator(bSep), submenu(menu), bChecked(false), pUserData(nullptr)
 		{	}
@@ -802,9 +711,9 @@ public:
 	LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 
 private:
-	void _initMenuItem();
+	void _initMenuItem() override;
 	void _InitTooltip();
-	int	ComputeWindowWidth();
+	int	ComputeWindowWidth() override;
 	//int ComputeWindowHeight();
 
 	CToolTipCtrl	m_tip;
@@ -829,6 +738,35 @@ private:
 	int	m_nIndex;
 
 };
+
+////////////////////////////////////////////////////////////////////////////
+// お気に入りグループのルートメニュー実装
+class CRootFavoriteGroupPopupMenu : public CBasePopupMenuImpl<CRootFavoriteGroupPopupMenu>
+{
+public:
+	static void	LoadFavoriteGroup();
+
+	static std::vector<CString>*	GetFavoriteGroupFilePathList() { return &s_vecFavoriteGroupFilePath; }
+
+	static void SetRefreshNotify(HWND hWnd, std::function<void ()> callback, bool bRegister);
+
+	BEGIN_MSG_MAP( CRootFavoriteGroupPopupMenu )
+		CHAIN_MSG_MAP( CBasePopupMenuImpl<CRootFavoriteGroupPopupMenu> )
+	END_MSG_MAP()
+
+private:
+	virtual void _initMenuItem() override;
+	virtual int	ComputeWindowWidth() override;
+	virtual void _DoExec(const CPoint& pt, bool bLButtonUp = false) override;
+
+	// Constants
+	enum { kFavoriteGroupFirstID = 40000, };
+
+	// Data members
+	static std::vector<CString>	s_vecFavoriteGroupFilePath;
+	static std::vector<std::pair<HWND, std::function<void ()>>>		s_vecfuncRefreshNotify;
+};
+
 
 ////////////////////////////////////////////////////////////////////////
 // お気に入りのルートメニュー実装
@@ -859,6 +797,7 @@ public:
 	static void LinkExportToFolder(LPCTSTR folder, bool bOverWrite);
 
 	// Overrides
+	virtual IBasePopupMenu* CreateSubMenu(int nIndex) override;
 	virtual void	DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent) override;
 	virtual void	DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClientItem, HWND hWndParent, int nInheritIndex) override;
 

@@ -36,6 +36,7 @@ public:
 
 	HWND	Create(HWND hWndParent);
 
+	/// ‚¨‹C‚É“ü‚è‚Ì’Ç‰Á/®——p
 	void	SetItemClickFunc(std::function<void (LinkItem*)> func) { m_funcItemClick = func; }
 
 	LinkFolderPtr	GetParentLinkFolderPtr(HTREEITEM htItem);

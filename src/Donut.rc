@@ -46,6 +46,7 @@ IDR_MDICHILD            ICON                    "res\\DonutDoc.ico"
 IDI_DLSTOP              ICON                    "res\\DLStop.ico"
 IDI_GENERIC_DOCUMENT    ICON                    "res\\Generic_Document.ico"
 IDI_FOLDER              ICON                    "res\\folder.ico"
+IDI_FAVORITEGROUP       ICON                    "res\\FavoritGroup.ico"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -1960,6 +1961,17 @@ BEGIN
     PUSHBUTTON      "TabList.bak.donutTabList",IDC_BUTTON_TABLISTBAKXML,279,203,85,17
 END
 
+IDD_FAVORITEGROUP_EDIT DIALOGEX 0, 0, 222, 201
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU | WS_THICKFRAME
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "OK",IDOK,7,182,50,14
+    PUSHBUTTON      "ï¬Ç∂ÇÈ",IDCANCEL,164,182,50,14
+    CONTROL         "",IDC_TREE,"SysTreeView32",WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,7,207,170
+    PUSHBUTTON      "çÌèú",ID_DELETE,62,182,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -2426,6 +2438,14 @@ BEGIN
         RIGHTMARGIN, 309
         TOPMARGIN, 7
         BOTTOMMARGIN, 185
+    END
+
+    IDD_FAVORITEGROUP_EDIT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 214
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 196
     END
 END
 #endif    // APSTUDIO_INVOKED

@@ -199,7 +199,6 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		break;
 
 	case ID_VIEW_FAVEXPBAR_HIST:
-	case ID_VIEW_FAVEXPBAR_GROUP:
 		wndTarget = m_FavBar;
 		funcCreateWindow = [this]() -> HWND {
 			m_FavBar.Create(m_hWnd);
@@ -207,6 +206,14 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 			m_FavBar.InitToolBar( ID_FAVORITE_ADD, ID_FAVORITE_ORGANIZE, ID_FAVORITE_PLACEMENT, IDB_FAVBAR, IDB_FAVBAR_HOT,
 								16, 16, RGB(255, 0, 255) );
 			return m_FavBar;
+		};
+		break;
+
+	case ID_VIEW_FAVEXPBAR_GROUP:
+		wndTarget = m_donutFavoriteGroupTreeView;
+		funcCreateWindow = [this]() -> HWND {
+			m_donutFavoriteGroupTreeView.Create(m_hWnd);
+			return m_donutFavoriteGroupTreeView.m_hWnd;
 		};
 		break;
 
@@ -245,7 +252,7 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		} else if (nID == ID_VIEW_FAVEXPBAR_HIST) {
 			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
 		} else if (nID == ID_VIEW_FAVEXPBAR_GROUP) {
-			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
+			//m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
 		}
 		wndTarget.ShowWindow(TRUE);
 		SetTitle( MtlGetWindowText(wndTarget) );
@@ -322,18 +329,25 @@ void	CDonutExplorerBar::HookMouseMoveForAutoShow(bool bHook)
 				wndSplitter.ClientToScreen(&rcSplitter);
 				rcSplitter.right = rcSplitter.left + kAutoShowVlidWidth;
 				if (rcSplitter.PtInRect(pt)) {
-					// 一定時間たったあとに表示する
-					if (m_bAutoShowTimer == false) {
-						SetTimer(kAutoShowTimerId, kAutoShowTimerInterval);
-						m_bAutoShowTimer = true;
-					} 
-				} else {
-					// 表示判定ポイントから外れたのでタイマーを止める
-					if (m_bAutoShowTimer) {
-						KillTimer(kAutoShowTimerId);
-						m_bAutoShowTimer = false;
-					}
-				}
+					if (m_nIndexAct == -1) {
+						OnViewBar(NULL, m_nShowPaneID, NULL);
+					} else {
+						OnViewBar(NULL, aryID[m_nIndexAct], NULL);
+					}		
+					m_bExplicitShowBar = false;
+					//// 一定時間たったあとに表示する
+					//if (m_bAutoShowTimer == false) {
+					//	SetTimer(kAutoShowTimerId, kAutoShowTimerInterval);
+					//	m_bAutoShowTimer = true;
+					//} 
+				} 
+				//else {
+				//	// 表示判定ポイントから外れたのでタイマーを止める
+				//	if (m_bAutoShowTimer) {
+				//		KillTimer(kAutoShowTimerId);
+				//		m_bAutoShowTimer = false;
+				//	}
+				//}
 			} else {
 				// 自動で消す
 				CRect rcThis;
@@ -394,9 +408,7 @@ bool	CDonutExplorerBar::_IsBarVisible(int nID)
 		bFavEx = (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_HISTORY) != 0;
 		break;
 
-	case ID_VIEW_FAVEXPBAR_GROUP:	hWndBar = m_FavBar;	
-		bFavEx = (m_FavBar.m_view.m_dwExplorerTreeViewExtendedStyle & ETV_EX_FAVORITEGROUP) != 0;
-		break;
+	case ID_VIEW_FAVEXPBAR_GROUP:	hWndBar = m_donutFavoriteGroupTreeView;		break;
 
 	case ID_VIEW_CLIPBOARDBAR:	hWndBar = m_ClipBar;	break;
 

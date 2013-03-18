@@ -7,15 +7,18 @@
 #include "PopupMenu.h"
 #include <fstream>
 #include <codecvt>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/xml_parser.hpp>
-#include <boost/thread.hpp>
+#include <boost\property_tree\ptree.hpp>
+#include <boost\property_tree\xml_parser.hpp>
+#include <boost\thread.hpp>
+#include <boost\format.hpp>
 #include <atlenc.h>
-#include "option/FavoriteMenuDialog.h"
+#include "option\FavoriteMenuDialog.h"
 #include "MtlWeb.h"
 #include "ExStyle.h"
 #include "RecentClosedTabList.h"
 #include "ChildFrame.h"
+#include "MainFrame.h"
+#include "DonutTabList.h"
 
 using namespace boost::property_tree;
 
@@ -517,6 +520,178 @@ void	CChevronPopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, 
 	ShowWindow(SW_SHOWNOACTIVATE);
 }
 
+//////////////////////////////////////////////////////////////////////////////////
+// CRootFavoriteGroupPopupMenu
+
+std::vector<CString>	CRootFavoriteGroupPopupMenu::s_vecFavoriteGroupFilePath;
+std::vector<std::pair<HWND, std::function<void ()>>>		CRootFavoriteGroupPopupMenu::s_vecfuncRefreshNotify;
+
+
+void	CRootFavoriteGroupPopupMenu::LoadFavoriteGroup()
+{
+	s_vecFavoriteGroupFilePath.clear();
+
+	CString strFavoriteGroupPath = Misc::GetExeDirectory() + _T("FavoriteGroup\\");
+	::SHCreateDirectory(NULL, strFavoriteGroupPath);
+	MtlForEachFileSort(strFavoriteGroupPath, [strFavoriteGroupPath](const CString& filePath) {
+		CString fileExt = Misc::GetFileExt(filePath);
+		if (fileExt.CompareNoCase(_T("donutTabList")) == 0) {
+			s_vecFavoriteGroupFilePath.push_back(filePath);
+
+		} else if (fileExt.CompareNoCase(_T("dfg")) == 0) {
+			// 旧ファイルから読み込む
+			using boost::wformat;
+			CIniFileI	pr(filePath, _T("Header"));
+			int	nCount = pr.GetValuei(_T("count"));
+			int nActive = pr.GetValuei(_T("active"), -1);
+			std::vector<std::unique_ptr<ChildFrameDataOnClose>>	vecpTabList;
+			for (int i = 0; i < nCount; ++i) {
+				pr.ChangeSectionName((wformat(L"Window%1%") % i).str().c_str());
+				std::unique_ptr<ChildFrameDataOnClose>	pChildFrameData(new ChildFrameDataOnClose);
+				ChildFrameDataOnClose& 	data = *pChildFrameData;
+				data.strTitle	= pr.GetString(_T("Title"));
+				data.strTitle.Replace(_T("\""), _T("_"));
+				data.strURL		= pr.GetString(_T("Location_URL"));
+				data.dwDLCtrl	= pr.GetValue(_T("DL_Control_Flags"));
+				data.dwExStyle	= pr.GetValue(_T("Extended_Style"));
+				data.dwAutoRefreshStyle	= pr.GetValue(_T("Auto_Refresh_Style"));
+				auto funcAddTravelLog = [&pr](LPCTSTR prefix, std::vector<std::pair<CString, CString> >& TravelLog) {
+					enum { kMaxTravelLog = 20 };
+					for (int nTravelCount = 0; nTravelCount < kMaxTravelLog; ++nTravelCount) {
+						CString title = pr.GetString((wformat(L"%1%_Title%2%") % prefix % nTravelCount).str().c_str());
+						title.Replace(_T("\""), _T("_"));
+						CString url = pr.GetString((wformat(L"%1%_URL%2%") % prefix % nTravelCount).str().c_str());
+						if (title.IsEmpty() && url.IsEmpty())
+							break;
+						TravelLog.emplace_back(title, url);
+					}
+				};
+				funcAddTravelLog(_T("Back"), data.TravelLogBack);
+				funcAddTravelLog(_T("Fore"), data.TravelLogFore);
+				vecpTabList.push_back(std::move(pChildFrameData));
+			}
+			pr.Close();
+
+			if (vecpTabList.size() > 0) {
+				/// 新形式に書き込み
+				CDonutTabList tabList;
+				tabList.Swap(vecpTabList);
+				tabList.SetActiveIndex(nActive);
+
+				CString fileName = Misc::GetFileBaseNoExt(filePath);
+				CString strTabList = strFavoriteGroupPath + fileName + _T(".donutTabList");
+				tabList.Save(strTabList);
+
+				CString strOldFolderPath = strFavoriteGroupPath + _T("#old\\");
+				::SHCreateDirectory(NULL, strOldFolderPath);
+				::MoveFile(filePath, strOldFolderPath + Misc::GetFileBaseName(filePath));
+
+				s_vecFavoriteGroupFilePath.push_back(strTabList);
+			}
+		}
+	});
+
+	/// 更新通知
+	for (auto& pair : s_vecfuncRefreshNotify)
+		pair.second();
+}
+
+void CRootFavoriteGroupPopupMenu::SetRefreshNotify(HWND hWnd, std::function<void ()> callback, bool bRegister)
+{
+	if (bRegister) {
+		s_vecfuncRefreshNotify.push_back(std::make_pair(hWnd, callback));
+	} else {
+		for (auto it = s_vecfuncRefreshNotify.begin(); it != s_vecfuncRefreshNotify.end(); ++it) {
+			if (it->first == hWnd) {
+				s_vecfuncRefreshNotify.erase(it);
+				break;
+			}
+		}
+	}
+}
+
+void CRootFavoriteGroupPopupMenu::_initMenuItem()
+{
+	int nTop = kBoundMargin;
+	struct FavoriteGroupMenuItem {
+		LPCTSTR name;
+		int		ID;
+	};
+	FavoriteGroupMenuItem	headItems[] = {
+		{ _T("お気に入りグループに追加")	, ID_FAVORITE_GROUP_ADD	},
+		{ _T("お気に入りグループを保存")	, ID_FAVORITE_GROUP_SAVE },
+		{ _T("お気に入りグループを整理")	, ID_FAVORITE_GROUP_ORGANIZE },
+		{ _T(""), -1 }
+	};
+	for (auto& item : headItems) {
+		CRect rc;
+		rc.top	= nTop;
+		rc.left	= kBoundMargin;
+		//rc.right= nWidht - kBoundMargin;
+		rc.bottom= nTop +  (item.ID == -1 ? kSeparatorHeight : kItemHeight);
+		nTop = rc.bottom;
+		m_vecMenuItem.emplace_back(item.name, item.ID, rc, item.ID == -1);
+	}
+
+	int nCount = (int)s_vecFavoriteGroupFilePath.size();
+	CClientDC dc(NULL);
+	HFONT prevFont = dc.SelectFont(m_font);
+	for (int i = 0; i < nCount; ++i) {
+		CRect rc;
+		rc.top	= nTop;
+		rc.left	= kBoundMargin;
+		rc.bottom= nTop + kItemHeight;
+
+		nTop = rc.bottom;
+#if _MSC_VER >= 1700
+		m_vecMenuItem.emplace_back(Misc::GetFileBaseNoExt(s_vecFavoriteGroupFilePath[i]), kFavoriteGroupFirstID + i, rc);
+#else
+		m_vecMenuItem.push_back(MenuItem(name, kFavoriteGroupFirstID + i, rc));
+#endif
+		m_vecMenuItem.back().icon.LoadIcon(IDI_FAVORITEGROUP);
+	}
+	dc.SelectFont(prevFont);
+}
+
+int	CRootFavoriteGroupPopupMenu::ComputeWindowWidth()
+{
+	int nMaxTextWidth = 0;
+	for (auto it = m_vecMenuItem.begin(); it != m_vecMenuItem.end(); ++it) {
+		int nNameWidth = MTL::MtlComputeWidthOfText(it->name, m_font);
+		if (nMaxTextWidth < nNameWidth)
+			nMaxTextWidth = nNameWidth;
+	}
+	if (nMaxTextWidth == 0)
+		nMaxTextWidth = kNoneTextWidth;
+	if (kMaxMenuTextWidth < nMaxTextWidth)
+		nMaxTextWidth = kMaxMenuTextWidth;
+	nMaxTextWidth += kLeftTextPos + kTextMargin + kArrowWidth + (kBoundMargin * 2);
+	return nMaxTextWidth;
+}
+
+void CRootFavoriteGroupPopupMenu::_DoExec(const CPoint& pt, bool bLButtonUp /*= false*/)
+{
+	int nIndex = _HitTest(pt);
+	if (nIndex == -1)
+		return ;
+
+	MenuItem& item = m_vecMenuItem[nIndex];
+	if (item.bSeparator || item.state == MPI_DISABLEDHOT)
+		return ;
+
+	if (bLButtonUp) {
+		// メニューを閉じる
+		_CloseBaseSubMenu();
+
+		if (0 <= nIndex && nIndex <= 2) {
+			// アイテムを実行...
+			CWindow(s_hWndCommandBar).GetTopLevelWindow().SendMessage(WM_COMMAND, item.nID);
+		} else {
+			g_pMainWnd->RestoreAllTab(s_vecFavoriteGroupFilePath[item.nID - kFavoriteGroupFirstID], (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG) == 0);
+		}
+	}
+}
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // CRootFavoritePopupMenu
@@ -534,7 +709,6 @@ bool							CRootFavoritePopupMenu::s_bCancel = false;
 #endif
 
 std::vector<std::pair<HWND, std::function<void ()>>>		CRootFavoritePopupMenu::s_vecfuncRefreshNotify;
-
 
 void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
@@ -715,6 +889,13 @@ void CRootFavoritePopupMenu::NotifyRefresh()
 {
 	for (auto& callback : s_vecfuncRefreshNotify)
 		callback.second();
+}
+
+// Overrides
+IBasePopupMenu* CRootFavoritePopupMenu::CreateSubMenu(int nIndex)
+{
+	/// お気に入りグループ
+	return new CRootFavoriteGroupPopupMenu;
 }
 
 void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent)

@@ -171,7 +171,11 @@ int  CDonutCommandBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_menu.LoadMenu(IDR_MAINFRAME);
 	_UpdateItemPosition();
 
+	// お気に入りを読み込み
 	CRootFavoritePopupMenu::LoadFavoriteBookmark();
+
+	// お気に入りグループを読み込み
+	CRootFavoriteGroupPopupMenu::LoadFavoriteGroup();
 
 	s_hWnd = m_hWnd;
 

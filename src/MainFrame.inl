@@ -36,86 +36,44 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 		}
 	}
 
-	int	nActiveIndex = 0;
-
-	CString	TabList;
+	CString	TabListPath;
 	if (strFilePath == NULL) {
-		TabList = GetConfigFilePath(_T("TabList.donutTabList"));
+		TabListPath = GetConfigFilePath(_T("TabList.donutTabList"));
 	} else {
-		TabList = strFilePath;
+		TabListPath = strFilePath;
 	}
 
-	try {
-		using boost::property_tree::wptree;
-
-		std::wifstream	filestream(TabList);
-		if (!filestream) {
-			PostMessage(WM_INITPROCESSFINISHED);
-			return ;
-		}
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-
-		wptree	pt;
-		boost::property_tree::read_xml(filestream, pt);
-
-		auto SetTravelLog	= [](wptree& ptLog, vector<std::pair<CString, CString> >& vecTravelLog) {
-			for (auto it = ptLog.begin(); it != ptLog.end(); ++it) {
-				wptree& item = it->second;
-				vecTravelLog.push_back(std::pair<CString, CString>(
-					item.get(L"<xmlattr>.title", L"").c_str(), 
-					item.get(L"<xmlattr>.url", L"").c_str()));
-			}
-		};
-
-		wptree&	ptChild = pt.get_child(L"TabList");
-		auto it = ptChild.begin();
-		nActiveIndex = it->second.get(L"ActiveIndex", 0);
-		++it;
-		int i = 0;
-		for (; it != ptChild.end(); ++it) {
-			wptree& ptItem = it->second;
-			NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
-
-			pdata->strURL	= ptItem.get(L"<xmlattr>.url", L"").c_str();
-			pdata->dwDLCtrl	= ptItem.get<DWORD>(L"<xmlattr>.DLCtrlFlags", CDLControlOption::s_dwDLControlFlags);
-			pdata->dwExStyle= ptItem.get<DWORD>(L"<xmlattr>.ExStyle",	CDLControlOption::s_dwExtendedStyleFlags);
-			pdata->dwAutoRefresh	= ptItem.get<DWORD>(L"<xmlattr>.AutoRefreshStyle", 0);
-			SetTravelLog(ptItem.get_child(L"TravelLog.Back"), pdata->TravelLogBack);
-			SetTravelLog(ptItem.get_child(L"TravelLog.Fore"), pdata->TravelLogFore);
-			pdata->bActive	= (i == nActiveIndex);
-
-			m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
-			++i;
-		}
-	} catch (...) {
+	CDonutTabList	tabList;
+	if (tabList.Load(TabListPath) == false) {
 		MessageBox(_T("RestoreAllTabでエラーが発生しました!"));
 		PostMessage(WM_INITPROCESSFINISHED);
 		return ;
+	}
+	int nCount = tabList.GetCount();
+	for (int i = 0; i < nCount; ++i) {
+		std::unique_ptr<NewChildFrameData>	pdata(new NewChildFrameData(m_ChildFrameClient));
+		auto pTab = tabList.At(i);
+		pdata->strURL	= pTab->strURL;
+		pdata->dwDLCtrl	= pTab->dwDLCtrl;
+		pdata->dwExStyle= pTab->dwExStyle;
+		pdata->dwAutoRefresh	= pTab->dwAutoRefreshStyle;
+		pdata->TravelLogBack	= pTab->TravelLogBack;
+		pdata->TravelLogFore	= pTab->TravelLogFore;
+		pdata->bActive	= (i == tabList.GetActiveIndex());
+
+		m_deqNewChildFrameData.push_back(std::move(pdata));
 	}
 
 	CLockRedrawMDIClient	 lock(m_ChildFrameClient);
 	CDonutTabBar::CLockRedraw lock2(m_TabBar);
 
-	//if (bCloseAllTab) 
-	//	MtlCloseAllMDIChildren(m_ChildFrameClient);
+	if (bCloseAllTab) {
+		m_ChildFrameClient.SetChildFrameWindow(NULL);
+		m_TabBar.ForEachWindow([](HWND hWnd) {
+			::PostMessage(hWnd, WM_CLOSE, 0, 0);
+		});
+	}
 
-	//for (int i = 0; i < nCount; ++i) {
-	//	ChildFrameDataOnClose* pData = vecpSaveData[i].release();
-	//	NewChildFrameData*	pThis = vecpNewChildData[i];
-	//	pThis->funcCallAfterCreated	= [pData, pThis, this](CChildFrame* pChild) {
-	//		pChild->SetTravelLog(pData->TravelLogFore, pData->TravelLogBack);
-	//		delete pData;
-	//		if (pThis->pNext) {
-	//			m_MDITab.SetInsertIndex(m_MDITab.GetItemCount());
-	//			CChildFrame::AsyncCreate(*pThis->pNext);	// 次のChildFrameを作成
-	//		} else {
-	//			m_MDITab.InsertHere(false);
-	//			this->PostMessage(WM_INITPROCESSFINISHED);
-	//		}
-	//		delete pThis;
-
-	//	};
-	//}
 	if (m_deqNewChildFrameData.size() > 0) {
 		m_TabBar.InsertHere(true);
 		m_TabBar.SetInsertIndex(m_TabBar.GetItemCount());
@@ -125,7 +83,7 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 	}
 }
 
-void	CMainFrame::Impl::SaveAllTab()
+CDonutTabList	CMainFrame::Impl::_CollectAllChildFrameData()
 {
 	/* 現在開いているタブの情報を集める */
 	HWND hWndActive = m_ChildFrameClient.GetActiveChildFrameWindow();
@@ -133,16 +91,7 @@ void	CMainFrame::Impl::SaveAllTab()
 	int nActiveIndex = -1;
 	vector<unique_ptr<ChildFrameDataOnClose> >	vecpSaveData;
 	auto CollectChildFrameData = [&](HWND hWnd) {
-		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, true, 0);
-
-		auto pChildFrameData = new ChildFrameDataOnClose;
-		CString strSharedMemName;
-		strSharedMemName.Format(_T("%s%#x"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWnd);
-		CSharedMemory sharedMem;
-		sharedMem.Deserialize(*pChildFrameData, strSharedMemName);
-
-		::SendMessage(hWnd, WM_GETCHILDFRAMEDATA, false, 0);
-
+		auto pChildFrameData = _GetChildFrameData(hWnd);
 		vecpSaveData.push_back(unique_ptr<ChildFrameDataOnClose>(std::move(pChildFrameData)));
 		if (hWnd == hWndActive)
 			nActiveIndex = nCount;
@@ -150,49 +99,32 @@ void	CMainFrame::Impl::SaveAllTab()
 	};
 	m_TabBar.ForEachWindow(CollectChildFrameData);
 
+	CDonutTabList tabList;
+	tabList.Swap(vecpSaveData);
+	tabList.SetActiveIndex(nActiveIndex);
+	return tabList;
+}
+
+unique_ptr<ChildFrameDataOnClose>	CMainFrame::Impl::_GetChildFrameData(HWND hWndChildFrame)
+{
+	::SendMessage(hWndChildFrame, WM_GETCHILDFRAMEDATA, true, 0);
+
+	unique_ptr<ChildFrameDataOnClose> pChildFrameData(new ChildFrameDataOnClose);
+	CString strSharedMemName;
+	strSharedMemName.Format(_T("%s%#x"), NOWCHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWndChildFrame);
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(*pChildFrameData, strSharedMemName);
+
+	::SendMessage(hWndChildFrame, WM_GETCHILDFRAMEDATA, false, 0);
+	return pChildFrameData;
+}
+
+void	CMainFrame::Impl::SaveAllTab()
+{
+	auto tabList = _CollectAllChildFrameData();
+
 	/* TabList.donutTabList に保存する */
-	try {
-		using boost::property_tree::wptree;
-
-		auto AddTravelLog = [](wptree& ptLog, const vector<std::pair<CString, CString> >& vecTravelLog) {
-			for (auto it = vecTravelLog.cbegin(); it != vecTravelLog.cend(); ++it) {
-				wptree& ptItem = ptLog.add(L"item", L"");
-				ptItem.put(L"<xmlattr>.title", (LPCTSTR)it->first);
-				ptItem.put(L"<xmlattr>.url"	 , (LPCTSTR)it->second);
-			}
-		};
-		wptree	pt;
-		wptree&	ptTabList = pt.add(L"TabList", L"");
-		ptTabList.add(L"<xmlattr>.ActiveIndex", nActiveIndex);
-		for (auto it = vecpSaveData.cbegin(); it != vecpSaveData.cend(); ++it) {
-			ChildFrameDataOnClose& data = *(*it);
-			wptree& ptItem = ptTabList.add(L"Tab", L"");
-			ptItem.put(L"<xmlattr>.title", (LPCTSTR)data.strTitle);
-			ptItem.put(L"<xmlattr>.url"	 , (LPCTSTR)data.strURL);
-			ptItem.put(L"<xmlattr>.DLCtrlFlags", data.dwDLCtrl);
-			ptItem.put(L"<xmlattr>.ExStyle",	data.dwExStyle);
-			ptItem.put(L"<xmlattr>.AutoRefreshStyle", data.dwAutoRefreshStyle);
-			AddTravelLog(ptItem.add(L"TravelLog.Back", L""), data.TravelLogBack);
-			AddTravelLog(ptItem.add(L"TravelLog.Fore", L""), data.TravelLogFore);
-		}
-		using namespace boost::property_tree::xml_parser;
-
-		CString strTempTabList = GetConfigFilePath(_T("TabList.temp.xml"));
-		std::wofstream filestream(strTempTabList);
-		if (!filestream)
-			throw "error";
-		filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
-
-		CString	TabList = GetConfigFilePath(_T("TabList.donutTabList"));
-		if (::PathFileExists(TabList)) {
-			CString strBakFile = Misc::GetFileNameNoExt(TabList) + _T(".bak.donutTabList");
-			::MoveFileEx(TabList, strBakFile, MOVEFILE_REPLACE_EXISTING);
-		}
-		filestream.close();
-		::MoveFileEx(strTempTabList, TabList, MOVEFILE_REPLACE_EXISTING);
-
-	} catch (...) {
+	if (tabList.Save(GetConfigFilePath(_T("TabList.donutTabList"))) == false) {
 		MessageBox(_T("SaveAllTabでエラー発生!"));
 	}
 }
@@ -536,6 +468,14 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	m_RecentClosedTabList.SetMenuType(CMainOption::s_RecentClosedTabMenuType);
 	m_RecentClosedTabList.ReadFromXmlFile();
 
+	CDonutFavoriteGroupTreeView::SetFunctions(
+		[this]() { return _CollectAllChildFrameData(); }, 
+		[this]() -> unique_ptr<ChildFrameDataOnClose> {
+			if (m_ChildFrameClient.GetActiveChildFrameWindow() == NULL)
+				return nullptr;
+			return _GetChildFrameData(m_ChildFrameClient.GetActiveChildFrameWindow());
+		});
+
 	CUrlSecurityOption::UpdateOriginalUrlSecurityList(m_hWnd);
 	CCustomContextMenuOption::UpdateCustomContextMenuList(m_hWnd);
 	CLoginDataManager::CreateOriginalLoginDataList(m_hWnd);
@@ -698,7 +638,21 @@ void	CMainFrame::Impl::OnDestroy()
 			vechWnd.push_back(hWndChildFrame);			
 		});
 		for (auto it = vechWnd.cbegin(); it != vechWnd.cend(); ++it)
-			::SendMessage(*it, WM_CLOSE, 0, 0);
+			::PostMessage(*it, WM_CLOSE, 0, 0);
+
+		// 履歴がすべて保存されるまで待つ
+		enum { kMaxWaitTime = 30 * 1000 };
+		DWORD startTime = ::timeGetTime();
+		while ((::timeGetTime() - startTime) < kMaxWaitTime) {
+			MSG msg = {};
+			if (PeekMessage(&msg , NULL , 0 , 0 , PM_REMOVE)) {
+				DispatchMessage(&msg);
+			} else {
+				if (m_TabBar.GetItemCount() == 0)
+					break;
+				::Sleep(10);
+			}
+		}
 	}
 
 	if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_RECENTCLOSE) {
@@ -1807,6 +1761,45 @@ void	CMainFrame::Impl::OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wnd
 	//MtlOrganizeFavorite( m_hWnd, bOldShell, DonutGetFavoritesFolder() );
 }
 
+/// お気に入りグループコマンド
+void	CMainFrame::Impl::OnFavoriteGroupCommand(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	switch (nID) {
+	case ID_FAVORITE_GROUP_ADD:
+		{
+			CFavoriteGroupEditDialog	dlg(CFavoriteGroupEditDialog::kFavoriteGroupAdd);
+			dlg.DoModal(m_hWnd);
+		}
+		break;
+
+
+	case ID_FAVORITE_GROUP_SAVE:
+		{
+			CDonutTabList tabList = _CollectAllChildFrameData();
+			CString favoriteGroupPath = Misc::GetExeDirectory() + _T("FavoriteGroup\\");
+			std::time_t nowTime = time(NULL);
+			tm*	timePtr = localtime(&nowTime);
+			wchar_t buff[32] = L"";
+			wcsftime(buff, sizeof(buff), L"%Y%m%d_%H%M%S", timePtr);
+			CRenameDialog	renameDialog(buff, _T(""), false);
+			if (renameDialog.DoModal(m_hWnd) == IDOK) {
+				tabList.Save(favoriteGroupPath + renameDialog.GetNewFileName() + _T(".donutTabList"), false);
+
+				CRootFavoriteGroupPopupMenu::LoadFavoriteGroup();
+			}
+		}
+		break;
+
+	case ID_FAVORITE_GROUP_ORGANIZE:
+		{
+			CFavoriteGroupEditDialog	dlg(CFavoriteGroupEditDialog::kFavoriteGroupOrganize);
+			dlg.DoModal(m_hWnd);
+		}
+		break;
+	}
+
+}
+
 
 void	CMainFrame::Impl::OnDoubleClose(UINT uNotifyCode, int nID, CWindow wndCtl) 
 {
@@ -1998,6 +1991,7 @@ void	CMainFrame::Impl::OnTabClose(UINT uNotifyCode, int nID, CWindow wndCtl)
 				vechwnd.push_back(hWnd);
 			});
 			boost::reverse(vechwnd);
+			m_ChildFrameClient.SetChildFrameWindow(NULL);
 			boost::for_each(vechwnd, [](HWND hWnd) { ::PostMessage(hWnd, WM_CLOSE, 0, 0); });
 			//RtlSetMinProcWorkingSetSize();
 		}
@@ -2141,10 +2135,12 @@ void	CMainFrame::Impl::OnShowBandTextChange(bool bShow)
 
 void	CMainFrame::Impl::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 {
-	if (dwOption & TAB_LINK)
+	if (dwOption & TAB_LINK) {
 		m_TabBar.SetLinkState(LINKSTATE_A_ON);
-	if (!_check_flag(MAIN_EX_NOACTIVATE_NEWWIN, CMainOption::s_dwMainExtendedStyle))
-		dwOption |= TAB_ACTIVE;
+		// ページ内のリンクを開くとき、作成された新規タブをアクティブにしない
+		if (!_check_flag(MAIN_EX_NOACTIVATE_NEWWIN, CMainOption::s_dwMainExtendedStyle))
+			dwOption |= TAB_ACTIVE;
+	}
 	m_TabBar.OnMDIChildCreate(hWndChildFrame, (dwOption & TAB_ACTIVE) != 0);
 	
 	//if ( _check_flag(m_view.m_ViewOption.m_dwExStyle, DVS_EX_OPENNEWWIN)) {

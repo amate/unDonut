@@ -443,6 +443,15 @@
     <ClCompile Include="DonutClipboardBar.cpp">
       <Filter>Source Files\ExplorerBar</Filter>
     </ClCompile>
+    <ClCompile Include="DonutFavoriteGroupTreeView.cpp">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClCompile>
+    <ClCompile Include="DonutTabList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FavoriteGroupEditDialog.cpp">
+      <Filter>Source Files\dialog</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -931,7 +940,18 @@
     <ClInclude Include="option\SupressPopupOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
-    <ClInclude Include="DonutFavoriteTreeView.h" />
+    <ClInclude Include="DonutFavoriteTreeView.h">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutFavoriteGroupTreeView.h">
+      <Filter>Source Files\ExplorerBar</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutTabList.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FavoriteGroupEditDialog.h">
+      <Filter>Source Files\dialog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">
@@ -1052,5 +1072,10 @@
     <ResourceCompile Include="Donut.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="res\FavoritGroup.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

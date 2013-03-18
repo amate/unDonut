@@ -10,9 +10,6 @@
 #include <deque>
 #include <sstream>
 #include <boost\range\algorithm.hpp>
-#include <codecvt>
-#include <boost\property_tree\ptree.hpp>
-#include <boost\property_tree\xml_parser.hpp>
 #include <boost\serialization\string.hpp>
 #include <boost\serialization\vector.hpp>
 #include <boost\serialization\utility.hpp>
@@ -108,7 +105,11 @@
 //#include "Thumbnail.h"
 //#include "FaviconManager.h"
 //#include "GdiplusUtil.h"
-
+#include "DonutTabList.h"
+#include "DonutFavoriteGroupTreeView.h"
+#include "FavoriteGroupEditDialog.h"
+#include "PopupMenu.h"
+#include "dialog\RenameFileDialog.h"
 
 #ifdef _DEBUG
 	const bool _Donut_MainFrame_traceOn = false;
@@ -168,6 +169,8 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 			::SendMessage(m_hWndChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 		}
 	}
+	HWND hWndPrevChildFrame = m_hWndChildFrame;
+	m_hWndChildFrame = hWndChildFrame;
 #if 0
 	if (m_hWndChildFrame && ::IsWindow(m_hWndChildFrame)) {
 		::PostMessage(m_hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);
@@ -176,12 +179,10 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 	}
 #endif
 	if (hWndChildFrame) {
-		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)m_hWndChildFrame);		
+		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)hWndPrevChildFrame);		
 	} else {
 		InvalidateRect(NULL);
 	}
-
-	m_hWndChildFrame = hWndChildFrame;
 }
 
 
@@ -349,6 +350,9 @@ public:
 		// ‚¨‹C‚É“ü‚è
 		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ADD			, OnFavoriteAdd 		)
 		COMMAND_ID_HANDLER_EX( ID_FAVORITE_ORGANIZE 	, OnFavoriteOrganize	)
+		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ADD 	, OnFavoriteGroupCommand	)
+		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_SAVE 	, OnFavoriteGroupCommand	)
+		COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ORGANIZE , OnFavoriteGroupCommand	)
 
 		// •\Ž¦
 		COMMAND_ID_HANDLER_EX( ID_VIEW_SEARCHBAR		, OnViewBar			)
@@ -633,6 +637,7 @@ public:
 
 	void	OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFavoriteOrganize(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnFavoriteGroupCommand(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnDoubleClose(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnPopupClose(UINT uNotifyCode, int nID, CWindow wndCtl);
@@ -696,6 +701,9 @@ private:
 	void	_NavigateChildFrame(HWND hWnd, LPCTSTR strURL, DWORD DLCtrl = -1, DWORD ExStyle = -1, DWORD AutoRefresh = 0);
 
 	bool	_RButtonHook(MouseGestureData data);
+
+	CDonutTabList	_CollectAllChildFrameData();
+	unique_ptr<ChildFrameDataOnClose>	_GetChildFrameData(HWND hWndChildFrame);
 
 	// for updateUI
 	bool	_IsClipboardAvailable() { return ::IsClipboardFormatAvailable(MTL_CF_TEXT) == TRUE; }

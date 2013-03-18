@@ -15,6 +15,7 @@
 #include "DonutPFunc.h"
 #include "PluginBar.h"
 #include "DonutFavoriteTreeView.h"
+#include "DonutFavoriteGroupTreeView.h"
 
 #include "option/ExplorerBarDialog.h"
 
@@ -32,7 +33,7 @@ public:
 	enum { 
 		kBottomHeight = 20, kcyIcon = 16,
 	
-		kAutoShowVlidWidth = 15,	// 自動表示に使う左端からの幅
+		kAutoShowVlidWidth = 10,	// 自動表示に使う左端からの幅
 		kAutoShowRightMargin = 10,	// ドラッグすると消えちゃうので
 		kAutoShowTimerId = 1,
 		kAutoShowTimerInterval = 500,
@@ -124,6 +125,7 @@ private:
 	CDonutFavoritesBar	m_FavBar;
 	CDonutClipboardBar	m_ClipBar;
 	CDonutFavoriteTreeView	m_donutFavoriteTreeView;
+	CDonutFavoriteGroupTreeView	m_donutFavoriteGroupTreeView;
 
 	function<bool ()>	m_funcSetSinglePaneMode;
 	CImageList	m_imgs;
