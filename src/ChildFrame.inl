@@ -3445,13 +3445,49 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 	// CTextWindow
 
 	class CTextWindow : 
-		public CWindowImpl<CTextWindow, CWindow, CWinTraits<WS_POPUP | WS_DLGFRAME | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW | WS_EX_TOPMOST> >
+		public CWindowImpl<CTextWindow, CWindow, CWinTraits<WS_POPUP | WS_DLGFRAME | WS_CLIPCHILDREN, WS_EX_TOOLWINDOW | WS_EX_TOPMOST> >,
+		public CMessageFilter
 	{
 	public:
-		CTextWindow(LPCWSTR text, CPoint pt) : m_strWord(text), m_ptTopLeft(pt)
+		CTextWindow(LPCWSTR text, CPoint pt, CMessageLoop* pLoop, bool bRightDragSearch) : m_strWord(text), m_ptTopLeft(pt), m_pLoop(pLoop), m_bUseRightDragSearch(bRightDragSearch)
 		{ }
 
 		void	OnFinalMessage(HWND /*hWnd*/) { delete this; }
+
+		BOOL PreTranslateMessage(MSG* pMsg) override
+		{
+			// Ctrl + A ‚ª‰Ÿ‚³‚ê‚½
+			if (pMsg->message == WM_KEYDOWN && pMsg->wParam == 'A' && ::GetKeyState(VK_CONTROL) < 0) {
+				m_Edit.SetSelAll(TRUE);
+				return TRUE;
+			}
+
+			// RButtonHook
+			if (pMsg->message == WM_RBUTTONDOWN) {
+				MouseGestureData	data;
+				data.hwnd	= pMsg->hwnd;
+				data.wParam	= pMsg->wParam;
+				data.lParam	= pMsg->lParam;
+				CString selectedText;
+				int start = 0, end = 0;
+				m_Edit.GetSel(start, end);
+				if (start < end)
+					selectedText = MtlGetWindowText(m_Edit).Mid(start, end - start);
+				data.bCursorOnSelectedText	= m_bUseRightDragSearch && selectedText.GetLength() > 0/* && _CursorOnSelectedText()*/;
+				data.strSelectedTextLine	= selectedText;
+				
+				CString strSharedMemName;
+				strSharedMemName.Format(_T("%s0x%x"), MOUSEGESTUREDATASHAREDMEMNAME, m_hWnd);
+				CSharedMemoryHandle	sharedMem;
+				sharedMem.Serialize(data, strSharedMemName);
+
+				GetTopLevelWindow().SetCapture();
+				GetTopLevelWindow().PostMessage(WM_MOUSEGESTURE, (WPARAM)m_hWnd, (LPARAM)sharedMem.Handle());
+				return FALSE;
+			}
+
+			return FALSE;
+		}
 
 		BEGIN_MSG_MAP( CTextWindow )
 			MSG_WM_CREATE( OnCreate )
@@ -3462,6 +3498,9 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 
 		int OnCreate(LPCREATESTRUCT lpCreateStruct)
 		{
+			// message loop
+			m_pLoop->AddMessageFilter(this);
+
 			WTL::CLogFont	lf;
 			lf.SetMenuFont();
 			m_Edit.Create(m_hWnd, 0, NULL, WS_CHILD | ES_MULTILINE | ES_AUTOVSCROLL /*| WS_VSCROLL*/);
@@ -3488,6 +3527,8 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 
 		void OnDestroy()
 		{
+			m_pLoop->RemoveMessageFilter(this);
+
 			m_Edit.DestroyWindow();
 			PostQuitMessage(0);
 		}
@@ -3516,14 +3557,17 @@ bool	CChildFrame::Impl::_ShowLinkTextSelectWindow(MSG* pMsg)
 		CString m_strWord;
 		CPoint	m_ptTopLeft;
 		CSize	m_Size;
+		CMessageLoop*	m_pLoop;
+		bool	m_bUseRightDragSearch;
 	};
 
-	auto window = new CTextWindow(text, rc.TopLeft());
+	CMessageLoop loop;
+
+	auto window = new CTextWindow(text, rc.TopLeft(), &loop, m_pGlobalConfig->bUseRightDragSearch);
 	window->Create(m_hWnd);
 	//window->MoveWindow(&rcWindow);
 	window->ShowWindow(TRUE);
 
-	CMessageLoop loop;
 	loop.Run();
 
 	return true;

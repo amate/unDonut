@@ -291,7 +291,8 @@ HINTERNET WINAPI HookInternetConnectW(
 	if (matchtest.IsKillURL(lpszServerName)) {
 		if (!(::GetAsyncKeyState(VK_PAUSE) < 0)) {	//　pauseキーを押してればバイパス
 			TRACEIN(_T("urlkill : %s"), lpszServerName);
-			return NULL;
+			//return NULL;
+			lpszServerName	= L"localhost";
 		}
 	}
 	return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
