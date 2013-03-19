@@ -251,7 +251,7 @@ BOOL CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
 			/* Deleteキーでカーソル下のアイテムを削除する */
 			s_pRecentClosedTabList->RemoveFromList(m_vecMenuItem[m_nHotIndex].nID);
 			m_vecMenuItem.clear();
-			_initMenuItem();
+			InitMenuItem();
 
 			CPoint pt;
 			::GetCursorPos(&pt);
@@ -307,7 +307,7 @@ void CRecentClosedTabPopupMenu::OnMButtonDown(UINT nFlags, CPoint point)
 		return ;
 	CWindow(s_hWndCommandBar).GetTopLevelWindow().SendMessage(WM_COMMAND, m_vecMenuItem[nIndex].nID);
 	m_vecMenuItem.clear();
-	_initMenuItem();
+	InitMenuItem();
 	m_nHotIndex = -1;
 	Invalidate(FALSE);
 }
@@ -343,7 +343,7 @@ LRESULT CRecentClosedTabPopupMenu::OnTooltipGetDispInfo(LPNMHDR pnmh)
 }
 
 
-void CRecentClosedTabPopupMenu::_initMenuItem()
+void CRecentClosedTabPopupMenu::InitMenuItem()
 {
 	int nType = s_pRecentClosedTabList->GetMenuType();
 	int nTop = kBoundMargin;
@@ -390,6 +390,14 @@ void CRecentClosedTabPopupMenu::_initMenuItem()
 #endif
 		m_vecMenuItem.back().pUserData = static_cast<void*>(pItem);
 	}
+	if (m_vecMenuItem.empty()) {
+		CRect rc;
+		rc.top	= nTop;
+		rc.left	= kBoundMargin;
+		rc.bottom= nTop + kItemHeight;
+		m_vecMenuItem.emplace_back(_T("なし"), 0, rc);
+		m_vecMenuItem.back().state = MPI_DISABLED;
+	}
 	dc.SelectFont(prevFont);
 }
 
@@ -412,32 +420,28 @@ int	CRecentClosedTabPopupMenu::ComputeWindowWidth()
 	int nMaxTextWidth = 0;
 	int nType = s_pRecentClosedTabList->GetMenuType();
 	for (auto it = m_vecMenuItem.begin(); it != m_vecMenuItem.end(); ++it) {
-		ChildFrameDataOnClose* pClosedTabData = static_cast<ChildFrameDataOnClose*>(it->pUserData);
-		int nNameWidth = MTL::MtlComputeWidthOfText(pClosedTabData->strTitle, m_font);
-		int nUrlWidth = MTL::MtlComputeWidthOfText(pClosedTabData->strURL, m_font);
-		switch (nType) {
-		case 0:
-			if (nMaxTextWidth < nUrlWidth)
-				nMaxTextWidth = nUrlWidth;
-			break;
+			if (ChildFrameDataOnClose* pClosedTabData = static_cast<ChildFrameDataOnClose*>(it->pUserData)) {
+			int nNameWidth = MTL::MtlComputeWidthOfText(pClosedTabData->strTitle, m_font);
+			int nUrlWidth = MTL::MtlComputeWidthOfText(pClosedTabData->strURL, m_font);
+			switch (nType) {
+			case 0:
+				if (nMaxTextWidth < nUrlWidth)
+					nMaxTextWidth = nUrlWidth;
+				break;
 
-		case 1:
-			if (nMaxTextWidth < nNameWidth)
-				nMaxTextWidth = nNameWidth;
-			break;
+			case 1:
+				if (nMaxTextWidth < nNameWidth)
+					nMaxTextWidth = nNameWidth;
+				break;
 
-		case 2:
-			if (nMaxTextWidth < std::max(nNameWidth, nUrlWidth))
-				nMaxTextWidth = std::max(nNameWidth, nUrlWidth);
-			break;
+			case 2:
+				if (nMaxTextWidth < std::max(nNameWidth, nUrlWidth))
+					nMaxTextWidth = std::max(nNameWidth, nUrlWidth);
+				break;
+			}
 		}
 	}
-	if (nMaxTextWidth == 0)
-		nMaxTextWidth = kNoneTextWidth;
-	if (kMaxMenuTextWidth < nMaxTextWidth)
-		nMaxTextWidth = kMaxMenuTextWidth;
-	nMaxTextWidth += kLeftTextPos + kTextMargin + kArrowWidth + (kBoundMargin * 2);
-	return nMaxTextWidth;
+	return CalcWindowWidth(nMaxTextWidth);
 }
 
 //int CRecentClosedTabPopupMenu::ComputeWindowHeight()
@@ -502,22 +506,24 @@ void	CChevronPopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, 
 		m_vecMenuItem.back().bChecked = (mii.fState & MFS_CHECKED) != 0;
 	}
 
-	CRect	rcWindow;
-	rcWindow.right	= ComputeWindowWidth();
-	rcWindow.bottom	= ComputeWindowHeight();
-	rcWindow.MoveToXY(ptLeftBottom.x, ptLeftBottom.y);	
-	CRect rcWork = Misc::GetMonitorWorkArea(hWndParent);
-	if (rcWork.bottom < rcWindow.bottom) {	// 下にはみ出る
-		rcWindow.bottom	= rcWork.bottom;
-		rcWindow.right += ::GetSystemMetrics(SM_CXVSCROLL);
-	}
-	if (rcWork.right < rcWindow.right) {	// 右にはみ出る
-		int nWidth = rcWindow.Width();
-		rcWindow.MoveToX(rcWork.right - nWidth);
-	}
-
-	Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+	CRect	rcWindow = CalcPopupWindowPos(ptLeftBottom, CSize(ComputeWindowWidth(), ComputeWindowHeight()), hWndParent);
+	Create(GetDesktopWindow(), rcWindow);
 	ShowWindow(SW_SHOWNOACTIVATE);
+}
+
+
+////////////////////////////////////////////////////////////////////////
+// CToolBarChevronPopupMenu
+
+IBasePopupMenu* CToolBarChevronPopupMenu::CreateSubMenu(int nIndex)
+{
+	HMENU hMenu = m_vecMenuItem[nIndex].submenu.m_hMenu;
+	for (auto& creator : m_vecCreateSubMenuFactory) {
+		if (creator.first == hMenu) {
+			return creator.second();
+		}
+	}
+	return new CBasePopupMenu;
 }
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -610,7 +616,7 @@ void CRootFavoriteGroupPopupMenu::SetRefreshNotify(HWND hWnd, std::function<void
 	}
 }
 
-void CRootFavoriteGroupPopupMenu::_initMenuItem()
+void CRootFavoriteGroupPopupMenu::InitMenuItem()
 {
 	int nTop = kBoundMargin;
 	struct FavoriteGroupMenuItem {
@@ -653,23 +659,8 @@ void CRootFavoriteGroupPopupMenu::_initMenuItem()
 	dc.SelectFont(prevFont);
 }
 
-int	CRootFavoriteGroupPopupMenu::ComputeWindowWidth()
-{
-	int nMaxTextWidth = 0;
-	for (auto it = m_vecMenuItem.begin(); it != m_vecMenuItem.end(); ++it) {
-		int nNameWidth = MTL::MtlComputeWidthOfText(it->name, m_font);
-		if (nMaxTextWidth < nNameWidth)
-			nMaxTextWidth = nNameWidth;
-	}
-	if (nMaxTextWidth == 0)
-		nMaxTextWidth = kNoneTextWidth;
-	if (kMaxMenuTextWidth < nMaxTextWidth)
-		nMaxTextWidth = kMaxMenuTextWidth;
-	nMaxTextWidth += kLeftTextPos + kTextMargin + kArrowWidth + (kBoundMargin * 2);
-	return nMaxTextWidth;
-}
 
-void CRootFavoriteGroupPopupMenu::_DoExec(const CPoint& pt, bool bLButtonUp /*= false*/)
+void CRootFavoriteGroupPopupMenu::OnClick(const CPoint& pt, bool bLButtonUp /*= false*/)
 {
 	int nIndex = _HitTest(pt);
 	if (nIndex == -1)
@@ -685,7 +676,7 @@ void CRootFavoriteGroupPopupMenu::_DoExec(const CPoint& pt, bool bLButtonUp /*= 
 
 		if (0 <= nIndex && nIndex <= 2) {
 			// アイテムを実行...
-			CWindow(s_hWndCommandBar).GetTopLevelWindow().SendMessage(WM_COMMAND, item.nID);
+			CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
 		} else {
 			g_pMainWnd->RestoreAllTab(s_vecFavoriteGroupFilePath[item.nID - kFavoriteGroupFirstID], (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG) == 0);
 		}
@@ -901,8 +892,10 @@ IBasePopupMenu* CRootFavoritePopupMenu::CreateSubMenu(int nIndex)
 void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent)
 {
 	m_menu = menu;
+	if (m_menu.IsNull())
+		m_menu.LoadMenu(IDR_DROPDOWN_FAV);	// ツールバーから
 	s_hWndCommandBar = hWndParent;
-	_initMenuItem();
+	InitMenuItem();
 
 	if (s_bBookmarkLoading == false) {
 		CLinkPopupMenu* pSubMenu = new CLinkPopupMenu(&s_BookmarkList);
@@ -971,8 +964,10 @@ void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBot
 void	CRootFavoritePopupMenu::DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClientItem, HWND hWndParent, int nInheritIndex)
 {
 	m_menu = menu;
-	s_hWndCommandBar = hWndParent;
-	_initMenuItem();
+	if (m_menu.IsNull())
+		m_menu.LoadMenu(IDR_DROPDOWN_FAV);	// ツールバーから
+	m_nInheritMenuIndex = nInheritIndex;
+	InitMenuItem();
 
 	int nTop	= rcClientItem.top - (kBoundBorder + kBoundMargin);
 	int nLeft	= rcClientItem.right	- kBiteWidth;

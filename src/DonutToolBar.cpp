@@ -262,7 +262,7 @@ class CDonutToolBar::Impl
 public:
 	DECLARE_WND_SUPERCLASS(_T("DonutToolBar"), CToolBarCtrl::GetWndClassName())
 
-	Impl() : m_pMainMessageLoop(nullptr) { };
+	Impl() { };
 	~Impl() { };
 
 	HWND	Create(HWND hWndParent);
@@ -279,10 +279,13 @@ public:
 		MSG_WM_RBUTTONUP	( OnRButtonUp )
 		MSG_WM_LBUTTONDBLCLK( OnLButtonDblClk )
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnToolTipText)
-		REFLECTED_NOTIFY_CODE_HANDLER( RBN_CHEVRONPUSHED, OnChevronPushed)
 		REFLECTED_NOTIFY_CODE_HANDLER( TBN_DROPDOWN		, OnDropDown   )
 		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseSubMenu )
 		MESSAGE_HANDLER_EX( WM_MOUSEWHEEL, OnMouseWheel	)
+
+		REFLECTED_NOTIFY_CODE_HANDLER( RBN_CHEVRONPUSHED, OnChevronPushed)
+		MESSAGE_HANDLER_EX( CBRM_GETCMDBAR, OnGetCmdBar )
+		MESSAGE_HANDLER_EX( CBRM_TRACKPOPUPMENU, OnChevronTrackPopupMenu )
 
 		// Customize
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_QUERYINSERT  , OnTbnQueryInsert	)
@@ -290,12 +293,15 @@ public:
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_GETBUTTONINFO, OnTbnGetButtonInfo )
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_TOOLBARCHANGE, OnTbnToolBarChange )
 		REFLECTED_NOTIFY_CODE_HANDLER_EX( TBN_RESET 	   , OnTbnReset 		)
+		CHAIN_MSG_MAP( CChevronHandler<Impl> )
 	END_MSG_MAP()
 
 	void	OnRButtonUp(UINT nFlags, CPoint point);
 	void	OnLButtonDblClk(UINT nFlags, CPoint point);
 	LRESULT OnToolTipText(LPNMHDR pnmh);
 	LRESULT OnChevronPushed(int /*idCtrl*/, LPNMHDR pnmh, BOOL &bHandled);
+	LRESULT OnGetCmdBar(UINT uMsg, WPARAM wParam, LPARAM lParam) { return (LRESULT)m_hWnd; }
+	LRESULT OnChevronTrackPopupMenu(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled);
 	LRESULT OnCloseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam) { _CloseSubMenu(); return 0; }
 	LRESULT OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -319,6 +325,8 @@ private:
 
 	void	_DoPopupSubMenu(int nCmdID);
 	void	_CloseSubMenu();
+	bool	_CreateCustomPopupMenu(int nCmdID, function<IBasePopupMenu* ()>& funcCreator, bool bCreateMenu, CMenuHandle& menu);
+	void	_WaitCloseCustomPopupMenu();
 	static LRESULT CALLBACK LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM lParam);
 
 	// Data members;
@@ -329,13 +337,16 @@ private:
 	static IBasePopupMenu*	s_pSubMenu;
 	static HHOOK	s_hHook;
 	static HWND		s_hWnd;
-	CMessageLoop*	m_pMainMessageLoop;
+	static CRect	s_rcScreenChevronPos;
+	DWORD			m_dwCurrentThreadId;
+	unique_ptr<CToolBarChevronPopupMenu>	m_pChevronPopupMenu;
 
 };
 
 IBasePopupMenu*	CDonutToolBar::Impl::s_pSubMenu = nullptr;
 HHOOK	CDonutToolBar::Impl::s_hHook= NULL;
 HWND	CDonutToolBar::Impl::s_hWnd	= NULL;
+CRect	CDonutToolBar::Impl::s_rcScreenChevronPos;
 
 //------------------------------
 /// DonutToolBarウィンドウ作成
@@ -349,6 +360,8 @@ HWND	CDonutToolBar::Impl::Create(HWND hWndParent)
 
 	//_InitButton();	// ボタン登録
 	s_hWnd = hWnd;
+
+	m_dwCurrentThreadId = ::GetCurrentThreadId();
 
 	return hWnd;
 }
@@ -404,9 +417,16 @@ void	CDonutToolBar::Impl::Customize()
 /// チェブロン用にサブメニューを用意する
 HMENU	CDonutToolBar::Impl::ChevronHandler_OnGetChevronMenu(int nCmdID, HMENU &hMenuDestroy)
 {
+	function<IBasePopupMenu* ()>	funcCreator;
+	CMenuHandle menu;
+	if (_CreateCustomPopupMenu(nCmdID, funcCreator, true, menu)) {
+		m_pChevronPopupMenu->AddCreater(menu, funcCreator);
+		return menu;
+	}
+
 	bool		bDestroy = 0;
 	bool		bSubMenu = 0;
-	CMenuHandle menu = _GetDropDownMenu(nCmdID, bDestroy, bSubMenu);
+	menu = _GetDropDownMenu(nCmdID, bDestroy, bSubMenu);
 
 	if (bDestroy)
 		hMenuDestroy = menu.m_hMenu;
@@ -417,7 +437,31 @@ HMENU	CDonutToolBar::Impl::ChevronHandler_OnGetChevronMenu(int nCmdID, HMENU &hM
 		return menu;
 }
 
+bool	CDonutToolBar::Impl::_CreateCustomPopupMenu(int nCmdID, function<IBasePopupMenu* ()>& funcCreator, bool bCreateMenu, CMenuHandle& menu)
+{
+	switch (nCmdID) {
+	case ID_RECENT_DOCUMENT:
+		if (bCreateMenu)
+			menu.CreatePopupMenu();
+		funcCreator = []() { return new CRecentClosedTabPopupMenu; };
+		return true;
 
+	case ID_FAVORITES_DROPDOWN:
+		if (bCreateMenu)
+			menu.LoadMenu(IDR_DROPDOWN_FAV);
+		funcCreator = []() { return new CRootFavoritePopupMenu; };
+		return true;
+
+	case ID_FAVORITES_GROUP_DROPDOWN:
+		if (bCreateMenu)
+			menu.CreatePopupMenu();
+		funcCreator = []() { return new CRootFavoriteGroupPopupMenu; };
+		return true;
+
+	default:
+		return false;
+	}
+}
 
 // Message map
 
@@ -455,18 +499,29 @@ LRESULT CDonutToolBar::Impl::OnToolTipText(LPNMHDR pnmh)
 	return 0;
 }
 
-//------------------------------
+
 LRESULT CDonutToolBar::Impl::OnChevronPushed(int /*idCtrl*/, LPNMHDR pnmh, BOOL &bHandled)
 {
-	ATLASSERT( ((LPNMREBARCHEVRON)pnmh)->wID == GetDlgCtrlID() );
-
-	if ( !PushChevron( pnmh, GetTopLevelParent() ) ) {
+	m_pChevronPopupMenu.reset(new CToolBarChevronPopupMenu);
+	if ( !PushChevron(pnmh, m_hWnd) ) {
 		bHandled = FALSE;
 		return 1;
 	}
-
 	return 0;
 }
+
+LRESULT CDonutToolBar::Impl::OnChevronTrackPopupMenu(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	auto pcbpm = (LPCBRPOPUPMENU)lParam;
+	s_rcScreenChevronPos = pcbpm->lptpm->rcExclude;
+	s_pSubMenu = m_pChevronPopupMenu.get();
+	m_pChevronPopupMenu->DoTrackPopupMenu(pcbpm->hMenu, CPoint(pcbpm->x, pcbpm->y), m_hWnd);
+	_WaitCloseCustomPopupMenu();
+	m_pChevronPopupMenu.release();	// _CloseSubMenuでDestroyWindowされるので大丈夫
+	s_rcScreenChevronPos.SetRectEmpty();
+	return 0;
+}
+
 
 //------------------------------
 LRESULT CDonutToolBar::Impl::OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled)
@@ -474,7 +529,8 @@ LRESULT CDonutToolBar::Impl::OnDropDown(int idCtrl, LPNMHDR pnmh, BOOL &bHandled
 	LPNMTOOLBAR lpnmtb = (LPNMTOOLBAR) pnmh;
 	int 		nCmdID = lpnmtb->iItem;
 	
-	if (nCmdID == ID_RECENT_DOCUMENT) {
+	/// 自前のポップアップウィンドウを表示させる
+	if (nCmdID == ID_RECENT_DOCUMENT || nCmdID == ID_FAVORITES_DROPDOWN || nCmdID == ID_FAVORITES_GROUP_DROPDOWN) {
 		_DoPopupSubMenu(nCmdID);
 		return TBDDRET_DEFAULT;
 	}
@@ -978,11 +1034,6 @@ HMENU CDonutToolBar::Impl::_GetDropDownMenu(int nCmdID, bool &bDestroy, bool &bS
 		}
 		break;
 
-	case ID_FAVORITES_DROPDOWN:
-		menu	 = m_menuFavorites;
-		bDestroy = bSubMenu = false;	// it's not mine.
-		break;
-
 	//case ID_MAIN_EX_NEWWINDOW:
 	//	menu.LoadMenu(IDR_MENU_FAVTREE_BAR);
 	//	break;
@@ -1031,19 +1082,9 @@ HMENU CDonutToolBar::Impl::_GetDropDownMenu(int nCmdID, bool &bDestroy, bool &bS
 		menu.LoadMenu(IDR_COOKIE_IE6);
 		break;
 
-	case ID_FAVORITES_GROUP_DROPDOWN:
-		menu	 = m_menuFavoritesUser;
-		bDestroy = bSubMenu = false;	// it's not mine.
-		break;
-
 	case ID_CSS_DROPDOWN:
 		menu	 = m_menuCSS;
 		bDestroy = bSubMenu = false;	// it's not mine.
-		break;
-
-	case ID_RECENT_DOCUMENT:
-		menu.LoadMenu(IDR_RECENT_DOC);
-		::SendMessage(GetTopLevelParent(), WM_MENU_RECENTDOCUMENT, (WPARAM) (HMENU) menu.GetSubMenu(0), (LPARAM) 0);
 		break;
 
 	default:
@@ -1058,22 +1099,52 @@ void	CDonutToolBar::Impl::_DoPopupSubMenu(int nCmdID)
 {
 	SetFocus();
 
-	ATLASSERT( m_pMainMessageLoop == nullptr );
-	m_pMainMessageLoop = _Module.GetMessageLoop();
-	_Module.RemoveMessageLoop();
-	CMessageLoop loop;
-	_Module.AddMessageLoop(&loop);
-
 	CRect	  rc;
 	GetItemRect(CommandToIndex(nCmdID), &rc);
 	ClientToScreen(&rc);
 	ATLASSERT( s_pSubMenu == nullptr );
-	s_pSubMenu = new CRecentClosedTabPopupMenu;
+	function<IBasePopupMenu* ()> funcCreator;
+	CMenuHandle menu;
+	ATLVERIFY(_CreateCustomPopupMenu(nCmdID, funcCreator, false, menu));
+	s_pSubMenu = funcCreator();
 	s_pSubMenu->DoTrackPopupMenu(NULL, CPoint(rc.left, rc.bottom), m_hWnd);
 
+	_WaitCloseCustomPopupMenu();
+}
+
+void	CDonutToolBar::Impl::_WaitCloseCustomPopupMenu()
+{
 	ATLVERIFY(s_hHook = ::SetWindowsHookEx(WH_MOUSE_LL, LowLevelMouseProc, _Module.GetModuleInstance(), 0));
 
-	loop.Run();
+	HWND hWndMainFrame = GetTopLevelWindow();
+	UINT nCommandID = 0;
+	for (;;) {
+		MSG msg = {};
+		BOOL bRet = ::GetMessage(&msg, NULL, 0, 0);
+		if(bRet == -1)
+		{
+			ATLTRACE2(atlTraceUI, 0, _T("::GetMessage returned -1 (error)\n"));
+			continue;   // error, don't process
+		}
+		else if(!bRet)
+		{
+			ATLTRACE2(atlTraceUI, 0, _T("CMessageLoop::Run - exiting\n"));
+			break;   // WM_QUIT, exit message loop
+		}
+		if (msg.message == WM_NULL && msg.hwnd == NULL)
+			break;
+
+		if (msg.message == WM_COMMAND && msg.hwnd == hWndMainFrame) {
+			nCommandID = (UINT)msg.wParam;	// コマンドは遅延実行する
+			continue;
+		}
+
+		::TranslateMessage(&msg);
+		::DispatchMessage(&msg);
+	}
+
+	if (nCommandID)
+		::PostMessage(hWndMainFrame, WM_COMMAND, nCommandID, 0);
 }
 
 void	CDonutToolBar::Impl::_CloseSubMenu()
@@ -1085,11 +1156,7 @@ void	CDonutToolBar::Impl::_CloseSubMenu()
 		::UnhookWindowsHookEx(s_hHook);
 		s_hHook = NULL;
 
-		PostQuitMessage(0);
-
-		_Module.RemoveMessageLoop();
-		_Module.AddMessageLoop(m_pMainMessageLoop);
-		m_pMainMessageLoop = nullptr;
+		::PostThreadMessage(m_dwCurrentThreadId, WM_NULL, 0, 0);
 	}
 }
 
@@ -1121,6 +1188,8 @@ LRESULT  CDonutToolBar::Impl::LowLevelMouseProc(int nCode, WPARAM wParam, LPARAM
 					break;
 				if (/*hWnd != s_hWnd &&*/ bChildWnd == false) {
 					::SendMessage(s_hWnd, WM_CLOSEBASESUBMENU, 0, 0);
+					if (s_rcScreenChevronPos.PtInRect(pllms->pt))
+						return 1;	// チェブロンがクリックされたのでメッセージを送らない
 				} 
 			}
 			break;

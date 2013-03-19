@@ -1335,6 +1335,7 @@
     <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
     <ClInclude Include="AutoLogin.h" />
+    <ClInclude Include="BasePopupMenu.h" />
     <ClInclude Include="BeginMsgMap_decl.h" />
     <ClInclude Include="BingTranslatorMenu.h" />
     <ClInclude Include="ChevronHandler.h" />

@@ -48,6 +48,9 @@
     <Filter Include="boost\serialization">
       <UniqueIdentifier>{3d4d7afb-77c4-4929-8f33-bef7f7221d7f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Window\Menu">
+      <UniqueIdentifier>{d0c798ea-09be-4e9d-8d68-2dcfb491cdd3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AccelManager.cpp">
@@ -284,9 +287,6 @@
     <ClCompile Include="DonutLinkBarCtrl.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="LinkPopupMenu.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
     <ClCompile Include="option\LinkBarPropertyPage.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
@@ -416,9 +416,6 @@
     <ClCompile Include="boost\serialization\codecvt_null.cpp">
       <Filter>boost\serialization</Filter>
     </ClCompile>
-    <ClCompile Include="PopupMenu.cpp">
-      <Filter>Source Files\Window</Filter>
-    </ClCompile>
     <ClCompile Include="FavoriteEditDialog.cpp">
       <Filter>Source Files\dialog</Filter>
     </ClCompile>
@@ -451,6 +448,12 @@
     </ClCompile>
     <ClCompile Include="FavoriteGroupEditDialog.cpp">
       <Filter>Source Files\dialog</Filter>
+    </ClCompile>
+    <ClCompile Include="LinkPopupMenu.cpp">
+      <Filter>Source Files\Window\Menu</Filter>
+    </ClCompile>
+    <ClCompile Include="PopupMenu.cpp">
+      <Filter>Source Files\Window\Menu</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -904,9 +907,6 @@
     <ClInclude Include="DonutLinkBarCtrl.h">
       <Filter>Source Files\Window</Filter>
     </ClInclude>
-    <ClInclude Include="LinkPopupMenu.h">
-      <Filter>Source Files\Window</Filter>
-    </ClInclude>
     <ClInclude Include="ShellFileDialog.h">
       <Filter>Source Files\Base</Filter>
     </ClInclude>
@@ -918,9 +918,6 @@
     </ClInclude>
     <ClInclude Include="BeginMsgMap_decl.h">
       <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="PopupMenu.h">
-      <Filter>Source Files\Window</Filter>
     </ClInclude>
     <ClInclude Include="SharedMemoryUtil.h">
       <Filter>Source Files\Base</Filter>
@@ -951,6 +948,15 @@
     </ClInclude>
     <ClInclude Include="FavoriteGroupEditDialog.h">
       <Filter>Source Files\dialog</Filter>
+    </ClInclude>
+    <ClInclude Include="LinkPopupMenu.h">
+      <Filter>Source Files\Window\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="PopupMenu.h">
+      <Filter>Source Files\Window\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="BasePopupMenu.h">
+      <Filter>Source Files\Window\Menu</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

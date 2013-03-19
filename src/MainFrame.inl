@@ -2,8 +2,320 @@
 *	@brief	CMainFrame::Impl の実装
 */
 
+///////////////////////////////////////////////////////////////////////////
+// メッセージマップ
+BEGIN_MSG_MAP_EX_impl( CMainFrame::Impl )
+
+	CHAIN_MSG_MAP_MEMBER( m_MainOption			)
+	CHAIN_MSG_MAP_MEMBER( m_ChildFrameUIState	)
+	CHAIN_MSG_MAP_MEMBER( m_DownloadManager		)
+	CHAIN_MSG_MAP_MEMBER( m_FaviconManager		)
+
+	MSG_WM_CREATE	( OnCreate	)
+	MSG_WM_CLOSE	( OnClose	)
+	MSG_WM_DESTROY	( OnDestroy )
+	MSG_WM_QUERYENDSESSION( OnQueryEndSession	)
+	MSG_WM_ENDSESSION( OnEndSession	)
+	MSG_WM_TIMER	( OnTimer	)
+	MSG_WM_PAINT	( OnPaint	)
+	MSG_WM_ACTIVATE ( OnActivate )
+	MSG_WM_SYSCOMMAND( OnSysCommand	)
+	MSG_WM_INITMENUPOPUP( OnInitMenuPopup	)
+	MSG_WM_COPYDATA	( OnCopyData	)
+	MESSAGE_HANDLER_EX( MYWM_NOTIFYICON , OnMyNotifyIcon  )
+	MSG_WM_MOUSEWHEEL( OnMouseWheel	)
+
+	USER_MSG_WM_INITPROCESSFINISHED		( OnInitProcessFinished )
+	USER_MSG_WM_UIUPDATE()
+	USER_MSG_WM_BROWSERTITLECHANGE		( OnBrowserTitleChange		)
+	USER_MSG_WM_BROWSERLOCATIONCHANGE	( OnBrowserLocationChange	)
+	USER_MSG_WM_OPEN_WITHEXPROP			( OnOpenWithExProp	)	// SearchBarから
+	USER_MSG_WM_HILIGHTSWITCHCHANGE		( OnHilightSwitchChange	)
+	// ChildFrame へ
+	USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
+	USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
+	USER_MSG_WM_SETPROXYTOCHLDFRAME		( OnSetProxyToChildFrame	)
+	USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
+
+	USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
+	USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG( OnSetDLConfigToGlobalConfig	)
+
+	USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR( OnReleaseProcessMonitorPtr	)
+
+	USER_MSG_WM_ADDREMOVECHILDPROCESSID( OnAddRemoveChildProcessId	)
+
+	// for DownloadManager
+	USER_MSG_WM_GETUNIQUENUMBERFORDLITEM( OnGetUniqueNumberForDLItem	)
+
+	m_bCommandFromChildFrame = false;
+	if (uMsg == WM_COMMAND_FROM_CHILDFRAME) {		// Loop防止
+		uMsg = WM_COMMAND;
+		m_bCommandFromChildFrame	= true;
+	}
+		
+	// ファイル
+	COMMAND_ID_HANDLER_EX( ID_FILE_NEW				, OnFileOpen 		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_NEW_BLANK		, OnFileOpen		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_NEW_HOME 		, OnFileOpen 		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_NEW_COPY 		, OnFileOpen 		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_NEW_CLIPBOARD	, OnFileOpen		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_OPEN_TABLIST		, OnFileOpen		)
+	COMMAND_ID_HANDLER_EX( ID_FILE_OPEN 			, OnFileOpen		)
+	COMMAND_RANGE_HANDLER_EX( ID_RECENTDOCUMENT_FIRST, ID_RECENTDOCUMENT_LAST, OnFileRecent )
+	COMMAND_RANGE_HANDLER_EX( ID_FILE_MRU_FIRST		 , ID_FILE_MRU_LAST		 , OnFileRecent )
+	COMMAND_ID_HANDLER_EX( ID_VIEW_HOME				, OnFileOpen		)
+
+	// 編集
+	COMMAND_ID_HANDLER_EX( ID_EDIT_CUT 				, OnEditOperation	)
+	COMMAND_ID_HANDLER_EX( ID_EDIT_COPY 			, OnEditOperation	)
+	COMMAND_ID_HANDLER_EX( ID_EDIT_PASTE 			, OnEditOperation	)
+	COMMAND_ID_HANDLER_EX( ID_EDIT_SELECT_ALL		, OnEditOperation	)
+	COMMAND_ID_HANDLER_EX( ID_SEARCHBAR_SEL_DOWN	, OnSearchBarCommand )
+	COMMAND_ID_HANDLER_EX( ID_SEARCHBAR_SEL_UP		, OnSearchBarCommand )
+	COMMAND_ID_HANDLER_EX( ID_SEARCHBAR_HILIGHT		, OnSearchBarCommand )
+	MSG_WM_USER_FIND_KEYWORD( OnFindKeyWord    )	// from SearchBar
+	MSG_WM_USER_HILIGHT 	( OnHilight 	   )
+
+	// お気に入り
+	COMMAND_ID_HANDLER_EX( ID_FAVORITE_ADD			, OnFavoriteAdd 		)
+	COMMAND_ID_HANDLER_EX( ID_FAVORITE_ORGANIZE 	, OnFavoriteOrganize	)
+	COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ADD 	, OnFavoriteGroupCommand	)
+	COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_SAVE 	, OnFavoriteGroupCommand	)
+	COMMAND_ID_HANDLER_EX( ID_FAVORITE_GROUP_ORGANIZE , OnFavoriteGroupCommand	)
+
+	// 表示
+	COMMAND_ID_HANDLER_EX( ID_VIEW_SEARCHBAR		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_COMMANDBAR		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR			, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_ADDRESSBAR		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_LINKBAR			, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_TABBAR			, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_GOBUTTON			, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_TABBAR_MULTI		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR_CUST		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_TOOLBAR_LOCK		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_STATUS_BAR		, OnViewBar			)
+	COMMAND_ID_HANDLER_EX( ID_AUTOLOGINEDIT			, OnAutoLoginEdit	)
+	CHAIN_COMMANDS_TO_EXPLORERBAR( m_ExplorerBar )	// Explorer バー へ
+	COMMAND_ID_HANDLER_EX( ID_SETFOCUS_ADDRESSBAR		, OnSetFocusToBar	)
+	COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR		, OnSetFocusToBar	)
+	COMMAND_ID_HANDLER_EX( ID_SETFOCUS_SEARCHBAR_ENGINE	, OnSetFocusToBar	)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_ADDBAR_DROPDOWN		, OnSetFocusToBar	)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_FULLSCREEN		, OnViewFullScreen		)
+
+	// ツール
+	COMMAND_ID_HANDLER_EX( ID_DOUBLE_CLOSE			, OnDoubleClose		)
+	COMMAND_ID_HANDLER_EX( ID_POPUP_CLOSE			, OnPopupClose		)
+	COMMAND_ID_HANDLER_EX( ID_TITLE_CLOSE			, OnTitleClose		)
+	COMMAND_ID_HANDLER_EX( ID_GET_OUT				, OnGetOut			)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION			, OnViewOption		)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_OPTION_DONUT 	, OnViewOptionDonut	)
+
+	// ウィンドウ
+	COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_ALL		, OnTabClose		)
+	COMMAND_ID_HANDLER_EX( ID_WINDOW_CLOSE_EXCEPT	, OnTabClose		)
+	COMMAND_ID_HANDLER_EX( ID_LEFT_CLOSE			, OnTabClose		)
+	COMMAND_ID_HANDLER_EX( ID_RIGHT_CLOSE			, OnTabClose		)
+	COMMAND_ID_HANDLER_EX( ID_TAB_LEFT				, OnTabSwitch 		)
+	COMMAND_ID_HANDLER_EX( ID_TAB_RIGHT 			, OnTabSwitch		)
+	COMMAND_ID_HANDLER_EX( ID_VIEW_STOP_ALL			, OnOperateCommandToAllTab )
+	COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH_ALL		, OnOperateCommandToAllTab )
+	COMMAND_ID_HANDLER_EX( ID_WINDOW_REFRESH_EXCEPT	, OnOperateCommandToAllTab )
+
+	// ヘルプ
+	COMMAND_ID_HANDLER_EX( ID_OPEN_EXE_DIR	, OnOpenDonutExeFolder	)
+	COMMAND_ID_HANDLER_EX( ID_JUMP_WEBSITE	, OnAuthorWebSite		)
+
+	// Special Command
+	COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
+	COMMAND_ID_HANDLER_EX( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine	)
+
+	USER_MSG_WM_SHOW_TOOLBARMENU( OnShowToolBarMenu )
+	USER_MSG_WM_SHOW_BAND_TEXT_CHANGE( OnShowBandTextChange	)
+
+	// CChildFrameから
+	USER_MSG_WM_TABCREATE				( OnTabCreate	)	
+	USER_MSG_WM_TABDESTROY				( OnTabDestory	)
+	USER_MSG_WM_ADDRECENTCLOSEDTAB		( OnAddRecentClosedTab )
+	//USER_MSG_WM_OPENFINDBARWITHTEXT		( OnOpenFindBarWithText )
+	//USER_MSG_WM_GETTABINDEX				( OnGetTabIndex	)
+	USER_MSG_WM_CHILDFRAMECONNECTING	( OnChildFrameConnecting	)
+	USER_MSG_WM_CHILDFRAMEDOWNLOADING	( OnChildFrameDownloading	)
+	USER_MSG_WM_CHILDFRAMECOMPLETE		( OnChildFrameComplete		)
+	USER_MSG_WM_MOUSEGESTURE			( OnMouseGesture			)
+
+	REFLECT_CHEVRONPUSHED_NOTIFICATION()	// CFrameWindowImpl より前に置く必要がある
+	CHAIN_MSG_MAP( CFrameWindowImpl<CMainFrame::Impl> )
+	CHAIN_MSG_MAP( CAppCommandHandler<CMainFrame::Impl> )
+	CHAIN_MSG_MAP( CUpdateCmdUI<CMainFrame::Impl> )
+	CHAIN_MSG_MAP( CDDEMessageHandler<CMainFrame::Impl> )
+	CHAIN_MSG_MAP( CMSMouseWheelMessageHandler<CMainFrame::Impl> )
+	if (uMsg == WM_COMMAND && m_bCommandFromChildFrame == false) {
+		HWND hWndChild = m_ChildFrameUIState.GetActiveChildFrameWindowHandle();
+		if (hWndChild)
+			::PostMessage(hWndChild, uMsg, wParam, lParam);
+	}	
+	REFLECT_NOTIFICATIONS()
+END_MSG_MAP()
+	
+
+////////////////////////////////////////////////////////////////////////////////////////
+// UI マップ
+
+BEGIN_UPDATE_COMMAND_UI_MAP_impl( CMainFrame::Impl )
+	CHAIN_UPDATE_COMMAND_UI_MEMBER( m_MainOption		)
+	CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ExplorerBar		)
+	CHAIN_UPDATE_COMMAND_UI_MEMBER( m_ChildFrameUIState )
+
+	bool bActiveChild = (m_ChildFrameClient.GetActiveChildFrameWindow() != NULL);
+
+	// File menu
+	UPDATE_COMMAND_UI_SETDEFAULT_FLAG		( ID_FILE_NEW_HOME , FILENEW_HOME , CFileNewOption::s_dwFlags )
+	UPDATE_COMMAND_UI_SETDEFAULT_FLAG_PASS	( ID_FILE_NEW_COPY , FILENEW_COPY , CFileNewOption::s_dwFlags )
+	UPDATE_COMMAND_UI_SETDEFAULT_FLAG		( ID_FILE_NEW_BLANK, FILENEW_BLANK, CFileNewOption::s_dwFlags )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_NEW_COPY		, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_NEW_CLIPBOARD , _IsClipboardAvailable() )
+	UPDATE_COMMAND_UI_SETDEFAULT			( ID_FILE_NEW_CLIPBOARD2 )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_NEW_CLIPBOARD2, _IsClipboardAvailable() )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_SAVE_AS		, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_PAGE_SETUP	, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_PRINT 		, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_PROPERTIES	, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 			( ID_FILE_CLOSE 		, bActiveChild )
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF 		( ID_RECENT_DOCUMENT, _GetRecentCount() )
+	UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP	( ID_RECENT_DOCUMENT, _GetRecentCount(), _GetRecentCount() )
+
+	// Edit menu
+	// アドレスバーかサーチバーにフォーカスがある or OLEコマンドが使用可能かどうか
+	CEdit editAddress = m_AddressBar.GetEditCtrl();
+	CEdit editSearch  = m_SearchBar.GetEditCtrl();
+	bool  bFocus	  = (::GetFocus() == editAddress || ::GetFocus() == editSearch);
+	bool  bCut		  = false, bCopy = false, bPaste = false, bSelectAll = false;
+	if (bActiveChild) {
+	//+++ 実はQUeryStatusWBがバグって、失敗しててもゴミを返していた...で、たまたま表示されることが多かったのかも.
+	//+++ が、そもそも必ず失敗するのが解せない... が、不便なので、暫定対処
+		bCut = true, bCopy = true, bPaste = true, bSelectAll = true;
+	}
+	if (bFocus)
+		bCut = true, bCopy = true, bPaste = true, bSelectAll = true;
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_CUT		, bCut			)
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_COPY		, bCopy			)
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_PASTE 	, bPaste		)
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_SELECT_ALL, bSelectAll	)
+	// ここまで
+
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_FIND				, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_OPEN_SELECTED_REF , bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF ( ID_EDIT_OPEN_SELECTED_TEXT, bActiveChild )
+	//UPDATE_COMMAND_UI_ENABLE_IF( ID_VIEW_SETFOCUS, bActiveChild )
+
+	// View menu
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_SEARCHBAR,	MtlIsBandVisible( m_hWndToolBar, IDC_SEARCHBAR		) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_COMMANDBAR,	MtlIsBandVisible( m_hWndToolBar, ATL_IDW_COMMAND_BAR) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TOOLBAR,		MtlIsBandVisible( m_hWndToolBar, ATL_IDW_TOOLBAR	) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_ADDRESSBAR,	MtlIsBandVisible( m_hWndToolBar, IDC_ADDRESSBAR 	) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_LINKBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_LINKBAR		) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_GOBUTTON, 	CAddressBarOption::s_bGoBtnVisible )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR,		MtlIsBandVisible( m_hWndToolBar, IDC_MDITAB 		) )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TABBAR_MULTI, CTabBarOption::s_bMultiLine )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_TOOLBAR_LOCK,  _IsRebarBandLocked()					)
+
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_PRIVACYREPORT, 	bActiveChild							)
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_STATUS_BAR,	::IsWindowVisible(m_hWndStatusBar)		)
+
+	UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP	( ID_VIEW_BACK, bActiveChild, bActiveChild		)		// with popup
+	UPDATE_COMMAND_UI_ENABLE_IF 		( ID_VIEW_FORWARD	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 		( ID_VIEW_REFRESH	, bActiveChild			)
+
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF	( ID_VIEW_BACK1 	, bActiveChild			)
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF	( ID_VIEW_FORWARD1	, bActiveChild			)
+
+	UPDATE_COMMAND_UI_ENABLE_IF 	(  ID_VIEW_STOP 		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	(  ID_VIEW_STOP_ALL 	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	(  ID_VIEW_REFRESH		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	(  ID_VIEW_REFRESH_ALL	, bActiveChild			)
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF( ID_AUTOREFRESH_NONE	, bActiveChild			)
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF( ID_VIEW_FONT_LARGEST , bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	(  ID_VIEW_FONT_SIZE	, bActiveChild			)
+
+	//UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_VIEW_ENCODECONTAINER, bActiveChild, bActiveChild ) // minit
+
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_VIEW_SOURCE		, bActiveChild			)
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_VIEW_FULLSCREEN	, m_bFullScreen			)
+
+	// Favorite menu
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_FAVORITE_ADD		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_FAVORITE_GROUP_SAVE, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_FAVORITE_GROUP_ADD , bActiveChild			)
+
+	// Tool menu
+	UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_DLCTL_DLIMAGES, bActiveChild, bActiveChild ) 	// with poup
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_CHG_MULTI	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_ON_OFF_MULTI , bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_BGSOUNDS 	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_VIDEOS		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_DLCTL_RUNACTIVEXCTLS, bActiveChild, bActiveChild )// with popup
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_CHG_SECU 	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_ON_OFF_SECU	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_DLACTIVEXCTLS, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_SCRIPTS		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DLCTL_JAVA 		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_DOCHOSTUI_OPENNEWWIN, bActiveChild 		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_MESSAGE_FILTER 	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_MOUSE_GESTURE		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_BLOCK_MAILTO		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_EDIT_IGNORE		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_TITLE_COPY 		, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_COPY_TITLEANDURL	, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_URL_COPY			, bActiveChild			)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_EDIT_CLOSE_TITLE	, bActiveChild			)
+
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_STYLESHEET_USE_USERS, CStyleSheetOption::GetUseUserSheet() )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_STYLESHEET_SET_USERS, CStyleSheetOption::s_bSetUserSheet	)
+
+	// Help
+	//UPDATE_COMMAND_UI_ENABLE_IF 	( ID_APP_HELP			, _IsExistHTMLHelp()	)
+
+	// Misc
+	// Window menu
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_WINDOW_CLOSE_ALL		, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_WINDOW_CLOSE_EXCEPT	, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF		( ID_LEFT_CLOSE				, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF		( ID_RIGHT_CLOSE			, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_WINDOW_REFRESH_EXCEPT	, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_TAB_LEFT				, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_TAB_RIGHT				, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF_WITH_POPUP( ID_WINDOW_RESTORE, bActiveChild, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ATL_IDS_SCPREVWINDOW		, bActiveChild		)
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ATL_IDS_SCNEXTWINDOW		, bActiveChild		)
+
+	// Misc
+	// UPDATE_COMMAND_UI_SETTEXT( ID_DEFAULT_PANE, _T("レディ" ))
+	UPDATE_COMMAND_UI				( IDC_PROGRESS		, _UpdateProgressUI		)
+	UPDATE_COMMAND_UI				( ID_SECURE_PANE	, _UpdateStautsIcon		)
+	UPDATE_COMMAND_UI				( ID_PRIVACY_PANE	, _UpdateStautsIcon		)
+
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_POPUP_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_TITLE_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidCloseTitle )
+	UPDATE_COMMAND_UI_SETCHECK_IF	( ID_DOUBLE_CLOSE	, CSupressPopupOption::s_PopupBlockData.bValidIgnoreURL && 
+															CSupressPopupOption::s_PopupBlockData.bValidCloseTitle )
+
+	UPDATE_COMMAND_UI_POPUP_ENABLE_IF( ID_STYLESHEET_BASE	, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_CSS_DROPDOWN		, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_VIEW_UP			, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_EDIT_FIND_MAX		, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_VIEW_SOURCE_SELECTED,bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_FILE_PRINT_PREVIEW , bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCH_PAGE		, bActiveChild )	//検索バーのページ内検索ボタン
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_SEL_UP	, bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_SEL_DOWN , bActiveChild )
+	UPDATE_COMMAND_UI_ENABLE_IF 	( ID_SEARCHBAR_HILIGHT	, bActiveChild )
+END_UPDATE_COMMAND_UI_MAP()
+
+
+
 CMainFrame::Impl::Impl() : 
-	CDDEMessageHandler<Impl>(_T("Donut")),
+	CDDEMessageHandler<CMainFrame::Impl>(_T("Donut")),
 	m_ExplorerBar(m_SplitterWindow),
 	m_hWndRestoreFocus(NULL),
 	m_bFullScreen(false)
