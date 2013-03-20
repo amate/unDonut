@@ -9,6 +9,8 @@
 #include <boost\serialization\string.hpp>
 #include <boost\serialization\vector.hpp>
 #include <boost\serialization\utility.hpp>
+#include <boost\archive\text_wiarchive.hpp>
+#include <boost\archive\text_woarchive.hpp>
 #include "SharedMemoryUtil.h"
 #include "MtlBrowser.h"
 #include "MtlWin.h"

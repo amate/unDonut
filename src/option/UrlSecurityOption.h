@@ -38,6 +38,7 @@ private:
 /// URL別セキュリティ
 class CUrlSecurityOption {
 	friend class CUrlSecurityPropertyPage;
+	friend class CUrlSecurityForChildFrame;
 
 public:
 	static bool s_bValid;		//+++ ref by CMainFrame

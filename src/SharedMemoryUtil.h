@@ -7,8 +7,8 @@
 
 #include <windows.h>
 #include <sstream>
-#include <boost\archive\text_woarchive.hpp>
-#include <boost\archive\text_wiarchive.hpp>
+#include <boost\archive\binary_iarchive.hpp>
+#include <boost\archive\binary_oarchive.hpp>
 
 /////////////////////////////////////////////
 // CSharedMemoryT
@@ -72,23 +72,26 @@ public:
 		ATLASSERT( m_hMap == NULL );
 
 		/* シリアライズ */
-		std::wstringstream ss;
-		boost::archive::text_woarchive ar(ss);
+		std::stringstream ss;
+		boost::archive::binary_oarchive ar(ss);
 		ar << data;
-		std::wstring serializedData = ss.str();
+		std::string serializedData = ss.str();
 
 		/* 共有メモリ作成 */
 		SECURITY_ATTRIBUTES	security_attributes = { sizeof(SECURITY_ATTRIBUTES) };
 		security_attributes.bInheritHandle = bInheritHandle;
-		DWORD	dwMapFileSize = (serializedData.size() + 1) * sizeof(WCHAR);
+		DWORD	dwMapFileSize = serializedData.size() + sizeof(DWORD);
 		m_hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, &security_attributes, PAGE_READWRITE, 0, dwMapFileSize, sharedMemName);
 		ATLASSERT( m_hMap );
 		if (m_hMap == NULL)
 			return false;
 
 		/* メモリマップされた領域に書き込む */
-		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
-		::wcscpy_s(sharedMemData, serializedData.size() + 1, serializedData.c_str());
+		void* sharedMemData = (void*)::MapViewOfFile(m_hMap, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+		*(DWORD*)sharedMemData = dwMapFileSize;
+		++((DWORD*&)sharedMemData);
+		::memcpy_s(sharedMemData, dwMapFileSize, serializedData.c_str(), serializedData.size());
+		--((DWORD*&)sharedMemData);
 		::UnmapViewOfFile((LPCVOID)sharedMemData);
 		return true;
 	}
@@ -126,13 +129,16 @@ private:
 	void	_desirialize(T& data)
 	{
 		/* メモリマップされた領域からデータを取り出す */
-		LPTSTR sharedMemData = (LPTSTR)::MapViewOfFile(m_hMap, FILE_MAP_READ, 0, 0, 0);
-		std::wstringstream ss;
-		ss << sharedMemData;
+		void* sharedMemData = (void*)::MapViewOfFile(m_hMap, FILE_MAP_READ, 0, 0, 0);
+		DWORD dwSize = *(DWORD*)sharedMemData;
+		++((DWORD*&)sharedMemData);
+		std::stringstream ss;
+		ss.write((const char*)sharedMemData, dwSize);
+		--((DWORD*&)sharedMemData);
 		::UnmapViewOfFile((LPCVOID)sharedMemData);
 
 		/* デシリアライズ */
-		boost::archive::text_wiarchive ar(ss);
+		boost::archive::binary_iarchive ar(ss);
 		ar >> data;
 	}
 
