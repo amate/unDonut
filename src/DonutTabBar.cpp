@@ -2671,7 +2671,7 @@ void	CDonutTabBar::Impl::_SetCurSelExceptIndex(const CSimpleArray<int>& arrCurMu
 					// 閉じるときアクティブなタブの右をアクティブにする
 					bool	bSink = false;
 					int nNext = nActiveIndex + 1;
-					while (arrCurMultiSel.Find(nNext) != -1) {
+					while (arrCurMultiSel.Find(nNext) != -1 || nNext == nCount) {
 						if (bSink) {
 							--nNext;
 							ATLASSERT( nNext >= 0 );
@@ -2684,6 +2684,7 @@ void	CDonutTabBar::Impl::_SetCurSelExceptIndex(const CSimpleArray<int>& arrCurMu
 							}
 						}
 					}
+					return nNext;
 				} else {
 					int nNext = GetTabIndex(m_vecpItem[nActiveIndex]->hWndPrevActive);
 					return nNext;

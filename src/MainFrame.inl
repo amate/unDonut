@@ -376,9 +376,6 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 		m_deqNewChildFrameData.push_back(std::move(pdata));
 	}
 
-	CLockRedrawMDIClient	 lock(m_ChildFrameClient);
-	CDonutTabBar::CLockRedraw lock2(m_TabBar);
-
 	if (bCloseAllTab) {
 		m_ChildFrameClient.SetChildFrameWindow(NULL);
 		m_TabBar.ForEachWindow([](HWND hWnd) {

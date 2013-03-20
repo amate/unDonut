@@ -27,9 +27,6 @@
     <Filter Include="Source Files\Base">
       <UniqueIdentifier>{02724dd7-7f4a-4892-b106-2638376e9df9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\ExplorerBar">
-      <UniqueIdentifier>{b29f7394-6ad5-48b4-a027-1b5b83199945}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Window">
       <UniqueIdentifier>{83aa46d4-df3b-4981-b947-1b794b3cdf4d}</UniqueIdentifier>
     </Filter>
@@ -50,6 +47,9 @@
     </Filter>
     <Filter Include="Source Files\Window\Menu">
       <UniqueIdentifier>{d0c798ea-09be-4e9d-8d68-2dcfb491cdd3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Window\ExplorerBar">
+      <UniqueIdentifier>{b29f7394-6ad5-48b4-a027-1b5b83199945}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -201,7 +201,7 @@
       <Filter>Source Files\Window</Filter>
     </ClCompile>
     <ClCompile Include="FavTreeViewCtrl.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClCompile>
     <ClCompile Include="DonutPFunc.cpp">
       <Filter>Source Files\Base</Filter>
@@ -432,16 +432,16 @@
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="DonutExplorerBar.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClCompile>
     <ClCompile Include="DonutFavoriteTreeView.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClCompile>
     <ClCompile Include="DonutClipboardBar.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClCompile>
     <ClCompile Include="DonutFavoriteGroupTreeView.cpp">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClCompile>
     <ClCompile Include="DonutTabList.cpp">
       <Filter>Source Files</Filter>
@@ -776,19 +776,19 @@
       <Filter>Source Files\Window</Filter>
     </ClInclude>
     <ClInclude Include="DonutClipboardBar.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="DonutExplorerBar.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="DonutPanelBar.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="FavTreeViewCtrl.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="PluginBar.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="ChevronHandler.h">
       <Filter>Source Files\Base</Filter>
@@ -938,10 +938,10 @@
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="DonutFavoriteTreeView.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="DonutFavoriteGroupTreeView.h">
-      <Filter>Source Files\ExplorerBar</Filter>
+      <Filter>Source Files\Window\ExplorerBar</Filter>
     </ClInclude>
     <ClInclude Include="DonutTabList.h">
       <Filter>Source Files</Filter>

@@ -781,21 +781,22 @@ bool	MtlDeleteAllCookies();
 
 
 template <class _Function>
-_Function _MtlForEachHTMLDocument2(IHTMLDocument2 *pDocument, _Function __f)
+bool _MtlForEachHTMLDocument2(IHTMLDocument2 *pDocument, _Function __f)
 {
-	__f(pDocument);
+	if (__f(pDocument) == false)
+		return false;
 
 	CComPtr<IHTMLFramesCollection2> spFrames;
 	HRESULT 	hr	   = pDocument->get_frames(&spFrames);
 	// cf. Even if no frame, get_frames would succeed.
 	if ( FAILED(hr) ) {
-		return __f;
+		return true;
 	}
 
 	LONG	nCount = 0;
 	hr = spFrames->get_length(&nCount);
 	if ( FAILED(hr) )
-		return __f;
+		return true;
 
 	for (LONG i = 0; i < nCount; ++i) {
 		CComVariant 	varItem(i);
@@ -826,25 +827,26 @@ _Function _MtlForEachHTMLDocument2(IHTMLDocument2 *pDocument, _Function __f)
 				continue;
 		}
 
-		_MtlForEachHTMLDocument2(spDocument, __f);
+		if (_MtlForEachHTMLDocument2(spDocument, __f) == false)
+			return false;
 	}
 
-	return __f;
+	return true;
 }
 
 
 
 template <class _Function>
-_Function MtlForEachHTMLDocument2(IWebBrowser2 *pBrowser, _Function __f)
+bool MtlForEachHTMLDocument2(IWebBrowser2 *pBrowser, _Function __f)
 {
 	CComPtr<IDispatch>	spDisp;
 	HRESULT 			hr		 = pBrowser->get_Document(&spDisp);
 	if ( FAILED(hr) )
-		return __f;
+		return true;
 
 	CComQIPtr<IHTMLDocument2> spDocument = spDisp;
 	if (!spDocument)
-		return __f;
+		return true;
 
 	return _MtlForEachHTMLDocument2(spDocument, __f);
 }
@@ -855,9 +857,10 @@ _Function MtlForEachHTMLDocument2(IWebBrowser2 *pBrowser, _Function __f)
 
 // gae: ’Ç‰Á
 template <class _Function>
-_Function _MtlForEachHTMLDocument2g(IHTMLDocument2* pDocument, _Function __f)
+bool _MtlForEachHTMLDocument2g(IHTMLDocument2* pDocument, _Function __f)
 {
-	__f(pDocument);
+	if (__f(pDocument) == false)
+		return false;
 
 	CComQIPtr<IOleContainer>	pOleContainer = pDocument;
 	if(pOleContainer) {
@@ -867,28 +870,29 @@ _Function _MtlForEachHTMLDocument2g(IHTMLDocument2* pDocument, _Function __f)
 			while(pEnum->Next(1,&pUnk,NULL)==S_OK) {
 				CComQIPtr<IWebBrowser2> pSubWeb = pUnk;
 				if(pSubWeb!=NULL) {
-					MtlForEachHTMLDocument2g(pSubWeb, __f);
+					if (MtlForEachHTMLDocument2g(pSubWeb, __f) == false)
+						return false;
 				}
 				pUnk = NULL;
 			}
 		}
 	}
 
-	return __f;
+	return true;
 }
 
 
 template <class _Function>
-_Function MtlForEachHTMLDocument2g(IWebBrowser2* pBrowser, _Function __f)
+bool MtlForEachHTMLDocument2g(IWebBrowser2* pBrowser, _Function __f)
 {
 	CComPtr<IDispatch> spDisp;
 	HRESULT hr = pBrowser->get_Document(&spDisp);
 	if (FAILED(hr))
-		return __f;
+		return true;
 
 	CComQIPtr<IHTMLDocument2> spDocument = spDisp;
 	if (!spDocument)
-		return __f;
+		return true;
 
 	return _MtlForEachHTMLDocument2g(spDocument, __f);
 }

@@ -925,6 +925,18 @@ enum TabCreateOption {
 	}
 
 
+//	void	OnReturnMatchCount(HWND hWndChildFrame, int nMatchCount);
+#define WM_RETURNMATCHCOUNT	(WM_USER + 150)
+#define USER_MSG_WM_RETURNMATCHCOUNT(func)	\
+	if (uMsg == WM_RETURNMATCHCOUNT) {	   \
+		SetMsgHandled(TRUE);		   \
+		lResult = 0;					\
+		func((HWND)wParam, (int)lParam);				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
 
 
 

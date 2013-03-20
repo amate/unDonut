@@ -134,7 +134,7 @@ void CStartUpOption::StartUp(CMainFrame& __frame)
 				m_bTabListChanged = true;
 			}
 
-
+			return 0;
 		}
 
 		void OnCommand(UINT uNotifyCode, int nID, CWindow wndCtl)

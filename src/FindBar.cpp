@@ -78,6 +78,9 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEDOWN	, OnFindPageDown )
 		COMMAND_ID_HANDLER_EX( ID_FIND_PAGEUP	, OnFindPageUp )
 		COMMAND_ID_HANDLER_EX( ID_FIND_HIGHLIGHT, OnFindHighlight )
+
+		USER_MSG_WM_RETURNMATCHCOUNT( OnReturnMatchCount )
+
 		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<Impl> )
 		CHAIN_MSG_MAP( CTrackMouseLeave<Impl> )
 	ALT_MSG_MAP(1)	// Edit
@@ -101,6 +104,8 @@ public:
 	void	OnFindPageDown(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnFindHighlight(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	void	OnReturnMatchCount(HWND hWndChildFrame, int nMatchCount);
+
 	// Edit
 	void	OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 	void	OnEditLButtonDown(UINT nFlags, CPoint point);
@@ -108,6 +113,7 @@ public:
 private:
 	void	_HighlightKeyword(bool bNoHighlight = false, bool bEraseOld = true);
 	void	_FindKeyword(bool bFindDown);
+	void	_RefreshStatusText();
 
 	// Data members
 	CContainedWindowT<CEdit>	m_Edit;
@@ -124,11 +130,14 @@ private:
 
 	bool	m_bNoHit;
 	int		m_nMatchCount;
+	int		m_nLastHitPos;
 	bool	m_bPageEnd;
 
 	function<void (BOOL)>	m_funcUpdateLayout;
 	bool	m_bNowShowing;
 	CString	m_strEditChange;
+
+	CString m_strLastHilightKeyword;
 };
 
 //=============================
@@ -144,6 +153,7 @@ CFindBar::Impl::Impl()
 	, m_bFindBarBottom(false)
 	, m_bNoHit(false)
 	, m_nMatchCount(0)
+	, m_nLastHitPos(0)
 	, m_bPageEnd(false)
 	, m_bNowShowing(false)
 {
@@ -375,7 +385,7 @@ void	CFindBar::Impl::OnParentNotify(UINT message, UINT nChildID, LPARAM lParam)
 		if (rc.PtInRect(pt)) {
 			HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
 			if (ActiveChildFrame) {
-				::SendMessage(ActiveChildFrame, WM_REMOVEHILIGHT, 0, 0);
+				::PostMessage(ActiveChildFrame, WM_REMOVEHILIGHT, 0, 0);
 			}
 		}
 	}
@@ -528,6 +538,24 @@ void	CFindBar::Impl::OnFindHighlight(UINT uNotifyCode, int nID, CWindow wndCtl)
 	_HighlightKeyword();
 }
 
+void	CFindBar::Impl::OnReturnMatchCount(HWND hWndChildFrame, int nMatchCount)
+{
+	if (g_pMainWnd->GetActiveChildFrameHWND() != hWndChildFrame)
+		return ;
+
+	m_nMatchCount = nMatchCount;
+
+	/* 一致件数を表示 */
+	if (m_strLastHilightKeyword.GetLength() > 0) {
+		_RefreshStatusText();
+	} else {	// からっぽに
+		m_static.SetWindowText(_T(""));
+		m_bNoHit = false;
+	}
+	m_Edit.Invalidate();
+	m_Edit.UpdateWindow();
+}
+
 // Edit
 
 void	CFindBar::Impl::OnEditKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
@@ -585,25 +613,15 @@ void	CFindBar::Impl::_HighlightKeyword(bool bNoHighlight /*= false*/, bool bEras
 	cds.dwData	= kHilightFromFindBar;
 	cds.lpData	= static_cast<LPVOID>(strData.GetBuffer(0));
 	cds.cbData	= (strData.GetLength() + 1) * sizeof(WCHAR);
-	m_nMatchCount = (int)::SendMessage(ActiveChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
-
-	/* 一致件数を表示 */
-	if (strKeyword.GetLength() > 0) {
-		if (m_nMatchCount > 0) {
-			CString strMsg;
-			strMsg.Format(_T(" %d 件の一致"), m_nMatchCount);
-			m_static.SetWindowText(strMsg);
-			m_bNoHit = false;
-		} else {
-			m_static.SetWindowText(_T(" 見つかりませんでした"));
-			m_bNoHit = true;
-		}
-	} else {	// からっぽに
-		m_static.SetWindowText(_T("\0"));
+	::SendMessage(ActiveChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+	if (m_strLastHilightKeyword != strKeyword) {
+		m_strLastHilightKeyword = strKeyword;
+		m_nMatchCount = -1;
+		m_nLastHitPos = 0;
 		m_bNoHit = false;
+		m_Edit.Invalidate();
+		m_Edit.UpdateWindow();
 	}
-	m_Edit.Invalidate();
-	m_Edit.UpdateWindow();
 }
 
 //-----------------------------------
@@ -618,8 +636,8 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 	strtemp2.ReleaseBuffer();
 	strKeyword = strtemp2;
 #endif
-	if (strKeyword.IsEmpty())
-		return;
+	//if (strKeyword.IsEmpty())
+	//	return;
 
 	long Flags = 0;
 	if (m_bWordUnit)
@@ -627,13 +645,24 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 	if (m_bDistinguish)
 		Flags |= 4;
 
+	// 独自検索バーから
+	Flags |= 0x80;
+
 	HWND ActiveChildFrame = g_pMainWnd->GetActiveChildFrameHWND();
 	if (ActiveChildFrame) {
-		BOOL bFind = (BOOL)::SendMessage(g_pMainWnd->GetHWND(), WM_USER_FIND_KEYWORD, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(bFindDown, Flags));
+		LRESULT FindData = ::SendMessage(g_pMainWnd->GetHWND(), WM_USER_FIND_KEYWORD, (WPARAM)(LPCTSTR)strKeyword, MAKELPARAM(bFindDown, Flags));
+		bool bFind = LOWORD(FindData) != 0;
+		int  nHitPos = HIWORD(FindData);
+		if (nHitPos & 0xF000)
+			nHitPos = nHitPos - 0x0000FFFF - 1;
+		m_nLastHitPos = nHitPos;
+		//if (bFindDown == false && m_nMatchCount != -1) 
+		//	nHitPos = m_nMatchCount - nHitPos;
+		
 		if (m_nMatchCount == 0)
 			return;	// 一致0ならなにもしない
 
-		if (bFind == FALSE) {
+		if (bFind == false && strKeyword.GetLength() > 0) {
 			CString strMsg  = bFindDown ? _T(" ページの最後まで検索しました") : _T(" ページの先頭まで検索しました");
 			m_static.SetWindowText(strMsg);
 			m_bPageEnd = true;
@@ -646,17 +675,29 @@ void	CFindBar::Impl::_FindKeyword(bool bFindDown)
 				m_static.UpdateWindow();
 			}
 
-			if (m_nMatchCount > 0) {
-				CString strMsg;
-				strMsg.Format(_T(" %d 件の一致"), m_nMatchCount);
-				m_static.SetWindowText(strMsg);
-			} else {
-				m_static.SetWindowText(_T(" 見つかりませんでした"));
-			}
+			_RefreshStatusText();
 		}
 	}
 }
 
+void	CFindBar::Impl::_RefreshStatusText()
+{
+	if (m_nMatchCount > 0) {
+		// 正確な件数が判明したのでHitPosを正常な位置に書き換える
+		if (m_nLastHitPos < 0) {
+			m_nLastHitPos = m_nMatchCount - (-m_nLastHitPos) + 1;
+		}
+		CString strMsg;
+		strMsg.Format(_T("%d / %d 件の一致"), m_nLastHitPos, m_nMatchCount);
+		m_static.SetWindowText(strMsg);
+	} else if (m_nMatchCount == -1) {
+		CString strMsg;
+		strMsg.Format(_T("%d / *** 件の一致"), m_nLastHitPos);
+		m_static.SetWindowText(strMsg);
+	} else {
+		m_static.SetWindowText(_T(" 見つかりませんでした"));
+	}
+}
 
 
 //==========================================

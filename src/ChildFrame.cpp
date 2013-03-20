@@ -69,129 +69,138 @@ static const int	g_LIGHTMAX	= _countof(g_lpszLight);
 
 
 struct _Function_SelectEmpt {
-	void operator ()(IHTMLDocument2 *pDocument)
+	bool operator ()(IHTMLDocument2 *pDocument)
 	{
 		CComPtr<IHTMLSelectionObject> spSelection;
 		HRESULT 	hr = pDocument->get_selection(&spSelection);
 		if (spSelection)
 			spSelection->empty();
+		return true;
 	}
 };
 
 struct _Function_Hilight2 {
 	LPCTSTR 	m_lpszKeyWord;
 	BOOL		m_bHilight;
+	function<bool ()>	m_funcProcessMessage;
 
-	_Function_Hilight2(LPCTSTR lpszKeyWord, BOOL bHilight)
-		: m_lpszKeyWord(lpszKeyWord), m_bHilight(bHilight)
+	_Function_Hilight2(LPCTSTR lpszKeyWord, BOOL bHilight, function<bool ()> func)
+		: m_lpszKeyWord(lpszKeyWord), m_bHilight(bHilight), m_funcProcessMessage(func)
 	{	}
 
-	void operator ()(IHTMLDocument2* pDocument)
+	bool operator ()(IHTMLDocument2* pDocument)
 	{
 		if (m_bHilight) {
 			if ( !FindHilight(pDocument) ) {
-				MakeHilight(pDocument);
+				if (MakeHilight(pDocument) == false)
+					return false;
 			}
 		} else {
 			RemoveHilight(pDocument);
 		}
+		return true;
 	}
 
 	// ハイライト作成
-	void MakeHilight(IHTMLDocument2* pDocument)
+	bool MakeHilight(IHTMLDocument2* pDocument)
 	{
-	try {
-		// キーワードの最初の一語を取得
-		CString		strKeyWord = m_lpszKeyWord;
+		try {
+			// キーワードの最初の一語を取得
+			CString		strKeyWord = m_lpszKeyWord;
 
-		//+++ 単語区切りを調整
-		LPCTSTR		strExcept	= _T(" \t\"\r\n　");
-		strKeyWord = _tcstok( strKeyWord.GetBuffer(0), strExcept );
-		strKeyWord.TrimLeft(strExcept);
-		strKeyWord.TrimRight(strExcept);
+			//+++ 単語区切りを調整
+			LPCTSTR		strExcept	= _T(" \t\"\r\n　");
+			strKeyWord = _tcstok( strKeyWord.GetBuffer(0), strExcept );
+			strKeyWord.TrimLeft(strExcept);
+			strKeyWord.TrimRight(strExcept);
 
-		int 	nLightIndex = 0;
-		HRESULT hr;
+			int 	nLightIndex = 0;
+			HRESULT hr;
 
-		// キーワードが空になるまで繰り返し
-		while ( !strKeyWord.IsEmpty() ) {
-			CComPtr<IHTMLElement>		spHTMLElement;
-			// <body>を取得
-			hr = pDocument->get_body(&spHTMLElement);
-			if (spHTMLElement == NULL) 
-				break;
+			// キーワードが空になるまで繰り返し
+			while ( !strKeyWord.IsEmpty() ) {
+				CComPtr<IHTMLElement>		spHTMLElement;
+				// <body>を取得
+				hr = pDocument->get_body(&spHTMLElement);
+				if (spHTMLElement == NULL) 
+					break;
 
-			CComQIPtr<IHTMLBodyElement>	spHTMLBody = spHTMLElement;
-			if (spHTMLBody == NULL) 
-				break;
+				CComQIPtr<IHTMLBodyElement>	spHTMLBody = spHTMLElement;
+				if (spHTMLBody == NULL) 
+					break;
 
-			// テキストレンジを取得
-			CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
-			hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
-			if (!spHTMLTxtRange)
-				AtlThrow(hr);			
+				// テキストレンジを取得
+				CComPtr<IHTMLTxtRange>	  spHTMLTxtRange;
+				hr = spHTMLBody->createTextRange(&spHTMLTxtRange);
+				if (!spHTMLTxtRange)
+					AtlThrow(hr);			
 
-			//+++ 最大キーワード数(無限ループ対策)
-			static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
-			//+++ 無限ループ状態を強制終了させるため、ループをカウントする
-			unsigned num = 0;
+				//+++ 最大キーワード数(無限ループ対策)
+				static unsigned maxKeyword	= Misc::getIEMejourVersion() <= 6 ? 1000 : 10000;
+				//+++ 無限ループ状態を強制終了させるため、ループをカウントする
+				unsigned num = 0;
 
-			// キーワードを検索
-			CComBSTR		bstrText= strKeyWord;
-			VARIANT_BOOL	vBool	= VARIANT_FALSE;
-			while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
-				// 現在選択しているHTMLテキストを取得
-				CComBSTR	bstrTextNow;
-				hr = spHTMLTxtRange->get_text(&bstrTextNow);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				// <span>を付加
-				CComBSTR	bstrTextNew;
-				bstrTextNew.Append(g_lpszLight[nLightIndex]);	// <span ～
-				bstrTextNew.Append(bstrTextNow);
-				bstrTextNew.Append(_T("</span>"));
-
-
-				CComPtr<IHTMLElement> spParentElement;
-				hr = spHTMLTxtRange->parentElement(&spParentElement);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				CComBSTR	bstrParentTag;
-				hr = spParentElement->get_tagName(&bstrParentTag);
-				if (FAILED(hr))
-					AtlThrow(hr);
-
-				if (   bstrParentTag != _T("SCRIPT")
-					&& bstrParentTag != _T("NOSCRIPT")
-					&& bstrParentTag != _T("TEXTAREA")
-					&& bstrParentTag != _T("STYLE"))
-				{
-					hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
+				// キーワードを検索
+				CComBSTR		bstrText= strKeyWord;
+				VARIANT_BOOL	vBool	= VARIANT_FALSE;
+				while (spHTMLTxtRange->findText(bstrText, 1, 0, &vBool), vBool == VARIANT_TRUE) {
+					// 現在選択しているHTMLテキストを取得
+					CComBSTR	bstrTextNow;
+					hr = spHTMLTxtRange->get_text(&bstrTextNow);
 					if (FAILED(hr))
 						AtlThrow(hr);
 
-					//+++ 通常のページでハイライト置換がこんなにもあることはないだろうで、無限ループ扱いでうちどめしとく
-					if (++num > maxKeyword)		
-						break;
+					// <span>を付加
+					CComBSTR	bstrTextNew;
+					bstrTextNew.Append(g_lpszLight[nLightIndex]);	// <span ～
+					bstrTextNew.Append(bstrTextNow);
+					bstrTextNew.Append(_T("</span>"));
+
+
+					CComPtr<IHTMLElement> spParentElement;
+					hr = spHTMLTxtRange->parentElement(&spParentElement);
+					if (FAILED(hr))
+						AtlThrow(hr);
+
+					CComBSTR	bstrParentTag;
+					hr = spParentElement->get_tagName(&bstrParentTag);
+					if (FAILED(hr))
+						AtlThrow(hr);
+
+					if (   bstrParentTag != _T("SCRIPT")
+						&& bstrParentTag != _T("NOSCRIPT")
+						&& bstrParentTag != _T("TEXTAREA")
+						&& bstrParentTag != _T("STYLE"))
+					{
+						hr = spHTMLTxtRange->pasteHTML(bstrTextNew);	// ハイライトする
+						if (FAILED(hr))
+							AtlThrow(hr);
+
+						//+++ 通常のページでハイライト置換がこんなにもあることはないだろうで、無限ループ扱いでうちどめしとく
+						if (++num > maxKeyword)		
+							break;
+					}
+					spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+
+					// たまってるメッセージを処理する
+					if (m_funcProcessMessage() == false)
+						return false;
 				}
-				spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
+
+				++nLightIndex;
+				if (nLightIndex >= g_LIGHTMAX)
+					nLightIndex = 0;
+
+				// 次のキーワードに
+				strKeyWord = _tcstok(NULL, strExcept);
+				strKeyWord.TrimLeft(strExcept);
+				strKeyWord.TrimRight(strExcept);
 			}
 
-			++nLightIndex;
-			if (nLightIndex >= g_LIGHTMAX)
-				nLightIndex = 0;
-
-			// 次のキーワードに
-			strKeyWord = _tcstok(NULL, strExcept);
-			strKeyWord.TrimLeft(strExcept);
-			strKeyWord.TrimRight(strExcept);
-		}
-
-	} catch (const CAtlException& e) {
-			e;	// 例外を握りつぶす
-	}	// try
+		} catch (const CAtlException& e) {
+				e;	// 例外を握りつぶす
+		}	// try
+		return true;
 	}
 
 	// ハイライトを解除する
@@ -261,6 +270,7 @@ struct _Function_Hilight2 {
 		return FALSE;
 	}
 };
+
 
 void	OpenMultiUrl(const std::pair<std::unique_ptr<WCHAR[]>, int>& pair, CWindow wndChildFrame)
 {
@@ -337,6 +347,8 @@ public:
 		WM_DELAYDOCUMENTCOMPLETE = WM_APP + 300,
 		kDelayHilightTimerId = 2,
 		kDelayHilightInterval = 500,
+
+		WM_DELAYHILIGHT	= WM_APP + 301,
 	};
 
 	Impl(CChildFrame* pChild);
@@ -402,6 +414,7 @@ public:
 		MSG_WM_TIMER		( OnTimer		)
 
 		MESSAGE_HANDLER_EX( WM_DELAYDOCUMENTCOMPLETE	, OnDelayDocumentComplete	)
+		MESSAGE_HANDLER_EX( WM_DELAYHILIGHT				, OnDelayHilight )
 		MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		MESSAGE_HANDLER_EX( WM_GETCHILDFRAMENOWACTIVE, OnGetChildFrameActive	)
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
@@ -496,6 +509,7 @@ public:
 	void	OnTimer(UINT_PTR nIDEvent);
 
 	LRESULT OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	LRESULT OnDelayHilight(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnGetChildFrameActive(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void	OnChildFrameActivate(HWND hWndAct, HWND hWndDeact);	// タブの切り替えが通知される
 	CChildFrame* OnGetChildFrame() { return m_pParentChild; }
@@ -571,13 +585,14 @@ private:
 	void	_CollectDataOnClose(ChildFrameDataOnClose& data);
 	void	_AutoImageResize(bool bFirst);
 	void	_SetFavicon(const CString& strURL);
-	void	_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord);
 	BOOL 	_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags = 0);
 	void	_SearchWebWithEngine(const CString& strText, const CString& strEngine);
 	void	_ExecuteUserJavascript(const CString& strScriptText);
 	int		_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 	void	_SetFocusToHTML();
 	bool	_ShowLinkTextSelectWindow(MSG* pMsg);
+
+	void	_HilightText(LPCTSTR lpszKeyWord, bool bHilight);
 
 	// Data members
 	CChildFrame*	m_pParentChild;
@@ -591,9 +606,6 @@ private:
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
 	CString	m_strSearchWord;
-	CComBSTR	m_strBookmark;
-	int 		m_nPainBookmark;
-	CString		m_strOldKeyword;
 	bool	m_bNowHilight;
 	bool	m_bAutoHilight;
 	CString m_strStatusText;
@@ -625,6 +637,30 @@ private:
 	bool	m_bMClickFail;
 	CSharedMemory m_sharedTravelLogMenu;
 	CString m_strLastScriptErrorMessage;
+
+	struct FindHilightData {
+		CString		strLastHilightText;
+		CString		strLastSearchText;
+		CComBSTR	strBookmark;
+		int			nPaneBookmark;
+		int			nLastHilightCount;
+		long		flags;
+		int			nHitPos;
+
+		FindHilightData() : nPaneBookmark(0), nLastHilightCount(0), flags(0), nHitPos(0) { }
+
+		void Clear() {
+			strLastHilightText.Empty();
+			strLastSearchText.Empty();
+			strBookmark.Empty();
+			nPaneBookmark = 0;
+			nLastHilightCount = 0;
+			flags = 0;
+			nHitPos = 0;
+		}
+	};
+	FindHilightData	m_SearchBarHilightData;
+	FindHilightData m_FindBarHilightData;
 };
 
 #include "ChildFrame.inl"

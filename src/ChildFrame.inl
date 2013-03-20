@@ -10,7 +10,6 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_view(m_UIChange),
 	m_BingTranslatorMenu(pChild),
 	m_bNowActive(false),
-	m_nPainBookmark(0),
 	m_bNowHilight(false),
 	m_bAutoHilight(false),
 	m_bExecutedNewWindow(false),
@@ -70,6 +69,7 @@ CString CChildFrame::Impl::GetSelectedText()
 				}
 			}
 		}
+		return true;
 	});
 #if 0	//:::
 	if (strSelText.IsEmpty()) {
@@ -301,8 +301,8 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 		m_ImageSize.SetSize(0, 0);
 
 		/* ページ内検索の情報をリセット */
-		m_nPainBookmark = 0;
-		m_strBookmark	= LPCOLESTR(NULL);
+		m_SearchBarHilightData.Clear();
+		m_FindBarHilightData.Clear();
 
 		_InitTravelLog();	// トラベルログを設定
 
@@ -1136,7 +1136,8 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 {
 	switch (pCopyDataStruct->dwData) {
 	case kHilightText:
-		OnHilight(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
+		PostMessage(WM_DELAYHILIGHT, (WPARAM)new CString(static_cast<LPCTSTR>(pCopyDataStruct->lpData)));
+		//OnHilight(static_cast<LPCTSTR>(pCopyDataStruct->lpData));
 		break;
 
 	case kNavigateChildFrame:
@@ -1167,12 +1168,13 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 
 	case kHilightFromFindBar:
 		{
-			CString strData = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
-			CString strdw = strData[0];
-			CString strFlags = strData[1];
-			DWORD dw = _wtoi(strdw);
-			long flags = _wtoi(strFlags);
-			return _HilightFromFindBar(strData.Mid(2), (dw & 0x1) != 0, (dw & 0x2) != 0, flags);
+			PostMessage(WM_DELAYHILIGHT, (WPARAM)new CString(static_cast<LPCTSTR>(pCopyDataStruct->lpData)), (LPARAM)wnd.m_hWnd);
+			//CString strData = static_cast<LPCTSTR>(pCopyDataStruct->lpData);
+			//CString strdw = strData[0];
+			//CString strFlags = strData[1];
+			//DWORD dw = _wtoi(strdw);
+			//long flags = _wtoi(strFlags);
+			//return _HilightFromFindBar(strData.Mid(2), (dw & 0x1) != 0, (dw & 0x2) != 0, flags);
 		}
 		break;
 
@@ -1235,10 +1237,8 @@ void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 			CString strWords = m_strSearchWord;
 			//DeleteMinimumLengthWord(strWords);
 			m_bNowHilight = true;
-			MtlForEachHTMLDocument2g(m_spBrowser, _Function_SelectEmpt());
-			MtlForEachHTMLDocument2g(m_spBrowser, _Function_Hilight2(L"", FALSE));
-			CComQIPtr<IDispatch> spDisp(m_spBrowser);
-			_HilightOnce(spDisp, strWords);
+			_HilightText(_T(""), false);
+			_HilightText(strWords, true);
 		}
 	}
 }
@@ -1267,8 +1267,7 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 			CString strWords = m_strSearchWord;
 			//DeleteMinimumLengthWord(strWords);
 			m_bNowHilight = true;
-			CComQIPtr<IDispatch> spDisp(m_spBrowser);
-			_HilightOnce(spDisp, strWords);
+			_HilightText(strWords, true);
 		}
 	}
 
@@ -1284,6 +1283,25 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 		m_nAutoLoginPrevIndex = -1;
 	}
 
+	return 0;
+}
+
+LRESULT CChildFrame::Impl::OnDelayHilight(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CString* pStrHilight = (CString*)wParam;
+	ATLASSERT( pStrHilight );
+	if (lParam) {
+		CString strData = *pStrHilight;
+		CString strdw = strData[0];
+		CString strFlags = strData[1];
+		DWORD dw = _wtoi(strdw);
+		long flags = _wtoi(strFlags);
+		int nMatchCount =  _HilightFromFindBar(strData.Mid(2), (dw & 0x1) != 0, (dw & 0x2) != 0, flags);
+		::PostMessage((HWND)lParam, WM_RETURNMATCHCOUNT, (WPARAM)m_hWnd, nMatchCount);
+	} else {
+		OnHilight(*pStrHilight);
+	}
+	delete pStrHilight;
 	return 0;
 }
 
@@ -1617,11 +1635,60 @@ LRESULT CChildFrame::Impl::OnHilight(const CString& strKeyWord)
 	} else {
 		m_strSearchWord.Empty();
 	}
-	MtlForEachHTMLDocument2g(m_spBrowser, _Function_SelectEmpt());
-	MtlForEachHTMLDocument2g(m_spBrowser, _Function_Hilight2(strKeyWord, bHilightSw));
+	_HilightText(strKeyWord, bHilightSw);
 
 	return TRUE;
 }
+
+void	CChildFrame::Impl::_HilightText(LPCTSTR lpszKeyWord, bool bHilight)
+{
+	if (bHilight) {
+		if (m_SearchBarHilightData.strLastHilightText == lpszKeyWord)
+			return ;
+
+		m_SearchBarHilightData.strLastHilightText = lpszKeyWord;
+	} else {
+		m_SearchBarHilightData.strLastHilightText.Empty();
+	}
+
+	MtlForEachHTMLDocument2g(m_spBrowser, _Function_SelectEmpt());
+	MtlForEachHTMLDocument2g(m_spBrowser, _Function_Hilight2(lpszKeyWord, bHilight, [this, lpszKeyWord]() -> bool {
+		// たまってるメッセージを処理する
+		MSG msg = {};
+		while (::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+			if (msg.message == WM_CLOSE && msg.hwnd == m_hWnd) {
+				return false;
+			}
+
+			if (PreTranslateMessage(&msg)) {
+				::GetMessage(&msg, NULL, 0, 0);
+				continue ;
+			}
+			// 自分自身の関数が呼ばれたら中止する
+			if (msg.message == WM_DELAYHILIGHT && msg.hwnd == m_hWnd && msg.lParam == 0) {
+				CString* pStrHilight = (CString*)msg.wParam;
+				ATLASSERT( pStrHilight );
+				if (*pStrHilight != lpszKeyWord || m_pGlobalConfig->bHilightSwitch == false/* ハイライト中止 */) {
+					return false;
+				} else {
+					::GetMessage(&msg, NULL, 0, 0);
+					continue ;	// ハイライトする文字が同じなのでハンドルする
+				}
+			}
+
+			::GetMessage(&msg, NULL, 0, 0);
+			::TranslateMessage(&msg);
+			::DispatchMessage(&msg);
+
+			// 別のページにナビゲートが開始されたので中止する
+			if (m_bNowNavigate)
+				return false;
+		}
+		return true;		
+	}));
+}
+
+
 
 /// ページ内検索
 int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
@@ -1645,10 +1712,16 @@ int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
 	CString strKeyword = findKeywordData.strKeyword;
 	strKeyword.Replace(_T('ﾞ'), _T('゛'));
 
+	FindHilightData*	pfindHilightData = nullptr;
+	if (findKeywordData.Flags & 0x80)
+		pfindHilightData = &m_FindBarHilightData;
+	else
+		pfindHilightData = &m_SearchBarHilightData;
+
 	// 検索
 	BOOL	bSts = _FindKeyWordOne(spDocument, strKeyword, findKeywordData.bFindDown, findKeywordData.Flags);
 	if (bSts)
-		return TRUE;
+		return MAKELONG(TRUE, (WORD)pfindHilightData->nHitPos);
 
 	// フレームウィンドウの取得
 	CComPtr<IHTMLFramesCollection2> 	spFrames;
@@ -1665,7 +1738,7 @@ int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
 
 	BOOL	bFindIt    = FALSE;
 	if (findKeywordData.bFindDown) {	// ページ内検索 - 下
-		for (LONG ii = m_nPainBookmark; ii < nCount; ii++) {
+		for (LONG ii = pfindHilightData->nPaneBookmark; ii < nCount; ii++) {
 			CComVariant 			varItem(ii);
 			CComVariant 			varResult;
 
@@ -1699,21 +1772,21 @@ int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
 			// 検索
 			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, findKeywordData.bFindDown, findKeywordData.Flags);
 			if (bFindIt) {
-				m_nPainBookmark = ii;
+				pfindHilightData->nPaneBookmark = ii;
 				break;
 			}
 		}
 
 		if (!bFindIt) {
-			m_nPainBookmark = 0;
-			m_strBookmark	= LPCOLESTR(NULL);
+			pfindHilightData->nPaneBookmark = 0;
+			pfindHilightData->strBookmark.Empty();
 		}
 
 	} else {			// ページ内検索 - 上
-		if (m_nPainBookmark == 0 && !m_strBookmark)
-			m_nPainBookmark = nCount - 1;
+		if (pfindHilightData->nPaneBookmark == 0 && !pfindHilightData->strBookmark)
+			pfindHilightData->nPaneBookmark = nCount - 1;
 
-		for (LONG ii = m_nPainBookmark; ii >= 0; ii--) {
+		for (LONG ii = pfindHilightData->nPaneBookmark; ii >= 0; ii--) {
 			CComVariant 			varItem(ii);
 			CComVariant 			varResult;
 
@@ -1747,24 +1820,26 @@ int		CChildFrame::Impl::OnFindKeyWord(HANDLE handle)
 			// 検索
 			bFindIt = _FindKeyWordOne(spDocumentFr, strKeyword, findKeywordData.bFindDown, findKeywordData.Flags);
 			if (bFindIt) {
-				m_nPainBookmark = ii;
+				pfindHilightData->nPaneBookmark = ii;
 				break;
 			}
 		}
 
 		if (!bFindIt) {
-			m_nPainBookmark = 0;
-			m_strBookmark	= LPCOLESTR(NULL);
+			pfindHilightData->nPaneBookmark = 0;
+			pfindHilightData->strBookmark.Empty();
 		}
 	}
+	if (bFindIt == false)
+		pfindHilightData->nHitPos = 0;	// リセットする
 
-	return bFindIt;
+	return MAKELONG(bFindIt, (WORD)pfindHilightData->nHitPos);
 }
 
 static void _RemoveHighlight(IHTMLDocument3* pDoc3)
 {
 	CComQIPtr<IHTMLDocument2> spDoc2 = pDoc3;
-	_MtlForEachHTMLDocument2(spDoc2, [&](IHTMLDocument2* pDoc) {
+	_MtlForEachHTMLDocument2(spDoc2, [&](IHTMLDocument2* pDoc) -> bool {
 		CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
 		pDoc->get_selection(&spSelection);
 		if (spSelection.p)
@@ -1789,12 +1864,14 @@ static void _RemoveHighlight(IHTMLDocument3* pDoc3)
 			(*it)->get_innerText(&str);
 			(*it)->put_outerHTML(str);
 		}
+		return true;
 	});
 }
 
 
 void	CChildFrame::Impl::OnRemoveHilight()
 {
+	m_FindBarHilightData.strLastHilightText.Empty();
 	CComPtr<IDispatch>	spDisp;
 	m_spBrowser->get_Document(&spDisp);
 	CComQIPtr<IHTMLDocument3> spDoc3 = spDisp;
@@ -2175,20 +2252,20 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 {
 	CSimpleArray<CString> arrUrls;
 	bool bNoAddFromMenu = false;
-	MtlForEachHTMLDocument2( m_spBrowser, [&arrUrls, &bNoAddFromMenu, this] (IHTMLDocument2 *pDocument) {
+	MtlForEachHTMLDocument2( m_spBrowser, [&arrUrls, &bNoAddFromMenu, this] (IHTMLDocument2 *pDocument) -> bool {
 		CComPtr<IHTMLSelectionObject>	spSelection;
 		HRESULT 	hr	= pDocument->get_selection(&spSelection);
 		if ( FAILED(hr) )
-			return;
+			return true;
 
 		CComPtr<IDispatch>				spDisp;
 		hr = spSelection->createRange(&spDisp);
 		if ( FAILED(hr) )
-			return;
+			return true;
 
 		CComQIPtr<IHTMLTxtRange>		spTxtRange = spDisp;
 		if (!spTxtRange)
-			return;
+			return true;
 
 		CComBSTR						bstrLocationUrl;
 		CComBSTR						bstrText;
@@ -2203,7 +2280,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 		} else {
 			hr = pDocument->get_URL(&bstrLocationUrl);
 			if ( FAILED(hr) )
-				return;
+				return true;
 
 			//BASEタグに対処する minit
 			CComPtr<IHTMLElementCollection> spAllClct;
@@ -2239,6 +2316,7 @@ void 	CChildFrame::Impl::OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*
 			if (arrUrls.GetSize() > 0)
 				bNoAddFromMenu = true;	// 選択範囲からリンクが見つかったので
 		}
+		return true;
 	});
 
 	std::vector<CString> vecUrl(arrUrls.GetData(), arrUrls.GetData() + arrUrls.GetSize());
@@ -2864,7 +2942,7 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 			{
 				CString strTitle = szTitle;
 				strTitle.Replace(_T('\"'), _T('_'));
-				vecLog.push_back(std::make_pair<WTL::CString, WTL::CString>(szTitle, szURL));
+				vecLog.push_back(std::make_pair(WTL::CString(szTitle), WTL::CString(szURL)));
 				++count;
 			}
 			if (szTitle) ::CoTaskMemFree( szTitle );
@@ -3030,16 +3108,6 @@ void	CChildFrame::Impl::_SetFavicon(const CString& strURL)
 	CFaviconManager::SetFavicon(m_hWnd, strFaviconURL);
 }
 
-void	CChildFrame::Impl::_HilightOnce(IDispatch *pDisp, LPCTSTR lpszKeyWord)
-{
-	CComQIPtr<IWebBrowser2> 	pWebBrowser = pDisp;
-	if (pWebBrowser) {
-		MtlForEachHTMLDocument2g(pWebBrowser, _Function_SelectEmpt());
-		MtlForEachHTMLDocument2g(pWebBrowser, _Function_Hilight2(lpszKeyWord, TRUE));
-	}
-}
-
-
 	
 BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString& strKeyword, BOOL bFindDown, long Flags /*= 0*/)
 {
@@ -3055,6 +3123,14 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 	strKeyWord.TrimLeft(strExcept);
 	strKeyWord.TrimRight(strExcept);
 
+	FindHilightData*	pfindHilightData = nullptr;
+	if (Flags & 0x80) {
+		Flags &= ~0x80;
+		pfindHilightData = &m_FindBarHilightData;
+	} else {
+		pfindHilightData = &m_SearchBarHilightData;
+	}
+
 	// <body>を取得
 	CComPtr<IHTMLElement>		spHTMLElement;
 	pDocument->get_body(&spHTMLElement);
@@ -3068,9 +3144,10 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 	if (!spTxtRange)
 		return FALSE;
 
-	if (m_strBookmark && m_strOldKeyword == strKeyword) {
+	// 前回の続きから検索する
+	if (pfindHilightData->strBookmark && pfindHilightData->strLastSearchText == strKeyword) {
 		VARIANT_BOOL vMoveBookmark = VARIANT_FALSE;
-		spTxtRange->moveToBookmark(m_strBookmark, &vMoveBookmark);
+		spTxtRange->moveToBookmark(pfindHilightData->strBookmark, &vMoveBookmark);
 		if (vMoveBookmark == TRUE) {
 			long lActual;
 			if (bFindDown) {
@@ -3085,11 +3162,12 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 			}
 		}
 	} else {	// 検索範囲を全体にする
+		pfindHilightData->nHitPos = 0;
 		long lActual;
 		spTxtRange->moveStart(CComBSTR("Textedit"), -1, &lActual);
 		spTxtRange->moveEnd(CComBSTR("Textedit"), 1, &lActual);
 	}
-	m_strOldKeyword = strKeyword;
+	pfindHilightData->strLastSearchText = strKeyword;
 
 	CComBSTR		bstrText(strKeyWord);
 	BOOL			bSts  = FALSE;
@@ -3217,8 +3295,8 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 		if (spSelection)
 			spSelection->empty();
 	} else {
-		if (spTxtRange->getBookmark(&m_strBookmark) != S_OK)
-			m_strBookmark = LPCOLESTR(NULL);
+		if (spTxtRange->getBookmark(&pfindHilightData->strBookmark) != S_OK)
+			pfindHilightData->strBookmark.Empty();
 
 		spTxtRange->select();
 		spTxtRange->scrollIntoView(VARIANT_TRUE);
@@ -3227,6 +3305,16 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 
 		if (m_pGlobalConfig->bScrollCenter)
 			funcScrollBy(pDocument);
+	}
+	if (bSts) {			
+		if (bFindDown) {
+			++pfindHilightData->nHitPos;
+		} else {
+			--pfindHilightData->nHitPos;
+		}
+		if (pfindHilightData->nHitPos < 0 && pfindHilightData->nLastHilightCount > 0) {
+			pfindHilightData->nHitPos = pfindHilightData->nLastHilightCount - (-pfindHilightData->nHitPos) + 1;
+		}
 	}
 
 	return bSts;
@@ -3281,6 +3369,12 @@ int		CChildFrame::Impl::_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, 
 	if (spDoc == nullptr)
 		return 0;
 
+	if (m_FindBarHilightData.strLastHilightText == strKeyword && m_FindBarHilightData.flags == Flags)
+		return m_FindBarHilightData.nLastHilightCount;
+
+	m_FindBarHilightData.strLastHilightText = strKeyword;
+	m_FindBarHilightData.flags = Flags;
+
 	/* 前のハイライト表示を消す */
 	TIMERSTART();
 	CComQIPtr<IHTMLDocument3>	spDoc3 = spDoc;
@@ -3292,7 +3386,7 @@ int		CChildFrame::Impl::_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, 
 	TIMERSTART();
 	int nMatchCount = 0;
 	if (strKeyword.GetLength() > 0) {
-		_MtlForEachHTMLDocument2(spDoc, [&](IHTMLDocument2* pDoc) {
+		_MtlForEachHTMLDocument2(spDoc, [&](IHTMLDocument2* pDoc) -> bool {
 			CComPtr<IHTMLSelectionObject> spSelection;	/* テキスト選択を空にする */
 			pDoc->get_selection(&spSelection);
 			if (spSelection.p)
@@ -3302,12 +3396,12 @@ int		CChildFrame::Impl::_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, 
 			pDoc->get_body(&spElm);
 			CComQIPtr<IHTMLBodyElement>	spBody = spElm;
 			if (spBody.p == nullptr)
-				return;
+				return true;
 
 			CComPtr<IHTMLTxtRange>	spTxtRange;
 			spBody->createTextRange(&spTxtRange);
 			if (spTxtRange.p == nullptr)
-				return;
+				return true;
 
 			//long nMove;
 			//spTxtRange->moveStart(strTextedit, -1, &nMove);
@@ -3375,10 +3469,56 @@ int		CChildFrame::Impl::_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, 
 					++nMatchCount;
 				}
 				spTxtRange->collapse(VARIANT_FALSE);
+
+				// たまってるメッセージを処理する
+				MSG msg = {};
+				while (::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE)) {
+					if (msg.message == WM_CLOSE && msg.hwnd == m_hWnd) {
+						return false;
+					}
+
+					if (PreTranslateMessage(&msg)) {
+						::GetMessage(&msg, NULL, 0, 0);
+						continue ;
+					}
+					// 自分自身の関数が呼ばれたら中止する
+					if (msg.message == WM_DELAYHILIGHT && msg.hwnd == m_hWnd && msg.lParam) {
+						CString* pStrHilight = (CString*)msg.wParam;
+						ATLASSERT( pStrHilight );
+						CString strData = *pStrHilight;
+						CString strDw	= strData[0];
+						CString strFlags = strData[1];
+						DWORD dw = _wtoi(strDw);
+						long flags = _wtoi(strFlags);
+						strData = strData.Mid(2);
+						if (strData != strKeyword || m_FindBarHilightData.flags != flags) {
+							_RemoveHighlight(spDoc3);
+							return false;
+						} else {
+							::GetMessage(&msg, NULL, 0, 0);
+							continue ;	// ハイライトする文字が同じなのでハンドルする
+						}
+					} else if (msg.message == WM_REMOVEHILIGHT && msg.hwnd == m_hWnd) {
+						::GetMessage(&msg, NULL, 0, 0);
+						m_FindBarHilightData.strLastHilightText.Empty();
+						_RemoveHighlight(spDoc3);
+						return false;
+					}
+
+					::GetMessage(&msg, NULL, 0, 0);
+					::TranslateMessage(&msg);
+					::DispatchMessage(&msg);
+
+					// 別のページにナビゲートが開始されたので中止する
+					if (m_bNowNavigate)
+						return false;
+				}
 			}
+			return true;
 		});
 	}
 	TIMERSTOP(_T(" ハイライトにかかった時間(%d 個hit)"), nMatchCount);
+	m_FindBarHilightData.nLastHilightCount = nMatchCount;
 	return nMatchCount;
 }
 
