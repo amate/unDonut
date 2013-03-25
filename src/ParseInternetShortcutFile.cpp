@@ -87,7 +87,7 @@ int ParseInternetShortcutFile_SearchMode(CString &strFilePath, const CString& st
 		bool		bAdrBar = pr.GetValue(_T("ExPropOpt"), 0) & 1;
 		pr.Close();
 
-	   #if 1	//強引なので、跡で、仕組みを直す
+	   #if 0	//強引なので、跡で、仕組みを直す
 		// 選択範囲があれば、それを優先する.
 		CString 		strSel = Donut_GetActiveSelectedText();
 		if (strSel.IsEmpty() == 0) {

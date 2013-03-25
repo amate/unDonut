@@ -31,6 +31,7 @@ void	CVersionControl::Run()
 		case 7: _7to8();
 		case 8: _8to9();
 		case 9: _9to10();
+		case 10: _10to11();
 			break;
 		}
 	}
@@ -210,7 +211,17 @@ void	CVersionControl::_9to10()
 }
 
 
-
+void	CVersionControl::_10to11()
+{
+	enum { 
+		MAIN_EX_ADDFAVORITEOLDSHELL 	= 0x00000800L,
+		MAIN_EX_ORGFAVORITEOLDSHELL 	= 0x00001000L,
+	};
+	CIniFileIO	pr( g_szIniFileName, _T("Main") );
+	pr.QueryValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
+	CMainOption::s_dwMainExtendedStyle &= ~(MAIN_EX_ADDFAVORITEOLDSHELL | MAIN_EX_ORGFAVORITEOLDSHELL);
+	pr.SetValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
+}
 
 
 

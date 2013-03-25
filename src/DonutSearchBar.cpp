@@ -475,8 +475,6 @@ void	CDonutSearchBar::Impl::SearchWeb(CString str)
 {
 	if (str.IsEmpty()) {
 		str = GetSearchStr();
-		if (str.IsEmpty())
-			str = Donut_GetActiveSelectedText();
 	}
 	SearchWebWithEngine(str, GetSearchEngineStr());
 }

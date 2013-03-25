@@ -56,6 +56,13 @@ BOOL CFavoriteGroupEditDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 void CFavoriteGroupEditDialog::OnOK(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	if (m_tree.IsChild(wndCtl))
+		return ;
+	if (::GetKeyState(VK_RETURN) < 0) {
+		m_tree.EndEditLabelNow(FALSE);
+		return ;
+	}
+
 	switch (m_favoriteGroupMode) {
 	case kFavoriteGroupAdd:
 		{

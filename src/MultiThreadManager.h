@@ -12,6 +12,15 @@ struct NewChildFrameData;
 
 namespace MultiThreadManager {
 
+/// メインフレーム用のメッセージループ
+int		RunMainFrameMessageLoop(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray);
+
+/// マルチプロセスモードでの子プロセスメインループ
+/// コマンドライン引数を見て自分が子プロセスとして起動されていたならループに入る
+bool	RunChildProcessMessageLoop(HINSTANCE hInstance);
+
+//===================================================================================
+
 #define NEWCHILDFRAMESHAREDMEMORYNAME	_T("DonutChildFrameSharedMemoryData")
 
 struct NewChildFrameProcessData {
@@ -28,15 +37,8 @@ struct NewChildFrameProcessData {
 	WCHAR	searchWord[512];
 };
 
-/// マルチプロセスモードでの子プロセスメインループ
-bool	RunChildProcessMessageLoop(HINSTANCE hInstance);
-
-/// マルチプロセスモードでの子スレッド作成
-void	AddChildThread(NewChildFrameData* pData);
-
-
-/// マルチスレッドモードでの子スレッド作成
-void	ExecuteChildFrameThread(CChildFrame* pChild, NewChildFrameData* pData);
+/// マルチスレッド/プロセスモードでの子スレッド作成
+void	CreateChildFrameThread(NewChildFrameData& data, bool bMultiProcessMode);
 
 /// マルチプロセスモードで子プロセスの作成
 void	CreateChildProcess(NewChildFrameData& data);

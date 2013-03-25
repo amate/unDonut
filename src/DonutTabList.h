@@ -26,7 +26,7 @@ public:
 	int		GetActiveIndex() const { return m_nActiveIndex; }
 	void	SetActiveIndex(int nActiveIndex) { m_nActiveIndex = nActiveIndex; }
 	int		GetCount() const { return static_cast<int>(m_vecpChildFrameData.size()); }
-	ChildFrameDataOnClose*	At(int nIndex) { return m_vecpChildFrameData.at(nIndex).get(); }
+	std::unique_ptr<ChildFrameDataOnClose>&	At(int nIndex) { return m_vecpChildFrameData.at(nIndex); }
 	
 	// Operates
 	void	Delete(int nIndex) { m_vecpChildFrameData.erase(m_vecpChildFrameData.begin() + nIndex); }

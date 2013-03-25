@@ -1039,7 +1039,9 @@ void	CDonutTabBar::Impl::OnMDIChildCreate(HWND hWnd, bool bActive /*= false*/)
 {
 	unique_ptr<TabItem>	pItem(new TabItem);
 	pItem->hWnd		= hWnd;
-	pItem->strItem	= LOADINGSTRING;
+	pItem->strItem	= MtlGetWindowText(hWnd);
+	if (pItem->strItem.IsEmpty())
+		pItem->strItem = LOADINGSTRING;
 	if ( m_bRedrawLocked || hWnd != m_pChildFrameClient->GetActiveChildFrameWindow() )
 		pItem->state |= TISS_INACTIVE;
 

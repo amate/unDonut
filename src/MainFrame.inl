@@ -364,7 +364,8 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 	int nCount = tabList.GetCount();
 	for (int i = 0; i < nCount; ++i) {
 		std::unique_ptr<NewChildFrameData>	pdata(new NewChildFrameData(m_ChildFrameClient));
-		auto pTab = tabList.At(i);
+		auto& pTab = tabList.At(i);
+		pdata->strTitle	= pTab->strTitle;
 		pdata->strURL	= pTab->strURL;
 		pdata->dwDLCtrl	= pTab->dwDLCtrl;
 		pdata->dwExStyle= pTab->dwExStyle;
@@ -372,6 +373,7 @@ void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 		pdata->TravelLogBack	= pTab->TravelLogBack;
 		pdata->TravelLogFore	= pTab->TravelLogFore;
 		pdata->bActive	= (i == tabList.GetActiveIndex());
+		pdata->bDelayLoad	= CMainOption::s_bDelayLoad;
 
 		m_deqNewChildFrameData.push_back(std::move(pdata));
 	}
@@ -506,15 +508,18 @@ void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStd
 }
 
 /// 複数URLを開く
-void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink /*= false*/)
+void	CMainFrame::Impl::UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink /*= false*/, bool bUseDelayLoad /*= true*/)
 {
 	for (auto it = vecOpenData.cbegin(); it != vecOpenData.cend(); ++it) {
 		NewChildFrameData*	pdata = new NewChildFrameData(m_ChildFrameClient);
+		pdata->strTitle	= it->strTitle;
 		pdata->strURL	= it->strURL;
 		pdata->dwDLCtrl	= it->DLCtrl;
 		pdata->dwExStyle= it->ExStyle;
 		pdata->dwAutoRefresh = it->AutoRefresh;
 		pdata->bLink	= bLink;
+		if (bUseDelayLoad && CMainOption::s_bDelayLoad)
+			pdata->bDelayLoad = true;
 
 		m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>(std::move(pdata)));
 	}
@@ -1360,10 +1365,10 @@ void	CMainFrame::Impl::OnSysCommand(UINT nID, CPoint pt)
 		}
 		break;
 
-  #if 0	//+++ 最小化ボタンを押した時に、タスクトレイに入るようにしてみる.
+	//+++ 最小化ボタンを押した時に、タスクトレイに入るようにしてみる.
 	case SC_MINIMIZE:
 		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
-			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
+			&& (pt.x || pt.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
 		) {
 			OnGetOut(0,0,0);
 			SetMsgHandled(TRUE);
@@ -1374,7 +1379,7 @@ void	CMainFrame::Impl::OnSysCommand(UINT nID, CPoint pt)
 
 	case SC_CLOSE:
 		if ((CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_CLOSEBTN2TRAY)	//+++ 最小化ボタンでタスクトレイに入れる設定のとき、
-			&& (point.x || point.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
+			&& (pt.x || pt.y)											//+++ x,yが0,0ならタスクバーでクリックした場合だろうで、トレイにいれず、最小化だけしてみる.
 		) {
 			OnGetOut(0,0,0);
 			SetMsgHandled(TRUE);
@@ -1382,7 +1387,6 @@ void	CMainFrame::Impl::OnSysCommand(UINT nID, CPoint pt)
 		}
 		SetMsgHandled(FALSE);
 		break;
-  #endif
 
 	default:
 		SetMsgHandled(FALSE);
@@ -1466,7 +1470,7 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 			std::transform(vecUrl.begin(), vecUrl.end(), std::back_inserter(vecData), [](const CString& url) {
 				return CMainFrame::OpenMultiFileData(url);
 			});
-			UserOpenMultiFile(vecData, true);
+			UserOpenMultiFile(vecData, true, false);
 		}
 		break;
 
@@ -2058,8 +2062,6 @@ void	CMainFrame::Impl::OnFavoriteAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 	CFavoriteEditDialog dlg(true);
 	dlg.SetNameURLFavicon(pUIData->strTitle, pUIData->strLocationURL, CFaviconManager::GetFavicon(pUIData->strFaviconURL));
 	dlg.DoModal(m_hWnd);
-	bool bOldShell = _check_flag(MAIN_EX_ADDFAVORITEOLDSHELL, CMainOption::s_dwMainExtendedStyle);
-	//MtlAddFavorite(pUIData->strLocationURL, pUIData->strTitle, bOldShell, DonutGetFavoritesFolder(), m_hWnd);
 
 	SendMessage(WM_REFRESH_EXPBAR);
 }

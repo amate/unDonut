@@ -959,7 +959,7 @@ BEGIN
     LTEXT           "タブ切り替え時のページのちらつきについて",IDC_STATIC,12,249,126,8,NOT WS_GROUP
 END
 
-IDD_PROPPAGE_MAIN DIALOGEX 0, 0, 279, 305
+IDD_PROPPAGE_MAIN DIALOGEX 0, 0, 279, 267
 STYLE DS_SETFONT | WS_CHILD | WS_CAPTION
 CAPTION "全般"
 FONT 9, "ＭＳ Ｐゴシック", 0, 0, 0x0
@@ -967,41 +967,39 @@ BEGIN
     CONTROL         "お気に入りやファイルを新規タブで開く(&N)",IDC_CHECK_MAIN_NEWWINDOW,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,16,135,10
     CONTROL         "お気に入りやファイルを開くとき、タブをアクティブにしない(&F)",IDC_CHECK_MAIN_NOACTIVATE,
                     "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,28,189,10
-    CONTROL         "ページ内のリンクを開くとき、作成された新規タブをアクティブにしない(&R)",IDC_CHECK_MAIN_NOACTIVATE_NEWWIN,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,64,223,10
-    CONTROL         "お気に入りグループを開くとき、他のウィンドウを閉じない(&D)",IDC_CHECK_MAIN_NOCLOSEDFG,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,76,182,10
-    CONTROL         "お気に入りの追加に、コモンダイアログボックスを使う(&C)",IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,88,177,10
-    CONTROL         "お気に入りの整理に、エクスプローラを使う(&E)",IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,100,147,10
-    CONTROL         "リンクのターゲット名を考慮する(&M) ※新規タブより有効",IDC_CHECK_MAIN_REGISTER_AS_BROWSER,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,112,171,10
-    CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,164,85,10
-    CONTROL         "状態をTabList.donutTabListへ定期的に保存する(&S):",IDC_CHECK_MAIN_BACKUP,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,204,149,10
-    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,159,204,25,12,ES_AUTOHSCROLL
-    LTEXT           "(1-120分)",IDC_STATIC,187,204,30,12,SS_CENTERIMAGE
-    CONTROL         "タブのオプション/セキュリティを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
-                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,216,140,10
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,88,232,25,12,ES_AUTOHSCROLL
-    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,123,232,25,12,ES_AUTOHSCROLL
-    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,8,232,80,12,SS_CENTERIMAGE
-    LTEXT           "分",IDC_STATIC,114,234,8,8
-    LTEXT           "秒",IDC_STATIC,151,234,8,8
-    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,248,44,15,BS_FLAT
-    LTEXT           "(バーに対してのフォント、アプリケーション再起動後有効)",IDC_STATIC,56,248,164,16,SS_CENTERIMAGE
-    LTEXT           "動作",IDC_STATIC,4,4,269,9,SS_SUNKEN
-    LTEXT           "システム",IDC_STATIC,4,152,269,9,SS_SUNKEN
-    LTEXT           "その他",IDC_STATIC,4,192,269,9,SS_SUNKEN
-    CONTROL         "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)",IDC_CHK_IGNORE_BLANK,
-                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,124,253,10
-    CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,136,115,9
     CONTROL         "外部からURLを開いたとき、新規タブで開く",IDC_CHECK_EXTERNALNEWTAB,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,40,136,10
     CONTROL         "↑で開かれたタブをアクティブにする",IDC_CHECK_EXTERNALNEWTABACTIVE,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,20,52,120,11
-    COMBOBOX        IDC_COMBO_BROWSREOPERATINGMODE,163,175,64,44,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
-    LTEXT           "ブラウザビューの動作モード(※再起動後の有効)",IDC_STATIC,16,176,144,12,SS_CENTERIMAGE
+    CONTROL         "ページ内のリンクを開くとき、作成された新規タブをアクティブにしない(&R)",IDC_CHECK_MAIN_NOACTIVATE_NEWWIN,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,64,223,10
+    CONTROL         "お気に入りグループを開くとき、現在開かれているタブを閉じない(&D)",IDC_CHECK_MAIN_NOCLOSEDFG,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,76,208,10
+    CONTROL         "一度に複数タブが開かれるとき、タブがアクティブになるまで読み込みを延期する",IDC_CHECK_DELAYLOAD,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,89,245,9
+    CONTROL         "リンクのターゲット名を考慮する(&M) ※新規タブより有効",IDC_CHECK_MAIN_REGISTER_AS_BROWSER,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,101,171,10
+    CONTROL         "リンクをクリックしたときに新規タブで開かれるのを防ぐ(target=""_blank""を無視する)",IDC_CHK_IGNORE_BLANK,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,114,253,10
+    CONTROL         "独自ページ内検索バーを使用する",IDC_CHK_USECUSTOMFINDBAR,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,8,127,115,9
+    CONTROL         "複数起動を許可しない(&O)",IDC_CHECK_ONEINSTANCE,"Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,154,85,10
+    COMBOBOX        IDC_COMBO_BROWSREOPERATINGMODE,163,165,64,44,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    CONTROL         "状態をTabList.donutTabListへ定期的に保存する(&S):",IDC_CHECK_MAIN_BACKUP,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,194,149,10
+    EDITTEXT        IDC_EDIT_MAIN_BACKUPTIME,159,194,25,12,ES_AUTOHSCROLL
+    LTEXT           "(1-120分)",IDC_STATIC,187,194,30,12,SS_CENTERIMAGE
+    CONTROL         "タブのオプション/セキュリティを継承する(&I)",IDC_CHECK_MAIN_INHERIT_OPTIONS,
+                    "Button",BS_AUTOCHECKBOX | BS_FLAT | WS_TABSTOP,8,206,140,10
+    LTEXT           "自動更新のユーザ設定(&A):",IDC_STATIC,8,222,80,12,SS_CENTERIMAGE
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_MIN,88,222,25,12,ES_AUTOHSCROLL
+    LTEXT           "分",IDC_STATIC,114,224,8,8
+    EDITTEXT        IDC_EDIT_MAIN_AUTOREFRESHTIME_SEC,123,222,25,12,ES_AUTOHSCROLL
+    LTEXT           "秒",IDC_STATIC,151,224,8,8
+    PUSHBUTTON      "フォント(&F)...",IDC_BUTTON_BAR_FONT,8,238,44,15,BS_FLAT
+    LTEXT           "(バーに対してのフォント、アプリケーション再起動後有効)",IDC_STATIC,56,238,164,16,SS_CENTERIMAGE
+    LTEXT           "動作",IDC_STATIC,4,4,269,9,SS_SUNKEN
+    LTEXT           "システム",IDC_STATIC,4,142,269,9,SS_SUNKEN
+    LTEXT           "その他",IDC_STATIC,4,182,269,9,SS_SUNKEN
+    LTEXT           "ブラウザビューの動作モード(※再起動後の有効)",IDC_STATIC,16,166,144,12,SS_CENTERIMAGE
 END
 
 IDD_PROPPAGE_FAVORITEMENU DIALOGEX 0, 0, 280, 256
@@ -1969,7 +1967,7 @@ FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
     DEFPUSHBUTTON   "OK",IDOK,7,182,50,14
     PUSHBUTTON      "閉じる",IDCANCEL,164,182,50,14
-    CONTROL         "",IDC_TREE,"SysTreeView32",WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,7,207,170
+    CONTROL         "",IDC_TREE,"SysTreeView32",TVS_EDITLABELS | WS_BORDER | WS_HSCROLL | WS_TABSTOP,7,7,207,170
     PUSHBUTTON      "削除",ID_DELETE,62,182,50,14
 END
 
@@ -2019,10 +2017,10 @@ BEGIN
 
     IDD_PROPPAGE_MAIN, DIALOG
     BEGIN
-        LEFTMARGIN, 6
+        LEFTMARGIN, 4
         RIGHTMARGIN, 274
-        VERTGUIDE, 13
-        BOTTOMMARGIN, 293
+        VERTGUIDE, 8
+        BOTTOMMARGIN, 255
     END
 
     IDD_PROPPAGE_FAVORITEMENU, DIALOG

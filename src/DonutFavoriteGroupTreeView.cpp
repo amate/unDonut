@@ -198,24 +198,26 @@ LRESULT CDonutFavoriteGroupTreeView::OnTreeItemRClick(LPNMHDR pnmh)
 		kFavoriteGroupOpen,
 		kAddActiveTab,
 		kAddAllTab,
+		kFavoriteGroupCreate,
 		kFavoriteGroupDelete,
 		kItemDelete,
 	};
 
 	LPCTSTR filePath = nullptr;
 	if (IsRootChildren(htHit)) {
-		menu.AppendMenu(0, kFavoriteGroupOpen, _T("グループを開く"));
-		menu.AppendMenu(MF_SEPARATOR, 0U, _T(""));
-		menu.AppendMenu(0, kAddActiveTab, _T("アクティブなタブをグループに追加"));
-		menu.AppendMenu(0, kAddAllTab, _T("全タブをグループに追加"));
-		menu.AppendMenu(MF_SEPARATOR, 0U, _T(""));
-		menu.AppendMenu(0, kRenameFavoriteGroup, _T("名前の変更"));
-		menu.AppendMenu(MF_SEPARATOR, 0U, _T(""));
-		menu.AppendMenu(0, kFavoriteGroupDelete, _T("削除"));
+		menu.AppendMenu(0, kFavoriteGroupOpen, _T("グループを開く(&O)"));
+		menu.AppendMenu(MF_SEPARATOR);
+		menu.AppendMenu(0, kAddActiveTab, _T("アクティブなタブをグループに追加(&A)"));
+		menu.AppendMenu(0, kAddAllTab	, _T("全タブをグループに追加(&L)"));
+		menu.AppendMenu(MF_SEPARATOR);
+		menu.AppendMenu(0, kRenameFavoriteGroup, _T("名前の変更(&R)"));
+		menu.AppendMenu(MF_SEPARATOR);
+		menu.AppendMenu(0, kFavoriteGroupCreate, _T("お気に入りグループを作成(&N)"));
+		menu.AppendMenu(0, kFavoriteGroupDelete, _T("グループを削除(&D)"));
 
 		filePath = (LPCTSTR)GetItemData(htHit);
 	} else {
-		menu.AppendMenu(0, kItemDelete, _T("削除"));
+		menu.AppendMenu(0, kItemDelete, _T("削除(&D)"));
 	}
 
 	ClientToScreen(&pt);
@@ -256,11 +258,15 @@ LRESULT CDonutFavoriteGroupTreeView::OnTreeItemRClick(LPNMHDR pnmh)
 				for (int i = 0; i < nCount; ++i) {
 					if (GetItemState(htHit, TVIS_EXPANDED) & TVIS_EXPANDED)
 						_AddTreeItem(htHit, allTabList.At(i)->strTitle, allTabList.At(i)->strURL);
-					tabList.PushBack(unique_ptr<ChildFrameDataOnClose>(std::move(allTabList.At(i))));
+					tabList.PushBack(std::move(allTabList.At(i)));
 				}
 				tabList.Save(filePath, false);
 			}
 		}
+		break;
+
+	case kFavoriteGroupCreate:
+		GetTopLevelWindow().PostMessage(WM_COMMAND, ID_FAVORITE_GROUP_SAVE);
 		break;
 
 	case kFavoriteGroupDelete:
@@ -320,8 +326,15 @@ LRESULT CDonutFavoriteGroupTreeView::OnTreeSelChanged(LPNMHDR pnmh)
 	if (IsRootChildren(pnmtv->itemNew.hItem))
 		return 0;
 
-	CString url = m_vecURLs[pnmtv->itemNew.lParam];
-	DonutOpenFile(url);
+	HTREEITEM htParent = GetParentItem(pnmtv->itemNew.hItem);
+	CString favoriteGroupPath = (LPCTSTR)GetItemData(htParent);
+	CDonutTabList tabList;
+	if (tabList.Load(favoriteGroupPath)) {
+		int nIndex = GetIndexFromHTREEITEM(htParent, pnmtv->itemNew.hItem);
+		ATLASSERT( 0 <= nIndex && nIndex < tabList.GetCount() );
+		g_pMainWnd->UserOpenFile(tabList.At(nIndex)->strURL, DonutGetStdOpenFlag(), tabList.At(nIndex)->dwDLCtrl, tabList.At(nIndex)->dwExStyle, tabList.At(nIndex)->dwAutoRefreshStyle);
+	}
+	
 	return 0;
 }
 

@@ -12,6 +12,7 @@ class CChildFrame;
 
 struct NewChildFrameData {
 	HWND	hWndParent;
+	CString	strTitle;	// optional
 	CString	strURL;
 	vector<std::pair<CString, CString> > TravelLogFore;
 	vector<std::pair<CString, CString> > TravelLogBack;
@@ -27,9 +28,11 @@ struct NewChildFrameData {
 	DWORD	dwThreadIdFromNewWindow;
 	CString	strNewWindowURL;
 
+	bool	bDelayLoad;
+
 	NewChildFrameData(HWND Parent) : 
 		hWndParent(Parent), dwDLCtrl(-1), dwExStyle(-1), dwAutoRefresh(0), 
-		bActive(false), bLink(false), bAutoHilight(false), dwThreadIdFromNewWindow(0)
+		bActive(false), bLink(false), bAutoHilight(false), dwThreadIdFromNewWindow(0), bDelayLoad(false)
 	{	}
 
 private:
@@ -37,8 +40,8 @@ private:
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar & strURL & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefresh;
-		ar & bActive & bLink & bAutoHilight & searchWord & dwThreadIdFromNewWindow & strNewWindowURL;
+		ar & strTitle & strURL & TravelLogFore & TravelLogBack & dwDLCtrl & dwExStyle & dwAutoRefresh;
+		ar & bActive & bLink & bAutoHilight & searchWord & dwThreadIdFromNewWindow & strNewWindowURL & bDelayLoad;
 #ifdef WIN64
 		ar & reinterpret_cast<__int64&>(hWndParent);
 #else

@@ -125,7 +125,6 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 				m_strUrl = strURL;
 			}
 		}
-		//m_strUrl = Donut_GetActiveStatusStr();
 	} else if (dwID == CONTEXT_MENU_IMAGE) {
 		if (pDispatchObjectHit) {
 			CComQIPtr<IHTMLImgElement>	spImage = pDispatchObjectHit;

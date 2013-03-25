@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "ChildFrame.h"
 #include <regex>
+#include <chrono>
 #include <boost\serialization\string.hpp>
 #include <boost\serialization\vector.hpp>
 #include <boost\serialization\utility.hpp>
@@ -635,6 +636,7 @@ private:
 	CString m_strNewWindowURL;
 	bool	m_bFirstNavigate;
 	int		m_nAutoLoginPrevIndex;
+	CString m_strDelayLoadURL;
 
 	bool	m_bMClickFail;
 	CSharedMemory m_sharedTravelLogMenu;
@@ -680,7 +682,9 @@ CChildFrame::~CChildFrame()
 	delete pImpl;
 }
 
+
 /// スレッドを立ててCChildFrameのインスタンスを作る
+/// MainFrameを持っているプロセスからしか呼んではいけない！
 void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 {
 	if (data.dwDLCtrl == -1)
@@ -690,8 +694,7 @@ void	CChildFrame::AsyncCreate(NewChildFrameData& data)
 	//pChild->pImpl->m_view.SetDefaultFlags(data.dwDLCtrl, data.dwExStyle, data.dwAutoRefresh);
 
 	if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiThreadMode) {
-		CChildFrame*	pChild = new CChildFrame;
-		MultiThreadManager::ExecuteChildFrameThread(pChild, &data);
+		MultiThreadManager::CreateChildFrameThread(data, false);
 
 	} else if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode) {
 		MultiThreadManager::CreateChildProcess(data);
@@ -719,9 +722,11 @@ HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRe
 	pImpl->SetAutoRefreshStyle(data.dwAutoRefresh);
 	pImpl->SetSearchWordAutoHilight(data.searchWord, data.bAutoHilight);
 	pImpl->SetTravelLog(data.TravelLogFore, data.TravelLogBack);
-	if (data.strURL.GetLength() > 0)
+	if (data.strURL.GetLength() > 0 && data.bDelayLoad == false)
 		pImpl->Navigate2(data.strURL);
-
+	else
+		pImpl->m_strDelayLoadURL = data.strURL;
+	pImpl->OnTitleChange(data.strTitle);
 	return hWndChildFrame;
 }
 

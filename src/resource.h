@@ -573,6 +573,8 @@
 #define IDC_EDIT_OFFSETMSELECTY         1404
 #define IDC_CHK_USECUSTOMFINDBAR        1405
 #define IDC_RADIO_NONE                  1406
+#define IDC_CHK_USECUSTOMFINDBAR2       1406
+#define IDC_CHECK_DELAYLOAD             1406
 #define IDC_RADIO_CASH                  1407
 #define IDC_RADIO_ALWAYS                1408
 #define IDC_CMB_DOWNLOADFOLDER          1409

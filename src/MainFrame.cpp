@@ -209,7 +209,7 @@ public:
 						 DWORD DLCtrl = -1, 
 						 DWORD ExStyle = -1, 
 						 DWORD AutoRefresh = 0);
-	void	UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink = false);
+	void	UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData, bool bLink = false, bool bUseDelayLoad = true);
 
 	HWND	GetActiveChildFrameHWND() { return m_ChildFrameClient.GetActiveChildFrameWindow(); }
 	CString GetActiveLocationURL();
@@ -463,7 +463,7 @@ void	CMainFrame::UserOpenFile(LPCTSTR url, DWORD openFlags,
 
 void	CMainFrame::UserOpenMultiFile(const std::vector<OpenMultiFileData>& vecOpenData)
 {
-	pImpl->UserOpenMultiFile(vecOpenData);
+	pImpl->UserOpenMultiFile(vecOpenData, false, true);
 }
 
 
@@ -475,12 +475,6 @@ HWND	CMainFrame::GetHWND()
 HWND	CMainFrame::GetActiveChildFrameHWND()
 {
 	return pImpl->GetActiveChildFrameHWND();
-}
-
-/// 現在表示中のページで選択されたテキストを返す
-CString	CMainFrame::GetActiveSelectedText()
-{
-	return CString();
 }
 
 

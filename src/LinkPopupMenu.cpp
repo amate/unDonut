@@ -706,6 +706,7 @@ void	CLinkPopupMenu::OpenMultiLink(LinkFolderPtr pFolder)
 				return ;
 			if (item.bExPropEnable == false) {
 				vecData.push_back(CMainFrame::OpenMultiFileData(item.strUrl));
+				vecData.back().strTitle = item.strName;
 				return ;
 			}
 			
@@ -713,6 +714,7 @@ void	CLinkPopupMenu::OpenMultiLink(LinkFolderPtr pFolder)
 				CDLControlOption::s_dwExtendedStyleFlags, 0, 
 				item.dwExProp.get(), item.dwExPropOpt.get());
 			vecData.push_back(CMainFrame::OpenMultiFileData(item.strUrl, ExProp.GetDLControlFlags(), ExProp.GetExtendedStyleFlags(), ExProp.GetAutoRefreshFlag()));		
+			vecData.back().strTitle = item.strName;
 	});
 	g_pMainWnd->UserOpenMultiFile(vecData);
 }

@@ -153,7 +153,8 @@ void CDonutFavoriteTreeView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	UINT flags = 0;
 	HTREEITEM htHit = HitTest(point, &flags);
-	_DoDragDrop(htHit, point, 0);
+	if (htHit)
+		_DoDragDrop(htHit, point, 0);
 }
 
 

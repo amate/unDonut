@@ -51,6 +51,7 @@ class CMainFrame
 public:
 
 	struct OpenMultiFileData {
+		CString strTitle;
 		CString strURL;
 		DWORD	DLCtrl;
 		DWORD	ExStyle;
@@ -77,7 +78,6 @@ public:
 
 	HWND	GetHWND();
 	HWND	GetActiveChildFrameHWND();
-	CString	GetActiveSelectedText();
 	CString GetActiveLocationURL();
 
 private:

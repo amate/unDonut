@@ -20,16 +20,13 @@
 #include "DonutOptions.h"
 #include "ie_feature_control.h"
 #include "ExMenu.h"
-#include "MainFrame.h"								//+++ "MainFrm.h"
+//#include "MainFrame.h"
 #include "API.h"
 #include "appconst.h"
 #include "MultiThreadManager.h"
 #include "DonutSimpleEventManager.h"
 #include "VersionControl.h"
 #include "APIHook.h"
-
-// Ini file name
-TCHAR				g_szIniFileName[MAX_PATH];
 
 
 extern const UINT	g_uDropDownCommandID[] = {
@@ -63,6 +60,7 @@ extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandI
 
 // グローバル変数
 CServerAppModule	_Module;
+TCHAR				g_szIniFileName[MAX_PATH];
 CMainFrame*			g_pMainWnd		= NULL;
 CAPI*				g_pAPI			= NULL;
 bool				g_bSefShutDown	= false;
@@ -74,7 +72,8 @@ BEGIN_OBJECT_MAP(ObjectMap)
 END_OBJECT_MAP()
 
 
-
+////////////////////////////////////////////////////////////////////
+/// クラッシュダンプ関係
 
 typedef BOOL (WINAPI *MiniDumpWriteDump_fp)(HANDLE, DWORD, HANDLE, MINIDUMP_TYPE, PMINIDUMP_EXCEPTION_INFORMATION, PMINIDUMP_USER_STREAM_INFORMATION, PMINIDUMP_CALLBACK_INFORMATION);
 
@@ -223,29 +222,6 @@ static bool CheckOneInstance(LPTSTR lpstrCmdLine)
 // iniファイルから設定を読み込む
 static bool _PrivateInit()
 {
-#if 0
-	CString strPath = Misc::GetExeDirectory() + _T("lock");
-	do {
-		if (::PathFileExists(strPath)) {
-			int nReturn = ::MessageBox(NULL, 
-				_T("unDonutが完全に終了していません。\n")
-				_T("設定の保存中の可能性があります。\n")
-				_T("無視してプロセスを実行しますか？\n")
-				_T("(※無視を選ぶと設定が読み込まれない可能性があります)")
-				, NULL, MB_ABORTRETRYIGNORE | MB_ICONWARNING);
-			if (nReturn == IDABORT) {	// 終了する
-				return false;
-			} else if (nReturn == IDRETRY) {
-				continue;
-			} else {
-				::DeleteFile(strPath);	// とりあえず消しておく
-			}
-		}
-		break;
-
-	} while(1);
-#endif
-
 	CVersionControl().Run();
 
 	CMainOption::GetProfile();
@@ -271,9 +247,7 @@ static bool _PrivateInit()
 	CFavoritesMenuOption::GetProfile();
 	CMouseOption::GetProfile();
 	CSkinOption::GetProfile();
-  #if 0	//+++ atltheme_d.hの使用をやめた
-	CThemeDLLLoader::LoadThemeDLL();
-  #endif
+
 	CExMenuManager::Initialize();
 
 	return true;
@@ -288,16 +262,9 @@ void _PrivateTerm()
 	CStartUpOption::WriteProfile();
 	CStyleSheetOption::WriteProfile();
 
-  #if 0	//+++ atltheme_d.hの使用をやめた
-	CThemeDLLLoader::UnLoadThemeDLL();
-  #endif
 	CExMenuManager::Terminate();
 	
-	ATLTRACE(_T("設定の保存完了!\n"));
-#if 0
-	CString strPath = Misc::GetExeDirectory() + _T("lock");
-	::DeleteFile(strPath);
-#endif
+	ATLTRACE(_T("_PrivateTerm : 設定の保存完了!\n"));
 }
 
 
@@ -441,53 +408,6 @@ static int RegisterCOMServer(int &nRet, bool &bRun, bool &bAutomation, bool &bTr
 }
 
 
-static int RunMainFrame(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
-{
-	CHandle hJob;
-	LPCTSTR kMainFrameJobName = _T("DonutMainFrameJobObject");
-	hJob.Attach(::CreateJobObject(NULL, kMainFrameJobName));
-	JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedLimit = { 0 };
-	extendedLimit.BasicLimitInformation.LimitFlags	= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	::SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &extendedLimit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
-
-	_Module.StartMonitor();
-	HRESULT hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
-	ATLASSERT( SUCCEEDED(hRes) );
-	hRes = ::CoResumeClassObjects();
-	ATLASSERT( SUCCEEDED(hRes) );
-
-	int nRet = 0;
-	{
-		CMessageLoop theLoop;
-		_Module.AddMessageLoop(&theLoop);
-
-		CMainFrame	 wndMain;
-		if (wndMain.CreateEx() == NULL) {
-			ATLTRACE( _T("Main window creation failed!\n") );
-			return 0;
-		}
-		// load windowplacement
-		wndMain.StartupMainFrameStyle(nCmdShow, bTray);
-
-		_Module.Lock();
-
-		CStartUpOption::StartUp(wndMain);
-
-		//wndMain.SetAutoBackUp();		//自動更新するなら、開始.
-
-		// 実際のメインループ.
-		nRet = theLoop.Run();
-
-		_Module.RemoveMessageLoop();
-	}
-
-	_Module.RevokeClassObjects();
-	::Sleep(_Module.m_dwPause);
-
-	return nRet;
-}
-
-
 static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 {
 	TIMERSTART();
@@ -597,7 +517,7 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 			nRet = theLoop.Run();
 		} else {
 			//\\nRet = Run(lpstrCmdLine, nCmdShow, bTray);
-			nRet = RunMainFrame(lpstrCmdLine, nCmdShow, bTray);
+			nRet = MultiThreadManager::RunMainFrameMessageLoop(lpstrCmdLine, nCmdShow, bTray);
 		}
 	  #if 1 //+++ WTLのメイン窓クローズが正常終了時に、終了コードとして1を返す...
 			//+++ OSに返す値なので0のほうがよいはずで、
@@ -720,33 +640,4 @@ HRESULT STDMETHODCALLTYPE CAPI::Unadvise(DWORD dwCookie)
 	return hr;
 }
 #endif
-
-
-
-/////////////////////////////////////////////////////////////////////////////
-///+++ 現在のアクティブ頁で選択中のテキストを返す.
-///+++ ※ CSearchBar向けに用意. 本来は g_pMainWnd-> の同名関数を呼べばいいだけだが、
-///+++	  include の依存関係が面倒なので...
-CString Donut_GetActiveSelectedText()
-{
-	return g_pMainWnd->GetActiveSelectedText();
-}
-
-
-///+++
-CString Donut_GetActiveStatusStr()
-{
-#if 0	//:::
-	return g_pMainWnd->GetActiveChildFrame()->strStatusBar();
-#endif
-	return CString();
-}
-
-
-///+++
-void  Donut_ExplorerBar_RefreshFavoriteBar()
-{
-	//CDonutExplorerBar::GetInstance()->RefreshExpBar(0);
-}
-
 

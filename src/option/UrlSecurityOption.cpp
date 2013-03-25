@@ -211,13 +211,13 @@ void CUrlSecurityOption::Add(unsigned flags, unsigned opts, unsigned opts2, cons
 
 void	CUrlSecurityForChildFrame::ReloadList()
 {
-	//CString sharedMemName;
-	//sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, m_hWndMainFrame);
-	//CSharedMemory sharedMem;
-	//sharedMem.Deserialize(m_UrlSecurityList, sharedMemName);
+	CString sharedMemName;
+	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, m_hWndMainFrame);
+	CSharedMemory sharedMem;
+	sharedMem.Deserialize(m_UrlSecurityList, sharedMemName);
 
-	CUrlSecurityOption::GetProfile();
-	m_UrlSecurityList = CUrlSecurityOption::s_UrlSecurityList;
+	//CUrlSecurityOption::GetProfile();
+	//m_UrlSecurityList = CUrlSecurityOption::s_UrlSecurityList;
 }
 
 

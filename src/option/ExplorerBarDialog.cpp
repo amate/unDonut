@@ -58,7 +58,7 @@ BOOL CExplorerBarPropertyPage::OnApply()
 		s_dwExplorerBarStyle = 0;
 		if (m_bExplorerBarAutoShow)	s_dwExplorerBarStyle |= EXPLORERBAROPTION_AUTOSHOW;
 
-		m_funcHookForAutoShow(m_bExplorerBarAutoShow);
+		m_funcHookForAutoShow(m_bExplorerBarAutoShow != 0);
 		
 		WriteProfile();
 

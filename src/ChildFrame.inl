@@ -434,6 +434,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 			: m_ppDisp(ppDisp)
 			, m_data(data)
 			, m_bMultiProcessMode(bMode)
+			, m_bGetMarshalIDispatchInterface(false)
 		{	}
 
 		virtual BOOL PreTranslateMessage(MSG* pMsg)
@@ -441,10 +442,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 			switch (pMsg->message) {
 			case WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2:
 				{
-					if (m_bMultiProcessMode)
-						MultiThreadManager::AddChildThread(&m_data);
-					else
-						MultiThreadManager::ExecuteChildFrameThread(new CChildFrame, &m_data);
+					MultiThreadManager::CreateChildFrameThread(m_data, m_bMultiProcessMode);
 					return TRUE;
 				}
 
@@ -454,7 +452,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 					IDispatch* pDisp;
 					ATLVERIFY(::CoGetInterfaceAndReleaseStream(pStream, IID_IDispatch, (void**)&pDisp) == S_OK);
 					*m_ppDisp = pDisp;
-					PostQuitMessage(0);
+					m_bGetMarshalIDispatchInterface = true;
 					return TRUE;
 				}				
 			}
@@ -464,17 +462,39 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 		IDispatch**	m_ppDisp;
 		NewChildFrameData& m_data;
 		bool	m_bMultiProcessMode;
+	public:
+		bool	m_bGetMarshalIDispatchInterface;
 	};
 
-	CMessageLoop loop;
 	CThreadObserver threadObserver(ppDisp, data, m_pGlobalConfig->bMultiProcessMode);
-	loop.AddMessageFilter(&threadObserver);
 	
 	PostThreadMessage(::GetCurrentThreadId(), WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2, 0, 0);
-	int nRet = loop.Run();
 
-	loop.RemoveMessageFilter(&threadObserver);
-	//CChildFrame::AsyncCreate(data);
+	auto startTime = std::chrono::steady_clock::now();
+	while ((std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+		MSG msg = {};
+		BOOL bRet = ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
+		if (bRet) {
+			bRet = ::GetMessage(&msg, NULL, 0, 0);
+			if(bRet == -1) {
+				ATLTRACE2(atlTraceUI, 0, _T("::GetMessage returned -1 (error)\n"));
+				continue;   // error, don't process
+			} else if(!bRet) {
+				ATLTRACE2(atlTraceUI, 0, _T("CMessageLoop::Run - exiting\n"));
+				break;   // WM_QUIT, exit message loop
+			}
+			
+			if(!threadObserver.PreTranslateMessage(&msg)) {
+				::TranslateMessage(&msg);
+				::DispatchMessage(&msg);
+			} else {
+				if (threadObserver.m_bGetMarshalIDispatchInterface)
+					break;	// ポインタを受け取ったのでループを抜ける
+			}
+		} else {
+			::Sleep(10);
+		}
+	}
 }
 
 void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)
@@ -1327,6 +1347,11 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 		if (MtlIsApplicationActive(m_hWnd)) {
 			//SetForegroundWindow(m_hWnd);
 			_SetFocusToHTML();
+		}
+		// 遅延読み込みを行う
+		if (m_strDelayLoadURL.GetLength() > 0) {
+			Navigate2(m_strDelayLoadURL);
+			m_strDelayLoadURL.Empty();
 		}
 
 		// タブごとに検索文字列を保存する
@@ -2900,6 +2925,8 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 	data.strTitle	= MtlGetWindowText(m_hWnd);
 	data.strTitle.Replace(_T('\"'), _T('_'));
 	data.strURL		= GetLocationURL();
+	if (data.strURL.IsEmpty())
+		data.strURL	= m_strDelayLoadURL;
 	data.dwDLCtrl	= m_view.GetDLControlFlags();
 	data.dwExStyle	= m_view.GetExStyle();
 	data.dwAutoRefreshStyle	= m_view.GetAutoRefreshStyle();

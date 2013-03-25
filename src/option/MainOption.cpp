@@ -41,6 +41,7 @@ bool	CMainOption::s_bIgnore_blank			= false;
 bool	CMainOption::s_bUseCustomFindBar		= false;
 bool	CMainOption::s_bExternalNewTab			= true;
 bool	CMainOption::s_bExternalNewTabActive	= true;
+bool	CMainOption::s_bDelayLoad				= false;
 
 int		CMainOption::s_nMaxRecentClosedTabCount		= 16;
 int		CMainOption::s_RecentClosedTabMenuType		= RECENTDOC_MENUTYPE_URL;
@@ -75,6 +76,7 @@ void CMainOption::GetProfile()
 	s_bUseCustomFindBar = (s_dwMainExtendedStyle & MAIN_EX_USECUSTOMFINDBER) != 0;
 	s_bExternalNewTab	= (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTAB) != 0;
 	s_bExternalNewTabActive = (s_dwMainExtendedStyle & MAIN_EX_EXTERNALNEWTABACTIVE) != 0;
+	s_bDelayLoad		= (s_dwMainExtendedStyle & MAIN_EX_DELAYLOAD) != 0;
 
 	pr.QueryValue(s_nAutoImageResizeType, _T("AutoImageResizeType"));
 	s_BrowserOperatingMode	= (BROWSEROPERATINGMODE)pr.GetValue(_T("BrowserOperatingMode"), s_BrowserOperatingMode);
@@ -243,8 +245,6 @@ void CMainPropertyPage::_GetData()
 	if (m_nOneInstance			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ONEINSTANCE;
 	if (m_nNoCloseDFG			/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_NOCLOSEDFG;
 	if (m_nBackUp				/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_BACKUP;
-	if (m_nAddFavoriteOldShell	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ADDFAVORITEOLDSHELL;
-	if (m_nOrgFavoriteOldShell	/*== 1*/) CMainOption::s_dwMainExtendedStyle |= MAIN_EX_ORGFAVORITEOLDSHELL;
 
 	if (m_nRegisterAsBrowser	/*== 1*/) {
 		CMainOption::s_dwMainExtendedStyle |= MAIN_EX_REGISTER_AS_BROWSER;
@@ -269,6 +269,7 @@ void CMainPropertyPage::_GetData()
 			CMainOption::s_dwMainExtendedStyle |= MAIN_EX_EXTERNALNEWTABACTIVE;
 		}
 	}
+	if (s_bDelayLoad)			CMainOption::s_dwMainExtendedStyle |= MAIN_EX_DELAYLOAD;
 
 	CMainOption::s_dwBackUpTime 	 = m_nBackUpTime;
 	// UDT DGSTR ( dai
@@ -305,8 +306,6 @@ void CMainPropertyPage::_SetData()
 	m_nAutoRefTimeMin	   = CMainOption::s_dwAutoRefreshTime / 60;
 	m_nAutoRefTimeSec	   = CMainOption::s_dwAutoRefreshTime % 60;
 	// ENDE
-	m_nAddFavoriteOldShell = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ADDFAVORITEOLDSHELL) != 0;		//+++ ? 1 : 0;
-	m_nOrgFavoriteOldShell = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_ORGFAVORITEOLDSHELL) != 0;		//+++ ? 1 : 0;
 	m_nRegisterAsBrowser   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_REGISTER_AS_BROWSER) != 0;		//+++ ? 1 : 0;
 	m_nInheritOptions	   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_INHERIT_OPTIONS	  ) != 0;		//+++ ? 1 : 0;
 	//+++ m_nNoCloseNL	   = (CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSE_NAVILOCK   ) != 0;		//+++ ’Ç‰Á.

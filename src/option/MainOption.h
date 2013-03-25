@@ -13,7 +13,7 @@
 enum EMain_Ex {
 	MAIN_EX_NEWWINDOW				= 0x00000001L,
 	MAIN_EX_NOACTIVATE				= 0x00000002L,
-	// MAIN_EX_NOINITWND			= 0x00000004L,	// obsolete
+	MAIN_EX_DELAYLOAD				= 0x00000004L,	// 一度に複数タブが開かれるとき、タブがアクティブになるまで読み込みを延期する
 	MAIN_EX_ONEINSTANCE 			= 0x00000008L,
 	// MAIN_EX_WINDOWLIMIT 			= 0x00000010L,
 	MAIN_EX_NOCLOSEDFG				= 0x00000020L,	// お気に入りグループを開くとき、他のウィンドウを閉じない
@@ -22,8 +22,8 @@ enum EMain_Ex {
 	MAIN_EX_FULLSCREEN				= 0x00000100L,
 	MAIN_EX_BACKUP					= 0x00000200L,
 	MAIN_EX_NOACTIVATE_NEWWIN		= 0x00000400L,	// ページ内のリンクを開くとき、作成された新規タブをアクティブにしない
-	MAIN_EX_ADDFAVORITEOLDSHELL 	= 0x00000800L,
-	MAIN_EX_ORGFAVORITEOLDSHELL 	= 0x00001000L,
+	// MAIN_EX_ADDFAVORITEOLDSHELL 	= 0x00000800L,
+	// MAIN_EX_ORGFAVORITEOLDSHELL 	= 0x00001000L,
 	MAIN_EX_GLOBALOFFLINE			= 0x00002000L,
 	// MAIN_EX_LOADGLOBALOFFLINE		= 0x00004000L,
 	// MAIN_EX_KILLDIALOG				= 0x00008000L,
@@ -100,6 +100,7 @@ public:
 	static bool		s_bUseCustomFindBar;
 	static bool		s_bExternalNewTab;
 	static bool		s_bExternalNewTabActive;
+	static bool		s_bDelayLoad;
 
 	static int		s_nMaxRecentClosedTabCount;
 	static int		s_RecentClosedTabMenuType;
@@ -180,8 +181,7 @@ public:
 		DDX_CHECK( IDC_CHECK_ONEINSTANCE				, m_nOneInstance		)
 		DDX_CHECK( IDC_CHECK_MAIN_BACKUP				, m_nBackUp 			)
 		DDX_CHECK( IDC_CHECK_MAIN_NOCLOSEDFG			, m_nNoCloseDFG 		)
-		DDX_CHECK( IDC_CHECK_MAIN_ADDFAVORITEOLDSHELL	, m_nAddFavoriteOldShell)
-		DDX_CHECK( IDC_CHECK_MAIN_ORGFAVORITEOLDSHELL	, m_nOrgFavoriteOldShell)
+		DDX_CHECK( IDC_CHECK_DELAYLOAD					, s_bDelayLoad			)
 		DDX_CHECK( IDC_CHECK_MAIN_REGISTER_AS_BROWSER	, m_nRegisterAsBrowser	)
 		DDX_CHECK( IDC_CHK_IGNORE_BLANK					, s_bIgnore_blank		)
 		DDX_CHECK( IDC_CHK_USECUSTOMFINDBAR				, s_bUseCustomFindBar	)
@@ -223,8 +223,6 @@ private:
 	int 	m_nOneInstance;
 	int 	m_nNoCloseDFG;
 	int 	m_nBackUp;
-	int 	m_nAddFavoriteOldShell;
-	int 	m_nOrgFavoriteOldShell;
 	int 	m_nRegisterAsBrowser;
 	int 	m_nBackUpTime;
 	int 	m_nAutoRefreshTime;
