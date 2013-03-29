@@ -455,6 +455,9 @@
     <ClCompile Include="PopupMenu.cpp">
       <Filter>Source Files\Window\Menu</Filter>
     </ClCompile>
+    <ClCompile Include="DonutScriptHost.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -957,6 +960,9 @@
     </ClInclude>
     <ClInclude Include="BasePopupMenu.h">
       <Filter>Source Files\Window\Menu</Filter>
+    </ClInclude>
+    <ClInclude Include="DonutScriptHost.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

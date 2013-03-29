@@ -39,20 +39,6 @@
 //#include "Download\DownloadManager.h"
 //#include "MainFrame.h"
 
-DECLARE_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr)
-
-#define MSG_WM_GETMARSHALIWEBBROWSERPTR()							   \
-{															   \
-	static UINT WM_GETMARSHALIWEBBROWSERPTR = GET_REGISTERED_MESSAGE(GetMarshalIWebBrowserPtr);	\
-	if ( uMsg == WM_GETMARSHALIWEBBROWSERPTR ) { \
-		SetMsgHandled(TRUE);								   \
-		IStream*	pStream = nullptr;							\
-		CoMarshalInterThreadInterfaceInStream(IID_IWebBrowser2, m_spBrowser, &pStream);	\
-		lResult = (LRESULT)pStream;									   \
-		if ( IsMsgHandled() )								   \
-			return TRUE;									   \
-	}														   \
-}
 
 #define WM_GETCHILDFRAMENOWACTIVE	(WM_APP + 1)
 #define WM_EXECUTE_JAVASCRIPT		(WM_APP + 2)
@@ -418,7 +404,7 @@ public:
 
 		MESSAGE_HANDLER_EX( WM_DELAYDOCUMENTCOMPLETE	, OnDelayDocumentComplete	)
 		MESSAGE_HANDLER_EX( WM_DELAYHILIGHT				, OnDelayHilight )
-		MSG_WM_GETMARSHALIWEBBROWSERPTR()
+		USER_MSG_WM_GETMARSHALIWEBBROWSERPTR()
 		MESSAGE_HANDLER_EX( WM_GETCHILDFRAMENOWACTIVE, OnGetChildFrameActive	)
 		USER_MSG_WM_CHILDFRAMEACTIVATE( OnChildFrameActivate )
 		USER_MSG_WM_SET_CHILDFRAME( OnGetChildFrame )
@@ -442,6 +428,7 @@ public:
 		USER_MSG_WM_UPDATEAUTOLOGINDATALIST	( OnUpdateAutoLoginDataList	)
 		USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
 		USER_MSG_WM_SETLASTSCRIPTERRORMESSAGE( OnSetLastScriptErrorMessage	)
+		USER_MSG_WM_CHANGECHILDFRAMEFLAGS	( OnChangeChildFrameFlags )
 
 		// ファイル
 		COMMAND_ID_HANDLER_EX( ID_EDIT_OPEN_SELECTED_REF, OnEditOpenSelectedRef 	)	// リンクを開く
@@ -536,6 +523,7 @@ public:
 		m_UIChange.SetStatusText(_T("スクリプトエラーが発生しました"));
 		m_strLastScriptErrorMessage = strErrorMessage; 
 	}
+	DWORD	OnChangeChildFrameFlags(ChildFrameChangeFlag change, DWORD flags);
 
 	// ファイル
 	void 	OnEditOpenSelectedRef(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -713,12 +701,12 @@ HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRe
 		
 	// ChildFrameウィンドウ作成
 	pImpl->SetDLCtrl(data.dwDLCtrl);
+	pImpl->SetExStyle(data.dwExStyle);
 
 	RECT rc;
 	::GetClientRect(data.hWndParent, &rc);
 	HWND hWndChildFrame = pImpl->Create(data.hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
 
-	pImpl->SetExStyle(data.dwExStyle);
 	pImpl->SetAutoRefreshStyle(data.dwAutoRefresh);
 	pImpl->SetSearchWordAutoHilight(data.searchWord, data.bAutoHilight);
 	pImpl->SetTravelLog(data.TravelLogFore, data.TravelLogBack);

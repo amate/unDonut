@@ -584,8 +584,13 @@ void	CChildFrameUIStateChange::SetDLCtrl(DWORD dw)
 
 void	CChildFrameUIStateChange::SetExStyle(DWORD dw)
 {
+	if (m_pUIData == nullptr)	// 
+		return ;
 	ChildFrameUIData& data = *m_pUIData;
-	data.dwExStyle = dw;
+	if (data.dwExStyle != dw) {
+		data.dwExStyle = dw;
+		::SendMessage(m_hWndMainFrame, WM_CHILDFRAMEEXSTYLECHANGE, (WPARAM)m_hWndChildFrame, dw);
+	}
 }
 
 void	CChildFrameUIStateChange::SetAutoRefreshStyle(DWORD dw)

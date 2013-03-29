@@ -147,7 +147,6 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 		}
 		if (m_strNewWindowURL == _T("about:blank"))
 			m_strNewWindowURL = strURL;
-		m_bFirstNavigate = false;
 	}
 
 	// ユーザースクリプトをインストールするかどうか
@@ -166,6 +165,32 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 		if (m_dwMarshalDLCtrlFlags) {
 			m_view.PutDLControlFlags(m_dwMarshalDLCtrlFlags);
 			m_dwMarshalDLCtrlFlags = 0;
+		}
+		// Navigate lock
+		if ( _check_flag(DVS_EX_OPENNEWWIN, m_view.GetExStyle()) &&
+		     m_bFirstNavigate == false &&
+		     IsRefreshBeforeNavigate2(pDisp) == false )
+		{
+			NewChildFrameData	data(GetParent());
+			data.strURL	= strURL;
+			DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
+			DWORD	dwExStyle	= _GetInheritedExStyleFlags();
+			if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
+				dwDLCtrl	= m_pGlobalConfig->dwDLControlFlags;
+				dwExStyle	= m_pGlobalConfig->dwExtendedStyleFlags;
+			}
+			data.dwDLCtrl	= dwDLCtrl;
+			data.dwExStyle	= dwExStyle;
+			data.bLink	= true;
+			data.searchWord	= m_strSearchWord;
+			data.bAutoHilight= m_bNowHilight;
+			data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
+			data.strNewWindowURL	= strURL;
+
+			CChildFrame::AsyncCreate(data);
+
+			bCancel = true;
+			return ;
 		}
 
 		m_view.PutDLControlFlags(m_view.GetDLControlFlags());
@@ -295,6 +320,8 @@ void	CChildFrame::Impl::OnStateCompleted()
 void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strURL)
 {
 	if ( IsPageIWebBrowser(pDisp) ) {
+		m_bFirstNavigate = false;
+
 		// 自動リサイズの設定を初期化
 		m_bImagePage	= false;
 		m_nImgSclSw		= (m_pGlobalConfig->AutoImageResizeType == AUTO_IMAGE_RESIZE_FIRSTON);
@@ -1126,6 +1153,14 @@ void	CChildFrame::Impl::OnDestroy()
 
 void	CChildFrame::Impl::OnClose()
 {
+	// タブロック状態なら閉じない
+	if ( m_pGlobalConfig->bMainFrameClosing == false &&							//+++ unDonut終了時以外で
+		 _check_flag(m_view.GetExStyle(), DVS_EX_OPENNEWWIN) &&					//+++ ナビゲートロックのページで
+		 (m_pGlobalConfig->dwMainExtendedStyle2 & MAIN_EX2_NOCLOSE_NAVILOCK) )	//+++ ナビゲートロックのページを閉じない、の指定があれば
+	{
+		return; 																//+++ 閉じずに帰る
+	}
+
 	SetMsgHandled(FALSE);
 
 	CWindow	wndMain = GetTopLevelWindow();
@@ -1632,18 +1667,43 @@ HANDLE	CChildFrame::Impl::OnGetLoginInfomation(HANDLE hMapForClose)
 }
 
 
+DWORD	CChildFrame::Impl::OnChangeChildFrameFlags(ChildFrameChangeFlag change, DWORD flags)
+{
+	switch (change) {
+	case kChangeDLCtrl:
+		if (flags == -1) {
+			return m_view.GetDLControlFlags();
+		} else {
+			m_view.PutDLControlFlags(flags);
+			m_view.LightRefresh();
+		}
+		break;
+
+	case kChangeExStyle:
+		if (flags == -1)
+			return m_view.GetExStyle();
+		else
+			m_view.SetExStyle(flags);
+		break;
+
+	case kChangeAutoRefresh:
+		if (flags == -1)
+			return m_view.GetAutoRefreshStyle();
+		else
+			m_view.SetAutoRefreshStyle(flags);
+		break;
+
+	default:
+		ATLASSERT( FALSE );
+	}
+	return 0;
+}
+
+
 
 /// ファイルを閉じる
 void 	CChildFrame::Impl::OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
-	//+++ タブロック対策... OnClose側のだけで大丈夫のようだけれど、とりあえず.
-	if (   //::: s_bMainframeClose == false											//+++ unDonut終了時以外で
-		/*&&*/ _check_flag(m_view.GetExStyle(), DVS_EX_OPENNEWWIN)					//+++ ナビゲートロックのページで
-		&& (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_NOCLOSE_NAVILOCK) )	//+++ ナビゲートロックのページを閉じない、の指定があれば
-	{
-		return; 																//+++ 閉じずに帰る
-	}
-
 	PostMessage(WM_CLOSE);
 }
 
@@ -2924,12 +2984,17 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 {	
 	data.strTitle	= MtlGetWindowText(m_hWnd);
 	data.strTitle.Replace(_T('\"'), _T('_'));
-	data.strURL		= GetLocationURL();
-	if (data.strURL.IsEmpty())
-		data.strURL	= m_strDelayLoadURL;
 	data.dwDLCtrl	= m_view.GetDLControlFlags();
 	data.dwExStyle	= m_view.GetExStyle();
 	data.dwAutoRefreshStyle	= m_view.GetAutoRefreshStyle();
+
+	data.strURL		= GetLocationURL();
+	if (data.strURL.IsEmpty()) {
+		data.strURL	= m_strDelayLoadURL;
+		data.TravelLogBack	= m_TravelLogBack;
+		data.TravelLogFore	= m_TravelLogFore;
+		return ;
+	}
 
 	HRESULT hr;
 	CComQIPtr<IServiceProvider>	 pISP = m_spBrowser;

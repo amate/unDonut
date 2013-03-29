@@ -64,6 +64,7 @@
 #include "FavoriteGroupEditDialog.h"
 #include "PopupMenu.h"
 #include "dialog\RenameFileDialog.h"
+#include "DonutScriptHost.h"
 
 
 namespace {
@@ -194,7 +195,8 @@ class CMainFrame::Impl :
 	public CUpdateCmdUI<CMainFrame::Impl>,
 	public CDDEMessageHandler<CMainFrame::Impl>,
 	public CMSMouseWheelMessageHandler<CMainFrame::Impl>,	// ïKóvÅH
-	public CMainFrameFileDropTarget<CMainFrame::Impl>
+	public CMainFrameFileDropTarget<CMainFrame::Impl>,
+	public IunDonutAPI
 {
 public:
 	DECLARE_FRAME_WND_CLASS(DONUT_WND_CLASS_NAME, IDR_MAINFRAME)
@@ -214,12 +216,21 @@ public:
 	HWND	GetActiveChildFrameHWND() { return m_ChildFrameClient.GetActiveChildFrameWindow(); }
 	CString GetActiveLocationURL();
 
+	void	ExecuteUserScript(const CString& scriptFilePath) { m_donutScriptHost.ExecuteUserScript(scriptFilePath); }
+
 	// Overrides
 	BOOL AddSimpleReBarBandCtrl(HWND hWndReBar, HWND hWndBand, int nID, LPTSTR lpstrTitle, UINT fStyle, int cxWidth);
 	void UpdateLayout(BOOL bResizeBars = TRUE);
 	BOOL PreTranslateMessage(MSG* pMsg) override;
 	BOOL OnIdle() override;
 	bool OnDDEOpenFile(const CString& strFileName);
+
+	// IunDonutAPI
+	virtual HWND	GetChildFrame(int nIndex) override { return m_TabBar.GetTabHwnd(nIndex); }
+	virtual LONG	GetTabCount() override { return m_TabBar.GetItemCount(); }
+	virtual LONG	get_ActiveTabIndex() override { return m_TabBar.GetCurSel(); }
+	virtual void	put_ActiveTabIndex(int nIndex) override { m_TabBar.SetCurSel(nIndex); }
+	virtual void	OpenTab(const CString& url, bool bActive) override {  UserOpenFile(url, bActive ? D_OPENFILE_ACTIVATE : 0); }
 	
 	// Message map
 	BEGIN_MSG_MAP_EX_decl( CMainFrame::Impl )
@@ -318,6 +329,7 @@ public:
 	void	OnChildFrameConnecting(HWND hWndChildFrame)	{ m_TabBar.SetConnecting(hWndChildFrame); }
 	void	OnChildFrameDownloading(HWND hWndChildFrame){ m_TabBar.SetDownloading(hWndChildFrame); }
 	void	OnChildFrameComplete(HWND hWndChildFrame)	{ m_TabBar.SetComplete(hWndChildFrame); }
+	void	OnChildFrameExStyleChange(HWND hWndChildFrame, DWORD ExStyle);
 	void	OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose);
 
 private:
@@ -398,6 +410,8 @@ private:
 
 	unique_ptr<CProcessMonitorDialog>	m_pProcessMonitor;
 	std::set<DWORD>	m_setChildProcessId;
+
+	CDonutScriptHost	m_donutScriptHost;
 };
 
 #include "MainFrame.inl"
@@ -482,3 +496,10 @@ CString CMainFrame::GetActiveLocationURL()
 {
 	return pImpl->GetActiveLocationURL();
 }
+
+void	CMainFrame::ExecuteUserScript(const CString& scriptFilePath)
+{
+	pImpl->ExecuteUserScript(scriptFilePath);
+}
+
+

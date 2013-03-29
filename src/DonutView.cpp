@@ -474,7 +474,7 @@ void CDonutView::OnMultiChg(WORD, WORD, HWND)
 	_ToggleFlag(ID_DLCTL_BGSOUNDS, DLCTL_BGSOUNDS);
 	_ToggleFlag(ID_DLCTL_VIDEOS  , DLCTL_VIDEOS  );
 	_ToggleFlag(ID_DLCTL_DLIMAGES, DLCTL_DLIMAGES);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -485,7 +485,7 @@ void CDonutView::OnSecuChg(WORD, WORD, HWND)
 	_ToggleFlag(ID_DLCTL_JAVA			, DLCTL_NO_JAVA 			, TRUE);
 	_ToggleFlag(ID_DLCTL_DLACTIVEXCTLS	, DLCTL_NO_DLACTIVEXCTLS	, TRUE);
 	_ToggleFlag(ID_DLCTL_RUNACTIVEXCTLS , DLCTL_NO_RUNACTIVEXCTLS	, TRUE);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -513,7 +513,7 @@ void CDonutView::OnAllOnOff(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)
 		break;
 	}
 
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -567,14 +567,15 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		if (m_pGlobalConfig->nDragDropCommandID)
 			SetOperateDragDrop(TRUE);
 
-	  #if 1	//+++
 		if (m_dwExStyle == -1)
 			m_dwExStyle = m_pGlobalConfig->dwExtendedStyleFlags;
-		//m_UIChange.SetExStyle(m_dwExStyle);
-	  #else
-		ATLASSERT(m_dwExStyle == 0);
-		m_dwExStyle = CDLControlOption::s_dwExtendedStyleFlags; //_dwViewStyle;
-	  #endif
+
+		// NavigateLockは遅延実行する(そうしないとタブに反映されない...)
+		if (m_dwExStyle & DVS_EX_OPENNEWWIN) {
+			m_dwExStyle &= ~DVS_EX_OPENNEWWIN;
+			PostMessage(WM_COMMAND, ID_DOCHOSTUI_OPENNEWWIN);
+		}
+
 		_SetTimer();	// 設定されているなら自動更新を開始
 
 		RegisterDragDrop(m_hWnd, this);
@@ -625,7 +626,7 @@ void CDonutView::OnDestroy()
 void CDonutView::OnMultiBgsounds(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	_ToggleFlag(ID_DLCTL_BGSOUNDS, DLCTL_BGSOUNDS);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -633,7 +634,7 @@ void CDonutView::OnMultiBgsounds(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 void CDonutView::OnMultiVideos(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	_ToggleFlag(ID_DLCTL_VIDEOS, DLCTL_VIDEOS);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -643,7 +644,7 @@ void CDonutView::OnMultiDlImages(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 	ATLTRACE2( atlTraceGeneral, 4, _T("CDonutView::OnMultiDlImages\n") );
 
 	if ( _ToggleFlag(ID_DLCTL_DLIMAGES, DLCTL_DLIMAGES) )
-		_LightRefresh();
+		LightRefresh();
 }
 
 
@@ -651,7 +652,7 @@ void CDonutView::OnMultiDlImages(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWnd
 void CDonutView::OnSecurRunactivexctls(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	_ToggleFlag(ID_DLCTL_RUNACTIVEXCTLS, DLCTL_NO_RUNACTIVEXCTLS, TRUE);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -659,7 +660,7 @@ void CDonutView::OnSecurRunactivexctls(WORD /*wNotifyCode*/, WORD /*wID*/, HWND 
 void CDonutView::OnSecurDlactivexctls(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	if ( !_ToggleFlag(ID_DLCTL_DLACTIVEXCTLS, DLCTL_NO_DLACTIVEXCTLS, TRUE) )
-		_LightRefresh();
+		LightRefresh();
 }
 
 
@@ -667,7 +668,7 @@ void CDonutView::OnSecurDlactivexctls(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 void CDonutView::OnSecurScritps(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	_ToggleFlag(ID_DLCTL_SCRIPTS, DLCTL_NO_SCRIPTS, TRUE);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -675,7 +676,7 @@ void CDonutView::OnSecurScritps(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 void CDonutView::OnSecurJava(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 {
 	_ToggleFlag(ID_DLCTL_JAVA, DLCTL_NO_JAVA, TRUE);
-	_LightRefresh();
+	LightRefresh();
 }
 
 
@@ -694,6 +695,15 @@ void	CDonutView::OnMouseGesture(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndC
 		m_dwExStyle &= ~DVS_EX_MOUSE_GESTURE;
 	else
 		m_dwExStyle |= DVS_EX_MOUSE_GESTURE;
+	m_UIChange.SetExStyle(m_dwExStyle);
+}
+
+void	CDonutView::OnOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	if (m_dwExStyle & DVS_EX_OPENNEWWIN)
+		m_dwExStyle &= ~DVS_EX_OPENNEWWIN;
+	else
+		m_dwExStyle |= DVS_EX_OPENNEWWIN;
 	m_UIChange.SetExStyle(m_dwExStyle);
 }
 
@@ -787,13 +797,13 @@ bool CDonutView::_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse)
 	}
 
 	PutDLControlFlags(dwDLControlFlags);
-	_LightRefresh();
+	LightRefresh();
 	return bRet;
 }
 
 
 /// DLコントロールの変更を有効にするために更新する
-void CDonutView::_LightRefresh()
+void CDonutView::LightRefresh()
 {
 	if (::GetKeyState(VK_CONTROL) < 0)
 		return;
@@ -811,7 +821,7 @@ void CDonutView::_AddFlag(DWORD dwFlag) 	//minit
 	dwDLControlFlags |= dwFlag;
 
 	PutDLControlFlags(dwDLControlFlags);
-	_LightRefresh();
+	LightRefresh();
 }
 
 /// DLフラグを取り除く
@@ -821,7 +831,7 @@ void CDonutView::_RemoveFlag(DWORD dwFlag)	//minit
 	dwDLControlFlags &= ~dwFlag;
 
 	PutDLControlFlags(dwDLControlFlags);
-	_LightRefresh();
+	LightRefresh();
 }
 
 /// 自動更新用のタイマーを開始する

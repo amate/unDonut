@@ -10,6 +10,7 @@ struct GlobalConfig
 {
 	//CMainOption
 	DWORD	dwMainExtendedStyle;
+	DWORD	dwMainExtendedStyle2;
 	int		AutoImageResizeType;
 	bool	bMultiProcessMode;
 
@@ -60,6 +61,8 @@ struct GlobalConfig
 	// ProxyComboBox
 	char	ProxyAddress[512];
 	char	ProxyBypass[512];
+
+	bool	bMainFrameClosing;
 
 };
 

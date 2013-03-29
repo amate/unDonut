@@ -199,6 +199,7 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 		break;
 
 	case ID_VIEW_FAVEXPBAR_HIST:
+	case ID_VIEW_FAVEXPBAR_SCRIPT:
 		wndTarget = m_FavBar;
 		funcCreateWindow = [this]() -> HWND {
 			m_FavBar.Create(m_hWnd);
@@ -251,8 +252,8 @@ void CDonutExplorerBar::OnViewBar(UINT uNotifyCode, int nID, CWindow wndCtl)
 			//m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_STANDARD);
 		} else if (nID == ID_VIEW_FAVEXPBAR_HIST) {
 			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_HISTORY);
-		} else if (nID == ID_VIEW_FAVEXPBAR_GROUP) {
-			//m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_GROUP);
+		} else if (nID == ID_VIEW_FAVEXPBAR_SCRIPT) {
+			m_FavBar.SendMessage(WM_COMMAND, ID_FAVTREE_BAR_SCRIPT);
 		}
 		wndTarget.ShowWindow(TRUE);
 		SetTitle( MtlGetWindowText(wndTarget) );

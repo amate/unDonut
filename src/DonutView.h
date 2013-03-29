@@ -63,6 +63,7 @@ public:
 	CString GetAnchorURL() const { return m_ExternalUIDispatch.GetAnchorURL(); }
 	CPoint	GetMenuPoint() const { return m_ExternalUIDispatch.GetPoint(); }
 	void	InitDLControlFlags() { _InitDLControlFlags(); }
+	void	LightRefresh();
 
 	//ドラッグドロップ時の操作を制御するかIEコンポに任せるか
 	void	SetOperateDragDrop(BOOL bOn);
@@ -144,6 +145,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_5MIN , OnAutoRefresh5min )
 		COMMAND_ID_HANDLER_EX( ID_AUTOREFRESH_USER , OnAutoRefreshUser )
 
+		COMMAND_ID_HANDLER_EX( ID_DOCHOSTUI_OPENNEWWIN, OnOpenNewWin )
 		COMMAND_ID_HANDLER_EX( ID_MESSAGE_FILTER  , OnMessageFilter   )
 		COMMAND_ID_HANDLER_EX( ID_MOUSE_GESTURE   , OnMouseGesture	  )
 		COMMAND_ID_HANDLER_EX( ID_BLOCK_MAILTO	  , OnBlockMailto	  )
@@ -167,6 +169,7 @@ public:
 
 	void	OnBlockMailto(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnMouseGesture(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnMessageFilter(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnDocHostUIOpenNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void	OnAutoRefreshNone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
@@ -182,7 +185,6 @@ private:
 	bool	_ToggleFlag(WORD wID, DWORD dwFlag, BOOL bReverse = FALSE);
 	void	_AddFlag(DWORD dwFlag);
 	void	_RemoveFlag(DWORD dwFlag);
-	void	_LightRefresh();
 	void	_SetTimer();
 
 	enum { AutoRefreshTimerID = 1 };

@@ -35,6 +35,8 @@ void	CreateGlobalConfig(GlobalConfigManageData* pMangeData)
 	pMangeData->pGlobalConfig->ProxyAddress[0] = '\0';
 	pMangeData->pGlobalConfig->ProxyBypass[0] = '\0';
 
+	pMangeData->pGlobalConfig->bMainFrameClosing = false;
+
 }
 
 
@@ -42,6 +44,7 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 {
 	// CMainOption
 	pConfig->dwMainExtendedStyle	= CMainOption::s_dwMainExtendedStyle;
+	pConfig->dwMainExtendedStyle2	= CMainOption::s_dwMainExtendedStyle2;
 	pConfig->AutoImageResizeType	= CMainOption::s_nAutoImageResizeType;
 	pConfig->bMultiProcessMode		= CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode;
 

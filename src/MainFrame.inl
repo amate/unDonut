@@ -142,6 +142,7 @@ BEGIN_MSG_MAP_EX_impl( CMainFrame::Impl )
 	USER_MSG_WM_CHILDFRAMECONNECTING	( OnChildFrameConnecting	)
 	USER_MSG_WM_CHILDFRAMEDOWNLOADING	( OnChildFrameDownloading	)
 	USER_MSG_WM_CHILDFRAMECOMPLETE		( OnChildFrameComplete		)
+	USER_MSG_WM_CHILDFRAMEEXSTYLECHANGE ( OnChildFrameExStyleChange )
 	USER_MSG_WM_MOUSEGESTURE			( OnMouseGesture			)
 
 	REFLECT_CHEVRONPUSHED_NOTIFICATION()	// CFrameWindowImpl より前に置く必要がある
@@ -318,7 +319,8 @@ CMainFrame::Impl::Impl() :
 	CDDEMessageHandler<CMainFrame::Impl>(_T("Donut")),
 	m_ExplorerBar(m_SplitterWindow),
 	m_hWndRestoreFocus(NULL),
-	m_bFullScreen(false)
+	m_bFullScreen(false),
+	m_donutScriptHost(this)
 {
 	GdiplusInit();
 }
@@ -943,6 +945,8 @@ void	CMainFrame::Impl::OnDestroy()
 	MtlWriteProfileMainFrameState(pr, m_hWnd);
 
 	m_ReBar.UnsubclassWindow();
+
+	m_GlobalConfigManageData.pGlobalConfig->bMainFrameClosing = true;
 
 	if (CStartUpOption::s_dwFlags == CStartUpOption::STARTUP_LATEST) {
 		SaveAllTab();	// 現在表示中のタブを保存する
@@ -2488,6 +2492,11 @@ void	CMainFrame::Impl::OnAddRecentClosedTab(HWND hWndChildFrame)
 	sharedMem.Deserialize(*pClosedTabData, strSharedMemName);
 
 	m_RecentClosedTabList.AddToList(pClosedTabData);
+}
+
+void	CMainFrame::Impl::OnChildFrameExStyleChange(HWND hWndChildFrame, DWORD ExStyle)
+{
+	m_TabBar.NavigateLockTab(hWndChildFrame, (ExStyle & DVS_EX_OPENNEWWIN) != 0);
 }
 
 

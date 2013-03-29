@@ -1177,6 +1177,7 @@
     <ClCompile Include="DonutLinkBarCtrl.cpp" />
     <ClCompile Include="DonutOption.cpp" />
     <ClCompile Include="DonutPFunc.cpp" />
+    <ClCompile Include="DonutScriptHost.cpp" />
     <ClCompile Include="DonutSearchBar.cpp" />
     <ClCompile Include="DonutSecurityZone.cpp" />
     <ClCompile Include="DonutStatusBarCtrl.cpp" />
@@ -1362,6 +1363,7 @@
     <ClInclude Include="DonutPCP.h" />
     <ClInclude Include="DonutPFunc.h" />
     <ClInclude Include="DonutRebarCtrl.h" />
+    <ClInclude Include="DonutScriptHost.h" />
     <ClInclude Include="DonutSearchBar.h" />
     <ClInclude Include="DonutSecurityZone.h" />
     <ClInclude Include="DonutSimpleEventManager.h" />

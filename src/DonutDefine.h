@@ -937,6 +937,46 @@ enum TabCreateOption {
 	}
 
 
+#define WM_GETMARSHALIWEBBROWSERPTR	(WM_USER + 151)
+#define USER_MSG_WM_GETMARSHALIWEBBROWSERPTR()	\
+	if ( uMsg == WM_GETMARSHALIWEBBROWSERPTR ) { \
+		SetMsgHandled(TRUE);								   \
+		IStream*	pStream = nullptr;							\
+		CoMarshalInterThreadInterfaceInStream(IID_IWebBrowser2, m_spBrowser, &pStream);	\
+		lResult = (LRESULT)pStream;									   \
+		if ( IsMsgHandled() )								   \
+			return TRUE;									   \
+	}	
+
+
+enum ChildFrameChangeFlag { 
+	kChangeDLCtrl = 0,
+	kChangeExStyle,
+	kChangeAutoRefresh,
+};
+
+// DWORD	OnChangeChildFrameFlags(ChildFrameChangeFlag change, DWORD flags);
+#define WM_CHANGECHILDFRAMEFLAGS	(WM_USER + 152)
+#define USER_MSG_WM_CHANGECHILDFRAMEFLAGS(func)	\
+	if ( uMsg == WM_CHANGECHILDFRAMEFLAGS ) { \
+		SetMsgHandled(TRUE);		   \
+		lResult = (LRESULT)func((ChildFrameChangeFlag)wParam, (DWORD)lParam);				\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
+
+// void	OnChildFrameExStyleChange(HWND hWndChildFrame, DWORD ExStyle)
+#define WM_CHILDFRAMEEXSTYLECHANGE		(WM_USER + 153)
+#define USER_MSG_WM_CHILDFRAMEEXSTYLECHANGE(func)	\
+	if (uMsg == WM_CHILDFRAMEEXSTYLECHANGE) {	   \
+		SetMsgHandled(TRUE);		   \
+		func((HWND)wParam, (DWORD)lParam);				\
+		lResult = 0;					\
+		if ( IsMsgHandled() )		   \
+			return TRUE; 		   \
+	}
+
 
 
 

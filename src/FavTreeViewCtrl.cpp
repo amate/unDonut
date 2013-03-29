@@ -6,14 +6,7 @@
 #include "FavTreeViewCtrl.h"
 #include "Donut.h"
 #include "DonutPFunc.h"
-
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
+#include "MainFrame.h"
 
 
 namespace {
@@ -454,7 +447,7 @@ void CFavoritesTreeViewCtrl::OnTreeItemClicked(HTREEITEM hTreeItem, UINT uFlags)
 		strPath = idl.GetUrl();			//+++ お試し。現状、失敗中.
 
 	if (!_check_flag( ETV_EX_FAVORITEGROUP,dwViewExStyle )
-	  && _check_flag( ETV_EX_MYCOMPUTER | ETV_EX_SHELLEXECUTE | ETV_EX_HISTORY | ETV_EX_SCRIPT, dwViewExStyle ) )
+	  && _check_flag( ETV_EX_MYCOMPUTER | ETV_EX_SHELLEXECUTE | ETV_EX_HISTORY, dwViewExStyle ) )
 	{
 	  #if 1 //+++ 拡張子がdonutで見れるものはdonutに任せる.
 			//+++ が、履歴の場合実体のファイルが存在しないため idl.GetPath()でパスが取得できない模様...
@@ -472,6 +465,13 @@ void CFavoritesTreeViewCtrl::OnTreeItemClicked(HTREEITEM hTreeItem, UINT uFlags)
 		MtlShellExecute( m_hWnd, idl );
 		return;
 	  #endif
+	} else if (_check_flag(ETV_EX_SCRIPT, dwViewExStyle)) {
+		CString ext = Misc::GetFileExt(strPath);
+		ext.MakeLower();
+		if (ext == _T("js")) {
+			g_pMainWnd->ExecuteUserScript(strPath);
+		}
+		return ;
 	}
 
 	HWND		hWnd = NULL;		//+++ 結局使われていない... 紛らわしいが...

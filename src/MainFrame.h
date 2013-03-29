@@ -80,6 +80,8 @@ public:
 	HWND	GetActiveChildFrameHWND();
 	CString GetActiveLocationURL();
 
+	void	ExecuteUserScript(const CString& scriptFilePath);
+
 private:
 	class Impl;
 	Impl* pImpl;
