@@ -1165,15 +1165,19 @@ void	CChildFrame::Impl::OnClose()
 
 	CWindow	wndMain = GetTopLevelWindow();
 
-	ChildFrameDataOnClose	ClosedTabData;
-	_CollectDataOnClose(ClosedTabData);
+	// Å‹ß•Â‚¶‚½ƒ^ƒu‚É’Ç‰Á‚·‚é
+	if (m_pGlobalConfig->bMainFrameClosing == false) {
 
-	CString strSharedMemName;
-	strSharedMemName.Format(_T("%s%#x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, m_hWnd);
-	CSharedMemory sharedMem;
-	sharedMem.Serialize(ClosedTabData, strSharedMemName);
+		ChildFrameDataOnClose	ClosedTabData;
+		_CollectDataOnClose(ClosedTabData);
 
-	wndMain.SendMessage(WM_ADDRECENTCLOSEDTAB, (WPARAM)m_hWnd);
+		CString strSharedMemName;
+		strSharedMemName.Format(_T("%s%#x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, m_hWnd);
+		CSharedMemory sharedMem;
+		sharedMem.Serialize(ClosedTabData, strSharedMemName);
+
+		wndMain.SendMessage(WM_ADDRECENTCLOSEDTAB, (WPARAM)m_hWnd);
+	}
 
 	wndMain.SendMessage(WM_TABDESTROY, (WPARAM)m_hWnd);
 }

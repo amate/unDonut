@@ -39,7 +39,7 @@ public:
 	int  GetRecentCount() const { return m_bLoading ? 0 : (int)m_vecpClosedTabData.size(); }
 
 	// Operations
-	BOOL AddToList(ChildFrameDataOnClose* pClosedTabData);
+	BOOL AddToList(std::unique_ptr<ChildFrameDataOnClose>&& pClosedTabData);
 	BOOL GetFromList(int nItemID, ChildFrameDataOnClose** ppClosedTabData);
 	BOOL RemoveFromList(int nItemID);
 
@@ -131,13 +131,13 @@ void CRecentClosedTabList::Impl::SetMaxItemLength(int cchMaxLen)
 
 
 // Oparation
-BOOL CRecentClosedTabList::Impl::AddToList(ChildFrameDataOnClose* pClosedTabData)
+BOOL CRecentClosedTabList::Impl::AddToList(std::unique_ptr<ChildFrameDataOnClose>&& pClosedTabData)
 {
 	CCritSecLock	lock(m_csLoading);
 	while ((int)m_vecpClosedTabData.size() > m_nMaxEntries)
 		m_vecpClosedTabData.erase(m_vecpClosedTabData.begin() + m_nMaxEntries - 1);
 
-	m_vecpClosedTabData.insert(m_vecpClosedTabData.begin(), unique_ptr<ChildFrameDataOnClose>(std::move(pClosedTabData)));
+	m_vecpClosedTabData.insert(m_vecpClosedTabData.begin(), std::move(pClosedTabData));
 
 	return TRUE;
 }
@@ -326,9 +326,9 @@ int  CRecentClosedTabList::GetRecentCount() const
 }
 
 // Operations
-BOOL CRecentClosedTabList::AddToList(ChildFrameDataOnClose* pClosedTabData)
+BOOL CRecentClosedTabList::AddToList(std::unique_ptr<ChildFrameDataOnClose>&& pClosedTabData)
 {
-	return pImpl->AddToList(pClosedTabData);
+	return pImpl->AddToList(std::move(pClosedTabData));
 }
 BOOL CRecentClosedTabList::GetFromList(int nItemID, ChildFrameDataOnClose** ppClosedTabData)
 {

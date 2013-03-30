@@ -6,6 +6,7 @@
 #pragma once
 
 #include "resource.h"
+#include <memory>
 
 // ëOï˚êÈåæ
 struct ChildFrameDataOnClose;
@@ -39,7 +40,7 @@ public:
 	int  GetRecentCount() const;
 
 	// Operations
-	BOOL AddToList(ChildFrameDataOnClose* pClosedTabData);
+	BOOL AddToList(std::unique_ptr<ChildFrameDataOnClose>&& pClosedTabData);
 	BOOL GetFromList(int nItemID, ChildFrameDataOnClose** ppClosedTabData);
 	BOOL RemoveFromList(int nItemID);
 

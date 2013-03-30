@@ -27,7 +27,10 @@ public:
 	void	SetActiveIndex(int nActiveIndex) { m_nActiveIndex = nActiveIndex; }
 	int		GetCount() const { return static_cast<int>(m_vecpChildFrameData.size()); }
 	std::unique_ptr<ChildFrameDataOnClose>&	At(int nIndex) { return m_vecpChildFrameData.at(nIndex); }
-	
+
+	std::vector<std::unique_ptr<ChildFrameDataOnClose>>::iterator	begin() { return m_vecpChildFrameData.begin(); }
+	std::vector<std::unique_ptr<ChildFrameDataOnClose>>::iterator	end() { return m_vecpChildFrameData.end(); }
+
 	// Operates
 	void	Delete(int nIndex) { m_vecpChildFrameData.erase(m_vecpChildFrameData.begin() + nIndex); }
 	void	PushBack(std::unique_ptr<ChildFrameDataOnClose>&& pData) { m_vecpChildFrameData.push_back(std::move(pData)); }

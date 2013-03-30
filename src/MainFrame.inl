@@ -951,6 +951,7 @@ void	CMainFrame::Impl::OnDestroy()
 	if (CStartUpOption::s_dwFlags == CStartUpOption::STARTUP_LATEST) {
 		SaveAllTab();	// 現在表示中のタブを保存する
 	} else {
+#if 0
 		vector<HWND> vechWnd;
 		m_TabBar.ForEachWindow([&](HWND hWndChildFrame) {	// 最近閉じたタブに追加
 			vechWnd.push_back(hWndChildFrame);			
@@ -971,6 +972,11 @@ void	CMainFrame::Impl::OnDestroy()
 				::Sleep(10);
 			}
 		}
+#endif
+		// 現在表示中のタブを最近閉じたタブに追加する
+		auto tabList = _CollectAllChildFrameData();
+		for (auto& tab : tabList)
+			m_RecentClosedTabList.AddToList(std::move(tab));
 	}
 
 	if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_DEL_RECENTCLOSE) {
@@ -2485,13 +2491,13 @@ void	CMainFrame::Impl::OnTabDestory(HWND hWndChildFrame)
 
 void	CMainFrame::Impl::OnAddRecentClosedTab(HWND hWndChildFrame)
 {
-	ChildFrameDataOnClose*	pClosedTabData = new ChildFrameDataOnClose;
+	std::unique_ptr<ChildFrameDataOnClose>	pClosedTabData(new ChildFrameDataOnClose);
 	CString strSharedMemName;
 	strSharedMemName.Format(_T("%s%#x"), CHILDFRAMEDATAONCLOSESHAREDMEMNAME, hWndChildFrame);
 	CSharedMemory sharedMem;
 	sharedMem.Deserialize(*pClosedTabData, strSharedMemName);
 
-	m_RecentClosedTabList.AddToList(pClosedTabData);
+	m_RecentClosedTabList.AddToList(std::move(pClosedTabData));
 }
 
 void	CMainFrame::Impl::OnChildFrameExStyleChange(HWND hWndChildFrame, DWORD ExStyle)
