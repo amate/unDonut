@@ -16,7 +16,7 @@
 #include "MainFrame.h"
 #include "ExStyle.h"
 #include "option\LinkBarPropertyPage.h"
-#include "option\FavoriteMenuDialog.h"
+#include "option\MenuDialog.h"
 #include "ChildFrameCommandUIUpdater.h"
 
 //////////////////////////////////////////////////////
@@ -903,6 +903,7 @@ int	CLinkPopupMenu::ShowRClickMenuAndExecCommand(LinkFolderPtr pFolder, LinkItem
 		}
 		break;
 	}
+	::SetFocus(s_wndLinkBar);
 	s_bNowShowRClickMenu = false;
 	return nCmd;
 }
@@ -962,6 +963,112 @@ void	CLinkPopupMenu::GetFaviconToLinkItem(const CString& url, LinkFolderPtr pFol
 	});
 	td.detach();
 }
+
+
+BOOL CLinkPopupMenu::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN) {
+		UINT nChar = (UINT)pMsg->wParam;
+		if (m_pSubMenu) {
+			if (m_pSubMenu->PreTranslateMessage(pMsg)) {
+				if (pMsg->wParam == VK_RIGHT && pMsg->lParam == -1)
+					return true;
+				if ((pMsg->wParam == VK_LEFT || nChar == VK_ESCAPE) && m_pSubMenu) {
+					_CloseSubMenu();
+					pMsg->wParam = 0;	// 打ち止めにしとく
+				}
+				return true;
+			}
+		}
+			
+		if (nChar == VK_DOWN || nChar == VK_UP) {	// 選択アイテムのを変える
+			int nNewHotIndex = m_nHotIndex;
+			if (nNewHotIndex == -1) {
+				if (nChar == VK_DOWN) {
+					nNewHotIndex = 0;
+				} else {	// VK_UP
+					nNewHotIndex = m_pFolder->size() - 1;
+				}
+			} else {
+				if (nChar == VK_DOWN) {
+					++nNewHotIndex;
+					if ((int)m_pFolder->size() <= nNewHotIndex)
+						nNewHotIndex = 0;
+				} else if (nChar == VK_UP) {
+					--nNewHotIndex;
+					if (nNewHotIndex < 0) 
+						nNewHotIndex = m_pFolder->size() - 1;
+				}
+			}
+			_HotItem(nNewHotIndex);
+			return true;
+		} else if (nChar == VK_RIGHT || nChar == VK_RETURN) {			// 選択アイテムのサブメニューを表示する
+			if (m_nHotIndex != -1 && m_pFolder->at(m_nHotIndex)->pFolder) {
+				_DoExec(m_pFolder->at(m_nHotIndex)->rcItem.TopLeft());
+				if (m_pSubMenu) {
+					// 一番上のアイテムをHot状態にする
+					MSG msg = *pMsg;
+					msg.wParam	= VK_DOWN;
+					m_pSubMenu->PreTranslateMessage(&msg);
+					return true;
+				} else {
+					pMsg->lParam = -1;
+					return true;
+				}
+			} else if (nChar == VK_RETURN && m_nHotIndex != -1) {
+				// アイテムを実行...
+				_DoExec(m_pFolder->at(m_nHotIndex)->rcItem.TopLeft(), true);
+				return true;
+			} else if (nChar == VK_RIGHT) {
+				if (m_pSubMenu) {
+					// 一番上のアイテムをHot状態にする
+					MSG msg = *pMsg;
+					msg.wParam	= VK_DOWN;
+					m_pSubMenu->PreTranslateMessage(&msg);
+				} else {	// 無効アイテム
+					pMsg->lParam = -1;
+				}
+				return true;
+			}
+		} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+			return true;
+		} else {	// プレフィックス処理
+			int nCount = (int)m_pFolder->size();
+			std::vector<int>	vecSamePrefixIndex;
+			for (int i = 0; i < nCount; ++i) {
+				if (m_pFolder->at(i)->strName.Left(1) == (TCHAR)nChar) 
+					vecSamePrefixIndex.push_back(i);
+			}
+			if (vecSamePrefixIndex.size() > 0) {
+				if (vecSamePrefixIndex.size() == 1) {
+					if (m_pFolder->at(vecSamePrefixIndex.front())->pFolder) {
+						_DoExec(m_pFolder->at(vecSamePrefixIndex.front())->rcItem.TopLeft());
+						if (m_pSubMenu) {
+							// 一番上のアイテムをHot状態にする
+							MSG msg = *pMsg;
+							msg.wParam	= VK_DOWN;
+							m_pSubMenu->PreTranslateMessage(&msg);
+							return true;
+						}
+					}
+					// アイテムを実行...
+					_DoExec(m_pFolder->at(vecSamePrefixIndex.front())->rcItem.TopLeft(), true);
+				} else {
+					for (int nIndex : vecSamePrefixIndex) {
+						if (m_nHotIndex < nIndex) {
+							_HotItem(nIndex);
+							return true;
+						}
+					}
+					_HotItem(vecSamePrefixIndex.front());
+				}
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
 
 void CLinkPopupMenu::DoPaint(CDCHandle dc)
 {
@@ -1166,7 +1273,10 @@ void CLinkPopupMenu::OnTrackMouseLeave()
 		CPoint	pt;
 		GetCursorPos(&pt);
 		HWND hWnd = WindowFromPoint(pt);
-		if (hWnd != m_pSubMenu->m_hWnd) {
+		if ((GetStyle() & WS_CHILD) && GetParent() == hWnd) {
+			// お気に入りルートメニューならすぐに閉じる
+			_CloseSubMenu();
+		} else if (hWnd != m_pSubMenu->m_hWnd) {
 			SetTimer(kSubMenuPopupCloseTimerID, kSubMenuPopupCloseTime);
 		} else {
 			_HotItem(m_pSubMenu->m_nInheritFolderIndex);
@@ -1405,9 +1515,6 @@ int CLinkPopupMenu::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	ATLVERIFY(SUCCEEDED(RegisterDragDrop()));
 
-	CMessageLoop *pLoop = _Module.GetMessageLoop();
-	pLoop->AddMessageFilter(this);
-
 	return 0;
 }
 
@@ -1418,9 +1525,6 @@ void CLinkPopupMenu::OnDestroy()
 	//});
 
 	RevokeDragDrop();
-
-	CMessageLoop *pLoop = _Module.GetMessageLoop();
-	pLoop->RemoveMessageFilter(this);
 }
 
 void CLinkPopupMenu::OnTimer(UINT_PTR nIDEvent)
@@ -1704,6 +1808,7 @@ void	CLinkPopupMenu::_HotItem(int nNewHotIndex)
 		LinkItem& item = *m_pFolder->at(m_nHotIndex);
 		item.state	= item.kItemHot;
 		//if ( item.ModifyState(0, item.kItemHot) )
+		ScrollToView(item.rcItem);
 			InvalidateRect(_GetClientItemRect(item.rcItem));
 	}
 }

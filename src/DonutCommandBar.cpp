@@ -18,7 +18,8 @@
 class CDonutCommandBar::Impl :
 	public CDoubleBufferWindowImpl<Impl>,
 	public CThemeImpl<Impl>,
-	public CTrackMouseLeave<Impl>
+	public CTrackMouseLeave<Impl>,
+	public CMessageFilter
 {
 public:
 	DECLARE_WND_CLASS(_T("DonutCommandBar"))
@@ -61,6 +62,7 @@ public:
 	void DoPaint(CDCHandle dc);
 	void OnTrackMouseMove(UINT nFlags, CPoint pt);
 	void OnTrackMouseLeave();
+	BOOL PreTranslateMessage(MSG* pMsg) override;
 
 	BEGIN_MSG_MAP( Impl )
 		MSG_WM_CREATE( OnCreate )
@@ -72,6 +74,10 @@ public:
 		MSG_WM_RBUTTONUP( OnRButtonUp )
 		MSG_WM_MBUTTONDOWN( OnMButtonDown )
 		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseBaseSubMenu )
+
+		MSG_WM_KILLFOCUS( OnKillFocus )
+		MSG_WM_KEYDOWN( OnKeyDown )
+
 		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CDonutCommandBar::Impl> )
 		CHAIN_MSG_MAP( CThemeImpl<CDonutCommandBar::Impl> )
 		CHAIN_MSG_MAP( CTrackMouseLeave<CDonutCommandBar::Impl> )
@@ -86,6 +92,9 @@ public:
 	 void OnRButtonUp(UINT nFlags, CPoint point);
 	 void OnMButtonDown(UINT nFlags, CPoint point);
 	 LRESULT OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam);
+
+	 void OnKillFocus(CWindow wndFocus);
+	 void OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags);
 
 private:
 	int		_GetBandHeight();
@@ -109,6 +118,7 @@ private:
 	struct CommandButton {
 		CString	name;
 		CRect	rect;
+		TCHAR	prefix;
 
 		enum ButtonState {
 			kNormal = 0,
@@ -117,8 +127,12 @@ private:
 		};
 		ButtonState	state;
 
-		CommandButton(LPCTSTR str, CRect rc) : name(str), rect(rc), state(kNormal)
-		{	}
+		CommandButton(LPCTSTR str, CRect rc) : name(str), rect(rc), state(kNormal), prefix(_T('\0'))
+		{
+			int nPos = name.Find(_T('&'));
+			if (nPos != -1) 
+				prefix = name.Mid(nPos + 1, 1)[0];
+		}
 
 		bool	ModifyState(ButtonState newState)
 		{
@@ -143,6 +157,10 @@ private:
 	static IBasePopupMenu* s_pSubMenu;
 	static HHOOK	s_hHook;
 	static HWND		s_hWnd;
+
+	bool	m_bFocusSelf;
+	bool	m_bNowAltKeyDown;
+	HWND	m_hWndRestoreFocus;
 
 };
 
@@ -172,6 +190,11 @@ HWND	CDonutCommandBar::Create(HWND hWndParent)
 void	CDonutCommandBar::SetFont(HFONT hFont)
 {
 	pImpl->SetFont(hFont);
+}
+
+HWND	CDonutCommandBar::GetHWND() const
+{
+	return pImpl->m_hWnd;
 }
 
 void	CDonutCommandBar::SetRecentClosedTabList(CRecentClosedTabList* pList)

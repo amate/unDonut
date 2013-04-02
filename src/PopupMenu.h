@@ -32,15 +32,15 @@ struct ChildFrameDataOnClose;
 
 
 class CRecentClosedTabPopupMenu : 
-	public CBasePopupMenuImpl<CRecentClosedTabPopupMenu>,
-	public CMessageFilter
+	public CBasePopupMenuImpl<CRecentClosedTabPopupMenu>/*,
+	public CMessageFilter*/
 {
 public:
 	static void	SetRecentClosedTabList(CRecentClosedTabList* pList) { s_pRecentClosedTabList = pList; }
 
 	// Overrides
 	void DoPaint(CDCHandle dc);
-	virtual BOOL PreTranslateMessage(MSG* pMsg) override;
+	virtual bool PreTranslateMessage(MSG* pMsg) override;
 
 	BEGIN_MSG_MAP( CRecentClosedTabPopupMenu )
 		MSG_WM_CREATE( OnCreate )
@@ -138,6 +138,7 @@ private:
 class CRootFavoritePopupMenu : public CBasePopupMenuImpl<CRootFavoritePopupMenu>
 {
 public:
+	CRootFavoritePopupMenu();
 
 	static void	LoadFavoriteBookmark();
 	static void JoinSaveBookmarkThread();
@@ -164,6 +165,9 @@ public:
 	virtual IBasePopupMenu* CreateSubMenu(int nIndex) override;
 	virtual void	DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBottom, HWND hWndParent) override;
 	virtual void	DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClientItem, HWND hWndParent, int nInheritIndex) override;
+	virtual bool	PreTranslateMessage(MSG* pMsg) override;
+
+	void OnTrackMouseLeave();
 
 	BEGIN_MSG_MAP( CRootFavoritePopupMenu )
 		MSG_WM_DESTROY	( OnDestroy	)

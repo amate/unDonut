@@ -175,6 +175,7 @@ class CLinkPopupMenu :
 	public CMessageFilter
 {
 	friend class CLinkEditDialog;
+	friend class CRootFavoritePopupMenu;
 public:
 	DECLARE_WND_CLASS_EX(_T("DonutLinkPopupMenu"), CS_HREDRAW | CS_VREDRAW | CS_DROPSHADOW, COLOR_MENU)
 
@@ -236,15 +237,7 @@ public:
 
 	// Overrides
 	virtual void OnFinalMessage(HWND /*hWnd*/) { delete this; }
-	virtual BOOL PreTranslateMessage(MSG* pMsg)
-	{
-		/*if (pMsg->hwnd == m_hWnd && pMsg->message == WM_LBUTTONDOWN) {
-			POINT pt = { GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam) };
-			OnLButtonDown((UINT)pMsg->wParam, pt);
-			return TRUE;
-		}*/
-		return FALSE;
-	}
+	virtual BOOL PreTranslateMessage(MSG* pMsg) override;
 
 	void DoPaint(CDCHandle dc);
 

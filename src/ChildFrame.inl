@@ -959,6 +959,12 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		return TRUE;
 	}
 
+	// Altキー
+	if ((pMsg->message == WM_SYSKEYDOWN || pMsg->message == WM_SYSKEYUP) && pMsg->wParam == VK_MENU) {
+		GetTopLevelWindow().PostMessage(pMsg->message, pMsg->wParam, pMsg->lParam);
+		return TRUE;
+	}
+
 	// アクセラレータキー
 	if (m_AcceleratorOption.TranslateAccelerator(m_hWnd, pMsg))
 		return TRUE;
@@ -2521,6 +2527,106 @@ void 	CChildFrame::Impl::OnAddClosePopupTitle(WORD /*wNotifyCode*/, WORD /*wID*/
 
 	PostMessage(WM_CLOSE);
 }
+
+/// CSS メニュー
+void	CChildFrame::Impl::OnChangeCSS(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	bool bOff = false;
+	CString cssName;
+	CString cssPath;
+	CComBSTR cssText;
+	
+	switch (nID) {
+	case ID_STYLESHEET_BASE:
+		break;
+
+	case ID_STYLESHEET_OFF:
+		bOff = true;
+		break;
+
+	default:
+		{
+			int nIndex = nID - (ID_INSERTPOINT_CSSMENU + 1);
+			std::vector<CString>	vecFileName;
+			MtlForEachFileSort(Misc::GetExeDirectory() + _T("css"), [this, &vecFileName](const CString& filePath) {
+				CString ext = Misc::GetFileExt(filePath);
+				ext.MakeLower();
+				if (ext != _T("css"))
+					return ;
+				vecFileName.push_back(Misc::GetFileBaseName(filePath));
+			});
+			if (nIndex < 0 || (int)vecFileName.size() <= nIndex) {
+				ATLASSERT( FALSE );
+				return ;
+			}
+			cssName = vecFileName[nIndex];
+			cssPath = Misc::GetExeDirectory() + _T("css\\") + cssName;
+			std::ifstream fs(cssPath);
+			if (!fs)
+				return ;
+			std::string tempBuff;
+			while (fs.good()) {
+				enum { kBuffSize = 5120 };
+				char buff[kBuffSize + 1] = "";
+				fs.read(buff, kBuffSize);
+				tempBuff.append(buff, fs.gcount());
+			}
+			cssText = tempBuff.c_str();
+		}
+		break;
+	}
+	MtlForEachHTMLDocument2g(m_spBrowser, [=](IHTMLDocument2* pDocument) -> bool {
+		// スタイルシート一覧を取得
+		CComPtr<IHTMLStyleSheetsCollection> spSheetsColl;
+		pDocument->get_styleSheets(&spSheetsColl);
+		if (!spSheetsColl)
+			return true;
+
+		bool	bFindTarSheet = false;
+		long	lLength = 0;
+		spSheetsColl->get_length(&lLength);
+		for (long i = 0; i < lLength; i++) {
+			VARIANT varIdx, varSheet;
+			varIdx.vt		  = VT_I4;
+			varIdx.lVal 	  = i;
+			varSheet.vt 	  = VT_DISPATCH;
+			varSheet.pdispVal = NULL;
+			spSheetsColl->item(&varIdx, &varSheet);
+			CComQIPtr<IHTMLStyleSheet> spSheet2 = varSheet.pdispVal;
+			if (spSheet2) {
+				CComBSTR	strTitle;
+				spSheet2->get_title(&strTitle);				
+				CString	strTarSheet;
+				if (strTitle)
+					strTarSheet = strTitle;
+				if (strTarSheet == cssName && bOff == false) {
+					spSheet2->put_disabled(VARIANT_FALSE);
+					bFindTarSheet = true;
+				} else {
+					spSheet2->put_disabled(VARIANT_TRUE);
+				}
+			}
+			if (varSheet.pdispVal)
+				varSheet.pdispVal->Release();
+		}
+
+		if ( !bFindTarSheet && !bOff && !cssPath.IsEmpty() ) {
+			CComPtr<IHTMLStyleSheet> spSheet;
+			pDocument->createStyleSheet(NULL, -1, &spSheet);
+			if (spSheet) {
+				// 属性を設定
+				//long lPos;
+				//spSheet->addImport( (BSTR) CComBSTR(cssPath), -1, &lPos );
+				spSheet->put_cssText(cssText);
+				spSheet->put_title( (BSTR) CComBSTR(cssName) );
+				spSheet->put_disabled(VARIANT_FALSE);
+			}
+		}
+		return true;
+	});
+}
+
+
 
 /// nページ戻る
 void	CChildFrame::Impl::OnViewBackX(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/)

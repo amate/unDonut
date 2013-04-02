@@ -21,6 +21,8 @@ public:
 	HWND	Create(HWND hWndParent);
 	void	SetFont(HFONT hFont);
 
+	HWND	GetHWND() const;
+
 	void	SetRecentClosedTabList(CRecentClosedTabList* pList);
 
 private:

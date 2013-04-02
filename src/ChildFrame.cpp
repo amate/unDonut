@@ -7,6 +7,7 @@
 #include "ChildFrame.h"
 #include <regex>
 #include <chrono>
+#include <fstream>
 #include <boost\serialization\string.hpp>
 #include <boost\serialization\vector.hpp>
 #include <boost\serialization\utility.hpp>
@@ -451,6 +452,9 @@ public:
 		// ツール
 		COMMAND_ID_HANDLER_EX( ID_EDIT_IGNORE			, OnAddClosePopupUrl		)
 		COMMAND_ID_HANDLER_EX( ID_EDIT_CLOSE_TITLE		, OnAddClosePopupTitle		)
+		COMMAND_ID_HANDLER_EX( ID_STYLESHEET_BASE		, OnChangeCSS				)
+		COMMAND_RANGE_HANDLER_EX( ID_INSERTPOINT_CSSMENU, ID_INSERTPOINT_CSSMENU_END, OnChangeCSS )
+		COMMAND_ID_HANDLER_EX( ID_STYLESHEET_OFF		, OnChangeCSS				)
 
 		// ウィンドウ
 		COMMAND_ID_HANDLER_EX( ID_FILE_CLOSE			, OnFileClose				)
@@ -548,6 +552,7 @@ public:
 	// ツール
 	void 	OnAddClosePopupUrl(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 	void 	OnAddClosePopupTitle(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+	void	OnChangeCSS(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// ウィンドウ
 	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);

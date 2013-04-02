@@ -12,7 +12,7 @@
 #include <boost\thread.hpp>
 #include <boost\format.hpp>
 #include <atlenc.h>
-#include "option\FavoriteMenuDialog.h"
+#include "option\MenuDialog.h"
 #include "MtlWeb.h"
 #include "ExStyle.h"
 #include "RecentClosedTabList.h"
@@ -147,23 +147,13 @@ void CRecentClosedTabPopupMenu::DoPaint(CDCHandle dc)
 				rc.left	= kBoundMargin + kIconWidth;
 				DrawThemeBackground(memDC, MENU_POPUPSEPARATOR, 0, &rc);   // draw separator line
 			
-				DrawThemeText(memDC, MENU_POPUPITEM, item.state, pClosedTabData->strTitle, pClosedTabData->strTitle.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_HIDEPREFIX, 0, &rcText);
+				DrawThemeText(memDC, MENU_POPUPITEM, item.state, pClosedTabData->strTitle, pClosedTabData->strTitle.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX, 0, &rcText);
 				rcText.MoveToY(rcText.top + kItemHeight);
 
-				DrawThemeText(memDC, MENU_POPUPITEM, item.state, item.name, item.name.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_HIDEPREFIX, 0, &rcText);
+				DrawThemeText(memDC, MENU_POPUPITEM, item.state, item.name, item.name.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX, 0, &rcText);
 			} else {
-				DrawThemeText(memDC, MENU_POPUPITEM, item.state, item.name, item.name.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_HIDEPREFIX, 0, &rcText);
+				DrawThemeText(memDC, MENU_POPUPITEM, item.state, item.name, item.name.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_NOPREFIX, 0, &rcText);
 			}
-
-			//if (item.submenu) {
-			//	CRect rcArrow = rcText;
-			//	rcArrow.left	= rcText.right;
-			//	rcArrow.right	= rcClient.right;
-			//	int nState = MSM_NORMAL;
-			//	if (item.state == MPI_DISABLED || item.state == MPI_DISABLEDHOT)
-			//		nState = MSM_DISABLED;
-			//	DrawThemeBackground(memDC, MENU_POPUPSUBMENU, nState, &rcArrow);
-			//}
 		}
 	} else {
 		memDC.FillRect(rcClient, COLOR_3DFACE);
@@ -207,36 +197,12 @@ void CRecentClosedTabPopupMenu::DoPaint(CDCHandle dc)
 				rc.top = rc.bottom - 2;
 				memDC.DrawEdge(&rc, EDGE_ETCHED, BF_TOP);   // draw separator line
 
-				memDC.DrawText(pClosedTabData->strTitle, pClosedTabData->strTitle.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_HIDEPREFIX);
+				memDC.DrawText(pClosedTabData->strTitle, pClosedTabData->strTitle.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
 				rcText.MoveToY(rcText.top + kItemHeight);
-				memDC.DrawText(item.name, item.name.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_HIDEPREFIX);
+				memDC.DrawText(item.name, item.name.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
 			} else {
-				memDC.DrawText(item.name, item.name.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_HIDEPREFIX);
+				memDC.DrawText(item.name, item.name.GetLength(), rcText, DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX);
 			}
-			//if (item.submenu) {
-			//	CRect rcArrow = rcText;
-			//	rcArrow.left	= rcText.right;
-			//	rcArrow.right	= rcClient.right;
-			//	enum { kcxArrow = 12, kcyArrow = 12 };
-			//	CDC	memDC2 = ::CreateCompatibleDC(memDC);
-			//	
-			//	CBitmap bmpArrow = ::CreateCompatibleBitmap(memDC, kcxArrow, kcyArrow);
-			//	HBITMAP hbmpPrev = memDC2.SelectBitmap(bmpArrow);
-			//	UINT nState = DFCS_MENUARROW;
-			//	memDC2.DrawFrameControl(CRect(0, 0, kcxArrow, kcyArrow), DFC_MENU, DFCS_MENUARROW);
-			//	if (item.state == MPI_HOT) {
-			//		CBitmap bmpWiteArrow = ::CreateCompatibleBitmap(memDC, kcxArrow, kcyArrow);
-			//		CDC	memDC3 = ::CreateCompatibleDC(memDC);
-			//		HBITMAP hbmpPrev2 = memDC3.SelectBitmap(bmpWiteArrow);
-			//		memDC3.BitBlt(0, 0, kcxArrow, kcyArrow, memDC2, 0, 0, NOTSRCCOPY);
-
-			//		memDC.TransparentBlt(rcClient.right - kcxArrow - 4, rcText.top + ((rcText.Height() - kcyArrow) / 2), kcxArrow, kcyArrow, memDC3, 0, 0, kcxArrow, kcyArrow, RGB(0, 0, 0));
-			//		memDC3.SelectBitmap(hbmpPrev2);
-			//	} else {
-			//		memDC.TransparentBlt(rcClient.right - kcxArrow - 4, rcText.top + ((rcText.Height() - kcyArrow) / 2), kcxArrow, kcyArrow, memDC2, 0, 0, kcxArrow, kcyArrow, RGB(0xFF, 0xFF, 0xFF));
-			//	}
-			//	memDC2.SelectBitmap(hbmpPrev);
-			//}
 		}
 	}
 
@@ -244,7 +210,7 @@ void CRecentClosedTabPopupMenu::DoPaint(CDCHandle dc)
 	memDC.SelectFont(hFontPrev);
 }
 
-BOOL CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
+bool CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
 {
 	if (pMsg->message == WM_KEYUP && pMsg->wParam == VK_DELETE) {
 		if (m_nHotIndex != -1) {
@@ -261,9 +227,10 @@ BOOL CRecentClosedTabPopupMenu::PreTranslateMessage(MSG* pMsg)
 			_HotItem(nIndex);
 
 			Invalidate(FALSE);
+			return true;
 		}
 	}
-	return FALSE;
+	return __super::PreTranslateMessage(pMsg);
 }
 
 int CRecentClosedTabPopupMenu::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -272,8 +239,8 @@ int CRecentClosedTabPopupMenu::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	_InitTooltip();
 
-	CMessageLoop *pLoop = _Module.GetMessageLoop();
-	pLoop->AddMessageFilter(this);
+	//CMessageLoop *pLoop = _Module.GetMessageLoop();
+	//pLoop->AddMessageFilter(this);
 
 	__super::OnCreate(lpCreateStruct);
 
@@ -287,8 +254,8 @@ void CRecentClosedTabPopupMenu::OnDestroy()
 {
 	SetMsgHandled(FALSE);
 
-	CMessageLoop *pLoop = _Module.GetMessageLoop();
-	pLoop->RemoveMessageFilter(this);
+	//CMessageLoop *pLoop = _Module.GetMessageLoop();
+	//pLoop->RemoveMessageFilter(this);
 }
 
 void CRecentClosedTabPopupMenu::OnSize(UINT nType, CSize size)
@@ -701,6 +668,11 @@ bool							CRootFavoritePopupMenu::s_bCancel = false;
 
 std::vector<std::pair<HWND, std::function<void ()>>>		CRootFavoritePopupMenu::s_vecfuncRefreshNotify;
 
+
+CRootFavoritePopupMenu::CRootFavoritePopupMenu() : m_pLinkSubMenu(nullptr), m_hWndLinkBar(NULL)
+{
+}
+
 void	CRootFavoritePopupMenu::LoadFavoriteBookmark()
 {
 	CString FavoriteBookmarkFilePath = GetConfigFilePath(_T("FavoriteBookmark.xml"));
@@ -1038,11 +1010,205 @@ void	CRootFavoritePopupMenu::DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClien
 	}
 }
 
+bool	CRootFavoritePopupMenu::PreTranslateMessage(MSG* pMsg)
+{
+	if (pMsg->message == WM_KEYDOWN) {
+		if (m_pLinkSubMenu == nullptr) {
+			return __super::PreTranslateMessage(pMsg);
+		}
+		UINT nChar = (UINT)pMsg->wParam;
+		if (m_pSubMenu) {
+			if (m_pSubMenu->PreTranslateMessage(pMsg)) {
+				if (pMsg->wParam == VK_RIGHT && pMsg->lParam == -1)
+					return true;
+				if ((pMsg->wParam == VK_LEFT || nChar == VK_ESCAPE) && m_pSubMenu) {
+					m_pSubMenu->DestroyWindow();
+					m_pSubMenu = nullptr;
+					pMsg->wParam = 0;	// 打ち止めにしとく
+				}
+				return true;
+			}
+		}
+		if (nChar == VK_DOWN) {
+			// どちらもHot状態のアイテムがないので一番上のアイテムをHot状態にする
+			if (m_nHotIndex == -1 && m_pLinkSubMenu->m_nHotIndex == -1) {
+				_HotItem(0);
+				return true;
+			} else if (m_nHotIndex == -1) {		// リンクアイテムの選択状態を変える				
+				if (m_pLinkSubMenu->m_nHotIndex == (m_pLinkSubMenu->m_pFolder->size() - 1) && m_pLinkSubMenu->m_pSubMenu == nullptr) {
+					m_pLinkSubMenu->_HotItem(-1);
+					_HotItem(0);
+				} else {
+					m_pLinkSubMenu->PreTranslateMessage(pMsg);
+				}
+				return true;
+			} else {
+				int nNewHotIndex = m_nHotIndex + 1;
+				if ((int)m_vecMenuItem.size() - 1 <= nNewHotIndex) {
+					m_pLinkSubMenu->_CloseSubMenu();
+					_HotItem(-1);
+					m_pLinkSubMenu->PreTranslateMessage(pMsg);
+				} else {
+					_HotItem(nNewHotIndex);
+				}
+				return true;
+			}
+		} else if (nChar == VK_UP) {
+			// どちらもHot状態のアイテムがないので一番下のアイテムをHot状態にする
+			if (m_nHotIndex == -1 && m_pLinkSubMenu->m_nHotIndex == -1) {
+				m_pLinkSubMenu->PreTranslateMessage(pMsg);
+			} else if (m_nHotIndex == -1) {		// リンクアイテムの選択状態を変える
+				if (m_pLinkSubMenu->m_nHotIndex == 0 && m_pLinkSubMenu->m_pSubMenu == nullptr) {
+					m_pLinkSubMenu->_HotItem(-1);
+					_HotItem(m_vecMenuItem.size() - 2);
+				} else {
+					m_pLinkSubMenu->PreTranslateMessage(pMsg);
+				}
+				return true;
+			} else {
+				int nNewHotIndex = m_nHotIndex - 1;
+				if (nNewHotIndex == -1) {
+					_HotItem(-1);
+					m_pLinkSubMenu->PreTranslateMessage(pMsg);
+				} else {
+					_HotItem(nNewHotIndex);
+				}
+				return true;
+			}
+		} else if (nChar == VK_RIGHT || nChar == VK_RETURN) {			// 選択アイテムのサブメニューを表示する
+			if (_DoTrackSubPopupMenu(m_nHotIndex)) {
+				if (m_pSubMenu) {
+					// 一番上のアイテムをHot状態にする
+					MSG msg = *pMsg;
+					msg.wParam	= VK_DOWN;
+					m_pSubMenu->PreTranslateMessage(&msg);
+					return true;
+				} else {
+					pMsg->lParam = -1;
+					return true;
+				}
+			} else if (nChar == VK_RETURN && m_nHotIndex != -1) {
+				// アイテムを実行...
+				MenuItem& item = m_vecMenuItem[m_nHotIndex];
+				if (item.state & (POPUPITEMSTATES::MPI_HOT | POPUPITEMSTATES::MPI_NORMAL)) {
+					// メニューを閉じる
+					_CloseBaseSubMenu();
+					CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+					return true;
+				}
+			} else if (m_nHotIndex == -1) {				
+				return m_pLinkSubMenu->PreTranslateMessage(pMsg) != 0;
+
+			} else if (nChar == VK_RIGHT) {
+				if (m_pSubMenu) {
+					// 一番上のアイテムをHot状態にする
+					MSG msg = *pMsg;
+					msg.wParam	= VK_DOWN;
+					m_pSubMenu->PreTranslateMessage(&msg);
+				} else {	// 無効アイテム
+					pMsg->lParam = -1;
+				}
+				return true;
+			}
+		} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && (m_pSubMenu == nullptr && m_pLinkSubMenu->m_pSubMenu == nullptr)) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+			return true;
+
+		} else {	// プレフィックス処理
+			if (m_pLinkSubMenu->m_pSubMenu) {
+				m_pLinkSubMenu->PreTranslateMessage(pMsg);
+			} else {
+				int nCount = (int)m_vecMenuItem.size();
+				std::vector<int>	vecSamePrefixIndex;
+				for (int i = 0; i < nCount; ++i) {
+					if (m_vecMenuItem[i].prefix == (TCHAR)nChar) 
+						vecSamePrefixIndex.push_back(i);
+				}
+				enum { kLinkItemBound = 100 };
+				int nLinkCount = (int)m_pLinkSubMenu->m_pFolder->size();
+				for (int i = 0; i < nLinkCount; ++i) {
+					if (m_pLinkSubMenu->m_pFolder->at(i)->strName.Left(1) == (TCHAR)nChar)
+						vecSamePrefixIndex.push_back(kLinkItemBound + i);
+				}
+				if (vecSamePrefixIndex.size() > 0) {
+					if (vecSamePrefixIndex.size() == 1) {
+						int nFirstIndex = vecSamePrefixIndex.front();
+						if (nFirstIndex < kLinkItemBound) {
+							if (_DoTrackSubPopupMenu(nFirstIndex)) {
+								if (m_pSubMenu) {
+									// 一番上のアイテムをHot状態にする
+									MSG msg = *pMsg;
+									msg.wParam	= VK_DOWN;
+									m_pSubMenu->PreTranslateMessage(&msg);
+									return true;
+								}
+							}
+							// アイテムを実行...
+							MenuItem& item = m_vecMenuItem[vecSamePrefixIndex.front()];
+							// メニューを閉じる
+							_CloseBaseSubMenu();
+							if (item.state & (POPUPITEMSTATES::MPI_HOT | POPUPITEMSTATES::MPI_NORMAL)) {
+								CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+							}
+						} else {
+							m_pLinkSubMenu->_DoExec(m_pLinkSubMenu->m_pFolder->at(nFirstIndex - kLinkItemBound)->rcItem.TopLeft(), true);
+						}
+					} else {
+						int nHotIndex = m_nHotIndex;
+						if (nHotIndex == -1 && m_pLinkSubMenu->m_nHotIndex != -1)
+							nHotIndex = m_pLinkSubMenu->m_nHotIndex + kLinkItemBound;
+						for (int nIndex : vecSamePrefixIndex) {
+							if (nHotIndex < nIndex) {
+								if (nIndex < kLinkItemBound) {
+									_HotItem(nIndex);
+								} else {
+									m_pLinkSubMenu->_HotItem(nIndex - kLinkItemBound);
+								}
+								return true;
+							}
+						}
+						if (vecSamePrefixIndex.front() < kLinkItemBound) {
+							_HotItem(vecSamePrefixIndex.front());
+						} else {
+							m_pLinkSubMenu->_HotItem(vecSamePrefixIndex.front() - kLinkItemBound);
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	return false;
+}
+
+
+void CRootFavoritePopupMenu::OnTrackMouseLeave()
+{
+	KillTimer(kSubMenuPopupTimerID);
+	if (m_pSubMenu) {	// カーソルが出て行ったときにサブメニューを閉じる
+		CPoint	pt;
+		GetCursorPos(&pt);
+		HWND hWnd = WindowFromPoint(pt);
+		if (m_pLinkSubMenu && hWnd == m_pLinkSubMenu->m_hWnd) {
+			// お気に入り方向にカーソルが移動したら直ちに閉じる
+			m_pSubMenu->DestroyWindow();
+			m_pSubMenu = nullptr;
+		} else if (hWnd != m_pSubMenu->GetHWND()) {
+			SetTimer(kSubMenuPopupCloseTimerID, kSubMenuPopupCloseTime);
+		} else {
+			_HotItem(m_pSubMenu->GetInheritMenuIndex());
+			return ;
+		}
+	}
+	_HotItem(-1);
+}
+
+
 void CRootFavoritePopupMenu::OnDestroy()
 {
 	SetMsgHandled(FALSE);
 
-	m_pLinkSubMenu->SetLinkBarHWND(m_hWndLinkBar);
+	if (m_pLinkSubMenu)
+		m_pLinkSubMenu->SetLinkBarHWND(m_hWndLinkBar);
 
 	if (s_bSaveBookmark) {
 		_SaveFavoriteBookmark();
@@ -1056,7 +1222,7 @@ LRESULT CRootFavoritePopupMenu::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM lP
 	HWND hWnd = ::WindowFromPoint(pt);
 	if (hWnd) {
 		bool bChildWnd = false;
-		if (m_pLinkSubMenu->m_hWnd == hWnd) {
+		if (m_pLinkSubMenu && m_pLinkSubMenu->m_hWnd == hWnd) {
 			bChildWnd = true;
 		} else {
 			CString className;

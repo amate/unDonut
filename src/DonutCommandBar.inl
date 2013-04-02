@@ -1,6 +1,6 @@
 
 
-CDonutCommandBar::Impl::Impl() : m_nHotIndex(-1), m_nPressedIndex(-1), m_ChevronState(ChvNormal)
+CDonutCommandBar::Impl::Impl() : m_nHotIndex(-1), m_nPressedIndex(-1), m_ChevronState(ChvNormal), m_bFocusSelf(false), m_bNowAltKeyDown(false), m_hWndRestoreFocus(NULL)
 {
 	WTL::CLogFont lf;
 	lf.SetMenuFont();
@@ -54,6 +54,10 @@ void CDonutCommandBar::Impl::DoPaint(CDCHandle dc)
 	dc.SetBkMode(TRANSPARENT);
 	HFONT hFontPrev = dc.SelectFont(m_font);
 
+	DWORD	dwTextFlags = DT_SINGLELINE | DT_VCENTER;
+	if (m_bFocusSelf == false)
+		dwTextFlags |= DT_HIDEPREFIX;
+
 	int nCount = static_cast<int>(m_vecCommandButton.size());
 	for (int i = 0; i < nCount; ++i) {
 		const CommandButton& item = m_vecCommandButton[i];
@@ -85,7 +89,7 @@ void CDonutCommandBar::Impl::DoPaint(CDCHandle dc)
 
 			DrawThemeBackground(dc, TP_BUTTON, nState, &item.rect);
 
-			DrawThemeText(dc, TP_BUTTON, nState, item.name, item.name.GetLength(), DT_SINGLELINE | DT_VCENTER | DT_HIDEPREFIX, 0, &rcText);
+			DrawThemeText(dc, TP_BUTTON, nState, item.name, item.name.GetLength(), dwTextFlags, 0, &rcText);
 		} else {
 			CRect rcEdge = item.rect;
 			rcEdge.DeflateRect(1, 1);
@@ -97,7 +101,7 @@ void CDonutCommandBar::Impl::DoPaint(CDCHandle dc)
 				//lpTBCustomDraw->clrText = ::GetSysColor(m_bParentActive ? COLOR_HIGHLIGHTTEXT : COLOR_GRAYTEXT);
 				dc.SetTextColor(::GetSysColor(COLOR_HIGHLIGHTTEXT));
 			}
-			dc.DrawText(item.name, item.name.GetLength(), &rcText, DT_SINGLELINE | DT_VCENTER | DT_END_ELLIPSIS | DT_HIDEPREFIX);
+			dc.DrawText(item.name, item.name.GetLength(), &rcText, dwTextFlags);
 			dc.SetTextColor(::GetSysColor(COLOR_MENUTEXT));
 		}
 	}
@@ -155,6 +159,107 @@ void CDonutCommandBar::Impl::OnTrackMouseLeave()
 }
 
 
+BOOL CDonutCommandBar::Impl::PreTranslateMessage(MSG* pMsg)
+{
+	// Altキー
+	if (pMsg->message == WM_SYSKEYDOWN) {
+		if (pMsg->wParam == VK_MENU) {
+			if (m_bFocusSelf == false && s_pSubMenu == nullptr) {	// メニュー選択モードにする
+				m_bFocusSelf = true;
+				m_bNowAltKeyDown = true;
+				Invalidate(FALSE);
+				m_hWndRestoreFocus = GetFocus();
+				SetFocus();
+			} else {						// メニュー選択をやめる
+				if (m_bNowAltKeyDown == false) {
+					m_bFocusSelf = false;
+					_CloseSubMenu();
+					_PressItem(-1);
+					Invalidate(FALSE);
+					::SetFocus(m_hWndRestoreFocus);
+					m_hWndRestoreFocus = NULL;
+				}
+			}
+			return TRUE;
+		} else if (m_bFocusSelf) {	// Alt + prefix
+			OnKeyDown((UINT)pMsg->wParam, 0, 0);
+			if (s_pSubMenu)	{	// メニューが表示された
+				m_bNowAltKeyDown = false;
+				return TRUE;
+			}
+		}
+	} else if (pMsg->message == WM_SYSKEYUP && pMsg->wParam == VK_MENU && m_bFocusSelf) {
+		m_bNowAltKeyDown = false;
+		_PressItem(0);
+		return TRUE;
+	}
+
+	// キーを処理する
+	if (pMsg->hwnd == m_hWnd) {
+		if (pMsg->message == WM_KEYDOWN) {
+			UINT nKey = (UINT)pMsg->wParam;
+			if (s_pSubMenu && s_pSubMenu->PreTranslateMessage(pMsg)) {
+				if (!(pMsg->wParam == VK_RIGHT && pMsg->lParam == -1)) {
+					if (pMsg->wParam != VK_LEFT) {
+						if (pMsg->wParam == VK_ESCAPE && s_pSubMenu) {
+							int nPressedIndex = m_nPressedIndex;
+							_CloseSubMenu();
+							_PressItem(nPressedIndex);
+						}
+						return TRUE;
+					}
+				}
+			}
+
+			if (nKey == VK_RIGHT || nKey == VK_LEFT || nKey == VK_DOWN || nKey == VK_UP) {
+				int nNewPressIndex = m_nPressedIndex;			
+				if (nNewPressIndex == -1) {
+					nNewPressIndex = 0;
+				} else {
+					if (nKey == VK_RIGHT) {
+						++nNewPressIndex;
+						if ((int)m_vecCommandButton.size() <= nNewPressIndex)
+							nNewPressIndex = 0;
+					} else if (nKey == VK_LEFT) {
+						--nNewPressIndex;
+						if (nNewPressIndex == -1) 
+							nNewPressIndex = m_vecCommandButton.size() - 1;
+					}
+				}
+				if (s_pSubMenu == nullptr && (nKey == VK_RIGHT || nKey == VK_LEFT)) {
+					_PressItem(nNewPressIndex);
+				} else {
+					_DoPopupSubMenu(nNewPressIndex);
+				}
+				return TRUE;
+
+			} else if (nKey == VK_RETURN && m_nPressedIndex != -1) {
+				if (s_pSubMenu) {
+					_CloseSubMenu();
+				} else {
+					_DoPopupSubMenu(m_nPressedIndex);
+				}
+				return TRUE;
+
+			} else if (nKey == VK_ESCAPE) {		// メニューを閉じる
+				m_bFocusSelf = false;
+				_CloseSubMenu();
+				_PressItem(-1);
+				Invalidate(FALSE);
+				::SetFocus(m_hWndRestoreFocus);
+				m_hWndRestoreFocus = NULL;
+				return TRUE;
+			}
+
+		} else if (pMsg->message == WM_KEYUP && s_pSubMenu && s_pSubMenu->PreTranslateMessage(pMsg)) {
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+
+
 // Message map
 
 int  CDonutCommandBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
@@ -177,13 +282,41 @@ int  CDonutCommandBar::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	// お気に入りグループを読み込み
 	CRootFavoriteGroupPopupMenu::LoadFavoriteGroup();
 
+	// cssメニュー
+	enum { kToolPos = 4, kCssPos = 13 };
+	CMenuHandle menuCss = m_menu.GetSubMenu(kToolPos).GetSubMenu(kCssPos);
+	std::vector<CString>	vecFileName;
+	MtlForEachFileSort(Misc::GetExeDirectory() + _T("css"), [this, &vecFileName](const CString& filePath) {
+		CString ext = Misc::GetFileExt(filePath);
+		ext.MakeLower();
+		if (ext != _T("css"))
+			return ;
+		vecFileName.push_back(Misc::GetFileBaseName(filePath));
+	});
+	int nID = ID_INSERTPOINT_CSSMENU + 1;
+	for (auto it = vecFileName.begin(); it != vecFileName.end(); ++it) {
+		menuCss.InsertMenu(ID_INSERTPOINT_CSSMENU, MF_BYCOMMAND, nID, (LPCTSTR)*it);
+		++nID;
+	}
+	if (vecFileName.size() > 0) {
+		menuCss.DeleteMenu(ID_INSERTPOINT_CSSMENU, MF_BYCOMMAND);
+	} else {
+		menuCss.ModifyMenu(ID_INSERTPOINT_CSSMENU, MF_BYCOMMAND | MF_DISABLED, ID_INSERTPOINT_CSSMENU, _T("(なし)"));
+	}
+
 	s_hWnd = m_hWnd;
+
+	CMessageLoop *pLoop = _Module.GetMessageLoop();
+	pLoop->AddMessageFilter(this);
 
 	return 0;
 }
 
 void CDonutCommandBar::Impl::OnDestroy()
 {
+	CMessageLoop *pLoop = _Module.GetMessageLoop();
+	pLoop->RemoveMessageFilter(this);
+
 	CRootFavoritePopupMenu::JoinSaveBookmarkThread();
 }
 
@@ -307,6 +440,32 @@ LRESULT CDonutCommandBar::Impl::OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPA
 	return 0;
 }
 
+
+void CDonutCommandBar::Impl::OnKillFocus(CWindow wndFocus)
+{
+	if (CLinkPopupMenu::s_bNowShowRClickMenu == false) {
+		m_bFocusSelf = false;
+		_PressItem(-1);
+		Invalidate(FALSE);
+
+		if (s_pSubMenu) 
+			_CloseSubMenu();
+	}
+}
+
+void CDonutCommandBar::Impl::OnKeyDown(UINT nChar, UINT nRepCnt, UINT nFlags)
+{
+	if (m_bFocusSelf) {
+		int nCount = (int)m_vecCommandButton.size();
+		for (int i = 0; i < nCount; ++i) {
+			if (m_vecCommandButton[i].prefix == nChar) {
+				_DoPopupSubMenu(i);
+				Invalidate(FALSE);
+				break;
+			}
+		}
+	}
+}
 
 int		CDonutCommandBar::Impl::_GetBandHeight()
 {

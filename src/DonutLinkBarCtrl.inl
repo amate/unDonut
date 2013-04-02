@@ -281,6 +281,70 @@ void CDonutLinkBarCtrl::Impl::OnTrackMouseLeave()
 		_ChevronStateChange(ChvNormal);
 }
 
+
+BOOL CDonutLinkBarCtrl::Impl::PreTranslateMessage(MSG* pMsg)
+{
+	// キーを処理する
+	if (pMsg->hwnd == m_hWnd) {
+		if (pMsg->message == WM_KEYDOWN) {
+			UINT nKey = (UINT)pMsg->wParam;
+			if (s_pSubMenu && s_pSubMenu->PreTranslateMessage(pMsg)) {
+				// サブメニューがないアイテムでの '→'キーは自分が処理する
+				if (!(pMsg->wParam == VK_RIGHT && pMsg->lParam == -1)) {
+					// サブメニューがない状態での '←' キーは自分が処理する
+					if (pMsg->wParam != VK_LEFT) {
+						// サブメニューがある状態での 'Esc'キーはサブメニューを閉じる
+						if (pMsg->wParam == VK_ESCAPE && s_pSubMenu) {
+							int nPressedIndex = m_nPressedIndex;
+							_CloseSubMenu();
+							_PressItem(nPressedIndex);
+						}
+						return TRUE;
+					}
+				}
+			}
+			// 矢印キーの処理
+			if (nKey == VK_RIGHT || nKey == VK_LEFT || nKey == VK_DOWN || nKey == VK_UP) {
+				int nNewPressIndex = m_nPressedIndex;			
+				if (nNewPressIndex == -1) {
+					nNewPressIndex = 0;
+				} else {
+					if (nKey == VK_RIGHT) {
+						++nNewPressIndex;
+						if ((int)m_BookmarkList.size() <= nNewPressIndex)
+							nNewPressIndex = 0;
+					} else if (nKey == VK_LEFT) {
+						--nNewPressIndex;
+						if (nNewPressIndex == -1) 
+							nNewPressIndex = m_BookmarkList.size() - 1;
+					}
+				}
+				if (_DoPopupSubMenu(nNewPressIndex) == false)
+					_PressItem(nNewPressIndex);
+				return TRUE;
+
+			} else if (nKey == VK_RETURN && m_nPressedIndex != -1) {
+				if (s_pSubMenu) {
+					_CloseSubMenu();
+				} else {
+					if (_DoPopupSubMenu(m_nPressedIndex) == false)
+						CLinkPopupMenu::OpenLink(*m_BookmarkList[m_nPressedIndex], DonutGetStdOpenFlag());
+				}
+				return TRUE;
+
+			} else if (nKey == VK_ESCAPE) {		// メニューを閉じる
+				_PressItem(-1);
+				Invalidate(FALSE);
+				GetTopLevelWindow().SetFocus();
+				return TRUE;
+			}
+
+		}
+	}
+	return FALSE;
+}
+
+
 // IDropTargetImpl
 
 DROPEFFECT CDonutLinkBarCtrl::Impl::OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point)
@@ -601,6 +665,9 @@ void	CDonutLinkBarCtrl::Impl::OnDragLeave()
 
 	_LoadLinkBookmark();
 
+	CMessageLoop *pLoop = _Module.GetMessageLoop();
+	pLoop->AddMessageFilter(this);
+
 	return 0;
 }
 
@@ -711,6 +778,9 @@ void	_AddPtree(wptree& ptFolder, LinkFolderPtr pLinkFolder, bool* pbCancel)
 
  void CDonutLinkBarCtrl::Impl::OnDestroy()
  {
+	CMessageLoop *pLoop = _Module.GetMessageLoop();
+	pLoop->RemoveMessageFilter(this);
+
 	RevokeDragDrop();
 
 	_ClearLinkBookmark();
@@ -779,7 +849,7 @@ LRESULT CDonutLinkBarCtrl::Impl::OnMouseWheel(UINT uMsg, WPARAM wParam, LPARAM l
 
 void CDonutLinkBarCtrl::Impl::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	if (CLinkPopupMenu::s_bNowShowRClickMenu)
+	if (CLinkPopupMenu::s_bNowShowRClickMenu || m_bLoading)
 		return ;
 
 	if (_HitTestChevron(point)) {
@@ -846,6 +916,17 @@ void CDonutLinkBarCtrl::Impl::OnMButtonDown(UINT nFlags, CPoint point)
 		if (item.pFolder)
 			return ;
 		CLinkPopupMenu::OpenLink(item, D_OPENFILE_CREATETAB | DonutGetStdOpenActivateFlag());
+	}
+}
+
+void CDonutLinkBarCtrl::Impl::OnKillFocus(CWindow wndFocus)
+{
+	if (CLinkPopupMenu::s_bNowShowRClickMenu == false) {
+		_PressItem(-1);
+		Invalidate(FALSE);
+
+		if (s_pSubMenu) 
+			_CloseSubMenu();
 	}
 }
 

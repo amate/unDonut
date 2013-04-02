@@ -24,6 +24,7 @@ public:
 	virtual IBasePopupMenu*	GetSubMenu() = 0;
 	virtual int		GetInheritMenuIndex() = 0;
 	virtual void	DestroyWindow() = 0;
+	virtual bool	PreTranslateMessage(MSG* pMsg) { return true; }
 
 	static HWND	s_hWndCommandBar;
 };
@@ -246,6 +247,124 @@ public:
 	virtual int		GetInheritMenuIndex() override { return m_nInheritMenuIndex; }
 	virtual void	DestroyWindow() override { ::DestroyWindow(m_hWnd); }
 
+	virtual bool	PreTranslateMessage(MSG* pMsg) override
+	{
+		if (pMsg->message == WM_KEYDOWN) {
+			UINT nChar = (UINT)pMsg->wParam;
+			if (m_pSubMenu) {
+				if (m_pSubMenu->PreTranslateMessage(pMsg)) {
+					if (pMsg->wParam == VK_RIGHT && pMsg->lParam == -1)
+						return true;
+					if ((pMsg->wParam == VK_LEFT || nChar == VK_ESCAPE) && m_pSubMenu) {
+						m_pSubMenu->DestroyWindow();
+						m_pSubMenu = nullptr;
+						pMsg->wParam = 0;	// 打ち止めにしとく
+					}
+					return true;
+				}
+			}
+			
+			if (nChar == VK_DOWN || nChar == VK_UP) {	// 選択アイテムのを変える
+				int nNewHotIndex = m_nHotIndex;
+				if (nNewHotIndex == -1) {
+					nNewHotIndex = 0;
+				} else {
+					if (nChar == VK_DOWN) {
+						++nNewHotIndex;
+						int nCount = (int)m_vecMenuItem.size();
+						if (nCount <= nNewHotIndex)		// 一番下まで行ったら一番上に戻す
+							nNewHotIndex = 0;						
+						if (m_vecMenuItem[nNewHotIndex].bSeparator)	// セパレーターは飛ばす
+							++nNewHotIndex;
+
+					} else if (nChar == VK_UP) {
+						--nNewHotIndex;
+						if (nNewHotIndex < 0)			// 一番上まで行ったら一番下に戻す
+							nNewHotIndex = m_vecMenuItem.size() - 1;
+						if (m_vecMenuItem[nNewHotIndex].bSeparator)	// セパレーターは飛ばす
+							--nNewHotIndex;
+					}
+				}
+				_HotItem(nNewHotIndex);
+				return true;
+			} else if (nChar == VK_RIGHT || nChar == VK_RETURN) {			// 選択アイテムのサブメニューを表示する
+				// サブメニューを表示する
+				if (_DoTrackSubPopupMenu(m_nHotIndex)) {
+					if (m_pSubMenu) {
+						// 一番上のアイテムをHot状態にする
+						MSG msg = *pMsg;
+						msg.wParam	= VK_DOWN;
+						m_pSubMenu->PreTranslateMessage(&msg);
+						return true;
+					} else {	// 無効アイテム
+						pMsg->lParam = -1;
+						return true;
+					}
+				} else if (nChar == VK_RETURN && m_nHotIndex != -1) {
+					// アイテムを実行...
+					MenuItem& item = m_vecMenuItem[m_nHotIndex];
+					if (item.state & (POPUPITEMSTATES::MPI_HOT | POPUPITEMSTATES::MPI_NORMAL)) {
+						// メニューを閉じる
+						_CloseBaseSubMenu();
+						CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+						return true;
+					}
+				} else if (nChar == VK_RIGHT) {
+					if (m_pSubMenu) {
+						// 一番上のアイテムをHot状態にする
+						MSG msg = *pMsg;
+						msg.wParam	= VK_DOWN;
+						m_pSubMenu->PreTranslateMessage(&msg);
+					} else {	// 無効アイテム
+						pMsg->lParam = -1;
+					}
+					return true;
+				}
+			} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+				return true;
+
+			} else {	// プレフィックス処理
+				int nCount = (int)m_vecMenuItem.size();
+				std::vector<int>	vecSamePrefixIndex;
+				for (int i = 0; i < nCount; ++i) {
+					if (m_vecMenuItem[i].prefix == (TCHAR)nChar) 
+						vecSamePrefixIndex.push_back(i);
+				}
+				if (vecSamePrefixIndex.size() > 0) {
+					if (vecSamePrefixIndex.size() == 1) {
+						// サブメニューを表示する
+						if (_DoTrackSubPopupMenu(vecSamePrefixIndex.front())) {
+							if (m_pSubMenu) {
+								// 一番上のアイテムをHot状態にする
+								MSG msg = *pMsg;
+								msg.wParam	= VK_DOWN;
+								m_pSubMenu->PreTranslateMessage(&msg);
+								return true;
+							}
+						}
+						// アイテムを実行...
+						MenuItem& item = m_vecMenuItem[vecSamePrefixIndex.front()];
+						// メニューを閉じる
+						_CloseBaseSubMenu();
+						if (item.state & (POPUPITEMSTATES::MPI_HOT | POPUPITEMSTATES::MPI_NORMAL)) {
+							CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+						}
+					} else {
+						for (int nIndex : vecSamePrefixIndex) {
+							if (m_nHotIndex < nIndex) {
+								_HotItem(nIndex);
+								return true;
+							}
+						}
+						_HotItem(vecSamePrefixIndex.front());
+					}
+				}
+				return true;
+			}
+		}
+		return false;
+	}
+
 	BEGIN_MSG_MAP( CBasePopupMenuImpl<T> )
 		MSG_WM_CREATE		( OnCreate )
 		MSG_WM_DESTROY		( OnDestroy )
@@ -364,28 +483,43 @@ protected:
 		if (nIndex == -1)
 			return ;
 
-		MenuItem& item = m_vecMenuItem[nIndex];
-		if (m_pSubMenu) {
-			if (m_pSubMenu->GetInheritMenuIndex() == nIndex)
-				return ;	// 派生元フォルダなら何もしない
-			m_pSubMenu->DestroyWindow();
-			m_pSubMenu = nullptr;
-		}
-		if (item.bSeparator || item.state == MPI_DISABLEDHOT)
+		if (_DoTrackSubPopupMenu(nIndex)) {	// サブメニューをポップアップさせる
 			return ;
-
-		// サブメニューをポップアップさせる
-		if (item.submenu) {
-			m_pSubMenu = CreateSubMenu(nIndex);
-			CRect rcClientItem = _GetClientItemRect(item.rect);
-			m_pSubMenu->DoTrackSubPopupMenu(item.submenu, rcClientItem, m_hWnd, nIndex);
-
 		} else if (bLButtonUp) {
 			// メニューを閉じる
 			_CloseBaseSubMenu();
 
 			// アイテムを実行...
+			MenuItem& item = m_vecMenuItem[nIndex];
 			CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+		}
+	}
+
+	bool	_DoTrackSubPopupMenu(int nIndex)
+	{
+		if (_IsValidIndex(nIndex) == false)
+			return false;
+
+		MenuItem& item = m_vecMenuItem[nIndex];
+		if (m_pSubMenu) {
+			if (m_pSubMenu->GetInheritMenuIndex() == nIndex)
+				return true;	// 派生元フォルダなら何もしない
+			m_pSubMenu->DestroyWindow();
+			m_pSubMenu = nullptr;
+		}
+		// 無効アイテムなので実行しない
+		if (item.bSeparator || item.state == MPI_DISABLEDHOT)
+			return true;
+
+		// サブメニューをポップアップさせる
+		if (item.submenu) {
+			_HotItem(nIndex);
+			m_pSubMenu = CreateSubMenu(nIndex);
+			CRect rcClientItem = _GetClientItemRect(item.rect);
+			m_pSubMenu->DoTrackSubPopupMenu(item.submenu, rcClientItem, m_hWnd, nIndex);
+			return true;
+		} else {
+			return false;
 		}
 	}
 
@@ -555,10 +689,15 @@ protected:
 		bool	bChecked;
 		void*	pUserData;
 		CIcon	icon;
+		TCHAR	prefix;
 
 		MenuItem(CString str, UINT id, CRect rc, bool bSep = false, CMenuHandle menu = NULL) : 
 			name(str), nID(id), rect(rc), state(POPUPITEMSTATES::MPI_NORMAL), bSeparator(bSep), submenu(menu), bChecked(false), pUserData(nullptr)
-		{ }
+		{
+			int nPos = name.Find(_T('&'));
+			if (nPos != -1) 
+				prefix = name.Mid(nPos + 1, 1)[0];
+		}
 	};
 
 	// Data members

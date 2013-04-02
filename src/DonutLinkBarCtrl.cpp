@@ -34,7 +34,8 @@ class CDonutLinkBarCtrl::Impl :
 	public CThemeImpl<CDonutLinkBarCtrl::Impl>,
 	public CTrackMouseLeave<CDonutLinkBarCtrl::Impl>,
 	public IDropTargetImpl<CDonutLinkBarCtrl::Impl>,
-	public IDropSourceImpl<CDonutLinkBarCtrl::Impl>
+	public IDropSourceImpl<CDonutLinkBarCtrl::Impl>,
+	public CMessageFilter
 {
 public:
 	DECLARE_WND_CLASS(_T("DonutLinkBarCtrl"))
@@ -85,6 +86,8 @@ public:
 	void DoPaint(CDCHandle dc);
 	void OnTrackMouseMove(UINT nFlags, CPoint pt);
 	void OnTrackMouseLeave();
+	BOOL PreTranslateMessage(MSG* pMsg) override;
+
 	// IDropTargetImpl
 	DROPEFFECT OnDragEnter(IDataObject *pDataObject, DWORD dwKeyState, CPoint point);
 	DROPEFFECT OnDragOver(IDataObject *pDataObject, DWORD dwKeyState, CPoint point, DROPEFFECT dropOkEffect);
@@ -100,6 +103,9 @@ public:
 		MSG_WM_LBUTTONUP( OnLButtonUp )
 		MSG_WM_RBUTTONUP( OnRButtonUp )
 		MSG_WM_MBUTTONDOWN( OnMButtonDown )
+
+		MSG_WM_KILLFOCUS( OnKillFocus )
+
 		NOTIFY_CODE_HANDLER_EX(TTN_GETDISPINFO, OnTooltipGetDispInfo)
 		MESSAGE_HANDLER_EX( WM_CLOSEBASESUBMENU, OnCloseBaseSubMenu )
 		MESSAGE_HANDLER_EX( WM_UPDATESUBMENUITEMPOS, OnUpdateSubMenuItemPosition	)
@@ -119,6 +125,9 @@ public:
 	 void OnLButtonUp(UINT nFlags, CPoint point);
 	 void OnRButtonUp(UINT nFlags, CPoint point);
 	 void OnMButtonDown(UINT nFlags, CPoint point);
+
+	 void OnKillFocus(CWindow wndFocus);
+
 	 LRESULT OnTooltipGetDispInfo(LPNMHDR pnmh);
 	 LRESULT OnCloseBaseSubMenu(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	 LRESULT OnUpdateSubMenuItemPosition(UINT uMsg, WPARAM wParam, LPARAM lParam) {
@@ -191,7 +200,7 @@ private:
 	boost::thread	m_thread_save;
 };
 
-unique_ptr<CLinkPopupMenu>	CDonutLinkBarCtrl::Impl::s_pSubMenu = nullptr;
+unique_ptr<CLinkPopupMenu>	CDonutLinkBarCtrl::Impl::s_pSubMenu;
 HHOOK			CDonutLinkBarCtrl::Impl::s_hHook	= NULL;
 HWND			CDonutLinkBarCtrl::Impl::s_hWnd		= NULL;
 
