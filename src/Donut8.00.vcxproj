@@ -313,7 +313,7 @@
       <AdditionalDependencies>odbc32.lib;odbccp32.lib;comctl32.lib;delayimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
@@ -1306,13 +1306,9 @@
     <ClCompile Include="MtlUser.cpp" />
     <ClCompile Include="MtlWeb.cpp" />
     <ClCompile Include="MtlWin.cpp" />
-    <ClCompile Include="option\DestroyDialog.cpp" />
     <ClCompile Include="option\DLControlOption.cpp" />
-    <ClCompile Include="option\DonutConfirmOption.cpp" />
     <ClCompile Include="option\ExecutableDialog.cpp" />
     <ClCompile Include="option\ExplorerBarDialog.cpp" />
-    <ClCompile Include="option\FavoriteMenuDialog.cpp" />
-    <ClCompile Include="option\FileNewOption.cpp" />
     <ClCompile Include="option\SupressPopupOption.cpp" />
     <ClCompile Include="option\KeyBoardDialog.cpp" />
     <ClCompile Include="option\MainOption.cpp" />
@@ -1322,7 +1318,7 @@
     <ClCompile Include="option\PluginDialog.cpp" />
     <ClCompile Include="option\ProxyDialog.cpp" />
     <ClCompile Include="option\SkinOption.cpp" />
-    <ClCompile Include="option\StartUpOption.cpp" />
+    <ClCompile Include="option\StartUpFinishOption.cpp" />
     <ClCompile Include="option\ToolBarDialog.cpp" />
     <ClCompile Include="option\UrlSecurityOption.cpp" />
     <ClCompile Include="VersionControl.cpp" />
@@ -1332,7 +1328,6 @@
     <ClInclude Include="..\wtl80\include\DwmApi_Wrap.h" />
     <ClInclude Include="..\wtl80\include\uxtheme_wrap.h" />
     <ClInclude Include="AccelManager.h" />
-    <ClInclude Include="API.h" />
     <ClInclude Include="APIHook.h" />
     <ClInclude Include="appconst.h" />
     <ClInclude Include="AutoLogin.h" />
@@ -1355,7 +1350,6 @@
     <ClInclude Include="DonutDefine.h" />
     <ClInclude Include="DonutExplorerBar.h" />
     <ClInclude Include="DonutFavoriteGroupTreeView.h" />
-    <ClInclude Include="DonutFavoritesMenu.h" />
     <ClInclude Include="DonutFavoriteTreeView.h" />
     <ClInclude Include="DonutLinkBarCtrl.h" />
     <ClInclude Include="DonutOptions.h" />
@@ -1453,13 +1447,9 @@
     <ClInclude Include="MtlWeb.h" />
     <ClInclude Include="MtlWin.h" />
     <ClInclude Include="option\AddressBarPropertyPage.h" />
-    <ClInclude Include="option\DestroyDialog.h" />
     <ClInclude Include="option\DLControlOption.h" />
-    <ClInclude Include="option\DonutConfirmOption.h" />
     <ClInclude Include="option\ExecutableDialog.h" />
     <ClInclude Include="option\ExplorerBarDialog.h" />
-    <ClInclude Include="option\FavoriteMenuDialog.h" />
-    <ClInclude Include="option\FileNewOption.h" />
     <ClInclude Include="option\SupressPopupOption.h" />
     <ClInclude Include="option\KeyBoardDialog.h" />
     <ClInclude Include="option\LinkBarPropertyPage.h" />
@@ -1472,7 +1462,7 @@
     <ClInclude Include="option\ProxyDialog.h" />
     <ClInclude Include="option\SearchPropertyPage.h" />
     <ClInclude Include="option\SkinOption.h" />
-    <ClInclude Include="option\StartUpOption.h" />
+    <ClInclude Include="option\StartUpFinishOption.h" />
     <ClInclude Include="option\ToolBarDialog.h" />
     <ClInclude Include="option\UrlSecurityOption.h" />
     <ClInclude Include="AtlhostEx.h" />

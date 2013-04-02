@@ -73,12 +73,13 @@ bool	CAcceleratorOption::TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg)
 	/////////////////////////////////////////////////////////////////
 // CKeyBoardPropertyPage
 
-CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame, function<void (function<void (HWND)>) > foreach)
-	: m_hAccel(hAccel), m_hMenu(hMenu), m_hWndMainFrame(hWndMainFrame), m_TabBarForEachWindow(foreach)
+CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame, function<void (function<void (HWND)>) > foreach) : 
+	m_hAccel(hAccel), 
+	m_hMenu(hMenu), 
+	m_hWndMainFrame(hWndMainFrame), 
+	m_TabBarForEachWindow(foreach), 
+	m_bInit(false)
 {
-	m_nCmdUpdate 	= 0;
-	m_nCmdMove	 	= 0;
-	//m_nMinBtn2Tray= 0;		//+++
 }
 
 
@@ -95,45 +96,31 @@ BOOL CKeyBoardPropertyPage::OnSetActive()
 {
 	SetModified(TRUE);
 
-	if (m_editNow.m_hWnd == NULL)
-		m_editNow.Attach( GetDlgItem(IDC_EDIT_NOW_KEY) );
+	if (m_bInit == false) {
+		m_bInit = true;
 
-	if (m_editNew.m_hWnd == NULL)
-		m_editNew.Attach( GetDlgItem(IDC_EDIT_NEW_KEY) );
+		m_editNew.Attach(GetDlgItem(IDC_EDIT_NEW_KEY));
 
-	if (m_cmbCategory.m_hWnd == NULL)
-		m_cmbCategory.Attach( GetDlgItem(IDC_CMB_CATEGORY) );
+		DoDataExchange(DDX_LOAD);
 
-	if (m_cmbCommand.m_hWnd == NULL)
-		m_cmbCommand.Attach( GetDlgItem(IDC_CMB_COMMAND) );
-
-	if (m_ltAccel.m_hWnd == NULL) {
-		m_ltAccel.Attach( GetDlgItem(IDC_LISTBOX1) );	//+++ラベル変更
-	}
-
-	if (m_editNow.m_hWnd && m_editNew.m_hWnd && m_cmbCategory.m_hWnd && m_cmbCommand.m_hWnd)
 		_SetData();
-
-	return DoDataExchange(FALSE);
+	}
+	return TRUE;
 }
 
 
 
 BOOL CKeyBoardPropertyPage::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 
 BOOL CKeyBoardPropertyPage::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
-		_GetData();
-		return TRUE;
-	} else {
-		return FALSE;
-	}
+	_GetData();
+	return TRUE;
 }
 
 
@@ -146,10 +133,6 @@ void CKeyBoardPropertyPage::_SetData()
 	InitialCombbox();
 	// リストボックスの初期化
 	InitialListbox();
-
-  #if 0 //+++ 別のオプションが管理している変数を間借りして追加.
-	m_nMinBtn2Tray	  = (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY) != 0;		//+++ 追加.
-  #endif
 }
 
 
@@ -165,53 +148,34 @@ void CKeyBoardPropertyPage::_GetData()
 	m_TabBarForEachWindow([](HWND hWnd) {
 		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
 	});
-  #if 0 //+++ 別のオプションが管理している変数を間借りして追加.
-	if (m_nMinBtn2Tray)	CMainOption::s_dwMainExtendedStyle2 	 |=  MAIN_EX2_MINBTN2TRAY;		//+++ 追加.
-	else				CMainOption::s_dwMainExtendedStyle2 	 &= ~MAIN_EX2_MINBTN2TRAY; 		//+++ 追加.
-  #endif
+
 }
 
-
-
-LRESULT CKeyBoardPropertyPage::OnChkBtn(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/)
-{
-	DoDataExchange(TRUE);
-
-	// 設定ボタンのEnable調節
-	EnableSetBtn();
-	return 0;
-}
-
-
-
+/// 削除
 void CKeyBoardPropertyPage::OnBtnDel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
 {
-	CString 		strAccel;
-	TCHAR			szAccel[MAX_PATH];
-	szAccel[0]	= 0;	//+++
+	CString strAccel = MtlGetWindowText(m_editNow);
+	if (strAccel.IsEmpty())
+		return ;
 
-	if (m_editNow.GetWindowText(szAccel, MAX_PATH) == 0)
-		return;
-
-	int 			nIndexCmd = m_cmbCommand.GetCurSel();
-	UINT			nCmdID	  = (UINT) m_cmbCommand.GetItemData(nIndexCmd);
+	int 	nIndexCmd = m_listCommand.GetCurSel();
+	UINT	nCmdID	  = (UINT) m_listCommand.GetItemData(nIndexCmd);
 
 	CAccelerManager accelManager(m_hAccel);
 	m_hAccel = accelManager.DeleteAccelerator(nCmdID);
 
-	// 強制的に、変更された事にする(;^_^A ｱｾｱｾ･･･
-	OnSelChangeCmd(0, 0, NULL);
+	OnSelChangeCommandList(0, 0, NULL);
 
 	SetAccelList();
 }
 
 
-
-void CKeyBoardPropertyPage::OnBtnSel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
+/// 割り当て
+void CKeyBoardPropertyPage::OnBtnSet(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
 {
 	// CommandID
-	int 			nIndexCmd = m_cmbCommand.GetCurSel();
-	UINT			nCmdID	  = (UINT) m_cmbCommand.GetItemData(nIndexCmd);
+	int 	nIndexCmd = m_listCommand.GetCurSel();
+	UINT	nCmdID	  = (UINT) m_listCommand.GetItemData(nIndexCmd);
 
 	// キーを得る
 	ACCEL			accel;
@@ -221,19 +185,10 @@ void CKeyBoardPropertyPage::OnBtnSel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*h
 	accel.fVirt |= FVIRTKEY;
 	accel.cmd	 = nCmdID;
 
-	//
 	CAccelerManager accelManager(m_hAccel);
 
-	TCHAR			cBuff[MAX_PATH];
-	cBuff[0]		= 0;	//+++
-	CString 		strAccelNow;
-	CString 		strCmd;
-
-	m_editNow.GetWindowText(cBuff, MAX_PATH);
-	strAccelNow  = CString(cBuff);
-
-	::GetWindowText(GetDlgItem(IDC_STC01), cBuff, MAX_PATH);
-	strCmd		 = CString(cBuff);
+	CString strAccelNow	= MtlGetWindowText(m_editNow);
+	CString strCmd		= MtlGetWindowText(GetDlgItem(IDC_STC01));
 
 	if ( strAccelNow.IsEmpty() ) {
 		// 既存コマンドがあった時
@@ -256,10 +211,17 @@ void CKeyBoardPropertyPage::OnBtnSel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*h
 		}
 	}
 
-	// 強制的に、変更された事にする(;^_^A ｱｾｱｾ･･･
-	OnSelChangeCmd(0, 0, NULL);
+	OnSelChangeCommandList(0, 0, NULL);
 
 	SetAccelList();
+
+	int nCount = m_ltAccel.GetItemCount();
+	for (int i = 0; i < nCount; ++i) {
+		if (m_ltAccel.GetItemData(i) == nCmdID) {
+			m_ltAccel.SelectItem(i);
+			break;
+		}
+	}
 }
 
 
@@ -271,7 +233,6 @@ void CKeyBoardPropertyPage::InitialCombbox()
 		return;
 
 	// する事
-	m_cmbCommand.SetDroppedWidth(250);
 	OnSelChangeCate(0, 0, 0);
 	::SetWindowText( GetDlgItem(IDC_STC01), _T("") );
 }
@@ -281,10 +242,11 @@ void CKeyBoardPropertyPage::InitialCombbox()
 void CKeyBoardPropertyPage::InitialListbox()
 {
 	static const TCHAR *titles[] = { _T("コマンド"), _T("ショートカット") };
-	static const int	widths[] = { 150, 350 };
+	static const int	widths[] = { 140, 90 };
 
-	LVCOLUMN			col;
+	m_ltAccel.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES);
 
+	LVCOLUMN	col = {};
 	col.mask = LVCF_TEXT | LVCF_WIDTH;
 
 	for (int i = 0; i < _countof(titles); ++i) {
@@ -292,14 +254,11 @@ void CKeyBoardPropertyPage::InitialListbox()
 		col.cx		= widths[i];
 		m_ltAccel.InsertColumn(i, &col);
 	}
-
-	m_ltAccel.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
-
 	SetAccelList();
 }
 
 
-
+/// アクセルリストからリストビューに登録する
 void CKeyBoardPropertyPage::SetAccelList()
 {
 	m_ltAccel.DeleteAllItems();
@@ -317,6 +276,7 @@ void CKeyBoardPropertyPage::SetAccelList()
 		CToolTipManager::LoadToolTipText(lpAccel->cmd, strCmdName);
 
 		m_ltAccel.InsertItem(ii, strCmdName);
+		m_ltAccel.SetItemData(ii, lpAccel->cmd);
 		m_ltAccel.SetItemText(ii, 1, strShortCut);
 	}
 }
@@ -330,21 +290,20 @@ void CKeyBoardPropertyPage::OnSelChangeCate(UINT code, int id, HWND hWnd)
 	int nIndex = m_cmbCategory.GetCurSel();
 
 	// コマンド選択
-	_PickUpCommand(m_hMenu, nIndex, m_cmbCommand);
+	PickUpCommand(m_hMenu, nIndex, m_listCommand);
 }
 
 
 
 // コマンド変更時
-void CKeyBoardPropertyPage::OnSelChangeCmd(UINT code, int id, HWND hWnd)
+void CKeyBoardPropertyPage::OnSelChangeCommandList(UINT code, int id, HWND hWnd)
 {
-	int 			nIndex = m_cmbCommand.GetCurSel();
-
+	int nIndex = m_listCommand.GetCurSel();
 	if (nIndex == -1)
 		return;
 
 	// コマンドID
-	UINT			nCmdID = (UINT) m_cmbCommand.GetItemData(nIndex);
+	UINT	nCmdID = (UINT)m_listCommand.GetItemData(nIndex);
 
 	// まず、有効化
 	if (nCmdID == 0)
@@ -369,7 +328,34 @@ void CKeyBoardPropertyPage::OnSelChangeCmd(UINT code, int id, HWND hWnd)
 	::SetWindowText( GetDlgItem(IDC_STC01), _T("") );
 }
 
-
+/// アクセルリストのアイテムをコマンドリストで選択状態にする
+LRESULT CKeyBoardPropertyPage::OnAccelListDblClk(LPNMHDR pnmh)
+{
+	CPoint pt;
+	::GetCursorPos(&pt);
+	m_ltAccel.ScreenToClient(&pt);
+	UINT flags = 0;
+	int nIndex = m_ltAccel.HitTest(pt, &flags);
+	if (nIndex != -1) {
+		UINT cmd = m_ltAccel.GetItemData(nIndex);
+		if (cmd) {
+			int nCategoryCount = m_cmbCategory.GetCount();
+			for (int i = 0; i < nCategoryCount; ++i) {
+				PickUpCommand(m_hMenu, i, m_listCommand);
+				int nListCount = m_listCommand.GetCount();
+				for (int k = 0; k < nListCount; ++k) {
+					if (m_listCommand.GetItemData(k) == cmd) {
+						m_cmbCategory.SetCurSel(i);
+						m_listCommand.SetCurSel(k);
+						OnSelChangeCommandList(0, 0, NULL);
+						return 0;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
 
 BOOL CKeyBoardPropertyPage::OnTranslateAccelerator(LPMSG lpMsg)
 {
@@ -383,17 +369,13 @@ BOOL CKeyBoardPropertyPage::OnTranslateAccelerator(LPMSG lpMsg)
 		UINT			nCmdID = accelManager.FindCommandID(&accel);
 
 		// New アクセスキーテキスト
-		TCHAR			cBuff[MAX_PATH + 1];
-		cBuff[0]	= 0;	//+++
-		::GetWindowText(m_editNew.m_hWnd, cBuff, MAX_PATH);
-		CString 		strAccelNew(cBuff);
+		CString strAccelNew = MtlGetWindowText(m_editNew);
 
 		// Now アクセスキーテキスト
-		::GetWindowText(m_editNow.m_hWnd, cBuff, MAX_PATH);
-		CString 		strAccelNow(cBuff);
+		CString strAccelNow = MtlGetWindowText(m_editNow);
 
 		// 既存コマンドテキスト
-		CString 		strCmd;
+		CString strCmd;
 
 		if (nCmdID != 0)
 			CToolTipManager::LoadToolTipText(nCmdID, strCmd);
@@ -402,9 +384,27 @@ BOOL CKeyBoardPropertyPage::OnTranslateAccelerator(LPMSG lpMsg)
 
 		// 設定ボタンのEnable調節
 		EnableSetBtn();
+		return TRUE;
+	} else {
+		// Deleteキーでコマンドを削除する
+		if (lpMsg->hwnd == m_ltAccel && lpMsg->message == WM_KEYDOWN && lpMsg->wParam == VK_DELETE) {
+			int nSelIndex = m_ltAccel.GetSelectedIndex();
+			if (nSelIndex != -1) {
+				UINT cmd = (UINT)m_ltAccel.GetItemData(nSelIndex);
+				if (cmd) {
+					CAccelerManager accelManager(m_hAccel);
+					m_hAccel = accelManager.DeleteAccelerator(cmd);
+					m_ltAccel.DeleteItem(nSelIndex);
+					if (m_ltAccel.GetItemCount() == nSelIndex)
+						--nSelIndex;
+					m_ltAccel.SelectItem(nSelIndex);
+				}
+				return TRUE;
+			}
+		}
 	}
 
-	return bSts;
+	return FALSE;
 }
 
 
@@ -413,46 +413,14 @@ BOOL CKeyBoardPropertyPage::OnTranslateAccelerator(LPMSG lpMsg)
 void CKeyBoardPropertyPage::EnableSetBtn()
 {
 	// New アクセスキーテキスト
-	TCHAR		cBuff[MAX_PATH];
-	cBuff[0]	= 0;	//+++
-
-	::GetWindowText(m_editNew.m_hWnd, cBuff, MAX_PATH);
-	CString strAccelNew(cBuff);
+	CString strAccelNew = MtlGetWindowText(m_editNew);
 
 	// Now アクセスキーテキスト
-	::GetWindowText(m_editNow.m_hWnd, cBuff, MAX_PATH);
-	CString strAccelNow(cBuff);
+	CString strAccelNow = MtlGetWindowText(m_editNow);
 
 	// 既存コマンドテキスト
-	::GetWindowText(GetDlgItem(IDC_STC01), cBuff, MAX_PATH);
-	CString strCmd(cBuff);
+	CString strCmd	= MtlGetWindowText(GetDlgItem(IDC_STC01));
 
-	BOOL	bEnableSetBtn = TRUE;
-
-	if (strAccelNew.IsEmpty() == FALSE) {
-		// Now アクセスキーがない時
-		if ( strAccelNow.IsEmpty() ) {
-			if ( strCmd.IsEmpty() )
-				bEnableSetBtn = TRUE;
-			else if (m_nCmdMove == 1)
-				bEnableSetBtn = TRUE;
-			else
-				bEnableSetBtn = FALSE;
-		} else {
-			if ( strCmd.IsEmpty() ) {
-				if (m_nCmdUpdate == 1)
-					bEnableSetBtn = TRUE;
-				else
-					bEnableSetBtn = FALSE;
-			} else {
-				if (m_nCmdMove == 1 && m_nCmdUpdate == 1)
-					bEnableSetBtn = TRUE;
-				else
-					bEnableSetBtn = FALSE;
-			}
-		}
-	} else {
-		bEnableSetBtn = FALSE;
-	}
+	bool	bEnableSetBtn = strAccelNew.GetLength() > 0;
 	::EnableWindow(GetDlgItem(IDC_BTN_SET), bEnableSetBtn);
 }

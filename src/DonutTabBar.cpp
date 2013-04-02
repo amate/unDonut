@@ -13,7 +13,7 @@
 #include "option\MenuDialog.h"
 #include "option\RightClickMenuDialog.h"
 #include "option\MDITabDialog.h"
-#include "option\DonutConfirmOption.h"
+#include "option\MainOption.h"
 #include "DonutAddressBar.h"
 #include "HlinkDataObject.h"
 #include "dialog\CommandSelectDialog.h"

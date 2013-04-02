@@ -335,7 +335,7 @@ CMainFrame::Impl::~Impl()
 void	CMainFrame::Impl::RestoreAllTab(LPCTSTR strFilePath, bool bCloseAllTab)
 {
 	/* default.dfgがあればそちらを使う */
-	CString	strFile = CStartUpOption::GetDefaultDFGFilePath();
+	CString	strFile = Misc::GetExeDirectory() + _T("Default.dfg");
 	if (::PathFileExists(strFile)) {
 		if ( MtlIsExt( strFile, _T(".dfg") ) ) {
 			if ( !(CMainOption::s_dwMainExtendedStyle & MAIN_EX_NOCLOSEDFG) ) {
@@ -701,12 +701,12 @@ bool CMainFrame::Impl::OnDDEOpenFile(const CString& strFileName)
 			dwOpen |= D_OPENFILE_ACTIVATE;
 	} else {	// 既存のタブをナビゲートする
 		dwOpen |= D_OPENFILE_NOCREATE;
-		if (!CStartUpOption::s_dwActivate)
+		if (CStartUpOption::s_bActivateOnExternalOpen == false)
 			dwOpen |= D_OPENFILE_NOSETFOCUS;
 	}
 
 	UserOpenFile( strFileName, dwOpen );
-	if (CStartUpOption::s_dwActivate) {
+	if (CStartUpOption::s_bActivateOnExternalOpen) {
 		_DeleteTrayIcon();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
 			ShowWindow(SW_RESTORE);
@@ -2199,19 +2199,16 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CDLControlPropertyPage			pageDLC(m_hWnd);
 	CMDITabPropertyPage 			pageTab(&m_TabBar, menu.m_hMenu);
 	CDonutAddressBarPropertyPage	pageAddress(m_AddressBar, m_SearchBar);
-	CDonutFavoritesMenuPropertyPage pageFav;
-	CFileNewPropertyPage			pageFileNew;
-	CStartUpPropertyPage			pageStartUp;
+	CStartUpFinishPropertyPage		pageStartUpFinish;
 	CProxyPropertyPage				pageProxy;
 	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu, m_hWnd, std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
 	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, std::bind(&CDonutToolBar::ReloadSkin, &m_ToolBar));
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);
 	CSearchPropertyPage 			pageSearch;
-	CMenuPropertyPage				pageMenu(menu.m_hMenu);
+	CMenuPropertyPage				pageMenu;
 	CRightClickPropertyPage			pageRightMenu(menu, m_hWnd);
 	CExplorerBarPropertyPage		pageExplorerBar(std::bind(&CDonutExplorerBar::HookMouseMoveForAutoShow, &m_ExplorerBar, std::placeholders::_1));
-	CDestroyPropertyPage			pageDestroy;
 	CSkinPropertyPage				pageSkin(m_hWnd, &bSkinChange);
 	CLinkBarPropertyPage			pageLinks(m_LinkBar);
 
@@ -2221,13 +2218,11 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 		strTitle = pChildUIData->strTitle;
 	}
 
-	CIgnoredURLsPropertyPage		pageURLs(strURL);
-	CCloseTitlesPropertyPage		pageTitles(strTitle);
+	CSurpressPopupPropertyPage		pageSurpreePopup(strURL, strTitle);
 	CUrlSecurityPropertyPage		pageUrlSecu(strURL, m_hWnd);		//+++
 	CUserDefinedCSSPropertyPage		pageUserCSS(strURL);
 	CUserDefinedJsPropertyPage		pageUserJs(strURL);
 	CDonutExecutablePropertyPage	pageExe;
-	CDonutConfirmPropertyPage		pageCnf;
 	CPluginPropertyPage 			pagePlugin;
 
 	CTreeViewPropertySheet			sheet( _T("Donutのオプション") );
@@ -2242,23 +2237,16 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	sheet.AddPage( pageExplorerBar		 );
 	sheet.AddPage( pageMenu				 );
 	sheet.AddPage( pageRightMenu , TRUE  );
-	sheet.AddPage( pageFav		 , FALSE );
 	sheet.AddPage( pageKeyBoard			 );
 	sheet.AddPage( pageMouse			 );
 	sheet.AddPage( pageGesture	 , TRUE  );
-	sheet.AddPage( pageFileNew			 );
-	sheet.AddPage( pageStartUp			 );
-	sheet.AddPage( pageDestroy			 );
 	sheet.AddPage( pageDLC				 );
-	sheet.AddPage( pageURLs 	 , TRUE  );
-	sheet.AddPage( pageTitles	 , FALSE );
+	sheet.AddPage( pageSurpreePopup, TRUE  );
 	sheet.AddPage( pageUrlSecu 	 , FALSE );				//+++
-	sheet.AddPage( pageUserCSS	 , FALSE );
-	sheet.AddPage( pageUserJs	 , FALSE );
-	//sheet.AddPage( pageDeterrent	 );
-
+	//sheet.AddPage( pageUserCSS	 , FALSE );
+	//sheet.AddPage( pageUserJs	 , FALSE );
+	sheet.AddPage( pageStartUpFinish );
 	sheet.AddPage( pageExe			 );
-	sheet.AddPage( pageCnf			 );
 	sheet.AddPage( pageProxy		 );
 	sheet.AddPage( pageSkin 		 );
 	sheet.AddPage( pagePlugin		 );

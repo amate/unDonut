@@ -15,7 +15,6 @@
 #include "HlinkDataObject.h"
 #include "MenuDropTargetWindow.h"
 #include "FlatComboBox.h"
-#include "DonutFavoritesMenu.h"
 #include "ExStyle.h"
 #include "DonutSearchBar.h"
 #include "MtlBrowser.h"

@@ -119,25 +119,13 @@
     <ClCompile Include="MtlWin.cpp">
       <Filter>Source Files\MTL</Filter>
     </ClCompile>
-    <ClCompile Include="option\DestroyDialog.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
     <ClCompile Include="option\DLControlOption.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="option\DonutConfirmOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\ExecutableDialog.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\ExplorerBarDialog.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="option\FavoriteMenuDialog.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="option\FileNewOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\KeyBoardDialog.cpp">
@@ -162,9 +150,6 @@
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\SkinOption.cpp">
-      <Filter>Source Files\option</Filter>
-    </ClCompile>
-    <ClCompile Include="option\StartUpOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
     <ClCompile Include="option\ToolBarDialog.cpp">
@@ -458,12 +443,12 @@
     <ClCompile Include="DonutScriptHost.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="option\StartUpFinishOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="API.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="appconst.h">
@@ -485,9 +470,6 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DonutDefine.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DonutFavoritesMenu.h">
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="DonutOptions.h">
@@ -622,25 +604,13 @@
     <ClInclude Include="option\AddressBarPropertyPage.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
-    <ClInclude Include="option\DestroyDialog.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
     <ClInclude Include="option\DLControlOption.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
-    <ClInclude Include="option\DonutConfirmOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\ExecutableDialog.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\ExplorerBarDialog.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
-    <ClInclude Include="option\FavoriteMenuDialog.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
-    <ClInclude Include="option\FileNewOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\KeyBoardDialog.h">
@@ -674,9 +644,6 @@
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\SkinOption.h">
-      <Filter>Source Files\option</Filter>
-    </ClInclude>
-    <ClInclude Include="option\StartUpOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
     <ClInclude Include="option\ToolBarDialog.h">
@@ -963,6 +930,9 @@
     </ClInclude>
     <ClInclude Include="DonutScriptHost.h">
       <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="option\StartUpFinishOption.h">
+      <Filter>Source Files\option</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

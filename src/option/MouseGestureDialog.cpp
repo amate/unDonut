@@ -5,23 +5,19 @@
 
 #include "stdafx.h"
 #include "MouseGestureDialog.h"
-#include "../MtlBase.h"
-#include "../IniFile.h"
-#include "../DonutPFunc.h"
-#include "../ToolTipManager.h"
-
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
+#include "..\MtlBase.h"
+#include "..\MtlWin.h"
+#include "..\IniFile.h"
+#include "..\DonutPFunc.h"
+#include "..\ToolTipManager.h"
 
 
 using namespace MTL;
 
-CMouseGesturePropertyPage::CMouseGesturePropertyPage(HMENU hMenu)
+////////////////////////////////////////////////////////////////////
+// CMouseGesturePropertyPage
+
+CMouseGesturePropertyPage::CMouseGesturePropertyPage(HMENU hMenu) : m_bInit(false)
 {
 	m_hMenu   = hMenu;
 	m_strPath = GetConfigFilePath( _T("MouseEdit.ini") );
@@ -33,45 +29,30 @@ BOOL CMouseGesturePropertyPage::OnSetActive()
 {
 	SetModified(TRUE);
 
-	if (m_cmbCategory.m_hWnd == NULL) {
-		if (m_cmbCategory.m_hWnd == NULL)
-			m_cmbCategory.Attach( GetDlgItem(IDC_CMB_CATEGORY) );
+	if (m_bInit == false) {
+		m_bInit = true;
 
-		if (m_cmbCommand.m_hWnd == NULL)
-			m_cmbCommand.Attach( GetDlgItem(IDC_CMB_COMMAND) );
+		DoDataExchange(DDX_LOAD);
 
 		OnInitCmb();
 		OnInitList();
 
-		m_stcMoveCmd.Attach( GetDlgItem(IDC_STC01) );
 	}
-
-	_SetData();
-	return DoDataExchange(FALSE);
+	
+	return TRUE;
 }
 
 
 BOOL CMouseGesturePropertyPage::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 BOOL CMouseGesturePropertyPage::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
-		_GetData();
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-
-// Constructor
-// データを得る
-void CMouseGesturePropertyPage::_SetData()
-{
+	_GetData();
+	return TRUE;
 }
 
 
@@ -130,10 +111,8 @@ void CMouseGesturePropertyPage::OnInitCmb()
 
 void CMouseGesturePropertyPage::OnInitList()
 {
-	m_ltMoveCmd.Attach( GetDlgItem(IDC_LISTBOX) );
-
 	static const TCHAR* titles[] = { _T("ジェスチャー"), _T("コマンド") };
-	static const int	widths[] = { 350, 150 };
+	static const int	widths[] = { 90, 140 };
 
 	LVCOLUMN		col;
 	col.mask = LVCF_TEXT | LVCF_WIDTH;
@@ -144,7 +123,7 @@ void CMouseGesturePropertyPage::OnInitList()
 		m_ltMoveCmd.InsertColumn(i, &col);
 	}
 
-	m_ltMoveCmd.SendMessage(LVM_SETEXTENDEDLISTVIEWSTYLE, 0, LVS_EX_FULLROWSELECT | LVS_EX_GRIDLINES);
+	m_ltMoveCmd.SetExtendedListViewStyle(LVS_EX_FULLROWSELECT | LVS_EX_DOUBLEBUFFER | LVS_EX_GRIDLINES);
 
 	CIniFileI		pr( m_strPath, _T("MouseJst") );
 	CIniFileI		pr2( m_strPath, _T("MouseCtrl") );
@@ -174,45 +153,89 @@ void CMouseGesturePropertyPage::OnInitList()
 	::EnableWindow(GetDlgItem(IDC_BTN_DEL), FALSE);
 }
 
-
+/// 登録
 void CMouseGesturePropertyPage::OnBtnAdd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
 {
-	int 	nIndexCmd = m_cmbCommand.GetCurSel();
-	UINT	nCmdID	  = (UINT) m_cmbCommand.GetItemData(nIndexCmd);
-
+	int 	nIndexCmd = m_listCommand.GetCurSel();
+	UINT	nCmdID	  = (UINT) m_listCommand.GetItemData(nIndexCmd);
 	if (nCmdID == 0)
 		return;
 
-	TCHAR	szText[255];
-	szText[0]	= 0;	//+++
-	CString strText;
-	m_stcMoveCmd.GetWindowText(szText, 255);
-	strText = szText;
-
+	CString strText = MtlGetWindowText(m_stcMoveCmd);
 	if ( strText.IsEmpty() )
 		return;
 
 	CString strCmd;
 	CToolTipManager::LoadToolTipText(nCmdID, strCmd);
-
 	if ( strCmd.IsEmpty() )
 		return;
 
-	int 	nCnt	  = m_ltMoveCmd.GetItemCount();
+	// コマンドを上書きする場合、前のジェスチャーを削除する
+	int nCount = m_ltMoveCmd.GetItemCount();
+	for (int i = 0; i < nCount; ++i) {
+		CString strGesture;
+		m_ltMoveCmd.GetItemText(i, 0, strGesture);
+		if (strGesture == strText) {
+			m_ltMoveCmd.DeleteItem(i);
+			break;
+		}
+	}
+
+	int nCnt = m_ltMoveCmd.GetItemCount();
 	nCnt	= m_ltMoveCmd.InsertItem(nCnt, strText);
 	m_ltMoveCmd.SetItemText(nCnt, 1, strCmd);
 	m_ltMoveCmd.SetItemData(nCnt, nCmdID);
+	m_ltMoveCmd.SelectItem(nCnt);
 
 	m_stcMoveCmd.SetWindowText(_T(""));
+	GetDlgItem(IDC_BTN_ADD).SetWindowText(_T("登録"));
+	GetDlgItem(IDC_STATIC_EXSISTCOMMAND).SetWindowText(_T(""));
 	::EnableWindow(GetDlgItem(IDC_BTN_ADD), FALSE);
-	::EnableWindow(GetDlgItem(IDC_BTN_DEL), FALSE);
+	::EnableWindow(GetDlgItem(IDC_BTN_DEL), TRUE);
 }
 
+/// 変更
+void	CMouseGesturePropertyPage::OnBtnChange(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
+{
+	CString strText = MtlGetWindowText(m_stcMoveCmd);
+	if ( strText.IsEmpty() )
+		return;
 
+	int nSelIndex = m_ltMoveCmd.GetSelectedIndex();
+	if (nSelIndex == -1)
+		return ;
+
+	CString strExsistCommand = MtlGetWindowText(GetDlgItem(IDC_STATIC_EXSISTCOMMAND));
+	if (strExsistCommand.GetLength() > 0) {
+		if (MessageBox(_T("同じジェスチャーがすでに登録されています。\n上書きしますか？"), _T("確認"), MB_OKCANCEL) == IDCANCEL)
+			return ;
+
+		// 同じジェスチャーを削除する
+		int nCount = m_ltMoveCmd.GetItemCount();
+		for (int i = 0; i < nCount; ++i) {
+			if (i == nSelIndex)
+				continue ;
+			CString strGesture;
+			m_ltMoveCmd.GetItemText(i, 0, strGesture);
+			if (strGesture == strText) {
+				m_ltMoveCmd.DeleteItem(i);
+				break;
+			}
+		}
+	}
+
+	// ジェスチャーを変更
+	m_ltMoveCmd.SetItemText(nSelIndex, 0, strText);
+
+	m_stcMoveCmd.SetWindowText(_T(""));
+	GetDlgItem(IDC_STATIC_EXSISTCOMMAND).SetWindowText(_T(""));
+	::EnableWindow(GetDlgItem(IDC_BTN_ADD), FALSE);
+}
+
+/// 削除
 void CMouseGesturePropertyPage::OnBtnDel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
 {
-	int 	nIndex = m_ltMoveCmd.GetSelectedIndex();
-
+	int nIndex = m_ltMoveCmd.GetSelectedIndex();
 	if (nIndex == -1)
 		return;
 
@@ -221,18 +244,16 @@ void CMouseGesturePropertyPage::OnBtnDel(UINT /*wNotifyCode*/, int /*wID*/, HWND
 	m_aryDelJst.Add(strJst);
 
 	m_ltMoveCmd.DeleteItem(nIndex);
+	if (m_ltMoveCmd.GetItemCount() == nIndex)
+		--nIndex;
+	m_ltMoveCmd.SelectItem(nIndex);
 	::EnableWindow(GetDlgItem(IDC_BTN_DEL), TRUE);
 }
 
-
+// 矢印
 void CMouseGesturePropertyPage::OnBtn(UINT /*wNotifyCode*/, int wID, HWND /*hWndCtl*/)
 {
-	TCHAR	szText[255];
-	szText[0]	= 0;	//+++
-	CString strText;
-
-	m_stcMoveCmd.GetWindowText(szText, 255);
-	strText = szText;
+	CString strText = MtlGetWindowText(m_stcMoveCmd);
 
 	switch (wID) {
 	case IDC_BTN_UP:	strText += _T("↑");	break;
@@ -246,39 +267,80 @@ void CMouseGesturePropertyPage::OnBtn(UINT /*wNotifyCode*/, int wID, HWND /*hWnd
 	EnableAddBtn();
 }
 
-
-void CMouseGesturePropertyPage::OnSelChangeCmd(UINT code, int id, HWND hWnd)
+/// コマンドリストの選択アイテムが変わった
+void CMouseGesturePropertyPage::OnSelChangeCommandList(UINT code, int id, HWND hWnd)
 {
 	EnableAddBtn();
 }
 
 
+/// ジェスチャーリストのアイテムをコマンドリストで選択状態にする
+LRESULT CMouseGesturePropertyPage::OnGestureListDblClk(LPNMHDR pnmh)
+{
+	CPoint pt;
+	::GetCursorPos(&pt);
+	m_ltMoveCmd.ScreenToClient(&pt);
+	UINT flags = 0;
+	int nIndex = m_ltMoveCmd.HitTest(pt, &flags);
+	if (nIndex != -1) {
+		UINT cmd = m_ltMoveCmd.GetItemData(nIndex);
+		if (cmd) {
+			int nCategoryCount = m_cmbCategory.GetCount();
+			for (int i = 0; i < nCategoryCount; ++i) {
+				PickUpCommand(m_hMenu, i, m_listCommand);
+				int nListCount = m_listCommand.GetCount();
+				for (int k = 0; k < nListCount; ++k) {
+					if (m_listCommand.GetItemData(k) == cmd) {
+						m_cmbCategory.SetCurSel(i);
+						m_listCommand.SetCurSel(k);
+						OnSelChangeCommandList(0, 0, NULL);
+						return 0;
+					}
+				}
+			}
+		}
+	}
+	return 0;
+}
+
+/// Deleteキーで選択ジェスチャーを消す
+LRESULT CMouseGesturePropertyPage::OnGestureListKeyDown(LPNMHDR pnmh)
+{
+	auto pnkd = (LPNMLVKEYDOWN)pnmh;
+	if (pnkd->wVKey == VK_DELETE) {
+		int nSelIndex = m_ltMoveCmd.GetSelectedIndex();
+		if (nSelIndex != -1) {
+			m_ltMoveCmd.SelectItem(nSelIndex);
+			OnBtnDel(0, 0, NULL);
+		}
+	}
+	return 0;
+}
+
+
 void CMouseGesturePropertyPage::EnableAddBtn()
 {
-	TCHAR	szText[255];
-	szText[0]	= 0;	//+++
-	CString strNowJst;
-
-	m_stcMoveCmd.GetWindowText(szText, 255);
-	strNowJst = szText;
+	CString strNowJst = MtlGetWindowText(m_stcMoveCmd);
+	GetDlgItem(IDC_BTN_ADD).SetWindowText(_T("登録"));
+	GetDlgItem(IDC_STATIC_EXSISTCOMMAND).SetWindowText(_T(""));
 
 	BOOL	bEnable   = TRUE;
 
-	int 	nIndexCmd = m_cmbCommand.GetCurSel();
-	UINT	nCmdID	  = (UINT) m_cmbCommand.GetItemData(nIndexCmd);
-
-	if (nCmdID == 0 || nIndexCmd == -1)
+	int 	nIndexCmd = m_listCommand.GetCurSel();
+	UINT	nCmdID	  = (UINT) m_listCommand.GetItemData(nIndexCmd);
+	if (nCmdID == 0 || nIndexCmd == -1 || strNowJst.IsEmpty())
 		bEnable = FALSE;
 
-	for (int ii = 0; ii < m_ltMoveCmd.GetItemCount() && bEnable; ii++) {
+	for (int ii = 0; ii < m_ltMoveCmd.GetItemCount(); ++ii) {
 		CString strMoveJst;
 		m_ltMoveCmd.GetItemText(ii, 0, strMoveJst);
-
-		if (strNowJst != strMoveJst)
-			continue;
-
-		bEnable = FALSE;
-		break;
+		if (strNowJst == strMoveJst) {
+			CString strCommand;
+			m_ltMoveCmd.GetItemText(ii, 1, strCommand);
+			GetDlgItem(IDC_STATIC_EXSISTCOMMAND).SetWindowText(strCommand);
+			GetDlgItem(IDC_BTN_ADD).SetWindowText(_T("上書き"));
+			break;
+		}
 	}
 
 	::EnableWindow(GetDlgItem(IDC_BTN_ADD), bEnable);
@@ -303,5 +365,6 @@ void CMouseGesturePropertyPage::OnSelChangeCate(UINT code, int id, HWND hWnd)
 	int nIndex = m_cmbCategory.GetCurSel();
 
 	// コマンド選択
-	_PickUpCommand(m_hMenu, nIndex, m_cmbCommand);
+	PickUpCommand(m_hMenu, nIndex, m_listCommand);
 }
+

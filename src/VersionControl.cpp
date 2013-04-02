@@ -32,6 +32,7 @@ void	CVersionControl::Run()
 		case 8: _8to9();
 		case 9: _9to10();
 		case 10: _10to11();
+		case 11: _11to12();
 			break;
 		}
 	}
@@ -70,7 +71,7 @@ void	CVersionControl::_0to1()
 		dwExStyle |= ((dwMainExStyle2 & MAIN_EX2_NOCSTMMENU) != 0) ? MENU_EX_NOCUSTOMMENU : 0;
 		dwExStyle |= dwIeMenuNoCstm		? MENU_EX_NOCUSTOMIEMENU	: 0;
 		dwExStyle |= dwR_Equal_L		? MENU_EX_R_EQUAL_L			: 0;
-		dwExStyle |= dwDontShowButton	? MENU_EX_DONTSHOWBUTTON	: 0;
+//		dwExStyle |= dwDontShowButton	? MENU_EX_DONTSHOWBUTTON	: 0;
 
 		donutProfile.ChangeSectionName(_T("Menu"));
 		donutProfile.SetValue(dwExStyle			, _T("ExStyle"));
@@ -223,6 +224,29 @@ void	CVersionControl::_10to11()
 	pr.SetValue(CMainOption::s_dwMainExtendedStyle, _T("Extended_Style"));
 }
 
+
+void	CVersionControl::_11to12()
+{
+	CIniFileIO	pr( g_szIniFileName, _T("StartUp") );
+	pr.DeleteValue(_T("StartUp_With_Param"));
+
+	pr.ChangeSectionName(_T("Main"));
+	pr.DeleteValue(_T("TravelLogGroup"));
+	pr.DeleteValue(_T("TravelLogClose"));
+
+	pr.ChangeSectionName(_T("Confirmation") );
+	pr.DeleteValue( _T("Script") );
+
+	pr.ChangeSectionName( _T("Menu") );
+	pr.DeleteValue( _T("MenuBarStyle") );
+	enum { 
+		MENU_EX_DONTSHOWBUTTON	= 0x00000008L,	// メニューに最小化etc..ボタンを表示しない 
+	};
+	DWORD dwExStyle = pr.GetValue(_T("ExStyle"), 0);
+	dwExStyle &= ~MENU_EX_DONTSHOWBUTTON;
+	pr.SetValue(dwExStyle, _T("ExStyle"));
+
+}
 
 
 

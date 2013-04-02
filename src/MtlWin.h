@@ -290,9 +290,14 @@ template <class T>
 class CTrackMouseLeave {
 public:
 	bool	m_bTrackMouseLeave;
+	POINT	m_ptLastMove;
 
 public:
-	CTrackMouseLeave() : m_bTrackMouseLeave(false) {}
+	CTrackMouseLeave() : m_bTrackMouseLeave(false)
+	{
+		m_ptLastMove.x = -1;
+		m_ptLastMove.y = -1;
+	}
 
 private:
 	// Overridables
@@ -318,7 +323,10 @@ private:
 
 		T *   pT = static_cast<T *>(this);
 		POINT pt = { GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam) };
-		pT->OnTrackMouseMove( (UINT) wParam, pt );
+		if (pt.x != m_ptLastMove.x || pt.y != m_ptLastMove.y) {
+			m_ptLastMove = pt;
+			pT->OnTrackMouseMove( (UINT) wParam, pt );
+		}
 		return 1;
 	}
 
@@ -327,6 +335,9 @@ public:
 	LRESULT OnMouseLeave(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 	{
 		bHandled = FALSE;
+
+		m_ptLastMove.x = -1;
+		m_ptLastMove.y = -1;
 
 		_LastTrackMouseLeave();
 		T *pT = static_cast<T *>(this);

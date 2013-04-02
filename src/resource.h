@@ -42,13 +42,12 @@
 #define IDD_PROPPAGE_MAIN               204
 #define IDB_FAVBAR_HOT                  205
 #define IDD_PROPPAGE_EXPMENU            206
-#define IDD_PROPPAGE_FAVORITEMENU       206
 #define IDD_PROPPAGE_IGNOREDURLS        207
+#define IDD_PROPPAGE_SURPRESSPOPUP      207
 #define IDD_PROPPAGE_STARTUP            208
-#define IDD_PROPPAGE_FILENEW            209
+#define IDD_PROPPAGE_STARTUP_FINISH     208
 #define IDD_DIALOG_OPENURL              210
 #define IDR_MENU_TAB                    211
-#define IDD_PROPPAGE_CLOSETITLES        212
 #define IDB_LINKBAR                     213
 #define IDB_GOBUTTON                    214
 #define IDB_GOBUTTON_HOT                215
@@ -62,7 +61,6 @@
 #define IDR_FILE_NEW                    223
 #define IDD_PROPPAGE_EXECUTABLE         224
 #define IDR_VIEW_FONT_SIZE              225
-#define IDD_PROPPAGE_CONFIRMDLG         226
 #define IDR_FILE_NEW_CLIPBOARD          227
 #define IDD_PROPPAGE_PROXY              228
 #define IDD_PROPPAGE_KEYBOARD           229
@@ -112,7 +110,6 @@
 #define IDR_THUMBNAIL_MENU              282
 #define IDR_TEXT_WARNING                283
 #define IDD_PROPPAGE_URLSECURITY        287
-#define IDD_PROPPAGE_DESTROY            288
 #define IDD_PROPPAGE_SKIN               289
 #define IDD_PROPPAGE_MOUSEGESTURE       290
 #define IDD_DIALOG_SEARCHHISTORY        291
@@ -156,6 +153,7 @@
 #define IDC_EDIT                        1001
 #define IDC_EDIT_CB_EXT                 1001
 #define IDC_LIST_URL                    1001
+#define IDC_CLOSE_TITLE_LIST            1001
 #define IDC_COMBO_STDTB_TEXT            1002
 #define IDC_DEL_BUTTON                  1003
 #define IDC_COMBO_STDTB_ICON            1004
@@ -166,11 +164,14 @@
 #define IDC_DELALL_BUTTON               1007
 #define IDC_URL_EDIT                    1008
 #define IDC_LIST_CB_CONT                1009
+#define IDC_TITLE_EDIT                  1009
 #define IDC_ADD_BUTTON                  1010
 #define IDC_BUTTON_OPEN                 1011
 #define IDC_BTN_ADD_URL                 1011
+#define IDC_ADD_BUTTON2                 1011
 #define IDC_CHECK_CB_FLUSH              1012
 #define IDC_BTN_DELALL_URL              1012
+#define IDC_DELALL_BUTTON2              1012
 #define IDC_BUTTON_DELETE               1013
 #define IDC_CHECK_MDITAB_LEFT           1014
 #define IDC_BUTTON_DELETEALL            1015
@@ -347,6 +348,8 @@
 #define IDC_BTN_ADD                     1177
 #define IDC_LIST1                       1178
 #define IDC_LIST_PROCESS                1178
+#define IDC_BTN_ADD4                    1178
+#define IDC_BTN_CHANGE                  1178
 #define IDC_LIST2                       1179
 #define IDC_BTN_UP                      1180
 #define IDC_NO_CSTM_TXT_MENU            1181
@@ -385,6 +388,7 @@
 #define IDC_LIST_THUMBNAIL              1209
 #define IDC_APPLY                       1210
 #define IDC_TREEVIEW                    1211
+#define IDC_APPLY2                      1211
 #define IDC_CHECK_MAIN_OPTIONSTYLE      1212
 #define IDC_CHECK_STARTUP_SAVE_FB       1213
 #define IDC_CHECK_FILTER                1214
@@ -573,7 +577,6 @@
 #define IDC_EDIT_OFFSETMSELECTY         1404
 #define IDC_CHK_USECUSTOMFINDBAR        1405
 #define IDC_RADIO_NONE                  1406
-#define IDC_CHK_USECUSTOMFINDBAR2       1406
 #define IDC_CHECK_DELAYLOAD             1406
 #define IDC_RADIO_CASH                  1407
 #define IDC_RADIO_ALWAYS                1408
@@ -626,6 +629,7 @@
 #define IDC_BTN_IMPORT                  1454
 #define IDC_BTN_EXPORT                  1455
 #define IDC_NAME1                       1456
+#define IDC_STATIC_EXSISTCOMMAND        1457
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -1027,7 +1031,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        335
 #define _APS_NEXT_COMMAND_VALUE         33242
-#define _APS_NEXT_CONTROL_VALUE         1457
+#define _APS_NEXT_CONTROL_VALUE         1458
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

@@ -4,15 +4,12 @@
  */
 #include "stdafx.h"
 #include "CommandSelectDialog.h"
-#include "../DonutPFunc.h"
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
+#include "..\DonutPFunc.h"
+#include "..\ToolTipManager.h"
 
 
+////////////////////////////////////////////////////////////////////////////////////
+// CCommandSelectDialog
 
 CCommandSelectDialog::CCommandSelectDialog(HMENU hMenu)
 	: m_dwCommandID(0)
@@ -61,7 +58,7 @@ void CCommandSelectDialog::OnSelChangeCate(UINT code, int id, HWND hWnd)
 	int nIndex = m_cmbCategory.GetCurSel();
 
 	// コマンド選択
-	_PickUpCommand(m_hMenu, nIndex, m_cmbCommand);
+	PickUpCommand(m_hMenu, nIndex, m_cmbCommand);
 
 	m_dwCommandID = 0;
 	SetGuideMsg();

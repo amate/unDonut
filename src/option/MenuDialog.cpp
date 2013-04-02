@@ -4,22 +4,14 @@
  */
 
 #include "stdafx.h"
-#include "../MtlCtrlw.h"		//+++
 #include "MenuDialog.h"
 #include "MainOption.h"
 #include "RightClickMenuDialog.h"
-#include "../IniFile.h"
-#include "../DonutPFunc.h"
-#include "../ToolTipManager.h"
-
-
-#if defined USE_ATLDBGMEM
-#define new DEBUG_NEW
-#undef THIS_FILE
-static char THIS_FILE[] = __FILE__;
-#endif
-
-
+#include "..\IniFile.h"
+#include "..\DonutPFunc.h"
+#include "..\ToolTipManager.h"
+#include "..\ItemIDList.h"
+#include "..\PopupMenu.h"
 
 using namespace MTL;
 
@@ -29,8 +21,6 @@ using namespace MTL;
 bool	CMenuOption::s_bNoCustomMenu	= false;
 bool	CMenuOption::s_bNoCustomIEMenu	= true;
 bool	CMenuOption::s_bR_Equal_L		= false;
-bool	CMenuOption::s_bDontShowButton	= false;
-int		CMenuOption::s_nMenuBarStyle	= 0;
 
 // iniから設定を読み込む
 void	CMenuOption::GetProfile()
@@ -41,9 +31,6 @@ void	CMenuOption::GetProfile()
 		s_bNoCustomMenu		= (dwExStyle & MENU_EX_NOCUSTOMMENU		) != 0;
 		s_bNoCustomIEMenu	= (dwExStyle & MENU_EX_NOCUSTOMIEMENU	) != 0;
 		s_bR_Equal_L		= (dwExStyle & MENU_EX_R_EQUAL_L		) != 0;
-		s_bDontShowButton	= (dwExStyle & MENU_EX_DONTSHOWBUTTON	) != 0;
-
-		s_nMenuBarStyle	= pr.GetValue(_T("MenuBarStyle"));
 	}
 }
 
@@ -52,33 +39,48 @@ void	CMenuOption::WriteProfile()
 {
 	{
 		DWORD	dwExStyle = 0;
-		dwExStyle |= s_bNoCustomMenu	? MENU_EX_NOCUSTOMMENU	 : 0;
-		dwExStyle |= s_bNoCustomIEMenu	? MENU_EX_NOCUSTOMIEMENU : 0;
-		dwExStyle |= s_bR_Equal_L		? MENU_EX_R_EQUAL_L		 : 0;
-		dwExStyle |= s_bDontShowButton	? MENU_EX_DONTSHOWBUTTON : 0;
+		if (s_bNoCustomMenu)
+			dwExStyle |= MENU_EX_NOCUSTOMMENU;
+		if (s_bNoCustomIEMenu)
+			dwExStyle |= MENU_EX_NOCUSTOMIEMENU;
+		if (s_bR_Equal_L)
+			dwExStyle |= MENU_EX_R_EQUAL_L;
 
 		CIniFileO	pr(g_szIniFileName, _T("Menu"));
 		pr.SetValue(dwExStyle		, _T("ExStyle"));
-		pr.SetValue(s_nMenuBarStyle	, _T("MenuBarStyle"));
 		
 	}
 }
 
 
 
+////////////////////////////////////////////////////////////////////////
+// CFavoritesMenuOption
+
+bool	CFavoritesMenuOption::s_bPackItem	= false;
+
+
+// iniから設定を読み込む
+void CFavoritesMenuOption::GetProfile()
+{
+	CIniFileI	pr( g_szIniFileName, _T("FavoritesMenu") );
+	s_bPackItem = pr.GetValue(_T("PackItem"), s_bPackItem) != 0;
+}
+
+// iniへ設定を保存する
+void CFavoritesMenuOption::WriteProfile()
+{
+	CIniFileIO	pr( g_szIniFileName, _T("FavoritesMenu") );
+	pr.SetValue(s_bPackItem, _T("PackItem"));
+}
+
 
 ////////////////////////////////////////////////////////////
 // CMenuPropertyPage
 
 // Constructor
-CMenuPropertyPage::CMenuPropertyPage(HMENU hMenu)
-	: m_hMenu(hMenu)
-	, m_nNoCstmMenu(0)
-	, m_nNoCstmIeMenu(0)
-	, m_nREqualL(0)
-	, m_nNoButton(0)
-	, m_nMenuBarStyle(0)
-	, m_bInit(false)
+CMenuPropertyPage::CMenuPropertyPage()
+	: m_bInit(false)
 {
 }
 
@@ -97,30 +99,28 @@ BOOL CMenuPropertyPage::OnSetActive()
 
 	if (m_bInit == false) {
 		m_bInit = true;
-		m_nNoCstmMenu	= CMenuOption::s_bNoCustomMenu;
-		m_nNoCstmIeMenu = CMenuOption::s_bNoCustomIEMenu;
-		m_nREqualL		= CMenuOption::s_bR_Equal_L;
-		m_nNoButton		= CMenuOption::s_bDontShowButton;
-
-		m_nMenuBarStyle	= CMenuOption::s_nMenuBarStyle;
 	}
 
-	return DoDataExchange(FALSE);
+	return DoDataExchange(DDX_LOAD);
 }
 
 
 
 BOOL CMenuPropertyPage::OnKillActive()
 {
-	return DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 
 BOOL CMenuPropertyPage::OnApply()
 {
-	if ( DoDataExchange(TRUE) ) {
-		_SaveData();
+	if ( DoDataExchange(DDX_SAVE) ) {
+		// データを保存
+		CMenuOption::WriteProfile();
+
+		CFavoritesMenuOption::WriteProfile();
+
 		return TRUE;
 	} else {
 		return FALSE;
@@ -128,18 +128,51 @@ BOOL CMenuPropertyPage::OnApply()
 }
 
 
+namespace {
 
-// データを保存
-void CMenuPropertyPage::_SaveData()
+CString BrowseForFolder(HWND hwnd)
 {
-	{
-		CMenuOption::s_bNoCustomMenu	= m_nNoCstmMenu		!= 0;
-		CMenuOption::s_bNoCustomIEMenu	= m_nNoCstmIeMenu	!= 0;
-		CMenuOption::s_bR_Equal_L		= m_nREqualL		!= 0;
-		CMenuOption::s_bDontShowButton	= m_nNoButton		!= 0;
-		CMenuOption::s_nMenuBarStyle	= m_nMenuBarStyle;
+	TCHAR	szDisplayName[MAX_PATH+1] = _T("\0");
+	BROWSEINFO	bi = {
+		hwnd, NULL, szDisplayName, _T("フォルダ選択"),
+		BIF_RETURNONLYFSDIRS | BIF_NEWDIALOGSTYLE, 
+		NULL, 0,				0
+	};
 
-		CMenuOption::WriteProfile();
+	CItemIDList idl;
+	idl.Attach( ::SHBrowseForFolder(&bi) );
+	return idl.GetPath();
+}
+
+};	// namespace
+
+
+/// リンクをフォルダからインポートする
+void CMenuPropertyPage::OnLinkImportFromFolder(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	if (MessageBox(_T("インポートすると現在のリンクはすべて削除されますが、よろしいですか？"), _T("確認"), MB_YESNO) == IDNO)
+		return ;
+	CWaitCursor	waitCursor;
+	CString folder = BrowseForFolder(m_hWnd);
+	if (folder.GetLength() > 0) {
+		CRootFavoritePopupMenu::LinkImportFromFolder(folder);
+	}
+}
+
+/// リンクをフォルダへエクスポートする
+void CMenuPropertyPage::OnLinkExportToFolder(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	bool bOverWrite = false;
+	switch (MessageBox(_T("フォルダにリンクがすでにある時、リンクを上書きしますか？"), _T("確認"), MB_YESNOCANCEL)) {
+	case IDYES:	bOverWrite = true;	break;
+	case IDNO:	bOverWrite = false;	break;
+	case IDCANCEL:
+		return ;
+	}
+	CWaitCursor	waitCursor;
+	CString folder = BrowseForFolder(m_hWnd);
+	if (folder.GetLength() > 0) {
+		CRootFavoritePopupMenu::LinkExportToFolder(folder, bOverWrite);
 	}
 }
 

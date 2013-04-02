@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <set>
 #include "../MtlUpdateCmdUI.h"
 #include "../MtlProfile.h"
 #include "../MtlUser.h"
@@ -92,8 +93,6 @@ public:
 
 	static volatile bool 	s_bIgnoreUpdateClipboard;	// for insane WM_DRAWCLIBOARD
 
-	static bool 	s_bTravelLogGroup;
-	static bool 	s_bTravelLogClose;
 	static bool 	s_bStretchImage;
 
 	static bool		s_bIgnore_blank;
@@ -237,6 +236,65 @@ private:
 };
 
 
+//===========================================================================
+
+enum EFileNew {
+	FILENEW_BLANK	= 0x00000001L,
+	FILENEW_COPY	= 0x00000002L,
+	FILENEW_HOME	= 0x00000004L,
+	FILENEW_USER	= 0x00000008L,		//+++
+};
+
+
+class CFileNewOption 
+{
+	friend class CMainPropertyPage2;
+	friend class CMainFrame;
+
+	static DWORD	s_dwFlags;
+	static CString	s_strUsr;
+
+public:
+	static void 	GetProfile();
+	static void 	WriteProfile();
+};
+
+
+
+/**
+	CDonutConfirmOption
+	各種確認ダイアログを出すためのクラス
+ */
+class CDonutConfirmOption 
+{
+	friend class CMainPropertyPage2;
+public:
+	//メンバ関数
+	static void 	GetProfile();
+	static void 	WriteProfile();
+
+	static bool 	OnDonutExit(HWND hWnd, const std::set<DWORD>& setProcessId);
+	static bool 	OnCloseAll(HWND hWnd = NULL);
+	static bool 	OnCloseAllExcept(HWND hWnd = NULL);
+	static bool		OnCloseLeftRight(HWND hWnd = NULL, bool bLeft = false);
+
+private:
+	static bool 	_SearchDownloadingDialog(const std::set<DWORD>& setProcessId);
+
+	//確認ダイアログの設定フラグの定数
+	enum EDonut_Confirm {
+		DONUT_CONFIRM_EXIT			 = 0x00000001L,
+		DONUT_CONFIRM_CLOSEALL		 = 0x00000002L,
+		DONUT_CONFIRM_CLOSEALLEXCEPT = 0x00000004L,
+		DONUT_CONFIRM_STOPSCRIPT	 = 0x00000008L,
+		DONUT_CONFIRM_CLOSELEFTRIGHT = 0x00000010L,
+	};
+
+	//メンバ変数
+	static DWORD	s_dwFlags;
+};
+
+
 /////////////////////////////////////////////////////////////////////////////////////
 // CMainPropertyPage2 : [Donutのオプション] - [全般2]
 
@@ -271,25 +329,34 @@ public:
 		DDX_CHECK( IDC_CHK_LINK 			, m_nShowLink	)
 		DDX_CHECK( IDC_CHK_SEARCH			, m_nShowSearch )
 		DDX_CHECK( IDC_CHK_STATUS			, m_nShowStatus )
-		//DDX_CHECK( IDC_CHK_MINBTN2TRAY	, m_nMinBtn2Tray )			//+++
 		DDX_RADIO( IDC_RADIO_NO2TRAY		, m_nMinBtn2Tray )			//+++
 
-		DDX_RADIO( IDC_RADIO_IMG_AUTO_RESIZE_NONE, s_nAutoImageResizeType )	//+++
-
-	  #if 0	//+++ 失敗
-		DDX_CHECK( IDC_CHK_TITLEBAR_STR_SWAP, m_nTitleBarStrSwap )	//+++
-	  #endif
-		DDX_CHECK( IDC_TRAVELLOG_GROUP		, m_nTravelLogGroup )
-		DDX_CHECK( IDC_TRAVELLOG_CLOSE		, m_nTravelLogClose )
-
+		// 最近閉じたタブ
 		DDX_INT_RANGE( IDC_EDIT_MRUCOUNT	, s_nMaxRecentClosedTabCount, m_nMRUCountMin, m_nMRUCountMax )
 		DDX_CBINDEX( IDC_COMBO_MRU_MENUTYPE	, s_RecentClosedTabMenuType )
+
+		// 新規ページの標準の動作
+		DDX_RADIO( IDC_RADIO_BLANK	, m_nDefaultNewFileButtonRadio )
+		DDX_TEXT( IDC_EDIT_NEWPAGE_USER, CFileNewOption::s_strUsr )
+
+		// 動作前に確認ダイアログを出す
+		DDX_CHECK( IDC_CHECK_CFD_EXIT,			m_nExit 		 )
+		DDX_CHECK( IDC_CHECK_CFD_CLOSEALL,		m_nCloseAll 	 )
+		DDX_CHECK( IDC_CHECK_CFD_CLOSEEXCEPT,	m_nCloseAllExcept)
+		DDX_CHECK( IDC_CHECK_CFD_CLOSELEFTRIGHT,m_nCloseLeftRight)
+
+		// その他
+		DDX_RADIO( IDC_RADIO_IMG_AUTO_RESIZE_NONE, s_nAutoImageResizeType )	//+++
+
 	END_DDX_MAP()
 
 	// Message map and handlers
 	BEGIN_MSG_MAP( CMainPropertyPage2 )
+		COMMAND_ID_HANDLER_EX( IDC_BTN_NEWPAGE_USER, OnButton )
 		CHAIN_MSG_MAP( CPropertyPageImpl<CMainPropertyPage2> )
 	END_MSG_MAP()
+
+	void 	OnButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	static int CALLBACK BrowseCallbackProc(HWND hwnd, UINT uMsg, LPARAM lParam, LPARAM lpData);
 
@@ -317,17 +384,18 @@ private:
 	int 		m_nShowLink;
 	int 		m_nShowSearch;
 	int 		m_nShowStatus;
-	int 		m_nTravelLogGroup;
-	int 		m_nTravelLogClose;
 
 	const int	m_nMRUCountMin;
 	const int	m_nMRUCountMax;
 
+	int			m_nDefaultNewFileButtonRadio;
+
+	int 		m_nExit;
+	int 		m_nCloseAll;
+	int 		m_nCloseAllExcept;
+	int 		m_nCloseLeftRight;
+
 	int			m_nMinBtn2Tray;			//+++
 
-  #if 0	//+++ 失敗
-	int			m_nTitleBarStrSwap;		//+++
-  #endif
-
-	BOOL		m_bInit;
+	bool		m_bInit;
 };

@@ -1380,7 +1380,7 @@ public:
 	{
 		int mode = CSkinOption::s_nMenuStyle;
 		if (mode == 0) {
-			mode = CMenuOption::s_nMenuBarStyle;
+			//mode = CMenuOption::s_nMenuBarStyle;
 		}
 		ATLASSERT(mode >= 0 && mode <= 2);
 		if (mode < 0 || mode > 2)

@@ -14,7 +14,6 @@
 #include "comdef.h"
 #include "wtypes.h"
 #include "SearchHistoryDialog.h"
-#include "DonutFavoritesMenu.h"
 #include "option/MainOption.h"
 
 //GetUrlCacheEntryInfo

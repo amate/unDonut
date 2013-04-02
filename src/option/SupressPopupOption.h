@@ -7,6 +7,7 @@
 
 #include "../resource.h"
 #include "../SharedMemoryUtil.h"
+#include <tuple>
 
 struct PopupBlockData
 {
@@ -61,164 +62,91 @@ protected:
 };
 
 /**
-	CIgnoredURLsPropertyPage
-	URLによる表示抑止を設定するためのプロパティベージダイアログクラス
+	CSurpressPopupPropertyPage
+	URL/タイトルによる表示抑止を設定するためのプロパティベージダイアログクラス
 
 	表示禁止タイトルの一覧を編集するためのダイアログ
  */
-class CIgnoredURLsPropertyPage
-	: public CPropertyPageImpl<CIgnoredURLsPropertyPage>
-	, public CWinDataExchange<CIgnoredURLsPropertyPage>
+class CSurpressPopupPropertyPage
+	: public CPropertyPageImpl<CSurpressPopupPropertyPage>
+	, public CWinDataExchange<CSurpressPopupPropertyPage>
 	, protected CSupressPopupOption
 {
 public:
 	// Declarations
-	enum { IDD = IDD_PROPPAGE_IGNOREDURLS };
+	enum { IDD = IDD_PROPPAGE_SURPRESSPOPUP };
 
 	// Constructor
-	CIgnoredURLsPropertyPage(const CString &strAddressBar);
-
-	// DDX map
-	BEGIN_DDX_MAP( CIgnoredURLsPropertyPage )
-		DDX_CHECK( IDC_IGNORED_URL_VALID, m_nValid )
-	END_DDX_MAP()
+	CSurpressPopupPropertyPage(const CString& url, const CString& title);
 
 	// Overrides
 	BOOL	OnSetActive();
 	BOOL	OnKillActive();
 	BOOL	OnApply();
 
-private:
-	// overrides
-	BOOL	_DoDataExchange(BOOL bSaveAndValidate); // get data from controls?
+	// DDX map
+	BEGIN_DDX_MAP( CSurpressPopupPropertyPage )
+		DDX_CHECK( IDC_IGNORED_URL_VALID, m_bIgnoreURLValid )
+		DDX_CHECK( IDC_CHK_TITLECLOSE	, m_bTitleCloseValid )
+		DDX_CONTROL_HANDLE( IDC_IGNORED_URL_LIST, m_listboxIgnoreURLs )
+		DDX_CONTROL_HANDLE( IDC_CLOSE_TITLE_LIST, m_listboxCloseTitle )
+		DDX_TEXT( IDC_URL_EDIT , m_strURL )
+		DDX_TEXT(IDC_TITLE_EDIT, m_strTitle )
+	END_DDX_MAP()
 
-public:
 	// Message map and handlers
-	BEGIN_MSG_MAP( CIgnoredURLsPropertyPage )
+	BEGIN_MSG_MAP( CSurpressPopupPropertyPage )
 		MESSAGE_HANDLER( WM_INITDIALOG	, OnInitDialog )
 		MESSAGE_HANDLER( WM_DESTROY 	, OnDestroy    )
+		// ポップアップ抑止
 		COMMAND_ID_HANDLER_EX( IDC_ADD_BUTTON	, OnAddCmd	  )
 		COMMAND_ID_HANDLER_EX( IDC_APPLY		, OnApply	)
 		COMMAND_ID_HANDLER_EX( IDC_DELALL_BUTTON, OnDelAllCmd )
 		COMMAND_ID_HANDLER_EX( IDC_DEL_BUTTON	, OnDelCmd	  )
 		COMMAND_HANDLER_EX( IDC_IGNORED_URL_LIST, LBN_SELCHANGE, OnSelChange )
-		CHAIN_MSG_MAP( CPropertyPageImpl<CIgnoredURLsPropertyPage> )
+
+		// タイトル抑止
+		COMMAND_ID_HANDLER_EX( IDC_ADD_BUTTON2	, OnAddCmd	  )
+		COMMAND_ID_HANDLER_EX( IDC_APPLY2		, OnApply	)
+		COMMAND_ID_HANDLER_EX( IDC_DELALL_BUTTON2, OnDelAllCmd )
+		COMMAND_ID_HANDLER_EX( IDC_DEL_BUTTON2	, OnDelCmd	  )
+		COMMAND_HANDLER_EX( IDC_CLOSE_TITLE_LIST, LBN_SELCHANGE, OnSelChange )
+
+		CHAIN_MSG_MAP( CPropertyPageImpl<CSurpressPopupPropertyPage> )
 	ALT_MSG_MAP(1)
-		MSG_WM_KEYUP( OnListKeyUp )
+		MSG_WM_KEYUP( OnURLListKeyUp )
+	ALT_MSG_MAP(2)
+		MSG_WM_KEYUP( OnTitleListKeyUp )
 	END_MSG_MAP()
 
 	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 	LRESULT OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
 
-private:
+
 	void	OnDelCmd(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnApply(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnDelAllCmd(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnAddCmd(UINT wNotifyCode, int wID, HWND hWndCtl);
 	void	OnSelChange(UINT code, int id, HWND hWnd);
-	void	OnListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnURLListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
+	void	OnTitleListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
 
+private:
 	// Implementation
-	// function objects
-	struct _AddToListBox : public std::unary_function<const CString &, void> {
-		CListBox &_box;
-		_AddToListBox(CListBox &box) : _box(box) { }
-		result_type operator ()(argument_type src)
-		{
-			_box.AddString(src);
-		}
-	};
-
+	std::tuple<CListBox, CEdit, std::list<CString>&> _GetListFromID(int ID);
 	void _GetData();
 
 	// Data members
-	bool	m_bInit;
-	CString 						m_strAddressBar;
-	CListBox						m_listbox;
-	CEdit							m_edit;
-	int 							m_nValid;
-	CContainedWindow				m_wndList;
+	bool				m_bInit;
+	CListBox			m_listboxIgnoreURLs;
+	CListBox			m_listboxCloseTitle;
+	CString				m_strURL;
+	CString				m_strTitle;
+	bool 				m_bIgnoreURLValid;
+	bool				m_bTitleCloseValid;
+	CContainedWindow	m_wndURLList;
+	CContainedWindow	m_wndTitleList;
 };
 
 
 
-
-/**
-	CCloseTitlesPropertyPage
-	ページタイトルによる表示抑止を設定するためのプロパティベージダイアログクラス
-
-	表示禁止タイトルの一覧を編集するためのダイアログ
- */
-class CCloseTitlesPropertyPage
-	: public CPropertyPageImpl<CCloseTitlesPropertyPage>
-	, public CWinDataExchange<CCloseTitlesPropertyPage>
-	, protected CSupressPopupOption
-{
-public:
-	//ダイアログのリソースID
-	enum { IDD = IDD_PROPPAGE_CLOSETITLES };
-
-	//コンストラクタ
-	CCloseTitlesPropertyPage(const CString &strAddressBar);
-
-	//DDXマップ
-	BEGIN_DDX_MAP(CCloseTitlesPropertyPage) 			//+++
-		DDX_CHECK( IDC_CHK_TITLECLOSE, m_nValid )
-	END_DDX_MAP()
-
-	//プロパティベージとしてのオーバーライド関数
-	BOOL	OnSetActive();
-	BOOL	OnKillActive();
-	BOOL	OnApply();
-
-
-	//メッセージマップ
-	BEGIN_MSG_MAP( CCloseTitlesPropertyPage )
-		MESSAGE_HANDLER 	 ( WM_INITDIALOG	, OnInitDialog	)
-		MESSAGE_HANDLER 	 ( WM_DESTROY		, OnDestroy 	)
-		COMMAND_ID_HANDLER_EX( IDC_ADD_BUTTON	, OnAddCmd		)
-		COMMAND_ID_HANDLER_EX( IDC_APPLY		, OnApply	)
-		COMMAND_ID_HANDLER_EX( IDC_DELALL_BUTTON, OnDelAllCmd	)
-		COMMAND_ID_HANDLER_EX( IDC_DEL_BUTTON	, OnDelCmd		)
-		COMMAND_HANDLER_EX	 ( IDC_IGNORED_URL_LIST, LBN_SELCHANGE, OnSelChange )
-		CHAIN_MSG_MAP( CPropertyPageImpl<CCloseTitlesPropertyPage> )
-	ALT_MSG_MAP(1)
-		MSG_WM_KEYUP( OnListKeyUp )
-	END_MSG_MAP()
-
-	//メッセージハンドラ
-	LRESULT OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-	LRESULT OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled);
-
-
-	//コマンドハンドラ
-	void	OnDelCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
-	void	OnApply(UINT wNotifyCode, int wID, HWND hWndCtl);
-	void	OnDelAllCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
-	void	OnAddCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
-	void	OnSelChange(UINT code, int id, HWND hWnd);
-	void	OnListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags);
-
-	//内部関数
-	void	GetData();									//ダイアログからデータの取得
-	BOOL	DataExchange(BOOL bSaveAndValidate);		//コントロールの状態とデータの変換
-
-private:
-	//メンバ変数
-	bool	m_bInit;
-	CString 						  m_strAddressBar;	//今開いているページのタイトル
-	CListBox						  m_listbox;		//リストボックスの操作クラス
-	CEdit							  m_edit;			//テキストボックスの操作クラス
-	int 							  m_nValid; 		//タイトル抑止機能は有効か
-	CContainedWindow				  m_wndList;		//リストボックスの操作クラス
-
-	//関数オブジェクト
-	struct AddToListBox : public std::unary_function<const CString &, void> {
-		CListBox &m_box;
-		AddToListBox(CListBox &box) : m_box(box) { }
-		result_type operator ()(argument_type src)
-		{
-			m_box.AddString(src);
-		}
-	};
-};

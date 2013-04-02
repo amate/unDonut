@@ -20,8 +20,7 @@
 #include "DonutOptions.h"
 #include "ie_feature_control.h"
 #include "ExMenu.h"
-//#include "MainFrame.h"
-#include "API.h"
+#include "MainFrame.h"
 #include "appconst.h"
 #include "MultiThreadManager.h"
 #include "DonutSimpleEventManager.h"
@@ -62,7 +61,6 @@ extern const int	g_uDropDownWholeCommandCount = sizeof (g_uDropDownWholeCommandI
 CServerAppModule	_Module;
 TCHAR				g_szIniFileName[MAX_PATH];
 CMainFrame*			g_pMainWnd		= NULL;
-CAPI*				g_pAPI			= NULL;
 bool				g_bSefShutDown	= false;
 CString				g_commandline;
 
@@ -258,8 +256,6 @@ static bool _PrivateInit()
 // iniƒtƒ@ƒCƒ‹‚ÉÝ’è‚ð•Û‘¶‚·‚é
 void _PrivateTerm()
 {
-	CFileNewOption::WriteProfile();
-	CStartUpOption::WriteProfile();
 	CStyleSheetOption::WriteProfile();
 
 	CExMenuManager::Terminate();
@@ -608,36 +604,4 @@ void	DonutOpenFile(const CString &strFileOrURL, DWORD dwOpenFlag)
 {
 	g_pMainWnd->UserOpenFile(strFileOrURL, dwOpenFlag);
 }
-
-#if 0
-/////////////////////////////////////////////////////////////////////////////
-// CAPI
-HRESULT STDMETHODCALLTYPE CAPI::Advise(IUnknown *pUnk, DWORD *pdwCookie)
-{
-	HRESULT hr = CProxyIDonutPEvents<CAPI>::Advise(pUnk, pdwCookie);
-
-	if ( SUCCEEDED(hr) ) {
-		g_pAPI = this;
-		m_aryCookie.Add(pdwCookie);
-	}
-
-	//CString str;
-	//str.Format("Advise pUnk=%p cookie=%u",pUnk,*pdwCookie);
-	//::MessageBox(NULL,str,_T("check"),MB_OK);
-	return hr;
-}
-
-HRESULT STDMETHODCALLTYPE CAPI::Unadvise(DWORD dwCookie)
-{
-	HRESULT hr = CProxyIDonutPEvents<CAPI>::Unadvise(dwCookie);
-
-	if ( SUCCEEDED(hr) )
-		g_pAPI = NULL;
-
-	//CString str;
-	//str.Format("Unadvise cookie=%u",dwCookie);
-	//::MessageBox(NULL,_T("unadvise"),_T("check"),MB_OK);
-	return hr;
-}
-#endif
 

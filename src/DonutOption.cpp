@@ -11,8 +11,13 @@
 ////////////////////////////////////////////////////////////////////////////
 // CTreeViewPropertySheet
 
+// unDonutのオプションの幅と高さ(ダイアログ単位)
 #define OPTIONDIALOGWIDTH	280;
 #define OPTIONDIALOGHEIGHT	300;
+
+// 定義
+HHOOK 					CTreeViewPropertySheet::s_hHook		= NULL;
+CTreeViewPropertySheet*	CTreeViewPropertySheet::s_pThis		= NULL;
 
 // コンストラクタ
 CTreeViewPropertySheet::CTreeViewPropertySheet(LPCTSTR title)
@@ -53,7 +58,7 @@ INT_PTR CTreeViewPropertySheet::DoModal(HWND hWndParent, LPARAM dwInitParam)
 	SetLastError(0);
 	#endif
 
-	s_hHook = ::SetWindowsHookEx( WH_MSGFILTER, MsgFilterProc, _Module.GetResourceInstance(), ::GetCurrentThreadId() );
+	ATLVERIFY(s_hHook = ::SetWindowsHookEx( WH_MSGFILTER, MsgFilterProc, _Module.GetResourceInstance(), ::GetCurrentThreadId() ));
 
 	#ifndef NDEBUG	//+++ メモ: unDonut+4 で追加されたチェック. なぜか正常?な環境でも場合によっては、
 					//+++ "指定されたリソース名がイメージファイルに見つかりません。"

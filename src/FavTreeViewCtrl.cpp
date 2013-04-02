@@ -175,7 +175,7 @@ CItemIDList CFavoritesTreeViewCtrl::OnInitRootFolder()
 		return idl;
 
 	} else if ( _check_flag( ETV_EX_FAVORITEGROUP, GetExplorerTreeViewExtendedStyle() ) ) {
-		CString strDir = DonutGetFavoriteGroupFolder();
+		CString strDir = Misc::GetExeDirectory() + _T("FavoriteGroup\\");
 		return (LPCTSTR) strDir;
 
 	} else if ( _check_flag( ETV_EX_USERDEFINED, GetExplorerTreeViewExtendedStyle() ) ) {

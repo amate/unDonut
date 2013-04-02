@@ -8,6 +8,8 @@
 #include "../AccelManager.h"
 #include "../SharedMemoryUtil.h"
 
+///////////////////////////////////////////////////////////////////////
+// CAcceleratorOption
 
 class CAcceleratorOption
 {
@@ -36,6 +38,10 @@ private:
 	static CSharedMemory s_sharedMem;
 };
 
+
+//////////////////////////////////////////////////////////////////////////
+// CKeyBoardPropertyPage
+
 class CKeyBoardPropertyPage
 	: public CPropertyPageImpl<CKeyBoardPropertyPage>
 	, public CWinDataExchange<CKeyBoardPropertyPage>
@@ -55,46 +61,43 @@ public:
 
 	// DDX map
 	BEGIN_DDX_MAP( CKeyBoardPropertyPage )
-		DDX_CHECK( IDC_CHK_CMDUPDATE	, m_nCmdUpdate 	)
-		DDX_CHECK( IDC_CHK_CMDMOVE		, m_nCmdMove	)
-		//DDX_CHECK( IDC_CHK_MINBTN2TRAY, m_nMinBtn2Tray)		//+++
+		DDX_CONTROL_HANDLE( IDC_CMB_CATEGORY, m_cmbCategory )
+		DDX_CONTROL_HANDLE( IDC_LIST_COMMAND, m_listCommand )
+		DDX_CONTROL_HANDLE( IDC_EDIT_NOW_KEY , m_editNow )
+		DDX_CONTROL_HANDLE( IDC_LISTBOX1	, m_ltAccel )
 	END_DDX_MAP()
 
 	// Message map and handlers
 	BEGIN_MSG_MAP(CKeyBoardPropertyPage)
 		COMMAND_HANDLER_EX( IDC_CMB_CATEGORY, CBN_SELCHANGE, OnSelChangeCate )
-		COMMAND_HANDLER_EX( IDC_CMB_COMMAND , CBN_SELCHANGE, OnSelChangeCmd  )
+		COMMAND_HANDLER_EX( IDC_LIST_COMMAND, LBN_SELCHANGE, OnSelChangeCommandList )
+		NOTIFY_HANDLER_EX( IDC_LISTBOX1, NM_DBLCLK, OnAccelListDblClk )
 
 		COMMAND_ID_HANDLER_EX( IDC_BTN_DEL, OnBtnDel )
-		COMMAND_ID_HANDLER_EX( IDC_BTN_SET, OnBtnSel )
-		COMMAND_ID_HANDLER( IDC_CHK_CMDUPDATE, OnChkBtn )
-		COMMAND_ID_HANDLER( IDC_CHK_CMDMOVE  , OnChkBtn )
+		COMMAND_ID_HANDLER_EX( IDC_BTN_SET, OnBtnSet )
 
 		CHAIN_MSG_MAP(CPropertyPageImpl<CKeyBoardPropertyPage>)
 	END_MSG_MAP()
 
 
-	LRESULT OnChkBtn(WORD /*wNotifyCode*/, WORD wID, HWND /*hWndCtl*/, BOOL & /*bHandled*/);
-
 	void	OnBtnDel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
+	void	OnBtnSet(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
 
-	void	OnBtnSel(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/);
-
-	// コンボボックスの初期化
-	void	InitialCombbox();
-	void	InitialListbox();
 	void	SetAccelList();
 
 	// カテゴリ変更時
 	void	OnSelChangeCate(UINT code, int id, HWND hWnd);
-
 	// コマンド変更時
-	void	OnSelChangeCmd(UINT code, int id, HWND hWnd);
-
+	void	OnSelChangeCommandList(UINT code, int id, HWND hWnd);
+	LRESULT OnAccelListDblClk(LPNMHDR pnmh);
 
 	BOOL	OnTranslateAccelerator(LPMSG lpMsg);
 
 private:
+
+	// コンボボックスの初期化
+	void	InitialCombbox();
+	void	InitialListbox();
 
 	// データを得る
 	void	_SetData();
@@ -109,16 +112,15 @@ private:
 	// Data members
 	HWND		  m_hWndMainFrame;
 	function<void (function<void (HWND)>) > m_TabBarForEachWindow;
+
 	CEdit		  m_editNow;
 	CEditAccel	  m_editNew;
 	CComboBox	  m_cmbCategory;
-	CComboBox	  m_cmbCommand;
+	CListBox	  m_listCommand;
 	CListViewCtrl m_ltAccel;
 
 	HACCEL&		  m_hAccel;
 	HMENU		  m_hMenu;
-	int 		  m_nCmdUpdate;
-	int 		  m_nCmdMove;
 
-	//int		  m_nMinBtn2Tray;	//+++ 最小化ボタンでトレイに入れる設定
+	bool	m_bInit;
 };

@@ -153,27 +153,43 @@ void CSupressPopupOption::AddCloseTitle(const CString &strTitle)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-//CIgnoredURLsPropertyPageの定義
+//CSurpressPopupPropertyPageの定義
 ////////////////////////////////////////////////////////////////////////////////
 
 // Constructor
-CIgnoredURLsPropertyPage::CIgnoredURLsPropertyPage(const CString &strAddressBar)
+CSurpressPopupPropertyPage::CSurpressPopupPropertyPage(const CString& url, const CString& title)
 	: m_bInit(false)
-	, m_strAddressBar(strAddressBar)
-	, m_wndList(this, 1)
+	, m_strURL(url)
+	, m_strTitle(title)
+	, m_wndURLList(this, 1)
+	, m_wndTitleList(this, 2)
 {
-	s_PopupBlockData.IgnoreURLList.sort();
-	m_nValid = s_PopupBlockData.bValidIgnoreURL != 0;		//+++ ? 1 : 0;
 }
 
 
 
 // Overrides
-BOOL CIgnoredURLsPropertyPage::OnSetActive()
+BOOL CSurpressPopupPropertyPage::OnSetActive()
 {
 	SetModified(TRUE);
 	if (m_bInit == false){
-		_DoDataExchange(FALSE);
+		s_PopupBlockData.IgnoreURLList.sort();
+		m_bIgnoreURLValid = s_PopupBlockData.bValidIgnoreURL != 0;
+
+		s_PopupBlockData.CloseTitleList.sort();
+		m_bTitleCloseValid = s_PopupBlockData.bValidCloseTitle != 0;
+
+		DoDataExchange(DDX_LOAD);
+
+		auto funcAddListBox = [](CListBox box, const std::list<CString>& list) {
+			box.ResetContent();
+			for (auto& str : list) {
+				box.AddString(str);
+			}
+		};
+		funcAddListBox(m_listboxIgnoreURLs, s_PopupBlockData.IgnoreURLList);
+		funcAddListBox(m_listboxCloseTitle, s_PopupBlockData.CloseTitleList);
+
 		m_bInit = true;
 	}
 	return TRUE;
@@ -181,16 +197,16 @@ BOOL CIgnoredURLsPropertyPage::OnSetActive()
 
 
 
-BOOL CIgnoredURLsPropertyPage::OnKillActive()
+BOOL CSurpressPopupPropertyPage::OnKillActive()
 {
-	return _DoDataExchange(TRUE);
+	return TRUE;
 }
 
 
 
-BOOL CIgnoredURLsPropertyPage::OnApply()
+BOOL CSurpressPopupPropertyPage::OnApply()
 {
-	if ( _DoDataExchange(TRUE) ) {
+	if ( DoDataExchange(DDX_SAVE) ) {
 		_GetData();
 		return TRUE;
 	} else {
@@ -200,349 +216,163 @@ BOOL CIgnoredURLsPropertyPage::OnApply()
 
 
 
-// overrides
-BOOL CIgnoredURLsPropertyPage::_DoDataExchange(BOOL bSaveAndValidate)	// get data from controls?
+
+LRESULT CSurpressPopupPropertyPage::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
 {
-	if (!bSaveAndValidate) {											// set data of control
-		if (!m_listbox.m_hWnd)
-			m_listbox.Attach( GetDlgItem(IDC_IGNORED_URL_LIST) );
+	m_wndURLList.SubclassWindow( GetDlgItem(IDC_IGNORED_URL_LIST) );
+	m_wndTitleList.SubclassWindow( GetDlgItem(IDC_CLOSE_TITLE_LIST) );
+	return 0;
+}
 
-		m_listbox.ResetContent();
-		std::for_each( s_PopupBlockData.IgnoreURLList.begin(), s_PopupBlockData.IgnoreURLList.end(), _AddToListBox(m_listbox) );
 
-		if (!m_edit.m_hWnd)
-			m_edit.Attach( GetDlgItem(IDC_URL_EDIT) );
 
-		m_edit.SetWindowText(m_strAddressBar);
+LRESULT CSurpressPopupPropertyPage::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
+{
+	m_wndURLList.UnsubclassWindow();
+	m_wndTitleList.UnsubclassWindow();
+	return 0;
+}
+
+std::tuple<CListBox, CEdit, std::list<CString>&> CSurpressPopupPropertyPage::_GetListFromID(int ID)
+{
+	switch (ID) {
+	case IDC_IGNORED_URL_LIST:
+	case IDC_ADD_BUTTON:
+	case IDC_APPLY:
+	case IDC_DEL_BUTTON:
+	case IDC_DELALL_BUTTON:
+		return std::make_tuple(m_listboxIgnoreURLs, CEdit(GetDlgItem(IDC_URL_EDIT)), s_PopupBlockData.IgnoreURLList);
+
+	case IDC_CLOSE_TITLE_LIST:
+	case IDC_ADD_BUTTON2:
+	case IDC_APPLY2:
+	case IDC_DEL_BUTTON2:
+	case IDC_DELALL_BUTTON2:
+		return std::make_tuple(m_listboxCloseTitle, CEdit(GetDlgItem(IDC_TITLE_EDIT)), s_PopupBlockData.CloseTitleList);
+
+	default:
+		ATLASSERT( FALSE );
 	}
-
-	return DoDataExchange(bSaveAndValidate);
+	static std::list<CString> list;
+	return std::make_tuple(CListBox(), CEdit(), list);
 }
 
-
-
-LRESULT CIgnoredURLsPropertyPage::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-	m_wndList.SubclassWindow( GetDlgItem(IDC_IGNORED_URL_LIST) );
-	return 0;
-}
-
-
-
-LRESULT CIgnoredURLsPropertyPage::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-	m_wndList.UnsubclassWindow();
-	return 0;
-}
-
-
-
-void CIgnoredURLsPropertyPage::OnDelCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
+void CSurpressPopupPropertyPage::OnDelCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
 	//とりあえず選択項目の番号をリストにしてソート
+	auto tupleList = _GetListFromID(wID);
 	std::list<int> sellist;
-	int 		   nSelCount = m_listbox.GetSelCount();
-	int *		   pIdx 	 = new int[nSelCount];
-
-	if (m_listbox.GetSelItems(nSelCount, pIdx) != LB_ERR) {
+	int nSelCount = std::get<0>(tupleList).GetSelCount();
+	std::unique_ptr<int[]>	pIdx(new int[nSelCount]);
+	if (std::get<0>(tupleList).GetSelItems(nSelCount, pIdx.get()) != LB_ERR) {
 		for (int i = 0; i < nSelCount; i++)
 			sellist.push_back(pIdx[i]);
 
 		sellist.sort();
 		sellist.reverse();
 
-		for (std::list<int>::iterator it = sellist.begin(); it != sellist.end(); ++it)
-			m_listbox.DeleteString(*it);
+		for (int index : sellist)
+			std::get<0>(tupleList).DeleteString(index);
 
-		if (m_listbox.SetSel(pIdx[0]) == -1)
-			m_listbox.SetSel(pIdx[0] - 1);
+		if (std::get<0>(tupleList).SetSel(pIdx[0]) == -1)
+			std::get<0>(tupleList).SetSel(pIdx[0] - 1);
 	}
-
-	delete[] pIdx;
 }
 
-void	CIgnoredURLsPropertyPage::OnApply(UINT wNotifyCode, int wID, HWND hWndCtl)
+void	CSurpressPopupPropertyPage::OnApply(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
-	int nSelCount = m_listbox.GetSelCount();
+	auto tupleList = _GetListFromID(wID);
+	int nSelCount = std::get<0>(tupleList).GetSelCount();
 	if (nSelCount == 0)
 		return ;
 	unique_ptr<int[]> pIdx(new int[nSelCount]);
-	m_listbox.GetSelItems(nSelCount, pIdx.get());
+	std::get<0>(tupleList).GetSelItems(nSelCount, pIdx.get());
 
-	m_listbox.DeleteString(pIdx[0]);
-	CString str = MtlGetWindowText(m_edit);
-	m_listbox.InsertString(pIdx[0], str);
+	std::get<0>(tupleList).DeleteString(pIdx[0]);
+	CString str = MtlGetWindowText(std::get<1>(tupleList));
+	std::get<0>(tupleList).InsertString(pIdx[0], str);
 	for (int i = 0; i < nSelCount; ++i) {
-		m_listbox.SetSel(pIdx[i], FALSE);
+		std::get<0>(tupleList).SetSel(pIdx[i], FALSE);
 	}
-	m_listbox.SetSel(pIdx[0], TRUE);
+	std::get<0>(tupleList).SetSel(pIdx[0], TRUE);
 }
 
 
-void CIgnoredURLsPropertyPage::OnDelAllCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
+void CSurpressPopupPropertyPage::OnDelAllCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
-	m_listbox.ResetContent();
+	auto tupleList = _GetListFromID(wID);
+	std::get<0>(tupleList).ResetContent();
 }
 
 
 
-void CIgnoredURLsPropertyPage::OnAddCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
+void CSurpressPopupPropertyPage::OnAddCmd(UINT wNotifyCode, int wID, HWND hWndCtl)
 {
-	TCHAR 	szEdit[INTERNET_MAX_PATH_LENGTH];
-	szEdit[0]	= 0;	//+++
-
-	if (m_edit.GetWindowText(szEdit, INTERNET_MAX_PATH_LENGTH) == 0)
+	auto tupleList = _GetListFromID(wID);
+	CString str = MtlGetWindowText(std::get<1>(tupleList));
+	if (str.IsEmpty())
 		return;
 
-	int   nIndex = m_listbox.FindStringExact(-1, szEdit);
-
+	int   nIndex = std::get<0>(tupleList).FindStringExact(-1, str);
 	if (nIndex == LB_ERR) {
-		m_listbox.AddString(szEdit);
+		std::get<0>(tupleList).AddString(str);
 	} else {
 		//m_listbox.SetCurSel(nIndex);
-		m_listbox.SetSel(nIndex, TRUE);
+		std::get<0>(tupleList).SetSel(nIndex, TRUE);
 	}
 }
 
 
 
-void CIgnoredURLsPropertyPage::OnSelChange(UINT code, int id, HWND hWnd)
+void CSurpressPopupPropertyPage::OnSelChange(UINT code, int id, HWND hWnd)
 {
-	//int nIndex = m_listbox.GetCurSel();
-	int 	nIndex = 0;
-
-	if (m_listbox.GetSelItems(1, &nIndex) == 0)
+	auto tupleList = _GetListFromID(id);
+	int nIndex = 0;
+	if (std::get<0>(tupleList).GetSelItems(1, &nIndex) == 0)
 		return;
 
 	CString 	strBox;
-	m_listbox.GetText(nIndex, strBox);
-	m_edit.SetWindowText(strBox);
+	std::get<0>(tupleList).GetText(nIndex, strBox);
+	std::get<1>(tupleList).SetWindowText(strBox);
 }
 
 
 
-void CIgnoredURLsPropertyPage::OnListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
+void CSurpressPopupPropertyPage::OnURLListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
 	if (nChar == VK_DELETE)
-		OnDelCmd(0, 0, NULL);
+		OnDelCmd(0, IDC_DEL_BUTTON, NULL);
 }
 
-
-void CIgnoredURLsPropertyPage::_GetData()
+void CSurpressPopupPropertyPage::OnTitleListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
 {
-	// update ignored urls list
-	int 	nCount = m_listbox.GetCount();
-	CString strbuf;
+	if (nChar == VK_DELETE)
+		OnDelCmd(0, IDC_DEL_BUTTON2, NULL);
+}
 
-	s_PopupBlockData.IgnoreURLList.clear();
+// 設定を保存する
+void CSurpressPopupPropertyPage::_GetData()
+{
+	auto funcAddListFromListBox = [](CListBox box, std::list<CString>& list) {
+		list.clear();
+		int nCount = box.GetCount();
+		for (int i = 0; i < nCount; ++i) {
+			CString text;
+			box.GetText(i, text);
+			list.push_back(text);
+		}
+	};
+	funcAddListFromListBox(m_listboxIgnoreURLs, s_PopupBlockData.IgnoreURLList);
+	funcAddListFromListBox(m_listboxCloseTitle, s_PopupBlockData.CloseTitleList);
 
-	for (int i = 0; i < nCount; i++) {
-		m_listbox.GetText(i, strbuf);
-		s_PopupBlockData.IgnoreURLList.push_back(strbuf);
-	}
-
-	s_PopupBlockData.bValidIgnoreURL = m_nValid != 0;
+	s_PopupBlockData.bValidIgnoreURL	= m_bIgnoreURLValid;
+	s_PopupBlockData.bValidCloseTitle	= m_bTitleCloseValid;
 
 	WriteProfile(true);
-	CreateSupressPopupData(s_hWndMainFrame);
-	NotifyUpdateToChildFrame();
-}
-
-
-
-
-
-////////////////////////////////////////////////////////////////////////////////
-//CCloseTitlesPropertyPageの定義
-////////////////////////////////////////////////////////////////////////////////
-
-//コンストラクタ
-CCloseTitlesPropertyPage::CCloseTitlesPropertyPage(const CString &strAddressBar)
-	: m_bInit(false)
-	, m_strAddressBar(strAddressBar)
-	, m_wndList(this, 1)
-{
-	s_PopupBlockData.CloseTitleList.sort();
-	m_nValid = s_PopupBlockData.bValidCloseTitle != 0;
-}
-
-
-
-//オーバーライド関数
-BOOL CCloseTitlesPropertyPage::OnSetActive()
-{
-	SetModified(TRUE);
-	if (m_bInit == false) {
-		DataExchange(FALSE);
-		m_bInit = true;
-	}
-	return TRUE;
-}
-
-
-
-BOOL CCloseTitlesPropertyPage::OnKillActive()
-{
-	return DataExchange(TRUE);
-}
-
-
-
-BOOL CCloseTitlesPropertyPage::OnApply()
-{
-	if ( DataExchange(TRUE) ) {
-		GetData();
-		return TRUE;
-	} else {
-		return FALSE;
-	}
-}
-
-
-//メッセージハンドラ
-LRESULT CCloseTitlesPropertyPage::OnInitDialog(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-	m_wndList.SubclassWindow( GetDlgItem(IDC_IGNORED_URL_LIST) );
-	return 0;
-}
-
-
-
-LRESULT CCloseTitlesPropertyPage::OnDestroy(UINT uMsg, WPARAM wParam, LPARAM lParam, BOOL &bHandled)
-{
-	m_wndList.UnsubclassWindow();
-	return 0;
-}
-
-
-
-//コマンドハンドラ
-void CCloseTitlesPropertyPage::OnDelCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	std::list<int> sellist;
-	int 		   nSelCount = m_listbox.GetSelCount();
-	int *		   pIdx 	 = (int *) new int[nSelCount];
-
-	if (m_listbox.GetSelItems(nSelCount, pIdx) != LB_ERR) {
-		for (int i = 0; i < nSelCount; i++)
-			sellist.push_back(pIdx[i]);
-
-		sellist.sort();
-		sellist.reverse();
-
-		for (std::list<int>::iterator it = sellist.begin(); it != sellist.end(); ++it)
-			m_listbox.DeleteString(*it);
-	}
-
-	delete[] pIdx;
-}
-
-
-void	CCloseTitlesPropertyPage::OnApply(UINT wNotifyCode, int wID, HWND hWndCtl)
-{
-	int nSelCount = m_listbox.GetSelCount();
-	if (nSelCount == 0)
-		return ;
-	unique_ptr<int[]> pIdx(new int[nSelCount]);
-	m_listbox.GetSelItems(nSelCount, pIdx.get());
-
-	m_listbox.DeleteString(pIdx[0]);
-	CString str = MtlGetWindowText(m_edit);
-	m_listbox.InsertString(pIdx[0], str);
-	for (int i = 0; i < nSelCount; ++i) {
-		m_listbox.SetSel(pIdx[i], FALSE);
-	}
-	m_listbox.SetSel(pIdx[0], TRUE);
-}
-
-void CCloseTitlesPropertyPage::OnDelAllCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	m_listbox.ResetContent();
-}
-
-
-
-void CCloseTitlesPropertyPage::OnAddCmd(UINT /*wNotifyCode*/, int /*wID*/, HWND /*hWndCtl*/)
-{
-	TCHAR szEdit[MAX_PATH];
-	szEdit[0]	= 0;	//+++
-
-	if (m_edit.GetWindowText(szEdit, MAX_PATH) == 0)
-		return;
-
-	int   nIndex = m_listbox.FindStringExact(-1, szEdit);
-
-	if (nIndex == LB_ERR) {
-		m_listbox.AddString(szEdit);
-	} else {
-		//m_listbox.SetCurSel(nIndex);
-		m_listbox.SetSel(nIndex, TRUE);
-	}
-}
-
-
-
-void CCloseTitlesPropertyPage::OnSelChange(UINT code, int id, HWND hWnd)
-{
-	//int nIndex = m_listbox.GetCurSel();
-	int 	nIndex = 0;
-
-	if (m_listbox.GetSelItems(1, &nIndex) == 0)
-		return;
-
-	CString strBox;
-	m_listbox.GetText(nIndex, strBox);
-	m_edit.SetWindowText(strBox);
-}
-
-
-
-void CCloseTitlesPropertyPage::OnListKeyUp(UINT nChar, UINT nRepCnt, UINT nFlags)
-{
-	if (nChar == VK_DELETE)
-		OnDelCmd(0, 0, NULL);
-}
-
-
-
-//内部関数
-void CCloseTitlesPropertyPage::GetData()
-{
-	// update close title list
-	int 	nCount = m_listbox.GetCount();
-	CString strbuf;
-
-	s_PopupBlockData.CloseTitleList.clear();
-
-	for (int i = 0; i < nCount; i++) {
-		m_listbox.GetText(i, strbuf);
-		s_PopupBlockData.CloseTitleList.push_back(strbuf);
-	}
-
-	s_PopupBlockData.bValidCloseTitle	= m_nValid != 0;
-
 	WriteProfile(false);
 	CreateSupressPopupData(s_hWndMainFrame);
 	NotifyUpdateToChildFrame();
 }
 
 
-
-BOOL CCloseTitlesPropertyPage::DataExchange(BOOL bSaveAndValidate)	// get data from controls?
-{
-	if (!bSaveAndValidate) {										// set data of control
-		if (!m_listbox.m_hWnd)
-			m_listbox.Attach( GetDlgItem(IDC_IGNORED_URL_LIST) );
-
-		m_listbox.ResetContent();
-		std::for_each( s_PopupBlockData.CloseTitleList.begin(), s_PopupBlockData.CloseTitleList.end(), AddToListBox(m_listbox) );
-
-		if (!m_edit.m_hWnd)
-			m_edit.Attach( GetDlgItem(IDC_URL_EDIT) );
-
-		m_edit.SetWindowText(m_strAddressBar);
-	}
-
-	return DoDataExchange(bSaveAndValidate);
-}
 

@@ -734,10 +734,11 @@ RESET:
 			std::vector<CString> strs;
 			strs.reserve(10);
 			Misc::SeptTextToWords(strs, str);
-			if (size_t(nNum) < strs.size())
+			if (size_t(nNum) < strs.size()) {
 				str = strs[nNum];
-			else
+			} else if (strs.size() > 0) {
 				str = strs[0];	//\\+
+			}
 		}
 
 		CString strExcept = _T(" \t\"\r\nÅ@");

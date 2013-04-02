@@ -32,9 +32,6 @@ DWORD	CMainOption::s_dwErrorBlock 			= 0;
 
 CString	CMainOption::s_strExplorerUserDirectory;
 
-bool	CMainOption::s_bTravelLogGroup			= false;
-bool	CMainOption::s_bTravelLogClose			= false;
-
 bool	CMainOption::s_bStretchImage			= false;
 
 bool	CMainOption::s_bIgnore_blank			= false;
@@ -66,8 +63,6 @@ void CMainOption::GetProfile()
 		pr.QueryValue( s_dwBackUpTime			, _T("BackUp_Time") 		);
 		pr.QueryValue( s_dwAutoRefreshTime		, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
 		pr.QueryValue( s_dwErrorBlock			, _T("ErrorBlock")			);	//minit
-		s_bTravelLogGroup	= pr.GetValue(_T("TravelLogGroup"), s_bTravelLogGroup) != 0;
-		s_bTravelLogClose	= pr.GetValue(_T("TravelLogClose"), s_bTravelLogClose) != 0;
 		pr.QueryValue( s_nMaxRecentClosedTabCount, _T("MaxRecentClosedTabCount"));
 		pr.QueryValue( s_RecentClosedTabMenuType , _T("RecentClosedTabMenuType"));
 	}
@@ -100,8 +95,6 @@ void CMainOption::WriteProfile()
 		pr.SetValue( s_dwMainExtendedStyle2 , _T("Extended_Style2") 	);
 		pr.SetValue( s_dwBackUpTime 		, _T("BackUp_Time") 		);
 		pr.SetValue( s_dwAutoRefreshTime	, _T("Auto_Refresh_Time")	);	// UDT DGSTR ( dai
-		pr.SetValue( s_bTravelLogGroup		, _T("TravelLogGroup")		);
-		pr.SetValue( s_bTravelLogClose		, _T("TravelLogClose")		);
 		pr.SetValue( s_nMaxRecentClosedTabCount, _T("MaxRecentClosedTabCount"));
 		pr.SetValue( s_RecentClosedTabMenuType , _T("RecentClosedTabMenuType"));
 	}
@@ -153,7 +146,6 @@ void CMainOption::OnMainExNoActivateNewWin(WORD /*wNotifyCode*/, WORD /*wID*/, H
 	else
 		s_dwMainExtendedStyle |= MAIN_EX_NOACTIVATE_NEWWIN;
 }
-
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -325,6 +317,155 @@ void CMainPropertyPage::_SetData()
 
 
 
+// ===========================================================================================
+
+////////////////////////////////////////////////////////////////////////////////
+//CFileNewOptionの定義
+////////////////////////////////////////////////////////////////////////////////
+
+DWORD 	CFileNewOption::s_dwFlags = FILENEW_BLANK;
+CString CFileNewOption::s_strUsr;
+
+
+void CFileNewOption::GetProfile()
+{
+	CIniFileI	pr( g_szIniFileName, _T("Main") );
+	s_dwFlags = pr.GetValue( _T("File_New_Option"), FILENEW_BLANK );
+	s_strUsr  = pr.GetStringUW( _T("File_New_UsrPage") );
+	pr.Close();
+}
+
+
+
+void CFileNewOption::WriteProfile()
+{
+	CIniFileO	pr( g_szIniFileName, _T("Main") );
+	pr.SetValue( s_dwFlags, _T("File_New_Option") );
+	pr.SetStringUW( s_strUsr, _T("File_New_UsrPage") );
+	pr.Close();
+}
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+//CDonutConfirmOptionの定義
+////////////////////////////////////////////////////////////////////////////////
+
+//static変数の定義
+DWORD		CDonutConfirmOption::s_dwFlags		= 0/*DONUT_CONFIRM_EXIT | DONUT_CONFIRM_CLOSEALLEXCEPT*/;
+
+
+//メンバ関数
+void CDonutConfirmOption::GetProfile()
+{
+	CIniFileI		pr( g_szIniFileName, _T("Confirmation") );
+	pr.QueryValue( s_dwFlags, _T("Confirmation_Flags") );
+}
+
+
+
+void CDonutConfirmOption::WriteProfile()
+{
+	CIniFileO	pr( g_szIniFileName, _T("Confirmation") );
+	pr.SetValue( s_dwFlags, _T("Confirmation_Flags") );
+}
+
+
+
+bool CDonutConfirmOption::OnDonutExit(HWND hWnd, const std::set<DWORD>& setProcessId)
+{
+	if ( _SearchDownloadingDialog(setProcessId) ) {
+		if ( IDYES == ::MessageBox(hWnd,
+						_T("ダウンロード中のファイルがありますが、Donutを終了してもよろしいですか？"),
+						_T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION ) )
+			return true;
+		else
+			return false;
+	}
+
+	if ( !_check_flag(DONUT_CONFIRM_EXIT, s_dwFlags) )
+		return true;
+
+	// Note. On debug mode, If DONUT_CONFIRM_EXIT set, the process would be killed
+	//		 before Module::Run returns. What can I do?
+	if ( IDYES == ::MessageBox(hWnd, _T("Donutを終了してもよろしいですか？"),
+								_T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION) ) {
+		return true;
+	}
+
+	return false;
+}
+
+
+
+bool CDonutConfirmOption::OnCloseAll(HWND hWnd)
+{
+	if ( !_check_flag(DONUT_CONFIRM_CLOSEALL, s_dwFlags) )
+		return true;
+
+	if ( IDYES == ::MessageBox(hWnd, _T("ウィンドウをすべて閉じてもよろしいですか？"),
+							   _T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION) )
+		return true;
+
+	return false;
+}
+
+
+
+bool CDonutConfirmOption::OnCloseAllExcept(HWND hWnd)
+{
+	if ( !_check_flag(DONUT_CONFIRM_CLOSEALLEXCEPT, s_dwFlags) )
+		return true;
+
+	if ( IDYES == ::MessageBox(hWnd, _T("これ以外のウィンドウをすべて閉じてもよろしいですか？"),
+							   _T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION) )
+		return true;
+
+	return false;
+}
+
+
+
+bool CDonutConfirmOption::OnCloseLeftRight(HWND hWnd, bool bLeft)
+{
+	if ( !_check_flag(DONUT_CONFIRM_CLOSELEFTRIGHT, s_dwFlags) )
+		return true;
+	const TCHAR* pStr = (bLeft) ? _T("このタブより左側のタブをすべて閉じてもよろしいですか？")
+								: _T("このタブより右側のタブをすべて閉じてもよろしいですか？") ;
+
+	if ( IDYES == ::MessageBox(hWnd, pStr, _T("確認ダイアログ"), MB_YESNO | MB_ICONQUESTION) )
+		return true;
+
+	return false;
+}
+
+
+
+bool CDonutConfirmOption::_SearchDownloadingDialog(const std::set<DWORD>& setProcessId)
+{
+	bool bFound = false;
+	MtlForEachTopLevelWindow(_T("#32770"), NULL, [&setProcessId, &bFound](HWND hWnd) -> bool {
+		DWORD dwProcessId = 0;
+		::GetWindowThreadProcessId(hWnd, &dwProcessId);
+		if (setProcessId.find(dwProcessId) != setProcessId.end()) {
+			CString strCaption = MtlGetWindowText(hWnd);
+
+			if ( (strCaption.Find( _T('%') ) != -1 && strCaption.Find( _T("完了しました") ) != -1)
+				|| strCaption.Find( _T("ファイルのダウンロード") ) != -1 )
+			{
+				bFound = true;
+				return false;
+			}
+		}
+		return true; // continue finding
+	});
+
+	return bFound;
+}
+
+
+
 ////////////////////////////////////////////////////////////////////////////////
 //CMainPropertyPage2の定義
 ////////////////////////////////////////////////////////////////////////////////
@@ -369,10 +510,10 @@ CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent)
 	m_wnd(hWnd), 
 	m_rRecentClosedTabList(rRecent),
 	m_nMRUCountMin(CRecentClosedTabList::kMaxEntries_Min),
-	m_nMRUCountMax(CRecentClosedTabList::kMaxEntries_Max)
+	m_nMRUCountMax(CRecentClosedTabList::kMaxEntries_Max),
+	m_nDefaultNewFileButtonRadio(0),
+	m_bInit(false)
 {
-	m_bInit 	     = FALSE;
-
 	//+++ mainframe.cppのInitStatusBarでの初期値にあわせて150を125に変更.
 	m_nSzPain1	     = 125;
 	m_nSzPain2	     = 125;
@@ -389,7 +530,6 @@ CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent)
 
 	m_nMinBtn2Tray   = 0;		//+++
 
-	_SetData();
 }
 
 
@@ -397,8 +537,9 @@ CMainPropertyPage2::CMainPropertyPage2(HWND hWnd, CRecentClosedTabList& rRecent)
 // Overrides
 BOOL CMainPropertyPage2::OnSetActive()
 {
-	if (!m_bInit) {
-		m_bInit = TRUE;
+	if (m_bInit == false) {
+		m_bInit = true;
+		_SetData();
 		InitCtrls();
 		DoDataExchange(DDX_LOAD);
 	}
@@ -427,15 +568,34 @@ BOOL CMainPropertyPage2::OnApply()
 }
 
 
+//+++ 追加.
+void CMainPropertyPage2::OnButton(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	TCHAR	szOldPath[MAX_PATH] = _T("");
+	::GetCurrentDirectory(MAX_PATH, szOldPath);
+	::SetCurrentDirectory( Misc::GetExeDirectory() );
+
+	static const TCHAR szFilter[] = _T("全ファイル(*.*)\0*.*\0\0");
+
+	CFileDialog 	   fileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY, szFilter);
+	fileDlg.m_ofn.lpstrTitle = _T("ユーザー指定の新規作成ページ");
+
+	if (fileDlg.DoModal() == IDOK) {
+		CEdit(GetDlgItem(IDC_EDIT_NEWPAGE_USER)).SetWindowText(fileDlg.m_szFileName);
+	}
+
+	// restore current directory
+	::SetCurrentDirectory(szOldPath);
+}
+
+
 
 void CMainPropertyPage2::_GetData()
 {
 	CIniFileO pr( g_szIniFileName, _T("StatusBar") );
 	pr.SetValue( MAKELONG(m_nSzPain1, m_nSzPain2), _T("SizePain") );
 	pr.SetValue( m_nChkSwapPain 				 , _T("SwapPain") );
-	//x pr.Close(); //+++
 
-	//x CIniFileO pr( g_szIniFileName, _T("FullScreen") );
 	pr.ChangeSectionName( _T("FullScreen")	);
 	pr.SetValue( m_nShowMenu	, _T("ShowMenu")	);
 	pr.SetValue( m_nShowToolBar , _T("ShowToolBar") );
@@ -446,25 +606,46 @@ void CMainPropertyPage2::_GetData()
 	pr.SetValue( m_nShowStatus	, _T("ShowStatus")	);
 	//pr.Close();
 
-	CMainOption::s_bTravelLogGroup = m_nTravelLogGroup != 0;	//+++ ? true : false;
-	CMainOption::s_bTravelLogClose = m_nTravelLogClose != 0;	//+++ ? true : false;
-
 	m_rRecentClosedTabList.SetMaxEntries(s_nMaxRecentClosedTabCount);
 	m_rRecentClosedTabList.SetMenuType(s_RecentClosedTabMenuType);
 
-  #if 0	//+++ 失敗
-	if (m_nTitleBarStrSwap)	CMainOption::s_dwMainExtendedStyle2 	 |=  MAIN_EX2_TITLEBAR_STR_SWAP;	//+++ 追加.
-	else					CMainOption::s_dwMainExtendedStyle2 	 &= ~MAIN_EX2_TITLEBAR_STR_SWAP;	//+++ 追加.
-  #endif
-  #if 1 //+++ 別のオプションが管理している変数を間借りして追加...やめ.. やっぱり復活
-	CMainOption::s_dwMainExtendedStyle2 &= ~(MAIN_EX2_CLOSEBTN2TRAY|MAIN_EX2_MINBTN2TRAY);
+	//+++ 別のオプションが管理している変数を間借りして追加...やめ.. やっぱり復活
+	CMainOption::s_dwMainExtendedStyle2 &= ~(MAIN_EX2_CLOSEBTN2TRAY | MAIN_EX2_MINBTN2TRAY);
 	if (m_nMinBtn2Tray == 2)
 		CMainOption::s_dwMainExtendedStyle2 |= MAIN_EX2_CLOSEBTN2TRAY;
 	else if (m_nMinBtn2Tray == 1)
 		CMainOption::s_dwMainExtendedStyle2 |= MAIN_EX2_MINBTN2TRAY;
-  #endif
 
 	WriteProfile();
+
+	// 新規ページの標準動作
+	CFileNewOption::s_dwFlags = 0;
+	switch (m_nDefaultNewFileButtonRadio) {
+	case  0: CFileNewOption::s_dwFlags = FILENEW_BLANK; break;
+	case  1: CFileNewOption::s_dwFlags = FILENEW_COPY ; break;
+	case  2: CFileNewOption::s_dwFlags = FILENEW_HOME ; break;
+	case  3: CFileNewOption::s_dwFlags = FILENEW_USER ; break;
+	default: ATLASSERT(FALSE);							break;
+	}
+	CFileNewOption::WriteProfile();
+
+	// 動作前に確認ダイアログを出す
+	DWORD dwFlags = 0;
+	if (m_nExit /*== 1*/)
+		dwFlags |= CDonutConfirmOption::DONUT_CONFIRM_EXIT;
+
+	if (m_nCloseAll /*== 1*/)
+		dwFlags |= CDonutConfirmOption::DONUT_CONFIRM_CLOSEALL;
+
+	if (m_nCloseAllExcept /*== 1*/)
+		dwFlags |= CDonutConfirmOption::DONUT_CONFIRM_CLOSEALLEXCEPT;
+
+	if (m_nCloseLeftRight)
+		dwFlags |= CDonutConfirmOption::DONUT_CONFIRM_CLOSELEFTRIGHT;
+
+	CDonutConfirmOption::s_dwFlags		= dwFlags;
+	CDonutConfirmOption::WriteProfile();
+
 }
 
 
@@ -493,19 +674,26 @@ void CMainPropertyPage2::_SetData()
 	pr.QueryValue( m_nShowStatus , _T("ShowStatus")  );
 	//pr.Close();
 
-	m_nTravelLogGroup = CMainOption::s_bTravelLogGroup != 0;	//+++ ? 1 : 0;
-	m_nTravelLogClose = CMainOption::s_bTravelLogClose != 0;	//+++ ? 1 : 0;
-
-  #if 0	//+++ 失敗
-	m_nTitleBarStrSwap= (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_TITLEBAR_STR_SWAP) != 0;	//+++ 追加.
-  #endif
-
-  #if 1 //+++ 別のオプションが管理している変数を間借りして追加...やめ... やっぱここで
+	//+++ 別のオプションが管理している変数を間借りして追加...やめ... やっぱここで
 	if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_CLOSEBTN2TRAY)
 		m_nMinBtn2Tray = 2;
 	else if (CMainOption::s_dwMainExtendedStyle2 & MAIN_EX2_MINBTN2TRAY)
 		m_nMinBtn2Tray = 1;
-  #endif
+
+	// 新規ページの標準動作
+	if		(CFileNewOption::s_dwFlags == FILENEW_BLANK) m_nDefaultNewFileButtonRadio = 0;
+	else if (CFileNewOption::s_dwFlags == FILENEW_COPY ) m_nDefaultNewFileButtonRadio = 1;
+	else if (CFileNewOption::s_dwFlags == FILENEW_HOME ) m_nDefaultNewFileButtonRadio = 2;
+	else if (CFileNewOption::s_dwFlags == FILENEW_USER ) m_nDefaultNewFileButtonRadio = 3;
+	else	ATLASSERT(FALSE);
+
+	// 動作前に確認ダイアログを出す
+	DWORD	dwFlags = CDonutConfirmOption::s_dwFlags;
+
+	m_nExit 		  = _check_flag(CDonutConfirmOption::DONUT_CONFIRM_EXIT 		, dwFlags);
+	m_nCloseAll 	  = _check_flag(CDonutConfirmOption::DONUT_CONFIRM_CLOSEALL 	, dwFlags);
+	m_nCloseAllExcept = _check_flag(CDonutConfirmOption::DONUT_CONFIRM_CLOSEALLEXCEPT,dwFlags);
+	m_nCloseLeftRight = _check_flag(CDonutConfirmOption::DONUT_CONFIRM_CLOSELEFTRIGHT,dwFlags);
 }
 
 

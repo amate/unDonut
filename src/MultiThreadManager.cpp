@@ -13,7 +13,7 @@
 #include "MainFrame.h"
 #include "ChildFrame.h"
 #include "Donut.h"
-#include "option\StartUpOption.h"
+#include "option\StartUpFinishOption.h"
 
 namespace {
 

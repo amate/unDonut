@@ -104,12 +104,96 @@ bool	FileReadString(const CString& strFile, std::list<CString>& Strings);
 BOOL	_SetCombboxCategory(CComboBox &cmb, HMENU hMenu);
 BOOL	_DontUseID(UINT uID);
 //----------------------------------------------
-/// メニューのコマンドに割り当てられた文字列をコンボボックスに追加する
-void	_PickUpCommandSub(HMENU hMenuSub, CComboBox &cmbCmd);
+/// メニューのコマンドに割り当てられた文字列をコンボボックス/リストボックスに追加する
+template <class boxT>
+void	PickUpCommandSub(CMenuHandle menuSub, boxT box)
+{
+	int nPopStartIndex = box.AddString(g_cSeparater);
+	int nAddCnt = 0;
+
+	int nCount = menuSub.GetMenuItemCount();
+	for (int ii = 0; ii < nCount; ++ii) {
+		HMENU	hMenuSub2 = menuSub.GetSubMenu(ii);
+		if (hMenuSub2)
+			PickUpCommandSub(hMenuSub2, box);
+
+		UINT	nCmdID	  = menuSub.GetMenuItemID(ii);
+		if ( _DontUseID(nCmdID) )
+			break;
+
+		CString strMenu;
+		CToolTipManager::LoadToolTipText(nCmdID, strMenu);
+
+		if ( strMenu.IsEmpty() )
+			continue;
+
+		int 	nIndex	  = box.AddString(strMenu);
+		box.SetItemData(nIndex, nCmdID);
+		nAddCnt++;
+	}
+
+	if (nAddCnt != 0)
+		box.AddString(g_cSeparater);
+	else
+		box.DeleteString(nPopStartIndex);
+}
 //-------------------------------------------------
 /// hMenuのnPopup番目のサブメニューのコマンドに割り当てられた文字列をコンボボックスに追加する
-void	_PickUpCommand(HMENU hMenu, int nPopup, CComboBox &cmbCmd);
+template <class boxT>
+void	PickUpCommand(CMenuHandle menuRoot, int nPopup, boxT box)
+{
+	CMenu	menu = menuRoot.GetSubMenu(nPopup);
+	box.ResetContent();
 
+	int nCount = menu.GetMenuItemCount();
+	for (int ii = 0; ii < nCount; ++ii) {
+		HMENU	hMenuSub = menu.GetSubMenu(ii);
+		if (hMenuSub)
+			PickUpCommandSub(hMenuSub, box);
+
+		UINT	nCmdID	 = menu.GetMenuItemID(ii);
+
+		if ( _DontUseID(nCmdID) )
+			break;
+
+		CString strMenu;
+		CToolTipManager::LoadToolTipText(nCmdID, strMenu);
+
+		if ( strMenu.IsEmpty() )
+			continue;
+
+		int nIndex = box.AddString(strMenu);
+		box.SetItemData(nIndex, nCmdID);
+	}
+
+	menu.Detach();
+
+	//不要なセパレータの削除
+	int   nCountSep = 0;
+	int   nCountCmb = box.GetCount();
+
+	for (int i = 0; i < nCountCmb - 1; i++) {
+		if (box.GetItemData(i) == 0) {
+			nCountSep++;
+
+			if (box.GetItemData(i + 1) == 0) {
+				box.DeleteString(i);
+				nCountCmb--;
+				i--;
+			}
+		}
+	}
+
+	if (nCountSep > 2) {
+		if (box.GetItemData(0) == 0)
+			box.DeleteString(0);
+
+		int nIndexLast = box.GetCount() - 1;
+
+		if (box.GetItemData(nIndexLast) == 0)
+			box.DeleteString(nIndexLast);
+	}
+}
 
 //-------------------------------------------------
 /// イメージリストのイメージをstrBmpFileのビットマップで置換する
