@@ -225,25 +225,26 @@ UINT CAccelerManager::FindCommandID(ACCEL *pAccel)
 /// 指定したコマンドIDを持つアクセラレータを削除してテーブルを再編する
 HACCEL CAccelerManager::DeleteAccelerator(UINT uCmd)
 {
-	ACCEL	   *lpAccel   = new ACCEL[m_nAccelSize - 1];
+	std::unique_ptr<ACCEL[]> lpAccel(new ACCEL[m_nAccelSize]);
 
 	BOOL		bFound	  = FALSE;
 	int 		iNewIndex = 0;
 
 	for (int ii = 0; ii < m_nAccelSize; ii++) {
-		if (uCmd != m_lpAccel[ii].cmd)
-			lpAccel[iNewIndex++] = m_lpAccel[ii];
-		else
+		if (uCmd == m_lpAccel[ii].cmd) {
 			bFound = TRUE;
+		} else {
+			lpAccel[iNewIndex] = m_lpAccel[ii];
+			++iNewIndex;
+		}
 	}
 
 	if (bFound == FALSE) {
-		delete[] lpAccel;
 		return m_hAccel;
 	} else {
 		m_nAccelSize--;
 		delete[] m_lpAccel;
-		m_lpAccel = lpAccel;
+		m_lpAccel = lpAccel.release();
 		::DestroyAcceleratorTable(m_hAccel);
 	}
 
