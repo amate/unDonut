@@ -39,7 +39,8 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 
 	CRect rcClient;
 	GetClientRect(rcClient);
-	rcClient.bottom	+= ptOffset.y;
+	rcClient.MoveToY(ptOffset.y);
+	//rcClient.bottom	+= ptOffset.y;
 
 	CMemoryDC	memDC(dc, rcClient);
 	HFONT hOldFont = memDC.SelectFont(m_Font);
@@ -52,6 +53,8 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		const DLItem& DLItem = *it->pDLItem;
 		CRect rcItem = it->rcItem;
 		rcItem.right = rcClient.right;
+		if (!(rcClient.PtInRect(rcItem.TopLeft()) || rcClient.PtInRect(rcItem.BottomRight())))
+			continue;
 
 		memDC.SetBkMode(TRANSPARENT);
 		if (it->dwState & DLITEMSTATE_SELECTED) {
