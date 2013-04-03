@@ -567,6 +567,7 @@ protected:
 			else
 				item.state = POPUPITEMSTATES::MPI_DISABLEDHOT;
 			//if ( item.ModifyState(0, item.kItemHot) )
+			ScrollToView(item.rect);
 				InvalidateRect(_GetClientItemRect(item.rect));
 		}
 	}

@@ -1121,18 +1121,25 @@ void	CDonutToolBar::Impl::_WaitCloseCustomPopupMenu()
 	for (;;) {
 		MSG msg = {};
 		BOOL bRet = ::GetMessage(&msg, NULL, 0, 0);
-		if(bRet == -1)
-		{
+		if (bRet == -1) {
 			ATLTRACE2(atlTraceUI, 0, _T("::GetMessage returned -1 (error)\n"));
 			continue;   // error, don't process
-		}
-		else if(!bRet)
-		{
+
+		} else if(!bRet) {
 			ATLTRACE2(atlTraceUI, 0, _T("CMessageLoop::Run - exiting\n"));
 			break;   // WM_QUIT, exit message loop
 		}
+		// メニューが閉じる
 		if (msg.message == WM_NULL && msg.hwnd == NULL)
 			break;
+
+		// メニューにキー入力を処理させる
+		if (s_pSubMenu && s_pSubMenu->PreTranslateMessage(&msg)) {
+			// Esc押されたのでメニューを閉じる
+			if (msg.message == WM_KEYDOWN && msg.wParam == VK_ESCAPE)
+				_CloseSubMenu();
+			continue ;
+		}
 
 		if (msg.message == WM_COMMAND && msg.hwnd == hWndMainFrame) {
 			nCommandID = (UINT)msg.wParam;	// コマンドは遅延実行する

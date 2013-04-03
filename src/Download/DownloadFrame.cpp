@@ -24,7 +24,7 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	// スプリッタウィンドウを作成
 	m_wndSplitter.Create(m_hWnd);
-	m_wndSplitter.SetSplitterExtendedStyle(0);
+	m_wndSplitter.SetSplitterExtendedStyle(SPLIT_RIGHTALIGNED);
 
 	// DownloadingListView作成
 	m_wndDownloadingListView.Create(m_wndSplitter, rcDefault, nullptr
@@ -40,18 +40,9 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 
 	m_wndDownloadingListView.SetAddDownloadedItemfunc(std::bind(&CDownloadedListView::AddDownloadedItem, &m_wndDownloadedListView, std::placeholders::_1));
 
-#if 0
-	// コマンドバー ウィンドウの作成
-	HWND hWndCmdBar = m_CmdBar.Create(m_hWnd, rcDefault, NULL, ATL_SIMPLE_CMDBAR_PANE_STYLE);
-	// メニューのアタッチ
-	m_CmdBar.AttachMenu(GetMenu());
-	// コマンドバー画像の読み込み
-	m_CmdBar.LoadImages(IDR_MAINFRAME);
-#endif
 	// 以前のメニューの削除
 	SetMenu(NULL);
 
-	//HWND hWndToolBar = CreateSimpleToolBarCtrl(m_hWnd, IDR_MAINFRAME, FALSE, ATL_SIMPLE_TOOLBAR_PANE_STYLE);
 	CToolBarCtrl	wndToolBar;
 	HWND hWndToolBar = wndToolBar.Create(m_hWnd, rcDefault, 0, ATL_SIMPLE_TOOLBAR_PANE_STYLE | TBSTYLE_LIST);
 	wndToolBar.SetButtonStructSize();
@@ -69,15 +60,11 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	wndToolBar.AddButton(ID_DLAPP_ABOUT	 , TBSTYLE_BUTTON, TBSTATE_ENABLED , 3, _T("About"), 0);
 
 	CreateSimpleReBar(ATL_SIMPLE_REBAR_NOBORDER_STYLE);
-	//AddSimpleReBarBand(hWndCmdBar);
+
 	AddSimpleReBarBand(hWndToolBar, NULL, TRUE);
 
-	//CreateSimpleStatusBar();
-
-	//m_hWndClient = m_view.Create(m_hWnd, rcDefault, NULL, WS_CHILD | WS_VISIBLE | WS_CLIPSIBLINGS | WS_CLIPCHILDREN, WS_EX_CLIENTEDGE);
 	m_hWndClient = m_wndSplitter;
 
-#if 1
 	// 位置を復元する
 	CString strIniFile = GetConfigFilePath(_T("Download.ini"));
 	CIniFileI	pr(strIniFile, _T("Main"));
@@ -88,24 +75,25 @@ int		CDownloadFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	rcWindow.bottom	= pr.GetValue(_T("bottom"), -1);
 	if (rcWindow != CRect(-1, -1, -1, -1)) {
 		MoveWindow(rcWindow);
-	}
-
-	int nSplitterPos = pr.GetValue(_T("SplitterPos"), -1);
-	if (nSplitterPos != -1) {
-		m_wndSplitter.SetSplitterPos(nSplitterPos);
+	} else {
+		enum { kDefaultcxy = 500 };
+		MoveWindow(0, 0, kDefaultcxy, kDefaultcxy);
+		CenterWindow();
 	}
 	if (pr.GetValue(_T("ShowWindow"), FALSE) && CDownloadManager::UseDownloadManager()) {
 		ShowWindow(TRUE);
 		m_bVisible = true;
 	}
+	int nSplitterPos = pr.GetValue(_T("SplitterPos"), -1);
+	if (nSplitterPos < -1)
+		nSplitterPos = -1;
+	m_wndSplitter.SetSplitterPos(nSplitterPos);
 
 	CDLOptions::LoadProfile();
 	if (::PathIsDirectory(CDLOptions::strDLFolderPath) == FALSE && CDownloadManager::UseDownloadManager()) {
 		MessageBox(_T("ダウンロード先のフォルダが存在しません。\n")
 			_T("ダウンロード開始前にオプションから保存先フォルダを設定してください。"));
 	}
-	//m_wndDownloadingListView.SetDLFolder(CDLOption::strDLFolderPath);
-#endif
 
 	return 0;
 }
@@ -119,7 +107,7 @@ void	CDownloadFrame::OnDestroy()
 
 	// 位置を保存する
 	CRect rcWindow;
-	if (m_bVisible) {
+	if (m_bVisible && IsIconic() == false) {
 		GetWindowRect(rcWindow);
 		pr.SetValue(TRUE, _T("ShowWindow"));
 	} else {
@@ -132,9 +120,9 @@ void	CDownloadFrame::OnDestroy()
 		pr.SetValue(rcWindow.right, _T("right"));
 		pr.SetValue(rcWindow.bottom, _T("bottom"));
 	}
-
-
 	int nSplitterPos = m_wndSplitter.GetSplitterPos();
+	if (nSplitterPos < 0)
+		nSplitterPos = -1;
 	pr.SetValue(nSplitterPos, _T("SplitterPos"));
 
 }
@@ -192,7 +180,7 @@ LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 {
 	//CAboutDlg dlg;
 	//dlg.DoModal();
-	MessageBox(_T("　　　version 3.2　　　"), _T("DownloadManager"));
+	MessageBox(_T("　　　version 3.3　　　"), _T("DownloadManager"));
 	return 0;
 }
 
