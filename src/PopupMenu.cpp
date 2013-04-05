@@ -898,7 +898,7 @@ void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBot
 	
 		m_vecMenuItem.pop_back();	// dummyMenuItem erase
 
-		Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+		Create(GetDesktopWindow(), rcWindow);
 		ShowWindow(SW_SHOWNOACTIVATE);
 
 		CRect rcTemp = rcWindow;
@@ -928,7 +928,7 @@ void	CRootFavoritePopupMenu::DoTrackPopupMenu(CMenuHandle menu, CPoint ptLeftBot
 		}
 		m_vecMenuItem.back().name	= _T("お気に入りを読み込み中です...");
 
-		Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+		Create(GetDesktopWindow(), rcWindow);
 		ShowWindow(SW_SHOWNOACTIVATE);
 	}
 }
@@ -974,7 +974,7 @@ void	CRootFavoritePopupMenu::DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClien
 	
 		m_vecMenuItem.pop_back();	// dummyMenuItem erase
 
-		Create(hWndParent, rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+		Create(hWndParent, rcWindow);
 		ShowWindow(SW_SHOWNOACTIVATE);
 
 		CRect rcTemp = rcWindow;
@@ -1005,7 +1005,7 @@ void	CRootFavoritePopupMenu::DoTrackSubPopupMenu(CMenuHandle menu, CRect rcClien
 		}
 		m_vecMenuItem.back().name	= _T("お気に入りを読み込み中です...");
 
-		Create(GetDesktopWindow(), rcWindow, NULL, WS_POPUP | WS_BORDER , WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE);
+		Create(GetDesktopWindow(), rcWindow);
 		ShowWindow(SW_SHOWNOACTIVATE);
 	}
 }
@@ -1110,7 +1110,7 @@ bool	CRootFavoritePopupMenu::PreTranslateMessage(MSG* pMsg)
 				}
 				return true;
 			}
-		} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && (m_pSubMenu == nullptr && m_pLinkSubMenu->m_pSubMenu == nullptr)) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+		} else if ((nChar == VK_LEFT || nChar == VK_ESCAPE) && (m_pSubMenu == nullptr && m_pLinkSubMenu->m_pSubMenu == nullptr)) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
 			return true;
 
 		} else {	// プレフィックス処理
@@ -1172,9 +1172,9 @@ bool	CRootFavoritePopupMenu::PreTranslateMessage(MSG* pMsg)
 							m_pLinkSubMenu->_HotItem(vecSamePrefixIndex.front() - kLinkItemBound);
 						}
 					}
+					return true;
 				}
 			}
-			return true;
 		}
 	}
 	return false;

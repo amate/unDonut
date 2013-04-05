@@ -678,6 +678,16 @@ BOOL CMainFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		}
 	}
 
+	if ((WM_KEYFIRST <= pMsg->message || pMsg->message <= WM_KEYLAST) && pMsg->hwnd == m_CommandBar.GetHWND()) {
+		HWND hWndActiveChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
+		if (hWndActiveChildFrame) {
+			HWND hWndDonutView = ::GetWindow(hWndActiveChildFrame, GW_CHILD);
+			bool bProcess = ::SendMessage(hWndDonutView, WM_FORWARDMSG, 0, (LPARAM) pMsg) != 0;
+			if (bProcess)
+				return TRUE;
+		}
+	}
+
 	return CFrameWindowImpl<CMainFrame::Impl>::PreTranslateMessage(pMsg);
 }
 

@@ -320,7 +320,7 @@ public:
 					}
 					return true;
 				}
-			} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+			} else if ((nChar == VK_LEFT || nChar == VK_ESCAPE) && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
 				return true;
 
 			} else {	// プレフィックス処理
@@ -358,8 +358,8 @@ public:
 						}
 						_HotItem(vecSamePrefixIndex.front());
 					}
+					return true;
 				}
-				return true;
 			}
 		}
 		return false;

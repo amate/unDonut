@@ -1030,7 +1030,7 @@ BOOL CLinkPopupMenu::PreTranslateMessage(MSG* pMsg)
 				}
 				return true;
 			}
-		} else if (nChar == VK_LEFT && nChar == VK_ESCAPE && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
+		} else if ((nChar == VK_LEFT || nChar == VK_ESCAPE) && m_pSubMenu == nullptr) {		// 自分が最上階のポップアップメニューなら自分自身を親に閉じてもらう
 			return true;
 		} else {	// プレフィックス処理
 			int nCount = (int)m_pFolder->size();
