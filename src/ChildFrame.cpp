@@ -402,6 +402,7 @@ public:
 		MSG_WM_COPYDATA		( OnCopyData	)
 		MSG_WM_SETFOCUS		( OnSetFocus	)
 		MSG_WM_TIMER		( OnTimer		)
+		MESSAGE_HANDLER_EX( WM_FORWARDMSG, OnForwardMsg )
 
 		MESSAGE_HANDLER_EX( WM_DELAYDOCUMENTCOMPLETE	, OnDelayDocumentComplete	)
 		MESSAGE_HANDLER_EX( WM_DELAYHILIGHT				, OnDelayHilight )
@@ -501,6 +502,7 @@ public:
 	BOOL	OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct);
 	void	OnSetFocus(CWindow wndOld);
 	void	OnTimer(UINT_PTR nIDEvent);
+	LRESULT OnForwardMsg(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDelayHilight(UINT uMsg, WPARAM wParam, LPARAM lParam);
@@ -658,6 +660,8 @@ private:
 	};
 	FindHilightData	m_SearchBarHilightData;
 	FindHilightData m_FindBarHilightData;
+
+	CSharedMemory	m_sharedMemKeyMessage;
 };
 
 #include "ChildFrame.inl"

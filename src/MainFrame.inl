@@ -681,8 +681,8 @@ BOOL CMainFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	if ((WM_KEYFIRST <= pMsg->message || pMsg->message <= WM_KEYLAST) && pMsg->hwnd == m_CommandBar.GetHWND()) {
 		HWND hWndActiveChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
 		if (hWndActiveChildFrame) {
-			HWND hWndDonutView = ::GetWindow(hWndActiveChildFrame, GW_CHILD);
-			bool bProcess = ::SendMessage(hWndDonutView, WM_FORWARDMSG, 0, (LPARAM) pMsg) != 0;
+			*static_cast<MSG*>(m_sharedMemKeyMessage.GetPointer()) = *pMsg;
+			bool bProcess = ::SendMessage(hWndActiveChildFrame, WM_FORWARDMSG, 0, 0) != 0;
 			if (bProcess)
 				return TRUE;
 		}
@@ -810,6 +810,10 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	CDLControlOption::SetUserAgent();
 
 	RegisterDragDrop();
+
+	CString strSharedMemNameKeyMessage;
+	strSharedMemNameKeyMessage.Format(_T("DonutKeyMessageSharedMemName%#x"), m_hWnd);
+	m_sharedMemKeyMessage.CreateSharedMemory(strSharedMemNameKeyMessage, sizeof(MSG));
 
 	TIMERSTOP(L"ÉÅÉCÉìÉtÉåÅ[ÉÄÇÃOnCreateÇ…Ç©Ç©Ç¡ÇΩéûä‘");
 	return 0;
@@ -946,6 +950,8 @@ void	CMainFrame::Impl::OnDestroy()
 	_PrivateTerm();		// ê›íËÇÃï€ë∂
 
 	KillTimer(kAutoBackupTimerId);
+
+	m_sharedMemKeyMessage.CloseHandle();
 
 	RevokeDragDrop();
 

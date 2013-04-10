@@ -30,6 +30,7 @@ public:
 	}
 
 	HANDLE	Handle() const { return m_hMap; }
+	void*	GetPointer() const { return m_pView; }
 
 	void	CloseHandle()
 	{

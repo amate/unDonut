@@ -296,7 +296,7 @@ void	CChildFrame::Impl::OnStateDownloading()
 {
 	READYSTATE	state;
 	HRESULT hr = m_spBrowser->get_ReadyState(&state);
-	if (hr == S_OK && state == READYSTATE_COMPLETE)
+	if (hr == S_OK && (state == READYSTATE_COMPLETE || state == READYSTATE_INTERACTIVE))
 		return;
 
 	//m_MDITab.SetDownloading(m_hWnd);
@@ -319,7 +319,13 @@ void	CChildFrame::Impl::OnStateCompleted()
 /// document‚ª‘€ì‚Å‚«‚é‚æ‚¤‚É‚È‚Á‚½
 void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strURL)
 {
-	if ( IsPageIWebBrowser(pDisp) ) {
+	if (strURL.IsEmpty()) {
+		READYSTATE	state;
+		HRESULT hr = m_spBrowser->get_ReadyState(&state);
+		OnStateCompleted();
+	}
+
+	if ( IsPageIWebBrowser(pDisp) || strURL.IsEmpty() ) {
 		m_bFirstNavigate = false;
 
 		// Ž©“®ƒŠƒTƒCƒY‚ÌÝ’è‚ð‰Šú‰»
@@ -970,6 +976,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		return TRUE;
 	//if (g_pMainWnd->m_hAccel != NULL && ::TranslateAccelerator(m_hWnd, g_pMainWnd->m_hAccel, pMsg))
 	//		return TRUE;
+
 	return m_view.PreTranslateMessage(pMsg);
 }
 
@@ -1125,6 +1132,10 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 		SetRegisterAsBrowser(true);
 	SetVisible(true);
 
+	CString strKeyMessageSharedMemName;
+	strKeyMessageSharedMemName.Format(_T("DonutKeyMessageSharedMemName%#x"), wndMainFrame.m_hWnd);
+	m_sharedMemKeyMessage.OpenSharedMemory(strKeyMessageSharedMemName, true);
+
 	CMessageLoop *pLoop = _Module.GetMessageLoop();
 	pLoop->AddMessageFilter(this);
 
@@ -1135,6 +1146,8 @@ void	CChildFrame::Impl::OnDestroy()
 {
 	m_bClosing = true;
 	HRESULT hr = m_spBrowser->Stop();
+
+	m_sharedMemKeyMessage.CloseHandle();
 
     CMessageLoop* pLoop = _Module.GetMessageLoop();
     pLoop->RemoveMessageFilter(this);
@@ -1306,6 +1319,11 @@ void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 			_HilightText(strWords, true);
 		}
 	}
+}
+
+LRESULT CChildFrame::Impl::OnForwardMsg(UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	return m_view.SendMessage(WM_FORWARDMSG, 0, (LPARAM)m_sharedMemKeyMessage.GetPointer());
 }
 
 
@@ -3290,6 +3308,8 @@ void	CChildFrame::Impl::_SetFavicon(const CString& strURL)
 						DWORD	dwSize = INTERNET_MAX_URL_LENGTH;
 						hr = ::UrlCombine(strURL, strhref, strFaviconURL.GetBuffer(INTERNET_MAX_URL_LENGTH), &dwSize, 0);
 						strFaviconURL.ReleaseBuffer();
+						if (strFaviconURL.Left(2) == _T("//"))
+							strFaviconURL.Insert(0, _T("http:"));
 						if (SUCCEEDED(hr))
 							return false;
 					}

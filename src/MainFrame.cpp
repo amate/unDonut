@@ -412,6 +412,8 @@ private:
 	std::set<DWORD>	m_setChildProcessId;
 
 	CDonutScriptHost	m_donutScriptHost;
+
+	CSharedMemory	m_sharedMemKeyMessage;
 };
 
 #include "MainFrame.inl"
