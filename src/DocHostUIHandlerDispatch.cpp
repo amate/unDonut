@@ -70,14 +70,14 @@ STDMETHODIMP CDocHostUIHandlerDispatch::TranslateAccelerator(
 	/* [in] */ DWORD			nCmdID,
 	/* [retval][out] */HRESULT* dwRetVal)
 {
-	if (::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
-		if (wParam == 'F') {
-			if (m_pView->GetParent().SendMessage(WM_COMMAND, ID_EDIT_FIND)) {
-				*dwRetVal = S_OK;
-				return S_OK;
-			}
-		}
-	}
+	//if (::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
+	//	if (wParam == 'F') {
+	//		if (m_pView->GetParent().SendMessage(WM_COMMAND, ID_EDIT_FIND)) {
+	//			*dwRetVal = S_OK;
+	//			return S_OK;
+	//		}
+	//	}
+	//}
 
 	return S_FALSE; //IE default action
 }
@@ -94,8 +94,6 @@ HRESULT	CDocHostUIHandlerDispatch::_ShowCustomContextMenu(DWORD dwID, POINT* ppt
 	HWND hWndTopLevel = CWindow(hWndTarget).GetTopLevelWindow();
 
 	m_nContextMenuMode	= 0;	//+++
-	// まずメニュー用のリソースが使用されていればそれを開放する
-	::SendMessage(hWndTopLevel, WM_RELEASE_CONTEXTMENU, 0, 0);
 
 	if (::GetKeyState(VK_LBUTTON) < 0) 
 		dwID = CONTEXT_MENU_HOLDLEFTBUTTON;
