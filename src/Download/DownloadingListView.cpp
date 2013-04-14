@@ -53,7 +53,7 @@ void	CDownloadingListView::DoPaint(CDCHandle dc)
 		const DLItem& DLItem = *it->pDLItem;
 		CRect rcItem = it->rcItem;
 		rcItem.right = rcClient.right;
-		if (!(rcClient.PtInRect(rcItem.TopLeft()) || rcClient.PtInRect(rcItem.BottomRight())))
+		if (memDC.RectVisible(&rcItem) == FALSE)
 			continue;
 
 		memDC.SetBkMode(TRANSPARENT);
