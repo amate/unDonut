@@ -846,6 +846,17 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		&& pMsg->message == WM_LBUTTONDOWN
 		&& m_pGlobalConfig->AutoImageResizeType != AUTO_IMAGE_RESIZE_NONE)
 	{
+		CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
+		CRect	rc;
+		GetClientRect(&rc);
+		if (m_nImgSclSw == 0) {
+			rc.right -= GetSystemMetrics(SM_CXVSCROLL);
+			rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
+		}
+		// スクロールバーをクリックしたときは何もしない
+		if (m_nImgScl == 100 && rc.PtInRect(pt) == false)
+			return FALSE;
+
 		CPoint ptCur;
 		GetCursorPos(&ptCur);
 		if (::DragDetect(m_hWnd, ptCur)) {
@@ -881,13 +892,6 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 			} 
 		} else {
 			// 拡大/原寸のトグル切替
-			CPoint pt(GET_X_LPARAM(pMsg->lParam), GET_Y_LPARAM(pMsg->lParam));
-			CRect	rc;
-			GetClientRect(&rc);
-			if (m_nImgSclSw == 0) {
-				rc.right -= GetSystemMetrics(SM_CXVSCROLL);
-				rc.bottom-= GetSystemMetrics(SM_CYHSCROLL);
-			}
 			if (rc.PtInRect(pt))
 				OnHtmlZoom(0, ID_HTMLZOOM_100TOGLE, (HWND)true);
 			return TRUE;
