@@ -630,6 +630,8 @@
 #define IDC_BTN_EXPORT                  1455
 #define IDC_NAME1                       1456
 #define IDC_STATIC_EXSISTCOMMAND        1457
+#define IDC_CHECKBOX_ENABLE_AUTOLOGIN	1458
+#define IDC_CHECKBOX_AUTOFILLONLY		1459
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -1031,7 +1033,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        335
 #define _APS_NEXT_COMMAND_VALUE         33242
-#define _APS_NEXT_CONTROL_VALUE         1458
+#define _APS_NEXT_CONTROL_VALUE         1460
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

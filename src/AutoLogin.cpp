@@ -19,11 +19,11 @@ using namespace std;
 /////////////////////////////////////////////
 // CLoginDataManager
 
-#define AUTOLOGINVERSION	_T("3.0")
+#define AUTOLOGINVERSION	_T("3.1")
 #define AUTOLOGINSHAREDMEMNAME	_T("DonutAutoLoginSharedMemName")
 
 // 定義
-vector<LoginInfomation>	CLoginDataManager::s_vecLoginInfo;
+LoginInfoData	CLoginDataManager::s_loginInfoData;
 CSharedMemory	CLoginDataManager::s_sharedMem;
 
 
@@ -36,7 +36,7 @@ void CLoginDataManager::CreateOriginalLoginDataList(HWND hWndMainFrame)
 
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), AUTOLOGINSHAREDMEMNAME, hWndMainFrame);
-	s_sharedMem.Serialize(s_vecLoginInfo, sharedMemName);
+	s_sharedMem.Serialize(s_loginInfoData, sharedMemName);
 }
 
 // for ChildFrame
@@ -45,10 +45,10 @@ void CLoginDataManager::UpdateLoginDataList(HWND hWndMainFrame)
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), AUTOLOGINSHAREDMEMNAME, hWndMainFrame);
 	CSharedMemory sharedMem;
-	sharedMem.Deserialize(s_vecLoginInfo, sharedMemName);
+	sharedMem.Deserialize(s_loginInfoData, sharedMemName);
 }
 
-bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2* pBrowser)
+bool CLoginDataManager::DoAutoLogin(int nIndex, IWebBrowser2* pBrowser)
 {
 	ATLASSERT( nIndex != -1 );
 
@@ -109,12 +109,14 @@ bool CLoginDataManager::DoAutoLogin(const CString& url, int nIndex, IWebBrowser2
 					return true;
 				});
 				if (nFoundCount == static_cast<int>(map2.size() + mapCheck.size())) {
-					// 一致したので自動ログインする
-					if (spSubmit.p) {
-						spSubmit->click();
-					} else {
-						spForm->submit();
-						//this->SetTimer(FlashIconTimerID, 1000);
+					if (s_loginInfoData.vecLoginInfo[nIndex].bAutoFillOnly == false) {
+						// 一致したので自動ログインする
+						if (spSubmit.p) {
+							spSubmit->click();
+						} else {
+							spForm->submit();
+							//this->SetTimer(FlashIconTimerID, 1000);
+						}
 					}
 					bSuccess = true;
 					return false;
@@ -134,7 +136,7 @@ void	CLoginDataManager::Load()
 {
 	CString LoginDataPath = GetConfigFilePath(_T("AutoLoginData"));
 
-	s_vecLoginInfo.reserve(20);
+	s_loginInfoData.vecLoginInfo.reserve(20);
 
 	if (::PathFileExists(LoginDataPath) == FALSE)
 		return ;
@@ -159,7 +161,7 @@ void	CLoginDataManager::Load()
 	std::wstring strData = (LPCWSTR)DataOut.pbData;
 	LocalFree(DataOut.pbData);
 
-	/* s_vecLoginInfo に設定 */
+	/* s_loginInfoData.vecLoginInfo に設定 */
 	_DeSerializeLoginData(strData);
 }
 
@@ -168,7 +170,7 @@ void	CLoginDataManager::Load()
 /// 暗号化して保存する
 void	CLoginDataManager::Save()
 {
-	/* s_vecLoginInfo を直列化 */
+	/* s_loginInfoData.vecLoginInfo を直列化 */
 	std::wstring strData;
 	_SerializeLoginData(strData);
 
@@ -191,7 +193,7 @@ void	CLoginDataManager::Import(LPCTSTR strPath)
 {
 	vector<char> data;
 	if (_ReadData(strPath, data)) {
-		/* s_vecLoginInfo に設定 */
+		/* s_loginInfoData.vecLoginInfo に設定 */
 		std::wstring strData = (LPCWSTR)data.data();
 		_DeSerializeLoginData(strData);
 	}
@@ -200,7 +202,7 @@ void	CLoginDataManager::Import(LPCTSTR strPath)
 //-----------------------
 void	CLoginDataManager::Export(LPCTSTR strPath)
 {
-	/* s_vecLoginInfo を直列化 */
+	/* s_loginInfoData.vecLoginInfo を直列化 */
 	std::wstring strData;
 	_SerializeLoginData(strData);
 
@@ -213,14 +215,17 @@ void	CLoginDataManager::Export(LPCTSTR strPath)
 /// マッチするログインURLのインデックスを返す
 int		CLoginDataManager::Find(LPCTSTR strUrl)
 {
+	if (s_loginInfoData.bEnableAutoLogin == false)
+		return -1;
+
 	CString strLoginUrl = strUrl;
 	strLoginUrl.MakeLower();
 
-	int nCount = s_vecLoginInfo.size();
+	int nCount = s_loginInfoData.vecLoginInfo.size();
 	for (int i = 0; i < nCount; ++i) {
-		if (strLoginUrl.GetLength() < s_vecLoginInfo[i].strLoginUrl.GetLength())
+		if (strLoginUrl.GetLength() < s_loginInfoData.vecLoginInfo[i].strLoginUrl.GetLength())
 			continue;
-		if (strLoginUrl.Left(s_vecLoginInfo[i].strLoginUrl.GetLength()) == s_vecLoginInfo[i].strLoginUrl)
+		if (strLoginUrl.Left(s_loginInfoData.vecLoginInfo[i].strLoginUrl.GetLength()) == s_loginInfoData.vecLoginInfo[i].strLoginUrl)
 			return i;
 	}
 	
@@ -230,13 +235,13 @@ int		CLoginDataManager::Find(LPCTSTR strUrl)
 //----------------------------------
 void	CLoginDataManager::GetNameValueMap(int nIndex, NameValueMap*& pmap)
 {
-	pmap = &s_vecLoginInfo[nIndex].mapNameValue;
+	pmap = &s_loginInfoData.vecLoginInfo[nIndex].mapNameValue;
 }
 
 //---------------------------------
 void	CLoginDataManager::GetCheckboxMap(int nIndex, CheckboxMap*& pmapCheckbox)
 {
-	pmapCheckbox = &s_vecLoginInfo[nIndex].mapCheckbox;
+	pmapCheckbox = &s_loginInfoData.vecLoginInfo[nIndex].mapCheckbox;
 }
 
 
@@ -266,7 +271,7 @@ bool	CLoginDataManager::_ReadData(LPCTSTR strPath, vector<char>& vecData)
 /// strDataからログイン情報に追加する
 void	CLoginDataManager::_DeSerializeLoginData(const std::wstring& strData)
 {
-	s_vecLoginInfo.clear();
+	s_loginInfoData.vecLoginInfo.clear();
 
 	/* 改行単位にばらす */
 	vector<std::wstring>	vecLine;
@@ -283,34 +288,48 @@ void	CLoginDataManager::_DeSerializeLoginData(const std::wstring& strData)
 				break;	// 終わり
 		}
 	}
-	/* s_vecLoginInfo に追加 */
-	for (auto it = vecLine.cbegin(); it != vecLine.cend(); ++it) {
-		wregex	rxUrl(L"\\[(.*?)\\]");
-		wsmatch	match;
-		if (std::regex_match(*it, match, rxUrl)) {
-			LoginInfomation	info;
-			info.strLoginUrl = match.str(1).c_str();
+	if (vecLine.size() > 0) {
+		auto it = vecLine.cbegin();
+		if (::wcsncmp(it->c_str(), _T("EnableAutoLogin="), 16) == 0) {
+			if (it->substr(16) == L"true") {
+				s_loginInfoData.bEnableAutoLogin = true;
+			} else {
+				s_loginInfoData.bEnableAutoLogin = false;
+			}
 			++it;
-			if (it == vecLine.cend())
-				break;	// 終わり
-
-			wregex	rxNameValue(L"([^=]+)=(.*)");
-			wsmatch	match2;
-			while (std::regex_match(*it, match2, rxNameValue)) {
-				CString strName = match2.str(1).c_str();
-				if (strName.Left(9) == _T("checkbox:")) {
-					info.mapCheckbox.insert(std::make_pair(strName.Mid(9), match2.str(2) == L"true"));
-				} else {
-					info.mapNameValue.insert(std::make_pair(match2.str(1).c_str(), match2.str(2).c_str()));
-				}
+		}
+		/* s_loginInfoData.vecLoginInfo に追加 */
+		for (; it != vecLine.cend(); ++it) {
+			wregex	rxUrl(L"\\[(.*?)\\]");
+			wsmatch	match;
+			if (std::regex_match(*it, match, rxUrl)) {
+				LoginInfomation	info;
+				info.strLoginUrl = match.str(1).c_str();
 				++it;
 				if (it == vecLine.cend())
 					break;	// 終わり
+
+				wregex	rxNameValue(L"([^=]+)=(.*)");
+				wsmatch	match2;
+				while (std::regex_match(*it, match2, rxNameValue)) {
+					CString strName = match2.str(1).c_str();
+					CString strValue = match2.str(2).c_str();
+					if (strName == _T("AutoFillOnly")) {
+						info.bAutoFillOnly	= strValue == _T("true");
+					} else if (strName.Left(9) == _T("checkbox:")) {
+						info.mapCheckbox.insert(std::make_pair(strName.Mid(9), strValue == L"true"));
+					} else {
+						info.mapNameValue.insert(std::make_pair(strName, strValue));
+					}
+					++it;
+					if (it == vecLine.cend())
+						break;	// 終わり
+				}
+				--it;	// 進めすぎたので戻しておく
+				s_loginInfoData.vecLoginInfo.push_back(info);
 			}
-			--it;	// 進めすぎたので戻しておく
-			s_vecLoginInfo.push_back(info);
-		}
 	
+		}
 	}
 }
 
@@ -318,7 +337,10 @@ void	CLoginDataManager::_DeSerializeLoginData(const std::wstring& strData)
 /// ログイン情報をstrDataに追加する
 void	CLoginDataManager::_SerializeLoginData(std::wstring& strData)
 {
-	for (auto it = s_vecLoginInfo.cbegin(); it != s_vecLoginInfo.cend(); ++it) {
+	strData = _T("EnableAutoLogin=");
+	strData += s_loginInfoData.bEnableAutoLogin ? _T("true") : _T("false");
+	strData += _T("\n");
+	for (auto it = s_loginInfoData.vecLoginInfo.cbegin(); it != s_loginInfoData.vecLoginInfo.cend(); ++it) {
 		CString temp;
 		temp.Format(_T("[%s]\n"), it->strLoginUrl);
 		strData += temp;
@@ -332,6 +354,9 @@ void	CLoginDataManager::_SerializeLoginData(std::wstring& strData)
 				strData += temp;
 			}
 		}
+		strData += _T("AutoFillOnly=");
+		strData += it->bAutoFillOnly ? _T("true") : _T("false");
+		strData += _T("\n");
 	}
 }
 
@@ -378,9 +403,11 @@ BOOL	CLoginInfoEditDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 	strTitle.Format(_T("%s - ver %s"), strtemp, strVersion);
 	SetWindowText(strTitle);
 
+	m_bEnableAutoLogin = s_loginInfoData.bEnableAutoLogin;
+
 	_SetLoginInfoData();
 
-	for (auto it = s_vecLoginInfo.cbegin(); it != s_vecLoginInfo.cend(); ++it) {
+	for (auto it = s_loginInfoData.vecLoginInfo.cbegin(); it != s_loginInfoData.vecLoginInfo.cend(); ++it) {
 		m_UrlList.AddString(it->strLoginUrl);
 	}
 	return 0;
@@ -389,12 +416,15 @@ BOOL	CLoginInfoEditDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 //------------------------------
 void	CLoginInfoEditDialog::OnApply(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	DoDataExchange(DDX_SAVE, IDC_CHECKBOX_ENABLE_AUTOLOGIN);
+	s_loginInfoData.bEnableAutoLogin = m_bEnableAutoLogin;
+
 	int nIndex = m_UrlList.GetCurSel();
 	if (nIndex == -1)
 		return ;
 
 	_SetCopyLoginInfo();
-	LoginInfomation& info = s_vecLoginInfo[nIndex];
+	LoginInfomation& info = s_loginInfoData.vecLoginInfo[nIndex];
 	info = m_info;
 
 	m_UrlList.DeleteString(nIndex);
@@ -408,7 +438,7 @@ void	CLoginInfoEditDialog::OnAdd(UINT uNotifyCode, int nID, CWindow wndCtl)
 	_SetCopyLoginInfo();
 	int nIndex = m_UrlList.AddString(m_Url);
 	m_UrlList.SetCurSel(nIndex);
-	s_vecLoginInfo.push_back(m_info);
+	s_loginInfoData.vecLoginInfo.push_back(m_info);
 }
 
 //------------------------------
@@ -418,7 +448,7 @@ void	CLoginInfoEditDialog::OnDelete(UINT uNotifyCode, int nID, CWindow wndCtl)
 	if (nIndex == -1)
 		return;
 
-	s_vecLoginInfo.erase(s_vecLoginInfo.begin() + nIndex);
+	s_loginInfoData.vecLoginInfo.erase(s_loginInfoData.vecLoginInfo.begin() + nIndex);
 	m_UrlList.DeleteString(nIndex);
 	if (nIndex < m_UrlList.GetCount() || 0 <= --nIndex) {
 		m_UrlList.SetCurSel(nIndex);
@@ -446,8 +476,8 @@ void	CLoginInfoEditDialog::OnImport(UINT uNotifyCode, int nID, CWindow wndCtl)
 		_T("テキスト ファイル (*.txt)\0*.txt\0すべてのファイル (*.*)\0*.*\0\0"));
 	if (dlg.DoModal() == IDOK) {
 		Import(dlg.m_szFileName);
-		while (m_UrlList.DeleteString(0) != -1) ;	
-		for (auto it = s_vecLoginInfo.cbegin(); it != s_vecLoginInfo.cend(); ++it) {
+		m_UrlList.ResetContent();
+		for (auto it = s_loginInfoData.vecLoginInfo.cbegin(); it != s_loginInfoData.vecLoginInfo.cend(); ++it) {
 			m_UrlList.AddString(it->strLoginUrl);
 		}
 		OnNew(0, 0, NULL);
@@ -484,6 +514,9 @@ void	CLoginInfoEditDialog::OnTest(UINT uNotifyCode, int nID, CWindow wndCtl)
 //------------------------------
 void	CLoginInfoEditDialog::OnFinish(UINT uNotifyCode, int nID, CWindow wndCtl)
 {
+	DoDataExchange(DDX_SAVE, IDC_CHECKBOX_ENABLE_AUTOLOGIN);
+	s_loginInfoData.bEnableAutoLogin = m_bEnableAutoLogin;
+
 	Save();
 
 	CreateOriginalLoginDataList(GetParent());
@@ -506,7 +539,7 @@ void CLoginInfoEditDialog::OnUrlListChange(UINT uNotifyCode, int nID, CWindow wn
 	if (nIndex == -1)
 		return ;
 
-	m_info = s_vecLoginInfo[nIndex];
+	m_info = s_loginInfoData.vecLoginInfo[nIndex];
 	_SetLoginInfoData();
 }
 
@@ -545,6 +578,7 @@ void	CLoginInfoEditDialog::_SetLoginInfoData()
 			++it;
 		}
 	}
+	m_bAutoFillOnly	= m_info.bAutoFillOnly;
 	DoDataExchange(DDX_LOAD);
 }
 
@@ -569,4 +603,5 @@ void	CLoginInfoEditDialog::_SetCopyLoginInfo()
 			m_info.mapCheckbox.insert(std::make_pair(m_CheckboxName[i], m_bCheck[i]));
 		}
 	}
+	m_info.bAutoFillOnly = m_bAutoFillOnly;
 }

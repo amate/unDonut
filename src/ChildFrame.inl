@@ -1362,7 +1362,7 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 	if (m_nAutoLoginPrevIndex == -1) {
 		int nIndex = CLoginDataManager::Find(strURL);
 		if (nIndex != -1) {
-			bool bSuccess = CLoginDataManager::DoAutoLogin(strURL, nIndex, m_spBrowser);
+			bool bSuccess = CLoginDataManager::DoAutoLogin(nIndex, m_spBrowser);
 			if (bSuccess)
 				m_nAutoLoginPrevIndex = nIndex;
 		}

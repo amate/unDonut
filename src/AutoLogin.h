@@ -24,16 +24,34 @@ struct LoginInfomation
 	CString			strLoginUrl;
 	NameValueMap	mapNameValue;
 	CheckboxMap		mapCheckbox;
+	bool			bAutoFillOnly;
+
+	LoginInfomation() : bAutoFillOnly(false) { }
 
 private:
 	friend class boost::serialization::access;  
 	template<class Archive>
 	void serialize(Archive& ar, const unsigned int version)
 	{
-		ar & strLoginUrl & mapNameValue & mapCheckbox;
+		ar & strLoginUrl & mapNameValue & mapCheckbox & bAutoFillOnly;
 	}
 };
 
+struct LoginInfoData
+{
+	bool					bEnableAutoLogin;
+	vector<LoginInfomation>	vecLoginInfo;
+
+	LoginInfoData() : bEnableAutoLogin(true) { }
+
+private:
+	friend class boost::serialization::access;  
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar & bEnableAutoLogin & vecLoginInfo;
+	}
+};
 
 ////////////////////////////////////////
 /// ログイン情報の入出力と検索、管理を行う
@@ -47,7 +65,7 @@ public:
 	// for ChildFrame
 	static void UpdateLoginDataList(HWND hWndMainFrame);
 
-	static bool DoAutoLogin(const CString& url, int nIndex, IWebBrowser2* pBrowser);
+	static bool DoAutoLogin(int nIndex, IWebBrowser2* pBrowser);
 
 	static int	Find(LPCTSTR strUrl);
 	static void	GetNameValueMap(int nIndex, NameValueMap*& pmap);
@@ -60,7 +78,7 @@ protected:
 	static void	Export(LPCTSTR strPath);
 
 	// Data members
-	static vector<LoginInfomation>	s_vecLoginInfo;
+	static LoginInfoData	s_loginInfoData;
 
 private:
 	static bool	_ReadData(LPCTSTR strPath, vector<char>& vecData);
@@ -96,6 +114,7 @@ public:
 	// DDX map
     BEGIN_DDX_MAP( CLoginInfoEditDialog )
         DDX_CONTROL_HANDLE(IDC_URL_LIST, m_UrlList)
+		DDX_CHECK( IDC_CHECKBOX_ENABLE_AUTOLOGIN, m_bEnableAutoLogin )
 
 		DDX_TEXT(IDC_EDIT_URL, m_Url)
 		DDX_TEXT(IDC_NAME1	, m_Name[0])
@@ -108,6 +127,7 @@ public:
 		DDX_TEXT(IDC_CHECKNAME2, m_CheckboxName[1])
 		DDX_CHECK(IDC_CHECKBOX1, m_bCheck[0])
 		DDX_CHECK(IDC_CHECKBOX2, m_bCheck[1])
+		DDX_CHECK(IDC_CHECKBOX_AUTOFILLONLY, m_bAutoFillOnly )
     END_DDX_MAP()
 
 	// Message map
@@ -143,11 +163,13 @@ private:
 
 	CComboBox	m_UrlList;
 
+	bool	m_bEnableAutoLogin;
 	CString	m_Url;
 	CString	m_Name[s_cMaxNameValue];
 	CString	m_Value[s_cMaxNameValue];
 	CString m_CheckboxName[s_cMaxCheckbox];
 	bool	m_bCheck[s_cMaxCheckbox];
+	bool	m_bAutoFillOnly;
 
 	function<void ()>	m_funcAutoLogin;
 	function<void (function<void (HWND)>) > m_funcTabBarForEachWindow;
