@@ -1,6 +1,13 @@
 
 
-CDonutCommandBar::Impl::Impl() : m_nHotIndex(-1), m_nPressedIndex(-1), m_ChevronState(ChvNormal), m_bFocusSelf(false), m_bNowAltKeyDown(false), m_hWndRestoreFocus(NULL)
+CDonutCommandBar::Impl::Impl() : 
+	m_nHotIndex(-1), 
+	m_nPressedIndex(-1), 
+	m_ChevronState(ChvNormal), 
+	m_bFocusSelf(false), 
+	m_bNowAltKeyDown(false), 
+	m_hWndRestoreFocus(NULL),
+	m_bAltPrefixFailed(false)
 {
 	WTL::CLogFont lf;
 	lf.SetMenuFont();
@@ -181,16 +188,27 @@ BOOL CDonutCommandBar::Impl::PreTranslateMessage(MSG* pMsg)
 				}
 			}
 			return TRUE;
-		} else if (m_bFocusSelf) {	// Alt + prefix
+		} else if (m_bFocusSelf && m_bAltPrefixFailed == false) {	// Alt + prefix
 			OnKeyDown((UINT)pMsg->wParam, 0, 0);
 			if (s_pSubMenu)	{	// ƒƒjƒ…[‚ª•\Ž¦‚³‚ê‚½
 				m_bNowAltKeyDown = false;
 				return TRUE;
+			} else {
+				m_bAltPrefixFailed = true;
 			}
 		}
-	} else if (pMsg->message == WM_SYSKEYUP && pMsg->wParam == VK_MENU && m_bFocusSelf) {
+	} else if ((pMsg->message == WM_SYSKEYUP || pMsg->message == WM_KEYUP) && pMsg->wParam == VK_MENU && m_bFocusSelf) {
 		m_bNowAltKeyDown = false;
 		_PressItem(0);
+		if (m_bAltPrefixFailed) {
+			m_bAltPrefixFailed = false;
+
+			m_bFocusSelf = false;
+			_PressItem(-1);
+			Invalidate(FALSE);
+			::SetFocus(m_hWndRestoreFocus);
+			m_hWndRestoreFocus = NULL;
+		}
 		return TRUE;
 	}
 

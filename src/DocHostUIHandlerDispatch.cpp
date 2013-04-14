@@ -70,15 +70,6 @@ STDMETHODIMP CDocHostUIHandlerDispatch::TranslateAccelerator(
 	/* [in] */ DWORD			nCmdID,
 	/* [retval][out] */HRESULT* dwRetVal)
 {
-	//if (::GetKeyState(VK_CONTROL) < 0 && nMessage != WM_CHAR) {
-	//	if (wParam == 'F') {
-	//		if (m_pView->GetParent().SendMessage(WM_COMMAND, ID_EDIT_FIND)) {
-	//			*dwRetVal = S_OK;
-	//			return S_OK;
-	//		}
-	//	}
-	//}
-
 	return S_FALSE; //IE default action
 }
 

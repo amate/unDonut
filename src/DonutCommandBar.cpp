@@ -161,6 +161,7 @@ private:
 	bool	m_bFocusSelf;
 	bool	m_bNowAltKeyDown;
 	HWND	m_hWndRestoreFocus;
+	bool	m_bAltPrefixFailed;
 
 };
 
