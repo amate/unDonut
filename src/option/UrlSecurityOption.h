@@ -52,27 +52,18 @@ public:
 	static int	MatchTest(const CString& strURL);
 	static void Add(unsigned flags, unsigned opts, unsigned opts2, const CString &strURL);
 
+	// for ChildFrame
+	static void	UpdateUrlSecurityList(HWND hWndMainFrame);
+
+	static bool	FindUrl(const CString& strURL, DWORD* exprop, DWORD* exprop2, DWORD* flags);
+	static bool	IsUndoSecurity(const CString& strURL);
+
 private:
 	static CSharedMemory	s_sharedMem;
 	static std::list<UrlSecurityData>	s_UrlSecurityList;
 };
 
-class CUrlSecurityForChildFrame
-{
-public:
-	void	SetMainFrameHWND(HWND hWnd) { m_hWndMainFrame = hWnd; }
 
-	void	ReloadList();
-
-	bool	FindUrl(const CString& strURL, DWORD* exprop, DWORD* exprop2, DWORD* flags);
-	bool	IsUndoSecurity(const CString& strURL);
-
-private:
-	// Data members
-	HWND	m_hWndMainFrame;	// for Sharedmemory name
-	std::list<UrlSecurityData>	m_UrlSecurityList;
-
-};
 
 ////////////////////////////////////////////////////////////////////////////
 // URL別セキュリティ

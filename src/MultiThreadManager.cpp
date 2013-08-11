@@ -14,6 +14,13 @@
 #include "ChildFrame.h"
 #include "Donut.h"
 #include "option\StartUpFinishOption.h"
+#include "GlobalConfig.h"
+
+#include "option\SupressPopupOption.h"
+#include "option\RightClickMenuDialog.h"
+#include "option\KeyBoardDialog.h"
+#include "option\UrlSecurityOption.h"
+#include "AutoLogin.h"
 
 namespace {
 
@@ -166,8 +173,11 @@ public:
 
 			} else if(dwRet == (WAIT_OBJECT_0 + m_dwCount)) {
 				if(::PeekMessage(&msg, (HWND)-1, 0, 0, PM_REMOVE)) {
-					if(msg.message == WM_NEWCHILDFRAMETHREAD)
+					if (msg.message == WM_NEWCHILDFRAMETHREAD) {
 						_AddThread((NewChildFrameData*)msg.wParam);
+					} else if (msg.message == WM_NOTIFYOBSERVERFROMMAINFRAME) {
+						CSharedDataChangeSubject::NotifyFromMainFrame((ObserverClass)msg.wParam, (HWND)msg.lParam);
+					}
 				}
 			} else {
 				::MessageBeep((UINT)-1);
@@ -233,15 +243,15 @@ private:
 
 namespace MultiThreadManager {
 
+static HANDLE g_hJob = NULL;
+
 /// メインフレーム用のメッセージループ
 int		RunMainFrameMessageLoop(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 {
-	CHandle hJob;
-	LPCTSTR kMainFrameJobName = _T("DonutMainFrameJobObject");
-	hJob.Attach(::CreateJobObject(NULL, kMainFrameJobName));
+	ATLVERIFY(g_hJob = ::CreateJobObject(NULL, NULL));
 	JOBOBJECT_EXTENDED_LIMIT_INFORMATION extendedLimit = { 0 };
 	extendedLimit.BasicLimitInformation.LimitFlags	= JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
-	::SetInformationJobObject(hJob, JobObjectExtendedLimitInformation, &extendedLimit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
+	::SetInformationJobObject(g_hJob, JobObjectExtendedLimitInformation, &extendedLimit, sizeof(JOBOBJECT_EXTENDED_LIMIT_INFORMATION));
 
 	_Module.StartMonitor();
 	HRESULT hRes = _Module.RegisterClassObjects(CLSCTX_LOCAL_SERVER, REGCLS_MULTIPLEUSE | REGCLS_SUSPENDED);
@@ -277,10 +287,32 @@ int		RunMainFrameMessageLoop(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray)
 	_Module.RevokeClassObjects();
 	::Sleep(_Module.m_dwPause);
 
+	::CloseHandle(g_hJob);
+	g_hJob = NULL;
+
 	return nRet;
 }
 
-	
+
+void	AddObserverAndLoadConfig(HWND hWndMainFrame)
+{
+	CSharedDataChangeSubject::AddObserver(ObserverClass::kSupressPopupOption, std::bind(&CSupressPopupOption::UpdateSupressPopupData, std::placeholders::_1));
+	CSupressPopupOption::UpdateSupressPopupData(hWndMainFrame);
+
+	CSharedDataChangeSubject::AddObserver(ObserverClass::kLoginDataManager, std::bind(&CLoginDataManager::UpdateLoginDataList, std::placeholders::_1));
+	CLoginDataManager::UpdateLoginDataList(hWndMainFrame);
+
+	CSharedDataChangeSubject::AddObserver(ObserverClass::kCustomContextMenuOption, std::bind(&CCustomContextMenuOption::ReloadCustomContextMenuList, std::placeholders::_1));
+	CCustomContextMenuOption::ReloadCustomContextMenuList(hWndMainFrame);
+
+	CSharedDataChangeSubject::AddObserver(ObserverClass::kUrlSecurityOption, std::bind(&CUrlSecurityOption::UpdateUrlSecurityList, std::placeholders::_1));
+	CUrlSecurityOption::UpdateUrlSecurityList(hWndMainFrame);
+
+	CSharedDataChangeSubject::AddObserver(ObserverClass::kAcceleratorOption, std::bind(&CAcceleratorOption::ReloadAccelerator, std::placeholders::_1));
+	CAcceleratorOption::ReloadAccelerator(hWndMainFrame);
+}
+
+
 /// マルチプロセスモードでの子プロセスメインループ
 /// コマンドライン引数を見て自分が子プロセスとして起動されていたならループに入る
 bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
@@ -317,11 +349,9 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 	// ActiveXコントロールをホストするための準備
 	AtlAxWinInit();
 
-	HANDLE hJob = ::OpenJobObject(JOB_OBJECT_ASSIGN_PROCESS, FALSE, MAINFRAMEJOBOBJECTNAME);
-	AssignProcessToJobObject(hJob, GetCurrentProcess());
-	::CloseHandle(hJob);
-
 	CWindow wndMainFrame = CWindow(NewChildData.hWndParent).GetTopLevelWindow();
+
+	AddObserverAndLoadConfig(wndMainFrame);
 
 	// 強制的にメッセージキューを作らせる
 	MSG msg;
@@ -358,12 +388,15 @@ bool	RunChildProcessMessageLoop(HINSTANCE hInstance)
 
 	_Module.Term();
 
-	::PostMessage(wndMainFrame, WM_ADDREMOVECHILDPROCESSID, ::GetCurrentProcessId(), false);
+	::PostMessage(wndMainFrame, WM_REMOVECHILDPROCESSID, ::GetCurrentProcessId(), 0);
 
 	TRACEIN(_T("RunChildProcessMessageLoop() 終了..."));
 
 	return true;
 }
+
+// グローバル変数
+std::vector<ChildProcessProcessThreadId>	g_vecChildProcessProcessThreadId;
 
 //===================================================================================
 
@@ -388,9 +421,11 @@ void	CreateChildProcess(NewChildFrameData& data)
 	/* 子プロセス作成 */
 	STARTUPINFO	startupInfo = { sizeof(STARTUPINFO) };
 	PROCESS_INFORMATION	processInfo = { 0 };
-	ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, 0, NULL, NULL, &startupInfo, &processInfo));
+	ATLVERIFY(::CreateProcess(Misc::GetExeFileName(), commandline.GetBuffer(0), NULL, NULL, TRUE, CREATE_BREAKAWAY_FROM_JOB, NULL, NULL, &startupInfo, &processInfo));
 
-	CWindow(data.hWndParent).GetTopLevelWindow().PostMessage(WM_ADDREMOVECHILDPROCESSID, processInfo.dwProcessId, true);
+	g_vecChildProcessProcessThreadId.emplace_back(processInfo.dwProcessId, processInfo.dwThreadId);
+
+	ATLVERIFY(::AssignProcessToJobObject(g_hJob, processInfo.hProcess));
 
 	::CloseHandle(processInfo.hProcess);
 	::CloseHandle(processInfo.hThread);

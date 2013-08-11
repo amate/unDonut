@@ -10,6 +10,7 @@
 #include "Misc.h"
 #include "DonutPFunc.h"
 #include "option\MainOption.h"
+#include "GlobalConfig.h"
 
 using namespace std;
 
@@ -37,6 +38,8 @@ void CLoginDataManager::CreateOriginalLoginDataList(HWND hWndMainFrame)
 	CString sharedMemName;
 	sharedMemName.Format(_T("%s%#x"), AUTOLOGINSHAREDMEMNAME, hWndMainFrame);
 	s_sharedMem.Serialize(s_loginInfoData, sharedMemName);
+
+	CSharedDataChangeNotify::NotifyObserver(ObserverClass::kLoginDataManager);
 }
 
 // for ChildFrame
@@ -520,14 +523,6 @@ void	CLoginInfoEditDialog::OnFinish(UINT uNotifyCode, int nID, CWindow wndCtl)
 	Save();
 
 	CreateOriginalLoginDataList(GetParent());
-	std::set<DWORD> setProcessId;
-	m_funcTabBarForEachWindow([&setProcessId](HWND hWnd) {
-		DWORD processId = 0;
-		::GetWindowThreadProcessId(hWnd, &processId);
-		auto it = setProcessId.insert(processId);
-		if (it.second)	// 挿入が成功した場合、同じプロセスには送っていないので送る
-			::SendMessage(hWnd, WM_UPDATEAUTOLOGINDATALIST, 0, 0);
-	});
 
 	EndDialog(IDOK);
 }

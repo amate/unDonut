@@ -7,12 +7,13 @@
 #include "SupressPopupOption.h"
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/list.hpp>
-#include "MainOption.h"
 #include "../CustomSerializeClass.h"
 #include "../IniFile.h"
 #include "../DonutPFunc.h"
 #include "../MtlMisc.h"
+#include "../MtlWin.h"
 #include "../DonutDefine.h"
+#include "../GlobalConfig.h"
 
 using namespace MTL;
 
@@ -68,8 +69,7 @@ void CSupressPopupOption::WriteProfile(bool bIgnoreURLPropertyPage)
 
 void	CSupressPopupOption::NotifyUpdateToChildFrame() 
 {
-	if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode)
-		PostMessage(s_hWndMainFrame, WM_UPDATESUPRESSPOPUPDATA, 0, 0);
+	CSharedDataChangeNotify::NotifyObserver(ObserverClass::kSupressPopupOption);
 
 }
 

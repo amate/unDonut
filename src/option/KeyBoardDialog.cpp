@@ -5,10 +5,11 @@
 
 #include "stdafx.h"
 #include "KeyBoardDialog.h"
-#include "../MtlBase.h"
-#include "../DonutPFunc.h"
-#include "../ToolTipManager.h"
+#include "..\MtlBase.h"
+#include "..\DonutPFunc.h"
+#include "..\ToolTipManager.h"
 #include "MainOption.h"
+#include "..\GlobalConfig.h"
 
 /////////////////////////////////////////////////////////////////
 // CAcceleratorOption
@@ -16,7 +17,7 @@
 #define ACCELERATORSHAREDMEMNAME _T("DonutAcceleratorSharedMemName")
 
 CSharedMemory CAcceleratorOption::s_sharedMem;
-
+HACCEL	CAcceleratorOption::s_hAccel = NULL;
 
 /// アクセラレータテーブルを読み込んでChildFrameのために共有メモリに書き込んでおく
 void CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAccel)
@@ -37,6 +38,8 @@ void CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAc
 	*pAccelSize = accel.m_nAccelSize;
 	pView = static_cast<void*>(reinterpret_cast<int*>(pView) + 1);
 	ATLVERIFY(::memcpy_s(pView, size - sizeof(int), accel.m_lpAccel, size - sizeof(int)) == 0);
+
+	CSharedDataChangeNotify::NotifyObserver(kAcceleratorOption);
 }
 
 void	CAcceleratorOption::DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel)
@@ -51,33 +54,33 @@ void	CAcceleratorOption::ReloadAccelerator(HWND hWndMainFrame)
 	sharedMemName.Format(_T("%s%#x"), ACCELERATORSHAREDMEMNAME, hWndMainFrame);
 	CSharedMemory sharedMem;
 	void* pView = sharedMem.OpenSharedMemory(sharedMemName, true);
+	ATLASSERT( pView );
 	if (pView == nullptr)
 		return ;
 
 	int AccelSize = *reinterpret_cast<int*>(pView);
 	LPACCEL lpAccel = reinterpret_cast<LPACCEL>(reinterpret_cast<int*>(pView) + 1);
-	m_hAccel = ::CreateAcceleratorTable(lpAccel, AccelSize);
-	ATLASSERT( m_hAccel );
+	s_hAccel = ::CreateAcceleratorTable(lpAccel, AccelSize);
+	ATLASSERT( s_hAccel );
 }
 
 
 bool	CAcceleratorOption::TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg)
 {
-	if (m_hAccel == NULL)
+	if (s_hAccel == NULL)
 		return false;
 
-	return ::TranslateAccelerator(hWndChildFrame, m_hAccel, lpMsg) != 0;
+	return ::TranslateAccelerator(hWndChildFrame, s_hAccel, lpMsg) != 0;
 }
 
 	
 	/////////////////////////////////////////////////////////////////
 // CKeyBoardPropertyPage
 
-CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame, function<void (function<void (HWND)>) > foreach) : 
+CKeyBoardPropertyPage::CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame) : 
 	m_hAccel(hAccel), 
 	m_hMenu(hMenu), 
 	m_hWndMainFrame(hWndMainFrame), 
-	m_TabBarForEachWindow(foreach), 
 	m_bInit(false)
 {
 }
@@ -145,10 +148,6 @@ void CKeyBoardPropertyPage::_GetData()
 
 	/* ChildFrameにアクセラレーターキーの更新を伝える */
 	CAcceleratorOption::CreateOriginAccelerator(m_hWndMainFrame, m_hAccel);
-	m_TabBarForEachWindow([](HWND hWnd) {
-		::SendMessage(hWnd, WM_ACCELTABLECHANGE, 0, 0);
-	});
-
 }
 
 /// 削除

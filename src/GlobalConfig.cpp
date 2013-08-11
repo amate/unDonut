@@ -5,6 +5,7 @@
 
 #include "stdafx.h"
 #include "GlobalConfig.h"
+#include <array>
 #include "option\MainOption.h"
 #include "option\MouseDialog.h"
 #include "option\MenuDialog.h"
@@ -114,6 +115,48 @@ void		  CloseGlobalConfig(GlobalConfigManageData* pManageData)
 	DestroyGlobalConfig(pManageData);
 }
 
+
+// ====================================
+
+#include "MultiThreadManager.h"
+#include "MainFrame.h"
+
+//////////////////////////////////////////////////////////////
+// CSharedDataChangeSubject
+
+void	CSharedDataChangeSubject::AddObserver(ObserverClass obclass, std::function<void (HWND)> callback)
+{
+	s_mapOBClassAndCallBack[obclass] = callback;
+}
+
+void	CSharedDataChangeSubject::RemoveObserver(ObserverClass obclass)
+{
+	s_mapOBClassAndCallBack.erase(obclass);
+}
+
+
+void CSharedDataChangeSubject::NotifyFromMainFrame(ObserverClass obclass, HWND hWndMainFrame)
+{
+	auto it = s_mapOBClassAndCallBack.find(obclass);
+	if (it != s_mapOBClassAndCallBack.end())
+		it->second(hWndMainFrame);
+}
+
+
+std::unordered_map<ObserverClass, std::function<void (HWND)>> CSharedDataChangeSubject::s_mapOBClassAndCallBack;
+
+
+///////////////////////////////////////////////////////////////
+// CSharedDataChangeNotify
+
+void	CSharedDataChangeNotify::NotifyObserver(ObserverClass obclass)
+{
+	if (CMainOption::s_BrowserOperatingMode != BROWSEROPERATINGMODE::kMultiProcessMode)
+		return ;
+
+	for (auto id : MultiThreadManager::g_vecChildProcessProcessThreadId)
+		PostThreadMessage(id.dwThreadId, WM_NOTIFYOBSERVERFROMMAINFRAME, obclass, (LPARAM)g_pMainWnd->GetHWND());
+}
 
 
 

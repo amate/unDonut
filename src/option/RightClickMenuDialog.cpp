@@ -11,11 +11,12 @@
 #include <boost\serialization\string.hpp>
 #include <boost\serialization\vector.hpp>
 #include <boost\serialization\array.hpp>
-#include "../IniFile.h"
-#include "../DonutPFunc.h"
-#include "../ToolTipManager.h"
+#include "..\IniFile.h"
+#include "..\DonutPFunc.h"
+#include "..\ToolTipManager.h"
 #include "MainOption.h"
 #include "DonutSearchBar.h"
+#include "..\GlobalConfig.h"
 
 using boost::property_tree::wptree;
 using namespace boost::property_tree::xml_parser;
@@ -454,7 +455,7 @@ void	CCustomContextMenuOption::UpdateCustomContextMenuList(HWND hWndMainFrame)
 	sharedMemName.Format(_T("%s%#x"), CUSTOMCOMTEXTMENULISTSHAREDMEMNAME, hWndMainFrame);
 	s_sharedMem.Serialize(arrCustomPopupMenu, sharedMemName);
 
-	::SendMessage(hWndMainFrame, WM_UPDATECUSTOMCONTEXTMENU, 0, 0);
+	CSharedDataChangeNotify::NotifyObserver(ObserverClass::kCustomContextMenuOption);
 }
 
 

@@ -32,17 +32,14 @@ BEGIN_MSG_MAP_EX_impl( CMainFrame::Impl )
 	USER_MSG_WM_OPEN_WITHEXPROP			( OnOpenWithExProp	)	// SearchBarから
 	USER_MSG_WM_HILIGHTSWITCHCHANGE		( OnHilightSwitchChange	)
 	// ChildFrame へ
-	USER_MSG_WM_UPDATEURLSECURITYLIST	( OnUpdateUrlSecurityList	)
-	USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
 	USER_MSG_WM_SETPROXYTOCHLDFRAME		( OnSetProxyToChildFrame	)
-	USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
 
 	USER_MSG_WM_CLEANUPNEWPROCESSSHAREDMEMHANDLE( OnCleanUpNewProcessSharedMemHandle )
 	USER_MSG_WM_SETDLCONFIGTOGLOBALCONFIG( OnSetDLConfigToGlobalConfig	)
 
 	USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR( OnReleaseProcessMonitorPtr	)
 
-	USER_MSG_WM_ADDREMOVECHILDPROCESSID( OnAddRemoveChildProcessId	)
+	USER_MSG_WM_REMOVECHILDPROCESSID( OnRemoveChildProcessId	)
 
 	// for DownloadManager
 	USER_MSG_WM_GETUNIQUENUMBERFORDLITEM( OnGetUniqueNumberForDLItem	)
@@ -838,7 +835,10 @@ void	CMainFrame::Impl::OnClose()
 	if (_ConfirmCloseForFileDownloading() == false)
 		return ;
 
-	if ( CDonutConfirmOption::OnDonutExit(m_hWnd, m_setChildProcessId) == false ) {
+	std::set<DWORD>	setChildProcessId;
+	for (auto id : MultiThreadManager::g_vecChildProcessProcessThreadId)
+		setChildProcessId.insert(id.dwProcessId);
+	if ( CDonutConfirmOption::OnDonutExit(m_hWnd, setChildProcessId) == false ) {
 		if (IsWindowVisible() == FALSE) {
 			_SetHideTrayIcon();
 		}
@@ -1750,26 +1750,6 @@ LRESULT CMainFrame::Impl::OnOpenWithExProp(_EXPROP_ARGS *pArgs)
 	return 0;
 }
 
-/// ChildFrameのURL別セキュリティリストを更新する
-void	CMainFrame::Impl::OnUpdateUrlSecurityList()
-{
-	m_TabBar.ForEachWindow([](HWND hWnd) {
-		::SendMessage(hWnd, WM_UPDATEURLSECURITYLIST, 0, 0);
-	});
-}
-
-/// ChildFrameのカスタムコンテキストメニューを更新する
-void	CMainFrame::Impl::OnUpdateCustomContextMenu()
-{
-	std::set<DWORD> setProcessId;
-	m_TabBar.ForEachWindow([&setProcessId](HWND hWnd) {
-		DWORD processId = 0;
-		::GetWindowThreadProcessId(hWnd, &processId);
-		auto it = setProcessId.insert(processId);
-		if (it.second)	// 挿入が成功した場合、同じプロセスには送っていないので送る
-			::SendMessage(hWnd, WM_UPDATECUSTOMCONTEXTMENU, 0, 0);
-	});
-}
 
 /// ChildFrameにプロクシ切替を通知する
 void	CMainFrame::Impl::OnSetProxyToChildFrame()
@@ -1781,19 +1761,6 @@ void	CMainFrame::Impl::OnSetProxyToChildFrame()
 	}
 }
 
-/// ChildFrameのポップアップ抑止の情報を更新する
-void	CMainFrame::Impl::OnUpdateSupressPopupData()
-{
-	std::set<DWORD> setProcessId;
-	m_TabBar.ForEachWindow([&setProcessId](HWND hWnd) {
-		DWORD processId = 0;
-		::GetWindowThreadProcessId(hWnd, &processId);
-		auto it = setProcessId.insert(processId);
-		if (it.second)	// 挿入が成功した場合、同じプロセスには送っていないので送る
-			::SendMessage(hWnd, WM_UPDATESUPRESSPOPUPDATA, 0, 0);
-	});
-}
-
 /// 現在のダウンロードマネージャーの設定をGlobalConfigに設定する
 void	CMainFrame::Impl::OnSetDLConfigToGlobalConfig()
 {
@@ -1803,13 +1770,14 @@ void	CMainFrame::Impl::OnSetDLConfigToGlobalConfig()
 	m_GlobalConfigManageData.pGlobalConfig->dwDLImageExStyle	= CDLOptions::dwImgExStyle;
 }
 
-/// ChildProcessIdを追加/削除する
-void	CMainFrame::Impl::OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd)
+/// ChildProcessThreadIdを削除する
+void	CMainFrame::Impl::OnRemoveChildProcessId(DWORD dwProcessId)
 {
-	if (bAdd) {
-		m_setChildProcessId.insert(dwProcessId);
-	} else {
-		m_setChildProcessId.erase(dwProcessId);
+	for (auto it = MultiThreadManager::g_vecChildProcessProcessThreadId.begin(); it != MultiThreadManager::g_vecChildProcessProcessThreadId.end(); ++it) {
+		if (it->dwProcessId == dwProcessId) {
+			MultiThreadManager::g_vecChildProcessProcessThreadId.erase(it);
+			break;
+		}
 	}
 }
 
@@ -2056,13 +2024,10 @@ void	CMainFrame::Impl::OnAutoLoginEdit(UINT uNotifyCode, int nID, CWindow wndCtl
 		::SendMessage(activeChildFrame, WM_GETLOGININFOMATION, (WPARAM)hMapForClose, 0);
 	}
 	auto funcRefresh = [activeChildFrame]() {
-		if (CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode)
-			::SendMessage(activeChildFrame, WM_UPDATEAUTOLOGINDATALIST, 0, 0);
-		::SendMessage(activeChildFrame, WM_COMMAND, ID_VIEW_REFRESH, 0);
+		::PostMessage(activeChildFrame, WM_COMMAND, ID_VIEW_REFRESH, 0);
 	};
 	CLoginInfoEditDialog dlg(info);
 	dlg.SetAutoLoginfunc(funcRefresh);
-	dlg.SetTabBarForEach(std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
 	dlg.DoModal(m_hWnd);
 
 	::SetFocus(m_ChildFrameClient.GetActiveChildFrameWindow());
@@ -2217,7 +2182,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	CDonutAddressBarPropertyPage	pageAddress(m_AddressBar, m_SearchBar);
 	CStartUpFinishPropertyPage		pageStartUpFinish;
 	CProxyPropertyPage				pageProxy;
-	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu, m_hWnd, std::bind(&CDonutTabBar::ForEachWindow, &m_TabBar, std::placeholders::_1));
+	CKeyBoardPropertyPage			pageKeyBoard(m_hAccel, menu.m_hMenu, m_hWnd);
 	CToolBarPropertyPage			pageToolBar(menu.m_hMenu, &bSkinChange, std::bind(&CDonutToolBar::ReloadSkin, &m_ToolBar));
 	CMousePropertyPage				pageMouse(menu.m_hMenu, m_SearchBar.GetSearchEngineMenuHandle());
 	CMouseGesturePropertyPage		pageGesture(menu.m_hMenu);

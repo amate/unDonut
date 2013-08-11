@@ -3,11 +3,11 @@
 /* this ALWAYS GENERATED file contains the definitions for the interfaces */
 
 
- /* File created by MIDL compiler version 7.00.0555 */
-/* at Fri Apr 05 19:21:56 2013
+ /* File created by MIDL compiler version 8.00.0595 */
+/* at Sun Aug 11 19:46:32 2013
  */
 /* Compiler settings for DonutP.idl:
-    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
+    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
@@ -48,30 +48,35 @@
 #ifndef __IAPI_FWD_DEFINED__
 #define __IAPI_FWD_DEFINED__
 typedef interface IAPI IAPI;
+
 #endif 	/* __IAPI_FWD_DEFINED__ */
 
 
 #ifndef __IAPI2_FWD_DEFINED__
 #define __IAPI2_FWD_DEFINED__
 typedef interface IAPI2 IAPI2;
+
 #endif 	/* __IAPI2_FWD_DEFINED__ */
 
 
 #ifndef __IAPI3_FWD_DEFINED__
 #define __IAPI3_FWD_DEFINED__
 typedef interface IAPI3 IAPI3;
+
 #endif 	/* __IAPI3_FWD_DEFINED__ */
 
 
 #ifndef __IAPI4_FWD_DEFINED__
 #define __IAPI4_FWD_DEFINED__
 typedef interface IAPI4 IAPI4;
+
 #endif 	/* __IAPI4_FWD_DEFINED__ */
 
 
 #ifndef __IDonutPEvents_FWD_DEFINED__
 #define __IDonutPEvents_FWD_DEFINED__
 typedef interface IDonutPEvents IDonutPEvents;
+
 #endif 	/* __IDonutPEvents_FWD_DEFINED__ */
 
 
@@ -167,6 +172,7 @@ EXTERN_C const IID IID_IAPI;
         
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAPIVtbl
@@ -177,7 +183,7 @@ EXTERN_C const IID IID_IAPI;
             IAPI * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            _COM_Outptr_  void **ppvObject);
         
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAPI * This);
@@ -205,14 +211,22 @@ EXTERN_C const IID IID_IAPI;
         
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IAPI * This,
-            /* [in] */ DISPID dispIdMember,
-            /* [in] */ REFIID riid,
-            /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
-            /* [out][in] */ DISPPARAMS *pDispParams,
-            /* [out] */ VARIANT *pVarResult,
-            /* [out] */ EXCEPINFO *pExcepInfo,
-            /* [out] */ UINT *puArgErr);
+            /* [annotation][in] */ 
+            _In_  DISPID dispIdMember,
+            /* [annotation][in] */ 
+            _In_  REFIID riid,
+            /* [annotation][in] */ 
+            _In_  LCID lcid,
+            /* [annotation][in] */ 
+            _In_  WORD wFlags,
+            /* [annotation][out][in] */ 
+            _In_  DISPPARAMS *pDispParams,
+            /* [annotation][out] */ 
+            _Out_opt_  VARIANT *pVarResult,
+            /* [annotation][out] */ 
+            _Out_opt_  EXCEPINFO *pExcepInfo,
+            /* [annotation][out] */ 
+            _Out_opt_  UINT *puArgErr);
         
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Close )( 
             IAPI * This,
@@ -462,6 +476,7 @@ EXTERN_C const IID IID_IAPI2;
         
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAPI2Vtbl
@@ -472,7 +487,7 @@ EXTERN_C const IID IID_IAPI2;
             IAPI2 * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            _COM_Outptr_  void **ppvObject);
         
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAPI2 * This);
@@ -500,14 +515,22 @@ EXTERN_C const IID IID_IAPI2;
         
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IAPI2 * This,
-            /* [in] */ DISPID dispIdMember,
-            /* [in] */ REFIID riid,
-            /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
-            /* [out][in] */ DISPPARAMS *pDispParams,
-            /* [out] */ VARIANT *pVarResult,
-            /* [out] */ EXCEPINFO *pExcepInfo,
-            /* [out] */ UINT *puArgErr);
+            /* [annotation][in] */ 
+            _In_  DISPID dispIdMember,
+            /* [annotation][in] */ 
+            _In_  REFIID riid,
+            /* [annotation][in] */ 
+            _In_  LCID lcid,
+            /* [annotation][in] */ 
+            _In_  WORD wFlags,
+            /* [annotation][out][in] */ 
+            _In_  DISPPARAMS *pDispParams,
+            /* [annotation][out] */ 
+            _Out_opt_  VARIANT *pVarResult,
+            /* [annotation][out] */ 
+            _Out_opt_  EXCEPINFO *pExcepInfo,
+            /* [annotation][out] */ 
+            _Out_opt_  UINT *puArgErr);
         
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Close )( 
             IAPI2 * This,
@@ -866,6 +889,7 @@ EXTERN_C const IID IID_IAPI3;
         
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAPI3Vtbl
@@ -876,7 +900,7 @@ EXTERN_C const IID IID_IAPI3;
             IAPI3 * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            _COM_Outptr_  void **ppvObject);
         
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAPI3 * This);
@@ -904,14 +928,22 @@ EXTERN_C const IID IID_IAPI3;
         
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IAPI3 * This,
-            /* [in] */ DISPID dispIdMember,
-            /* [in] */ REFIID riid,
-            /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
-            /* [out][in] */ DISPPARAMS *pDispParams,
-            /* [out] */ VARIANT *pVarResult,
-            /* [out] */ EXCEPINFO *pExcepInfo,
-            /* [out] */ UINT *puArgErr);
+            /* [annotation][in] */ 
+            _In_  DISPID dispIdMember,
+            /* [annotation][in] */ 
+            _In_  REFIID riid,
+            /* [annotation][in] */ 
+            _In_  LCID lcid,
+            /* [annotation][in] */ 
+            _In_  WORD wFlags,
+            /* [annotation][out][in] */ 
+            _In_  DISPPARAMS *pDispParams,
+            /* [annotation][out] */ 
+            _Out_opt_  VARIANT *pVarResult,
+            /* [annotation][out] */ 
+            _Out_opt_  EXCEPINFO *pExcepInfo,
+            /* [annotation][out] */ 
+            _Out_opt_  UINT *puArgErr);
         
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Close )( 
             IAPI3 * This,
@@ -1307,6 +1339,7 @@ EXTERN_C const IID IID_IAPI4;
         
     };
     
+    
 #else 	/* C style interface */
 
     typedef struct IAPI4Vtbl
@@ -1317,7 +1350,7 @@ EXTERN_C const IID IID_IAPI4;
             IAPI4 * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            _COM_Outptr_  void **ppvObject);
         
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IAPI4 * This);
@@ -1345,14 +1378,22 @@ EXTERN_C const IID IID_IAPI4;
         
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IAPI4 * This,
-            /* [in] */ DISPID dispIdMember,
-            /* [in] */ REFIID riid,
-            /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
-            /* [out][in] */ DISPPARAMS *pDispParams,
-            /* [out] */ VARIANT *pVarResult,
-            /* [out] */ EXCEPINFO *pExcepInfo,
-            /* [out] */ UINT *puArgErr);
+            /* [annotation][in] */ 
+            _In_  DISPID dispIdMember,
+            /* [annotation][in] */ 
+            _In_  REFIID riid,
+            /* [annotation][in] */ 
+            _In_  LCID lcid,
+            /* [annotation][in] */ 
+            _In_  WORD wFlags,
+            /* [annotation][out][in] */ 
+            _In_  DISPPARAMS *pDispParams,
+            /* [annotation][out] */ 
+            _Out_opt_  VARIANT *pVarResult,
+            /* [annotation][out] */ 
+            _Out_opt_  EXCEPINFO *pExcepInfo,
+            /* [annotation][out] */ 
+            _Out_opt_  UINT *puArgErr);
         
         /* [helpstring][id] */ HRESULT ( STDMETHODCALLTYPE *Close )( 
             IAPI4 * This,
@@ -1772,7 +1813,7 @@ EXTERN_C const IID DIID_IDonutPEvents;
             IDonutPEvents * This,
             /* [in] */ REFIID riid,
             /* [annotation][iid_is][out] */ 
-            __RPC__deref_out  void **ppvObject);
+            _COM_Outptr_  void **ppvObject);
         
         ULONG ( STDMETHODCALLTYPE *AddRef )( 
             IDonutPEvents * This);
@@ -1800,14 +1841,22 @@ EXTERN_C const IID DIID_IDonutPEvents;
         
         /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
             IDonutPEvents * This,
-            /* [in] */ DISPID dispIdMember,
-            /* [in] */ REFIID riid,
-            /* [in] */ LCID lcid,
-            /* [in] */ WORD wFlags,
-            /* [out][in] */ DISPPARAMS *pDispParams,
-            /* [out] */ VARIANT *pVarResult,
-            /* [out] */ EXCEPINFO *pExcepInfo,
-            /* [out] */ UINT *puArgErr);
+            /* [annotation][in] */ 
+            _In_  DISPID dispIdMember,
+            /* [annotation][in] */ 
+            _In_  REFIID riid,
+            /* [annotation][in] */ 
+            _In_  LCID lcid,
+            /* [annotation][in] */ 
+            _In_  WORD wFlags,
+            /* [annotation][out][in] */ 
+            _In_  DISPPARAMS *pDispParams,
+            /* [annotation][out] */ 
+            _Out_opt_  VARIANT *pVarResult,
+            /* [annotation][out] */ 
+            _Out_opt_  EXCEPINFO *pExcepInfo,
+            /* [annotation][out] */ 
+            _Out_opt_  UINT *puArgErr);
         
         END_INTERFACE
     } IDonutPEventsVtbl;

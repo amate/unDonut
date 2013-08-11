@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <vector>
+
 // 前方宣言
 class CChildFrame;
 struct NewChildFrameData;
@@ -18,6 +20,19 @@ int		RunMainFrameMessageLoop(LPTSTR lpstrCmdLine, int nCmdShow, bool bTray);
 /// マルチプロセスモードでの子プロセスメインループ
 /// コマンドライン引数を見て自分が子プロセスとして起動されていたならループに入る
 bool	RunChildProcessMessageLoop(HINSTANCE hInstance);
+
+
+// グローバル変数
+struct ChildProcessProcessThreadId
+{
+	DWORD	dwProcessId;
+	DWORD	dwThreadId;
+
+	ChildProcessProcessThreadId(DWORD processId, DWORD threadId) : dwProcessId(processId), dwThreadId(threadId) { }
+};
+extern std::vector<ChildProcessProcessThreadId>	g_vecChildProcessProcessThreadId;
+
+#define	WM_NOTIFYOBSERVERFROMMAINFRAME	(WM_APP + 400)
 
 //===================================================================================
 

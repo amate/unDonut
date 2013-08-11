@@ -417,9 +417,6 @@ public:
 		USER_MSG_WM_DRAWCHILDFRAMEPAGE( OnDrawChildFramePage )
 		USER_MSG_WM_INCREMENTTHREADREFCOUNT()
 		USER_MSG_WM_GETBROWSERFONTSIZE()
-		USER_MSG_WM_UPDATEURLSECURITYLIST( OnUpdateUrlSecurityList )
-		USER_MSG_WM_UPDATECUSTOMCONTEXTMENU	( OnUpdateCustomContextMenu	)
-		USER_MSG_WM_ACCELTABLECHANGE	( OnAccelTableChange	)
 		MESSAGE_HANDLER_EX( WM_SETPROXYTOCHLDFRAME, OnSetProxyToChildFrame	)
 		USER_MSG_WM_CLOSEHANDLEFORSHAREDMEM()
 		MESSAGE_HANDLER_EX( WM_DEFAULTRBUTTONDOWN	, OnDefaultRButtonDown	)
@@ -427,8 +424,6 @@ public:
 
 		MESSAGE_HANDLER_EX( WM_EXECUTE_JAVASCRIPT	, OnExecuteJavascript	)
 		USER_MSG_WM_GETLOGININFOMATION		( OnGetLoginInfomation	)
-		USER_MSG_WM_UPDATEAUTOLOGINDATALIST	( OnUpdateAutoLoginDataList	)
-		USER_MSG_WM_UPDATESUPRESSPOPUPDATA	( OnUpdateSupressPopupData	)
 		USER_MSG_WM_SETLASTSCRIPTERRORMESSAGE( OnSetLastScriptErrorMessage	)
 		USER_MSG_WM_CHANGECHILDFRAMEFLAGS	( OnChangeChildFrameFlags )
 
@@ -514,17 +509,12 @@ public:
 	void	OnGetSelectedText(LPCTSTR* ppStr);
 	void	OnSetPageBitmap(HBITMAP* pBmp) { m_pPageBitmap = pBmp; }
 	void	OnDrawChildFramePage(CDCHandle dc);
-	void	OnUpdateUrlSecurityList() { m_UrlSecurity.ReloadList(); }
-	void	OnUpdateCustomContextMenu() { CCustomContextMenuOption::ReloadCustomContextMenuList(GetTopLevelWindow()); }
-	void	OnAccelTableChange() { m_AcceleratorOption.ReloadAccelerator(GetTopLevelWindow()); }
 	LRESULT OnSetProxyToChildFrame(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDefaultRButtonDown(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	LRESULT OnDefaultRButtonUp(UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 	LRESULT OnExecuteJavascript(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	HANDLE	OnGetLoginInfomation(HANDLE hMapForClose);
-	void	OnUpdateAutoLoginDataList() { CLoginDataManager::UpdateLoginDataList(GetTopLevelWindow()); }
-	void	OnUpdateSupressPopupData() { CSupressPopupOption::UpdateSupressPopupData(GetTopLevelWindow()); }
 	void	OnSetLastScriptErrorMessage(LPCTSTR strErrorMessage) { 
 		m_UIChange.SetStatusText(_T("スクリプトエラーが発生しました"));
 		m_strLastScriptErrorMessage = strErrorMessage; 
@@ -598,8 +588,6 @@ private:
 	CChildFrameUIStateChange	m_UIChange;
 	GlobalConfigManageData		m_GlobalConfigManageData;
 	GlobalConfig*				m_pGlobalConfig;
-	CUrlSecurityForChildFrame	m_UrlSecurity;
-	CAcceleratorOption			m_AcceleratorOption;
 	CBingTranslatorMenu			m_BingTranslatorMenu;
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;

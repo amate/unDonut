@@ -109,7 +109,6 @@ public:
 	CLoginInfoEditDialog(const LoginInfomation& info);
 
 	void	SetAutoLoginfunc(function<void ()> func) { m_funcAutoLogin = func; }
-	void	SetTabBarForEach(function<void (function<void (HWND)>) > func) { m_funcTabBarForEachWindow = func; }
 
 	// DDX map
     BEGIN_DDX_MAP( CLoginInfoEditDialog )
@@ -172,7 +171,6 @@ private:
 	bool	m_bAutoFillOnly;
 
 	function<void ()>	m_funcAutoLogin;
-	function<void (function<void (HWND)>) > m_funcTabBarForEachWindow;
 	
 };
 

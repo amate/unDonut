@@ -175,7 +175,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			data.strURL	= strURL;
 			DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
 			DWORD	dwExStyle	= _GetInheritedExStyleFlags();
-			if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
+			if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
 				dwDLCtrl	= m_pGlobalConfig->dwDLControlFlags;
 				dwExStyle	= m_pGlobalConfig->dwExtendedStyleFlags;
 			}
@@ -206,11 +206,11 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 				DWORD autoRefresh = 0xFFFFFFFF;
 				DWORD dwExPropOpt = 8;
 				CString nowLocation = GetLocationURL();
-				if (m_UrlSecurity.IsUndoSecurity(nowLocation)) {
+				if (CUrlSecurityOption::IsUndoSecurity(nowLocation)) {
 					m_view.PutDLControlFlags(m_pGlobalConfig->dwDLControlFlags);
 					SetExStyle(m_pGlobalConfig->dwExtendedStyleFlags);
 				}
-				if (m_UrlSecurity.FindUrl( strURL, &exopts, &dwExPropOpt, 0 )) {
+				if (CUrlSecurityOption::FindUrl( strURL, &exopts, &dwExPropOpt, 0 )) {
 					CExProperty  ExProp(m_pGlobalConfig->dwDLControlFlags, m_pGlobalConfig->dwExtendedStyleFlags, 0, exopts, dwExPropOpt);
 					dlCtlFlg	= ExProp.GetDLControlFlags();
 					exstyle		= ExProp.GetExtendedStyleFlags();
@@ -448,7 +448,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	data.strURL	= _T("");
 	DWORD	dwDLCtrl	= _GetInheritedDLCtrlFlags();
 	DWORD	dwExStyle	= _GetInheritedExStyleFlags();
-	if (m_UrlSecurity.IsUndoSecurity(GetLocationURL())) {
+	if (CUrlSecurityOption::IsUndoSecurity(GetLocationURL())) {
 		dwDLCtrl	= m_pGlobalConfig->dwDLControlFlags;
 		dwExStyle	= m_pGlobalConfig->dwExtendedStyleFlags;
 	}
@@ -976,7 +976,7 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 	}
 
 	// アクセラレータキー
-	if (m_AcceleratorOption.TranslateAccelerator(m_hWnd, pMsg))
+	if (CAcceleratorOption::TranslateAccelerator(m_hWnd, pMsg))
 		return TRUE;
 	//if (g_pMainWnd->m_hAccel != NULL && ::TranslateAccelerator(m_hWnd, g_pMainWnd->m_hAccel, pMsg))
 	//		return TRUE;
@@ -1074,7 +1074,6 @@ FINISH_FILL:
 
 // Message map
 
-static bool s_bInit = false;
 
 int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 {
@@ -1092,18 +1091,7 @@ int		CChildFrame::Impl::OnCreate(LPCREATESTRUCT /*lpCreateStruct*/)
 	m_view.SetGlobalConfig(m_pGlobalConfig);
 	OnSetProxyToChildFrame(0, 0, 0);	// プロクシ設定
 
-	m_UrlSecurity.SetMainFrameHWND(wndMainFrame);
-	m_UrlSecurity.ReloadList();
-
-	m_AcceleratorOption.ReloadAccelerator(wndMainFrame);
-
-	if (m_pGlobalConfig->bMultiProcessMode) {		
-		if (s_bInit == false) {
-			CCustomContextMenuOption::ReloadCustomContextMenuList(wndMainFrame);
-			CLoginDataManager::UpdateLoginDataList(wndMainFrame);
-			CSupressPopupOption::UpdateSupressPopupData(wndMainFrame);
-			s_bInit = true;
-		}
+	if (m_pGlobalConfig->bMultiProcessMode) {
 		
 		// ユーザーエージェントを設定
 		std::vector<char>	userAgent;

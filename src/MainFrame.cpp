@@ -65,6 +65,7 @@
 #include "PopupMenu.h"
 #include "dialog\RenameFileDialog.h"
 #include "DonutScriptHost.h"
+#include "MultiThreadManager.h"
 
 
 namespace {
@@ -264,17 +265,14 @@ public:
 		m_GlobalConfigManageData.pGlobalConfig->bHilightSwitch = bOn;
 	}
 
-	void	OnUpdateUrlSecurityList();
-	void	OnUpdateCustomContextMenu();
 	void	OnSetProxyToChildFrame();
-	void	OnUpdateSupressPopupData();
 
 	void	OnCleanUpNewProcessSharedMemHandle(HANDLE hDel) { ::CloseHandle(hDel); }
 	void	OnSetDLConfigToGlobalConfig();
 
 	void	OnReleaseProcessMonitorPtr() { m_pProcessMonitor.reset(); }
 
-	void	OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd);
+	void	OnRemoveChildProcessId(DWORD dwProcessId);
 
 	// for DownloadManager
 	LRESULT OnGetUniqueNumberForDLItem();
@@ -409,7 +407,6 @@ private:
 	bool	m_bFullScreen;
 
 	unique_ptr<CProcessMonitorDialog>	m_pProcessMonitor;
-	std::set<DWORD>	m_setChildProcessId;
 
 	CDonutScriptHost	m_donutScriptHost;
 

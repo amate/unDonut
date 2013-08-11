@@ -14,25 +14,18 @@
 class CAcceleratorOption
 {
 public:
-	CAcceleratorOption() : m_hAccel(NULL) { }
-	~CAcceleratorOption()
-	{
-		if (m_hAccel)
-			::DestroyAcceleratorTable(m_hAccel);
-	}
-
 	// for MainFrame
 	static void	CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAccel);
 	static void	DestroyOriginAccelerator(HWND hWndMainFrame, HACCEL hAccel);
 
 	// for ChildFrame
-	void	ReloadAccelerator(HWND hWndMainFrame);
+	static void	ReloadAccelerator(HWND hWndMainFrame);
 
-	bool	TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg);
+	static bool	TranslateAccelerator(HWND hWndChildFrame, LPMSG lpMsg);
 
 private:
 	// for ChildFrame
-	HACCEL	m_hAccel;
+	static HACCEL	s_hAccel;
 
 	// for MainFrame
 	static CSharedMemory s_sharedMem;
@@ -51,7 +44,7 @@ public:
 	enum { IDD = IDD_PROPPAGE_KEYBOARD };
 
 	//ê∂ê¨ÅEîjä¸
-	CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame, function<void (function<void (HWND)>) > foreach);
+	CKeyBoardPropertyPage(HACCEL& hAccel, HMENU hMenu, HWND hWndMainFrame);
 	~CKeyBoardPropertyPage();
 
 	// Overrides
@@ -111,7 +104,6 @@ private:
 
 	// Data members
 	HWND		  m_hWndMainFrame;
-	function<void (function<void (HWND)>) > m_TabBarForEachWindow;
 
 	CEdit		  m_editNow;
 	CEditAccel	  m_editNew;

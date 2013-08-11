@@ -240,7 +240,7 @@ static bool _PrivateInit()
 	CStyleSheetOption::GetProfile();
 	//CToolBarOption::GetProfile();
 	CTabBarOption::GetProfile();
-	ie_feature_control_setting();
+	//ie_feature_control_setting();	// Ç‡Ç¡Ç∆éËëOÇ≈é¿çsÇ∑ÇÈÇÊÇ§Ç…ÇµÇΩ
 
 	CFavoritesMenuOption::GetProfile();
 	CMouseOption::GetProfile();
@@ -440,6 +440,8 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	CString killfilepath = GetConfigFilePath(_T("kill.txt"));
 	if (::PathFileExists(killfilepath) != 0)
 		DoHookInternetConnect();
+
+	ie_feature_control_setting();
 
 	if (MultiThreadManager::RunChildProcessMessageLoop(hInstance)) 
 		return 0;

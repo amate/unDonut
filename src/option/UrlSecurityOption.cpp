@@ -11,30 +11,15 @@
 #include <sstream>
 #include <boost\archive\text_woarchive.hpp>
 #include <boost\archive\text_wiarchive.hpp>
-#include "../IniFile.h"
-#include "../DonutPFunc.h"
-#include "../MtlMisc.h"
-#include "../MtlFile.h"
-#include "../DonutViewOption.h"
-#include "../ExStyle.h"
+#include "..\IniFile.h"
+#include "..\DonutPFunc.h"
+#include "..\MtlMisc.h"
+#include "..\MtlFile.h"
+#include "..\DonutViewOption.h"
+#include "..\ExStyle.h"
 #include "UrlSecurityExPropDialog.h"
+#include "..\GlobalConfig.h"
 
-
-#if defined USE_ATLDBGMEM
- #define new DEBUG_NEW
- #undef THIS_FILE
- static char THIS_FILE[] = __FILE__;
-#elif defined USE_DIET || _ATL_VER < 0x700	//+++ Diet時。(atl3のときはdiet扱いでコンパイルを無理やり通す)
- #undef USE_REGEX
-#else
- #define USE_REGEX
-#endif
-
-
-#define DONUTURLSECURITYSHAREDMEMNAME	_T("DonutUrlSecuritySharedMemName")
-
-
-#ifdef USE_REGEX
 #if _MSC_VER >= 1500
 #include <regex>
 using std::tr1::basic_regex;
@@ -46,13 +31,15 @@ using boost::basic_regex;
 using boost::match_results;
 using boost::regex_match;
 #endif
-#endif
 
+//////////////////////////////////////////////////////////////////////////////////////
+// CUrlSecurityOption
+
+#define DONUTURLSECURITYSHAREDMEMNAME	_T("DonutUrlSecuritySharedMemName")
 
 CSharedMemory				CUrlSecurityOption::s_sharedMem;
 std::list<UrlSecurityData>	CUrlSecurityOption::s_UrlSecurityList;
 bool 						CUrlSecurityOption::s_bValid			= true;
-
 
 
 void CUrlSecurityOption::GetProfile()
@@ -135,7 +122,7 @@ void CUrlSecurityOption::UpdateOriginalUrlSecurityList(HWND hWndMainFrame)
 	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
 	s_sharedMem.Serialize(s_UrlSecurityList, sharedMemName);
 
-	::SendMessage(hWndMainFrame, WM_UPDATEURLSECURITYLIST, 0, 0);
+	CSharedDataChangeNotify::NotifyObserver(ObserverClass::kUrlSecurityOption);
 }
 
 
@@ -206,27 +193,22 @@ void CUrlSecurityOption::Add(unsigned flags, unsigned opts, unsigned opts2, cons
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// CUrlSecurityForChildFrame
 
-void	CUrlSecurityForChildFrame::ReloadList()
+// for ChildFrame
+
+void	CUrlSecurityOption::UpdateUrlSecurityList(HWND hWndMainFrame)
 {
 	CString sharedMemName;
-	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, m_hWndMainFrame);
+	sharedMemName.Format(_T("%s0x%x"), DONUTURLSECURITYSHAREDMEMNAME, hWndMainFrame);
 	CSharedMemory sharedMem;
-	sharedMem.Deserialize(m_UrlSecurityList, sharedMemName);
-
-	//CUrlSecurityOption::GetProfile();
-	//m_UrlSecurityList = CUrlSecurityOption::s_UrlSecurityList;
+	sharedMem.Deserialize(s_UrlSecurityList, sharedMemName);
 }
 
-
-bool CUrlSecurityForChildFrame::FindUrl(const CString &strURL, DWORD* pExProp, DWORD* pExPropOpt, DWORD* pFlags)
+bool	CUrlSecurityOption::FindUrl(const CString& strURL, DWORD* pExProp, DWORD* pExPropOpt, DWORD* pFlags)
 {
 	bool rc = false;
-
-	auto it = m_UrlSecurityList.begin();
-	for (; it != m_UrlSecurityList.end(); ++it) {
+	auto it = s_UrlSecurityList.begin();
+	for (; it != s_UrlSecurityList.end(); ++it) {
 		//CString ptn = it->m_url;
 		const std::wstring& patern = it->urlPatern;
 		if (it->flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.
@@ -267,10 +249,9 @@ bool CUrlSecurityForChildFrame::FindUrl(const CString &strURL, DWORD* pExProp, D
 	return rc;
 }
 
-// セキュリティをもとに戻すかどうか(このURLでのみ有効)
-bool CUrlSecurityForChildFrame::IsUndoSecurity(const CString& strURL)
+bool	CUrlSecurityOption::IsUndoSecurity(const CString& strURL)
 {
-	for (auto it = m_UrlSecurityList.cbegin(); it != m_UrlSecurityList.cend(); ++it) {
+	for (auto it = s_UrlSecurityList.cbegin(); it != s_UrlSecurityList.cend(); ++it) {
 		if (it->flags & USP_ONLYTHISURL) {
 			const std::wstring& patern = it->urlPatern;
 			if (it->flags & USP_USEREGEX) {	//+++ 正規表現を有効にする場合.

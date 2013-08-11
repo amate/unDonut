@@ -82,11 +82,43 @@ GlobalConfigManageData GetGlobalConfig(HWND hWndMainFrame);
 void	CloseGlobalConfig(GlobalConfigManageData* pMangeData);
 
 
+// ====================================
 
+#include <functional>
+#include <unordered_map>
 
+enum ObserverClass {
+	kSupressPopupOption,
+	kLoginDataManager,
+	kCustomContextMenuOption,
+	kUrlSecurityOption,
+	kAcceleratorOption,
+};
 
+/// 子プロセス側が利用するクラス
+/// このクラスに更新の通知を依頼する
 
+class CSharedDataChangeSubject
+{
+public:
+	static void	AddObserver(ObserverClass obclass, std::function<void (HWND)> callback);
+	static void	RemoveObserver(ObserverClass obclass);
 
+	static void NotifyFromMainFrame(ObserverClass obclass, HWND hWndMainFrame);
+
+private:
+	// Data members
+	static std::unordered_map<ObserverClass, std::function<void (HWND)>> s_mapOBClassAndCallBack;
+};
+
+/// メインフレーム側が利用するクラス
+/// CSharedDataChangeSubject 側と裏側で繋がっていて 各子プロセスに更新の通知が行われる
+
+class CSharedDataChangeNotify
+{
+public:
+	static void	NotifyObserver(ObserverClass obclass);
+};
 
 
 

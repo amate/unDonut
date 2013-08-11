@@ -739,18 +739,6 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
-//	void OnUpdateUrlSecurityList()
-#define WM_UPDATEURLSECURITYLIST	(WM_USER + 132)
-#define USER_MSG_WM_UPDATEURLSECURITYLIST(func)	\
-	if (uMsg == WM_UPDATEURLSECURITYLIST) {	   \
-		SetMsgHandled(TRUE);		   \
-		func();			\
-		lResult = 0;								\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
-
-
 //	void OnMouseGesture(HWND hWndChildFrame, HANDLE hMapForClose)
 #define WM_MOUSEGESTURE	(WM_USER + 133)
 #define USER_MSG_WM_MOUSEGESTURE(func)	\
@@ -806,31 +794,9 @@ enum TabCreateOption {
 	}
 
 
-//	void OnAccelTableChange()
-#define WM_ACCELTABLECHANGE	(WM_USER + 138)
-#define USER_MSG_WM_ACCELTABLECHANGE(func)	\
-	if (uMsg == WM_ACCELTABLECHANGE) {	   \
-		SetMsgHandled(TRUE);		   \
-		func();				\
-		lResult = 0;				\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
-
 #define WM_DEFAULTRBUTTONDOWN	(WM_USER + 139)
 #define WM_DEFAULTRBUTTONUP		(WM_USER + 140)
 
-
-//	void OnUpdateCustomContextMenu()
-#define WM_UPDATECUSTOMCONTEXTMENU	(WM_USER + 141)
-#define USER_MSG_WM_UPDATECUSTOMCONTEXTMENU(func)	\
-	if (uMsg == WM_UPDATECUSTOMCONTEXTMENU) {	   \
-		SetMsgHandled(TRUE);		   \
-		func();				\
-		lResult = 0;				\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
 
 #define WM_RELEASE_PROCESSMONITOR_PTR	(WM_USER + 142)
 #define USER_MSG_WM_RELEASE_PROCESSMONITOR_PTR(func)	\
@@ -853,28 +819,6 @@ enum TabCreateOption {
 			return TRUE; 		   \
 	}
 
-//	void OnUpdateAutoLoginDataList()
-#define WM_UPDATEAUTOLOGINDATALIST	(WM_USER + 144)
-#define USER_MSG_WM_UPDATEAUTOLOGINDATALIST(func)	\
-	if (uMsg == WM_UPDATEAUTOLOGINDATALIST) {	   \
-		SetMsgHandled(TRUE);		   \
-		func();				\
-		lResult = 0;				\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
-
-//	void OnUpdateSupressPopupData()
-#define WM_UPDATESUPRESSPOPUPDATA	(WM_USER + 145)
-#define USER_MSG_WM_UPDATESUPRESSPOPUPDATA(func)	\
-	if (uMsg == WM_UPDATESUPRESSPOPUPDATA) {	   \
-		SetMsgHandled(TRUE);		   \
-		func();				\
-		lResult = 0;				\
-		if ( IsMsgHandled() )		   \
-			return TRUE; 		   \
-	}
-
 
 #define CREATETRAVELLOGMENUSHAREDMEMNAME _T("DonutCreateTravelLogMenuSharedMemName")
 
@@ -890,12 +834,12 @@ enum TabCreateOption {
 	}
 
 
-//	void OnAddRemoveChildProcessId(DWORD dwProcessId, bool bAdd)
-#define WM_ADDREMOVECHILDPROCESSID	(WM_USER + 147)
-#define USER_MSG_WM_ADDREMOVECHILDPROCESSID(func)	\
-	if (uMsg == WM_ADDREMOVECHILDPROCESSID) {	   \
+//	void OnRemoveChildProcessId(DWORD dwProcessId)
+#define WM_REMOVECHILDPROCESSID	(WM_USER + 147)
+#define USER_MSG_WM_REMOVECHILDPROCESSID(func)	\
+	if (uMsg == WM_REMOVECHILDPROCESSID) {	   \
 		SetMsgHandled(TRUE);		   \
-		func((DWORD)wParam, lParam != 0);				\
+		func((DWORD)wParam);				\
 		lResult = 0;				\
 		if ( IsMsgHandled() )		   \
 			return TRUE; 		   \
