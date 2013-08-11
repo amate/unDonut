@@ -44,7 +44,7 @@ CCustomBindStatusCallBack*	CDownloadManager::CreateCustomBindStatusCallBack(HWND
 	uintptr_t unique = ::SendMessage(hWndMainFrame, WM_GETUNIQUENUMBERFORDLITEM, 0, 0);
 	/* 共有メモリを作成 */
 	CString sharedMemName;
-	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
+	sharedMemName.Format(_T("%s%#x_%#x"), DLITEMSHAREDMEMNAME, hWndMainFrame, unique);
 	HANDLE hMap = ::CreateFileMapping(INVALID_HANDLE_VALUE, nullptr, PAGE_READWRITE, 0, sizeof(DLItem), sharedMemName);
 	ATLASSERT( hMap );
 	/* 共有メモリからビューを得る */

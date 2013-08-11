@@ -436,10 +436,8 @@ static int RunWinMain(HINSTANCE hInstance, LPTSTR lpstrCmdLine, int nCmdShow)
 	// 設定ファイルのフルパスを取得する
 	InitDonutConfigFilePath(g_szIniFileName, MAX_PATH);
 
-	// urlkillフックを仕掛ける
-	CString killfilepath = GetConfigFilePath(_T("kill.txt"));
-	if (::PathFileExists(killfilepath) != 0)
-		DoHookInternetConnect();
+	// フックを仕掛ける
+	DoHookInternetConnect();
 
 	ie_feature_control_setting();
 

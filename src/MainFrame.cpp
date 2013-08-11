@@ -106,6 +106,8 @@ HWND	CChildFrameClient::Create(HWND hWndMainFrame)
 
 void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 {
+	enum { kTimeOut = 5000 };
+	DWORD_PTR result = 0;
 	CChildFrameCommandUIUpdater::ChangeCommandUIMap(hWndChildFrame);
 	if (m_hWndChildFrame) {
 		// タブに検索テキストを設定する
@@ -115,7 +117,7 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 			cds.dwData	= kSetSearchText;
 			cds.lpData	= static_cast<LPVOID>(text.GetBuffer(0));
 			cds.cbData	= (text.GetLength() + 1) * sizeof(TCHAR);
-			::SendMessage(m_hWndChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+			::SendMessageTimeout(m_hWndChildFrame, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds, SMTO_ABORTIFHUNG, kTimeOut, &result);
 		}
 	}
 	HWND hWndPrevChildFrame = m_hWndChildFrame;
@@ -128,7 +130,7 @@ void	CChildFrameClient::SetChildFrameWindow(HWND hWndChildFrame)
 	}
 #endif
 	if (hWndChildFrame) {
-		::SendMessage(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)hWndPrevChildFrame);		
+		::SendMessageTimeout(hWndChildFrame, WM_CHILDFRAMEACTIVATE, (WPARAM)hWndChildFrame, (LPARAM)hWndPrevChildFrame, SMTO_ABORTIFHUNG, kTimeOut, &result);		
 	} else {
 		InvalidateRect(NULL);
 	}

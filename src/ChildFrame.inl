@@ -889,7 +889,9 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 				}
 				ReleaseCapture();
 				return TRUE;
-			} 
+			} else {
+				return FALSE;
+			}
 		} else {
 			// 拡大/原寸のトグル切替
 			if (rc.PtInRect(pt))
@@ -969,17 +971,17 @@ BOOL CChildFrame::Impl::PreTranslateMessage(MSG* pMsg)
 		return TRUE;
 	}
 
+#if 0
 	// Altキー
 	if ((pMsg->message == WM_SYSKEYDOWN || pMsg->message == WM_SYSKEYUP) && pMsg->wParam == VK_MENU) {
 		GetTopLevelWindow().PostMessage(pMsg->message, pMsg->wParam, pMsg->lParam);
 		return TRUE;
 	}
+#endif
 
 	// アクセラレータキー
 	if (CAcceleratorOption::TranslateAccelerator(m_hWnd, pMsg))
 		return TRUE;
-	//if (g_pMainWnd->m_hAccel != NULL && ::TranslateAccelerator(m_hWnd, g_pMainWnd->m_hAccel, pMsg))
-	//		return TRUE;
 
 	return m_view.PreTranslateMessage(pMsg);
 }
@@ -3558,6 +3560,7 @@ void	CChildFrame::Impl::_ExecuteUserJavascript(const CString& strScriptText)
 	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
 	if (spDoc == nullptr)
 		return ;
+
 	CComPtr<IHTMLWindow2>	spWindow;
 	spDoc->get_parentWindow(&spWindow);
 	if (spWindow == nullptr)

@@ -18,6 +18,8 @@
 #include <unordered_map>
 #include <list>
 #include <memory>
+#include <set>
+#include <atlsync.h>
 #include "DonutPFunc.h"
 #include "FileNotification.h"
 
@@ -265,6 +267,59 @@ std::vector<CString>	CURLHashMatch::_SplitURL(LPCWSTR host, int count)
 }
 
 
+class CInternetRequestManager
+{
+public:
+	void	AddKillConnectHandle(HINTERNET hInternet)
+	{
+		CCritSecLock	lock(m_cs);
+		m_sethConnect.insert(hInternet);
+	}
+
+	void	RemoveKillConnectHandle(HINTERNET hInternet)
+	{
+		CCritSecLock	lock(m_cs);
+		m_sethConnect.erase(hInternet);
+	}
+
+	bool	IsKillConnectHandle(HINTERNET hInternet)
+	{
+		CCritSecLock	lock(m_cs);
+		return m_sethConnect.find(hInternet) != m_sethConnect.end();
+	}
+
+
+	void	AddRequestHandle(HINTERNET hRequest)
+	{
+		CCritSecLock	lock(m_csReq);
+		m_sethRequest.insert(hRequest);
+	}
+
+	void	RemoveRequestHandle(HINTERNET hRequest)
+	{
+		CCritSecLock	lock(m_csReq);
+		m_sethRequest.erase(hRequest);
+	}
+
+	bool	IsExistRequestHandle(HINTERNET hRequest)
+	{
+		CCritSecLock	lock(m_csReq);
+		return m_sethRequest.find(hRequest) != m_sethRequest.end();
+	}
+
+private:
+	// Data members
+	std::set<HINTERNET>	m_sethConnect;
+	CCriticalSection	m_cs;
+
+	std::set<HINTERNET>	m_sethRequest;
+	CCriticalSection	m_csReq;
+
+} internetRequestManager;
+
+////////////////////////////////////////////////////////////
+// HookInternetConnectW
+
 typedef HINTERNET (WINAPI* FuncInternetConnectW)(
     _In_ HINTERNET hInternet,
     _In_ LPCWSTR lpszServerName,
@@ -292,13 +347,76 @@ HINTERNET WINAPI HookInternetConnectW(
 		if (!(::GetAsyncKeyState(VK_PAUSE) < 0)) {	//　pauseキーを押してればバイパス
 			TRACEIN(_T("urlkill : %s"), lpszServerName);
 			//return NULL;
-			lpszServerName	= L"localhost";
+			//lpszServerName	= L"localhost";
+			HINTERNET hConnect = pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
+			internetRequestManager.AddKillConnectHandle(hConnect);
+			return hConnect;
 		}
 	}
 	return pfOrgInternetConnectW(hInternet, lpszServerName, nServerPort, lpszUserName, lpszPassword, dwService, dwFlags, dwContext);
 }
 
+//////////////////////////////////////////////////////////////////////
+// HookHttpOpenRequestW
+
+typedef HINTERNET (WINAPI* FuncHttpOpenRequestW)(
+    _In_ HINTERNET hConnect,
+    _In_opt_ LPCWSTR lpszVerb,
+    _In_opt_ LPCWSTR lpszObjectName,
+    _In_opt_ LPCWSTR lpszVersion,
+    _In_opt_ LPCWSTR lpszReferrer,
+    _In_opt_z_ LPCWSTR FAR * lplpszAcceptTypes,
+    _In_ DWORD dwFlags,
+    _In_opt_ DWORD_PTR dwContext
+    );
+FuncHttpOpenRequestW	pfOrgHttpOpenRequestW = nullptr;
+
+HINTERNET WINAPI HookHttpOpenRequestW(
+    _In_ HINTERNET hConnect,
+    _In_opt_ LPCWSTR lpszVerb,
+    _In_opt_ LPCWSTR lpszObjectName,
+    _In_opt_ LPCWSTR lpszVersion,
+    _In_opt_ LPCWSTR lpszReferrer,
+    _In_opt_z_ LPCWSTR FAR * lplpszAcceptTypes,
+    _In_ DWORD dwFlags,
+    _In_opt_ DWORD_PTR dwContext
+    )
+{
+	if (internetRequestManager.IsKillConnectHandle(hConnect)) {
+		internetRequestManager.RemoveKillConnectHandle(hConnect);
+		lpszVerb = L"HEAD";
+	}
+	return pfOrgHttpOpenRequestW(hConnect, lpszVerb, lpszObjectName, lpszVersion, lpszReferrer, lplpszAcceptTypes, dwFlags, dwContext);
+}
+
 #if 0
+//////////////////////////////////////////////////////////////////////
+// HookHttpSendRequestW
+
+typedef BOOL (WINAPI* FuncHttpSendRequestW)(
+    _In_ HINTERNET hRequest,
+    _In_reads_opt_(dwHeadersLength) LPCWSTR lpszHeaders,
+    _In_ DWORD dwHeadersLength,
+    _In_reads_bytes_opt_(dwOptionalLength) LPVOID lpOptional,
+    _In_ DWORD dwOptionalLength
+    );
+FuncHttpSendRequestW	pfOrgHttpSendRequestW = nullptr;
+
+BOOL WINAPI HookHttpSendRequestW(
+    _In_ HINTERNET hRequest,
+    _In_reads_opt_(dwHeadersLength) LPCWSTR lpszHeaders,
+    _In_ DWORD dwHeadersLength,
+    _In_reads_bytes_opt_(dwOptionalLength) LPVOID lpOptional,
+    _In_ DWORD dwOptionalLength
+    )
+{
+	return pfOrgHttpSendRequestW(hRequest, lpszHeaders, dwHeadersLength, lpOptional, dwOptionalLength);
+}
+#endif
+
+////////////////////////////////////////////////////////////////////
+// HookInternetReadFile
+
 typedef BOOL (WINAPI* FuncInternetReadFile)(
     _In_ HINTERNET hFile,
     _Out_writes_bytes_(dwNumberOfBytesToRead) __out_data_source(NETWORK) LPVOID lpBuffer,
@@ -314,9 +432,41 @@ BOOL WINAPI HookInternetReadFile(
     _Out_ LPDWORD lpdwNumberOfBytesRead
     )
 {
-	return pfOrgInternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, lpdwNumberOfBytesRead);
+	if (internetRequestManager.IsExistRequestHandle(hFile) == false) {
+		internetRequestManager.AddRequestHandle(hFile);
+		WCHAR	contentType[512] = L"";
+		DWORD	buffSize = 512;
+		DWORD	index = 0;
+		if (::HttpQueryInfo(hFile, HTTP_QUERY_CONTENT_TYPE, contentType, &buffSize, &index)) {
+			if (::wcsncmp(contentType, L"text/html", 9) == 0) {
+				LPCSTR kDocType = "<!DOCTYPE html>";
+				if (dwNumberOfBytesToRead > (DWORD)::lstrlenA(kDocType)) {
+					::lstrcpyA((LPSTR)lpBuffer, kDocType);
+					*lpdwNumberOfBytesRead = ::lstrlenA(kDocType);
+					return TRUE;
+				}
+			}
+		}
+	}
+	BOOL bRet = pfOrgInternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, lpdwNumberOfBytesRead);
+	return bRet;
 }
-#endif
+
+///////////////////////////////////////////////////////////////
+// HookInternetCloseHandle
+
+typedef BOOL (WINAPI* FuncInternetCloseHandle)(
+    _In_ HINTERNET hInternet
+    );
+FuncInternetCloseHandle	pfOrgInternetCloseHandle = nullptr;
+
+BOOL WINAPI HookInternetCloseHandle(
+    _In_ HINTERNET hInternet
+    )
+{
+	internetRequestManager.RemoveRequestHandle(hInternet);
+	return pfOrgInternetCloseHandle(hInternet);
+}
 
 }	// namespace
 
@@ -328,6 +478,11 @@ void	DoHookInternetConnect()
 	APIHook("wininet.dll", "InternetConnectW", (PROC)&HookInternetConnectW, (PROC*)&pfOrgInternetConnectW);
 	matchtest.StartWatch();
 
-	//APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
+	APIHook("wininet.dll", "HttpOpenRequestW", (PROC)&HookHttpOpenRequestW, (PROC*)&pfOrgHttpOpenRequestW);
+
+
+	APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
+
+	APIHook("wininet.dll", "InternetCloseHandle", (PROC)&HookInternetCloseHandle, (PROC*)&pfOrgInternetCloseHandle);
 }
 

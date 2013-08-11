@@ -16,6 +16,7 @@
 #include "../dialog/RenameFileDialog.h"
 
 
+
 ////////////////////////////////////////////////////////////////
 // CDownloadingListView
 
@@ -486,7 +487,7 @@ LRESULT CDownloadingListView::OnRemoveFromList(UINT uMsg, WPARAM wParam, LPARAM 
 	CSharedMemory sharedMem;
 	if (pDLItem == nullptr) {
 		CString sharedMemName;
-		sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);		
+		sharedMemName.Format(_T("%s%#x_%#x"), DLITEMSHAREDMEMNAME, g_pMainWnd->GetHWND(), unique);		
 		pDLItem = static_cast<DLItem*>(sharedMem.OpenSharedMemory(sharedMemName, false));
 	}
 	ATLASSERT( pDLItem );
@@ -544,7 +545,7 @@ LRESULT CDownloadingListView::OnAddToList(UINT uMsg, WPARAM wParam, LPARAM lPara
 
 	uintptr_t unique = (uintptr_t)wParam;
 	CString sharedMemName;
-	sharedMemName.Format(_T("%s%#x"), DLITEMSHAREDMEMNAME, unique);
+	sharedMemName.Format(_T("%s%#x_%#x"), DLITEMSHAREDMEMNAME, g_pMainWnd->GetHWND(), unique);
 	CSharedMemoryHandle sharedMem;
 	DLItem* pDLItem = static_cast<DLItem*>(sharedMem.OpenSharedMemory(sharedMemName, false));
 	ATLASSERT( pDLItem );

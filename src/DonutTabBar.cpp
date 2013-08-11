@@ -2056,17 +2056,12 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 	if ( _IsValidIndex(nIndex) ) {
 		m_strTooltipText.Empty();
 		HWND	hWnd = GetTabHwnd(nIndex);
-		if (hWnd) {
-			CChildFrame* pChild = (CChildFrame*)::SendMessage(hWnd, WM_GET_CHILDFRAME, 0, 0);
-			if (pChild) {
-				CString	strName = MtlGetWindowText(hWnd);
-				CString	strUrl;
-				auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(hWnd);
-				if (pChildFrameUIData)
-					strUrl = pChildFrameUIData->strLocationURL;
-				m_strTooltipText = strName + _T("\n") + strUrl;
-			}
-		}
+		auto pChildFrameUIData = CChildFrameCommandUIUpdater::GetChildFrameUIData(hWnd);
+		ATLASSERT( pChildFrameUIData );
+		CString	strName = pChildFrameUIData->strTitle;
+		CString	strUrl	= pChildFrameUIData->strLocationURL;
+		m_strTooltipText = strName + _T("\n") + strUrl;		
+
 		pDispInfo->lpszText = m_strTooltipText.GetBuffer(0);
 	} else {
 		pDispInfo->lpszText = NULL;
@@ -2204,7 +2199,7 @@ void	CDonutTabBar::Impl::_InitTooltip()
 		tinfo.cbSize = sizeof(TOOLINFO) - sizeof(void*);
 	tinfo.hwnd = m_hWnd;		// WTL always sucks...
 	m_ToolTip.AddTool(tinfo);
-	m_ToolTip.SetMaxTipWidth(SHRT_MAX);
+	m_ToolTip.SetMaxTipWidth(700/*SHRT_MAX*/);
 	m_ToolTip.SetDelayTime(TTDT_AUTOPOP, 30 * 1000);
 }
 
