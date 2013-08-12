@@ -22,6 +22,7 @@
 #include <atlsync.h>
 #include "DonutPFunc.h"
 #include "FileNotification.h"
+#include "Misc.h"
 
 
 // ImageDirectoryEntryToData
@@ -440,10 +441,19 @@ BOOL WINAPI HookInternetReadFile(
 		if (::HttpQueryInfo(hFile, HTTP_QUERY_CONTENT_TYPE, contentType, &buffSize, &index)) {
 			if (::wcsncmp(contentType, L"text/html", 9) == 0) {
 				LPCSTR kDocType = "<!DOCTYPE html>";
-				if (dwNumberOfBytesToRead > (DWORD)::lstrlenA(kDocType)) {
-					::lstrcpyA((LPSTR)lpBuffer, kDocType);
-					*lpdwNumberOfBytesRead = ::lstrlenA(kDocType);
-					return TRUE;
+				enum { kDocTypeLength = 15, kMaxSearchCount = 128, };
+				DWORD readableSize = dwNumberOfBytesToRead - kDocTypeLength;
+				if (readableSize > 0) {
+					if (readableSize > kMaxSearchCount)
+						readableSize = kMaxSearchCount;
+					BOOL bRet = pfOrgInternetReadFile(hFile, lpBuffer, readableSize, lpdwNumberOfBytesRead);
+					if (bRet && *lpdwNumberOfBytesRead > 0 && *static_cast<char*>(lpBuffer) != '{') {
+						memmove_s(static_cast<char*>(lpBuffer) + kDocTypeLength, readableSize, lpBuffer, *lpdwNumberOfBytesRead);
+						memcpy_s(lpBuffer, dwNumberOfBytesToRead, kDocType, kDocTypeLength);
+						*lpdwNumberOfBytesRead += kDocTypeLength;
+						return TRUE;
+					}
+					return bRet;
 				}
 			}
 		}
@@ -480,9 +490,12 @@ void	DoHookInternetConnect()
 
 	APIHook("wininet.dll", "HttpOpenRequestW", (PROC)&HookHttpOpenRequestW, (PROC*)&pfOrgHttpOpenRequestW);
 
+	auto renderMode = Misc::GetRenderingModeAndForce();
+	int majorIEversion = (int)Misc::getIEMejourVersion();
+	if (renderMode.first == majorIEversion) {
+		APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
 
-	APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
-
-	APIHook("wininet.dll", "InternetCloseHandle", (PROC)&HookInternetCloseHandle, (PROC*)&pfOrgInternetCloseHandle);
+		APIHook("wininet.dll", "InternetCloseHandle", (PROC)&HookInternetCloseHandle, (PROC*)&pfOrgInternetCloseHandle);
+	}
 }
 

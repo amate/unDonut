@@ -39,6 +39,8 @@ void CAcceleratorOption::CreateOriginAccelerator(HWND hWndMainFrame, HACCEL& hAc
 	pView = static_cast<void*>(reinterpret_cast<int*>(pView) + 1);
 	ATLVERIFY(::memcpy_s(pView, size - sizeof(int), accel.m_lpAccel, size - sizeof(int)) == 0);
 
+	s_hAccel = hAccel;
+
 	CSharedDataChangeNotify::NotifyObserver(kAcceleratorOption);
 }
 

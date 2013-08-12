@@ -147,62 +147,11 @@ LRESULT CAboutDlg::OnLButtonUp(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lParam
 
 static CString GetRenderingMode()
 {
-	CString exeFileName = Misc::GetFileBaseName(Misc::GetExeFileName());
-
-	// http://msdn.microsoft.com/en-us/library/ee330730(v=vs.85).aspx#browser_emulation
-	enum RenderingMode { 
-		kIE7mode = 7,
-		kIE8mode = 8,
-		kIE9mode = 9,
-		kIE10mode = 10,
-	};
-	RenderingMode mode = kIE7mode;
-	bool bForce = false;
-
-	auto funcGetRenderingModeFromRegistory = [&] (HKEY hk) {
-		static LPCTSTR BROWSEREMULATIONKEY	= _T("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION");
-		ATL::CRegKey rk;
-		LONG result = rk.Open(hk, BROWSEREMULATIONKEY, KEY_QUERY_VALUE);
-		if (result == ERROR_SUCCESS) {
-			DWORD dwMode = 0;
-			rk.QueryDWORDValue(exeFileName, dwMode);
-			switch (dwMode) {
-			// IE7mode
-			case 7000:
-			default:
-				mode = kIE7mode;
-				break;
-
-			// IE8mode
-			case 8888:
-				bForce = true;
-			case 8000:
-				mode = kIE8mode;
-				break;
-
-			// IE9mode
-			case 9999:
-				bForce = true;
-			case 9000:
-				mode = kIE9mode;
-				break;
-
-			// IE10mode
-			case 10001:
-				bForce = true;
-			case 10000:			
-				mode = kIE10mode;
-				break;
-			}
-		}
-	};
-
-	funcGetRenderingModeFromRegistory(HKEY_LOCAL_MACHINE);
-	funcGetRenderingModeFromRegistory(HKEY_CURRENT_USER);
+	auto renderMode = Misc::GetRenderingModeAndForce();
 
 	CString temp;
-	temp.Format(_T("(IE%dmode"), mode);
-	if (bForce) {
+	temp.Format(_T("(IE%dmode"), renderMode.first);
+	if (renderMode.second) {
 		temp += _T(" force");
 	}
 	if (Misc::IsGpuRendering()) {
@@ -239,21 +188,28 @@ CString CAboutDlg::GetEnvironInfo()
 CString CAboutDlg::GetIEVersion()
 {
 	//レジストリからIEのバージョンを取得
-	TCHAR	buf[MAX_PATH+2];
-	DWORD	dwCount = MAX_PATH;
+	CString version;
 	Misc::CRegKey reg;
-
-	memset(buf, 0, sizeof buf); //+++
 	LRESULT rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer"), KEY_QUERY_VALUE );
 	if (rc == ERROR_SUCCESS) {
-		rc = reg.QueryStringValue( _T("Version"), buf, &dwCount);
-		reg.Close();
+		DWORD dwCount = MAX_PATH;
+		if (reg.QueryStringValue(_T("svcVersion"), version.GetBuffer(MAX_PATH), &dwCount) == ERROR_SUCCESS && dwCount > 0) {
+			version.ReleaseBuffer();
+			return version;
+		} else {
+			dwCount = MAX_PATH;
+			rc = reg.QueryStringValue( _T("Version"), version.GetBuffer(MAX_PATH), &dwCount);
+			version.ReleaseBuffer();
+			reg.Close();
+		}
 	}
 
 	if (rc != ERROR_SUCCESS) {
 		rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer\\Version Vector"), KEY_QUERY_VALUE );
 		if (rc == ERROR_SUCCESS) {
-			rc = reg.QueryStringValue( _T("IE"), buf, &dwCount);
+			DWORD dwCount = MAX_PATH;
+			rc = reg.QueryStringValue( _T("IE"), version.GetBuffer(MAX_PATH), &dwCount);
+			version.ReleaseBuffer();
 			//DWORD dw = 0;
 			//LRESULT rc = reg.QueryDWORDValue( _T("IE"), dw);
 			//sprintf(buf, _T("%d"), dw);
@@ -261,7 +217,7 @@ CString CAboutDlg::GetIEVersion()
 		}
 	}
 
-	return buf;
+	return version;
 }
 
 

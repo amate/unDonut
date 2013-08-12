@@ -219,6 +219,16 @@ void ErrorLogPrintf(const TCHAR* fmt, ...);
 // ==========================================================================
 
 BOOL	IsWow64(); 					//+++
+
+enum RenderingMode { 
+	kIE7mode = 7,
+	kIE8mode = 8,
+	kIE9mode = 9,
+	kIE10mode = 10,
+};
+
+std::pair<RenderingMode, bool>	GetRenderingModeAndForce();
+
 unsigned getIEMejourVersion();		//+++
 bool	IsGpuRendering();
 bool	IsVistalater();

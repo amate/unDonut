@@ -1402,6 +1402,57 @@ BOOL IsWow64()
 }
 
 
+std::pair<RenderingMode, bool>	GetRenderingModeAndForce()
+{
+	CString exeFileName = Misc::GetFileBaseName(Misc::GetExeFileName());
+
+	// http://msdn.microsoft.com/en-us/library/ee330730(v=vs.85).aspx#browser_emulation
+	RenderingMode mode = kIE7mode;
+	bool bForce = false;
+
+	auto funcGetRenderingModeFromRegistory = [&] (HKEY hk) {
+		static LPCTSTR BROWSEREMULATIONKEY	= _T("SOFTWARE\\Microsoft\\Internet Explorer\\Main\\FeatureControl\\FEATURE_BROWSER_EMULATION");
+		ATL::CRegKey rk;
+		LONG result = rk.Open(hk, BROWSEREMULATIONKEY, KEY_QUERY_VALUE);
+		if (result == ERROR_SUCCESS) {
+			DWORD dwMode = 0;
+			rk.QueryDWORDValue(exeFileName, dwMode);
+			switch (dwMode) {
+			// IE7mode
+			case 7000:
+			default:
+				mode = kIE7mode;
+				break;
+
+			// IE8mode
+			case 8888:
+				bForce = true;
+			case 8000:
+				mode = kIE8mode;
+				break;
+
+			// IE9mode
+			case 9999:
+				bForce = true;
+			case 9000:
+				mode = kIE9mode;
+				break;
+
+			// IE10mode
+			case 10001:
+				bForce = true;
+			case 10000:			
+				mode = kIE10mode;
+				break;
+			}
+		}
+	};
+
+	funcGetRenderingModeFromRegistory(HKEY_LOCAL_MACHINE);
+	funcGetRenderingModeFromRegistory(HKEY_CURRENT_USER);
+	return std::make_pair(mode, bForce);
+}
+
 
 //+++
 unsigned getIEMejourVersion()
@@ -1416,7 +1467,10 @@ unsigned getIEMejourVersion()
 		memset(buf, 0, sizeof buf);
 		LRESULT rc = reg.Open( HKEY_LOCAL_MACHINE, _T("SOFTWARE\\Microsoft\\Internet Explorer"), KEY_QUERY_VALUE );
 		if (rc == ERROR_SUCCESS) {
-			rc = reg.QueryStringValue(_T("Version"), buf, &dwCount);
+			if (reg.QueryStringValue(_T("svcVersion"), buf, &dwCount) != ERROR_SUCCESS) {
+				dwCount = MAX_PATH;
+				rc = reg.QueryStringValue(_T("Version"), buf, &dwCount);
+			}
 			reg.Close();
 		}
 
