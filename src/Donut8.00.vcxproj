@@ -263,9 +263,9 @@
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release-DIET|x64'">false</GenerateManifest>
     <EmbedManifest Condition="'$(Configuration)|$(Platform)'=='Release-DIET|x64'">false</EmbedManifest>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)ExecuteEnv\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">unDonut</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">iexplore</TargetName>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)ExecuteEnv\</OutDir>
-    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">unDonut</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">iexplore</TargetName>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\$(Configuration)$(Platform)\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">64unDonut</TargetName>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">64unDonut</TargetName>

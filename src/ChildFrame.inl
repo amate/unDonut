@@ -504,18 +504,18 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	PostThreadMessage(::GetCurrentThreadId(), WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2, 0, 0);
 
 	auto startTime = std::chrono::steady_clock::now();
-	while ((std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+	while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
 		MSG msg = {};
-		BOOL bRet = ::PeekMessage(&msg, NULL, 0, 0, PM_NOREMOVE);
+		BOOL bRet = ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
 		if (bRet) {
-			bRet = ::GetMessage(&msg, NULL, 0, 0);
-			if(bRet == -1) {
-				ATLTRACE2(atlTraceUI, 0, _T("::GetMessage returned -1 (error)\n"));
-				continue;   // error, don't process
-			} else if(!bRet) {
-				ATLTRACE2(atlTraceUI, 0, _T("CMessageLoop::Run - exiting\n"));
-				break;   // WM_QUIT, exit message loop
-			}
+			//bRet = ::GetMessage(&msg, NULL, 0, 0);
+			//if(bRet == -1) {
+			//	ATLTRACE2(atlTraceUI, 0, _T("::GetMessage returned -1 (error)\n"));
+			//	continue;   // error, don't process
+			//} else if(!bRet) {
+			//	ATLTRACE2(atlTraceUI, 0, _T("CMessageLoop::Run - exiting\n"));
+			//	break;   // WM_QUIT, exit message loop
+			//}
 			
 			if(!threadObserver.PreTranslateMessage(&msg)) {
 				::TranslateMessage(&msg);
@@ -3174,6 +3174,8 @@ void	CChildFrame::Impl::_CollectDataOnClose(ChildFrameDataOnClose& data)
 /// Ž©“®‰æ‘œƒŠƒTƒCƒY
 void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 {
+	if (m_spBrowser == nullptr)
+		return ;
 	if (m_pGlobalConfig->AutoImageResizeType == AUTO_IMAGE_RESIZE_NONE)
 		return ;
 	//TRACEIN(L"_AutoImageResize : bFirst(%d)", bFirst);

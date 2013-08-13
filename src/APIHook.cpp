@@ -415,6 +415,7 @@ BOOL WINAPI HookHttpSendRequestW(
 }
 #endif
 
+#if 0
 ////////////////////////////////////////////////////////////////////
 // HookInternetReadFile
 
@@ -442,8 +443,8 @@ BOOL WINAPI HookInternetReadFile(
 			if (::wcsncmp(contentType, L"text/html", 9) == 0) {
 				LPCSTR kDocType = "<!DOCTYPE html>";
 				enum { kDocTypeLength = 15, kMaxSearchCount = 128, };
-				DWORD readableSize = dwNumberOfBytesToRead - kDocTypeLength;
-				if (readableSize > 0) {
+				if (dwNumberOfBytesToRead > kDocTypeLength) {
+					DWORD readableSize = dwNumberOfBytesToRead - kDocTypeLength;
 					if (readableSize > kMaxSearchCount)
 						readableSize = kMaxSearchCount;
 					BOOL bRet = pfOrgInternetReadFile(hFile, lpBuffer, readableSize, lpdwNumberOfBytesRead);
@@ -477,6 +478,7 @@ BOOL WINAPI HookInternetCloseHandle(
 	internetRequestManager.RemoveRequestHandle(hInternet);
 	return pfOrgInternetCloseHandle(hInternet);
 }
+#endif
 
 }	// namespace
 
@@ -490,12 +492,14 @@ void	DoHookInternetConnect()
 
 	APIHook("wininet.dll", "HttpOpenRequestW", (PROC)&HookHttpOpenRequestW, (PROC*)&pfOrgHttpOpenRequestW);
 
+#if 0
 	auto renderMode = Misc::GetRenderingModeAndForce();
 	int majorIEversion = (int)Misc::getIEMejourVersion();
 	if (renderMode.first == majorIEversion) {
-		APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
+		//APIHook("wininet.dll", "InternetReadFile", (PROC)&HookInternetReadFile, (PROC*)&pfOrgInternetReadFile);
 
-		APIHook("wininet.dll", "InternetCloseHandle", (PROC)&HookInternetCloseHandle, (PROC*)&pfOrgInternetCloseHandle);
+		//APIHook("wininet.dll", "InternetCloseHandle", (PROC)&HookInternetCloseHandle, (PROC*)&pfOrgInternetCloseHandle);
 	}
+#endif
 }
 

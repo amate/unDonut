@@ -491,7 +491,7 @@ protected:
 
 			// アイテムを実行...
 			MenuItem& item = m_vecMenuItem[nIndex];
-			CWindow(s_hWndCommandBar).GetTopLevelWindow().PostMessage(WM_COMMAND, item.nID);
+			CWindow(s_hWndCommandBar).GetTopLevelWindow().SendMessage(WM_COMMAND, item.nID);
 		}
 	}
 
