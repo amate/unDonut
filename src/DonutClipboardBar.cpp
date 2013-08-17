@@ -8,8 +8,8 @@
 #include "Donut.h"
 #include "DonutPFunc.h"
 #include "option/MainOption.h"
-
-
+#include "MtlFile.h"
+#include "MtlBrowser.h"
 
 // Ctor
 CDonutClipboardBar::CDonutClipboardBar()

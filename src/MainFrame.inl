@@ -1871,7 +1871,8 @@ void	CMainFrame::Impl::OnFileRecent(UINT uNotifyCode, int nID, CWindow wndCtl)
 		nID = ID_RECENTDOCUMENT_FIRST + (nID - ID_FILE_MRU_FIRST);
 
 	ChildFrameDataOnClose*	pdata = nullptr;
-	ATLVERIFY(m_RecentClosedTabList.GetFromList(nID, &pdata));
+	if (m_RecentClosedTabList.GetFromList(nID, &pdata) == FALSE)
+		return ;
 	NewChildFrameData	data(m_ChildFrameClient);
 	data.strURL		= pdata->strURL;
 	data.dwDLCtrl	= pdata->dwDLCtrl;

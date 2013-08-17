@@ -46,7 +46,11 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	// CMainOption
 	pConfig->dwMainExtendedStyle	= CMainOption::s_dwMainExtendedStyle;
 	pConfig->dwMainExtendedStyle2	= CMainOption::s_dwMainExtendedStyle2;
-	pConfig->AutoImageResizeType	= CMainOption::s_nAutoImageResizeType;
+	if (Misc::GetFileBaseNoExt(Misc::GetExeFileName()).CompareNoCase(_T("iexplore")) == 0) {
+		pConfig->AutoImageResizeType	= AUTO_IMAGE_RESIZE_NONE;
+	} else {
+		pConfig->AutoImageResizeType	= CMainOption::s_nAutoImageResizeType;
+	}
 	pConfig->bMultiProcessMode		= CMainOption::s_BrowserOperatingMode == BROWSEROPERATINGMODE::kMultiProcessMode;
 
 	// CMouseOption

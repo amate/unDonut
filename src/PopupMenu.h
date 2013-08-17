@@ -65,6 +65,7 @@ private:
 
 	CToolTipCtrl	m_tip;
 	CString			m_strTipText;
+	ChildFrameDataOnClose*	m_pEmptyChildFrameData;
 
 	static CRecentClosedTabList*	s_pRecentClosedTabList;
 };

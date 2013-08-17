@@ -279,12 +279,13 @@ private:
 public:
 	void OnViewOption(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
 	{
-		T * 	pT		 = static_cast<T *>(this);
+		//T * 	pT		 = static_cast<T *>(this);
 
-		CComQIPtr<IOleCommandTarget> spCmdTarget = pT->m_spBrowser;
-		spCmdTarget->Exec(&CGID_IWebBrowser, HTMLID_OPTIONS, 0, NULL, NULL);
+		//CComQIPtr<IOleCommandTarget> spCmdTarget = pT->m_spBrowser;
+		//HRESULT hr = spCmdTarget->Exec(&CGID_IWebBrowser, HTMLID_OPTIONS, 0, NULL, NULL);
+
 		// this is modeless
-		// ::ShellExecute(0, "open", "control.exe", "inetcpl.cpl", ".", SW_SHOW);
+		::ShellExecute(0, _T("open"), _T("control.exe"), _T("inetcpl.cpl"), NULL, SW_SHOW);
 	}
 
 

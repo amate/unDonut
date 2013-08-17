@@ -254,6 +254,9 @@ void CRecentClosedTabPopupMenu::OnDestroy()
 {
 	SetMsgHandled(FALSE);
 
+	if (m_pEmptyChildFrameData)
+		delete m_pEmptyChildFrameData;
+
 	//CMessageLoop *pLoop = _Module.GetMessageLoop();
 	//pLoop->RemoveMessageFilter(this);
 }
@@ -312,6 +315,7 @@ LRESULT CRecentClosedTabPopupMenu::OnTooltipGetDispInfo(LPNMHDR pnmh)
 
 void CRecentClosedTabPopupMenu::InitMenuItem()
 {
+	m_pEmptyChildFrameData = nullptr;
 	int nType = s_pRecentClosedTabList->GetMenuType();
 	int nTop = kBoundMargin;
 	int nCount = s_pRecentClosedTabList->GetRecentCount();
@@ -364,6 +368,9 @@ void CRecentClosedTabPopupMenu::InitMenuItem()
 		rc.bottom= nTop + kItemHeight;
 		m_vecMenuItem.emplace_back(_T("‚È‚µ"), 0, rc);
 		m_vecMenuItem.back().state = MPI_DISABLED;
+		m_pEmptyChildFrameData = new ChildFrameDataOnClose;
+		m_pEmptyChildFrameData->strTitle	= _T("‚È‚µ");
+		m_vecMenuItem.back().pUserData = m_pEmptyChildFrameData;
 	}
 	dc.SelectFont(prevFont);
 }

@@ -140,6 +140,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 
 	// ポップアップ抑止
 	if (m_bFirstNavigate && strURL != _T("about:blank") && m_strNewWindowURL.GetLength() > 0) {
+		m_bFirstNavigate = false;
 		if (CSupressPopupOption::SearchURLString(strURL)) {
 			bCancel = true;
 			PostMessage(WM_CLOSE);
@@ -326,7 +327,6 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 	}
 
 	if ( IsPageIWebBrowser(pDisp) || strURL.IsEmpty() ) {
-		m_bFirstNavigate = false;
 
 		// 自動リサイズの設定を初期化
 		m_bImagePage	= false;
