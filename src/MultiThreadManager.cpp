@@ -101,8 +101,8 @@ int	RunChildFrameMessageLoop(const NewChildFrameData& NewChildData)
 
 	_Module.RemoveMessageLoop();
 
-	::CoUninitialize();
 	::OleUninitialize();
+	::CoUninitialize();
 
 	return nRet;
 }

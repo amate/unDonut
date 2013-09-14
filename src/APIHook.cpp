@@ -480,6 +480,34 @@ BOOL WINAPI HookInternetCloseHandle(
 }
 #endif
 
+typedef BOOL (WINAPI* FuncHttpQueryInfoA)(
+    _In_ HINTERNET hRequest,
+    _In_ DWORD dwInfoLevel,
+    _Inout_updates_bytes_to_opt_(*lpdwBufferLength, *lpdwBufferLength) __out_data_source(NETWORK) LPVOID lpBuffer,
+    _Inout_ LPDWORD lpdwBufferLength,
+    _Inout_opt_ LPDWORD lpdwIndex
+    );
+
+FuncHttpQueryInfoA	pfOrgHttpQueryInfoA = nullptr;
+
+BOOL WINAPI HookHttpQueryInfoA(
+    _In_ HINTERNET hRequest,
+    _In_ DWORD dwInfoLevel,
+    _Inout_updates_bytes_to_opt_(*lpdwBufferLength, *lpdwBufferLength) __out_data_source(NETWORK) LPVOID lpBuffer,
+    _Inout_ LPDWORD lpdwBufferLength,
+    _Inout_opt_ LPDWORD lpdwIndex
+    )
+{
+	if (dwInfoLevel == HTTP_QUERY_CUSTOM && strcmp((LPCSTR)lpBuffer, "X-UA-Compatible") == 0) {
+		if (pfOrgHttpQueryInfoA(hRequest, dwInfoLevel, lpBuffer, lpdwBufferLength, lpdwIndex) && strncmp((LPCSTR)lpBuffer, "IE=", 3) == 0)
+			return TRUE;
+		::strcpy((LPSTR)lpBuffer, "IE=edge");
+		*lpdwBufferLength = 7;
+		return TRUE;
+	}
+	return pfOrgHttpQueryInfoA(hRequest, dwInfoLevel, lpBuffer, lpdwBufferLength, lpdwIndex);
+}
+
 }	// namespace
 
 
@@ -491,6 +519,8 @@ void	DoHookInternetConnect()
 	matchtest.StartWatch();
 
 	APIHook("wininet.dll", "HttpOpenRequestW", (PROC)&HookHttpOpenRequestW, (PROC*)&pfOrgHttpOpenRequestW);
+
+	APIHook("wininet.dll", "HttpQueryInfoA", (PROC)&HookHttpQueryInfoA, (PROC*)&pfOrgHttpQueryInfoA);
 
 #if 0
 	auto renderMode = Misc::GetRenderingModeAndForce();

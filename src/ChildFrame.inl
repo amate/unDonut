@@ -460,6 +460,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
 	data.strNewWindowURL	= bstrUrl;
 
+#if 1
 	class CThreadObserver : public CMessageFilter
 	{
 	public:
@@ -503,8 +504,9 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	
 	PostThreadMessage(::GetCurrentThreadId(), WM_EXECUTECHILDFRAMETHREADFROMNEWWINDOW2, 0, 0);
 
-	auto startTime = std::chrono::steady_clock::now();
-	while (std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - startTime) < std::chrono::seconds(10)) {
+	using namespace std::chrono;
+	auto startTime = steady_clock::now();
+	while (duration_cast<seconds>(steady_clock::now() - startTime) < seconds(30)) {
 		MSG msg = {};
 		BOOL bRet = ::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE);
 		if (bRet) {
@@ -528,6 +530,26 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 			::Sleep(10);
 		}
 	}
+
+#endif
+#if 0
+	{
+		// ChildFrameウィンドウ作成
+		CChildFrame* pChild = new CChildFrame;
+		CWindow wnd = pChild->CreateChildFrame(data, m_pThreadRefCount);
+
+		pChild->pImpl->m_spBrowser->get_Application(ppDisp);
+		ATLASSERT( ppDisp && *ppDisp );
+
+		DWORD dwOption = 0;
+		if (data.bActive)
+			dwOption |= TAB_ACTIVE;
+		if (data.bLink)
+			dwOption |= TAB_LINK;
+		CWindow wndMainFrame = wnd.GetTopLevelWindow();
+		wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
+	}
+#endif
 }
 
 void	CChildFrame::Impl::OnWindowClosing(bool IsChildWindow, bool& bCancel)

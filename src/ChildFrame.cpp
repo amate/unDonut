@@ -173,8 +173,8 @@ struct _Function_Hilight2 {
 					spHTMLTxtRange->collapse(VARIANT_FALSE);	// Caretの位置を選択したテキストの一番下に
 
 					// たまってるメッセージを処理する
-					if (m_funcProcessMessage() == false)
-						return false;
+					//if (m_funcProcessMessage() == false)
+					//	return false;
 				}
 
 				++nLightIndex;
