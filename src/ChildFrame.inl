@@ -2295,7 +2295,7 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 				return;
 
 			CComVariant variantVal;
-			CComBSTR	bstrZoom( L"zoom" );
+			CComBSTR	bstrZoom(L"zoom");
 			if (addSub) {
 				if ( FAILED(pHtmlStyle->getAttribute(bstrZoom, 1, &variantVal)) )
 					return;
@@ -2346,6 +2346,12 @@ void	CChildFrame::Impl::OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl)
 						return ;
 					spWindow->scrollBy(ptScroll.x, ptScroll.y);
 				}
+			} else {
+				CComPtr<IHTMLWindow2> spWindow;
+				pDoc->get_parentWindow(&spWindow);
+				if (!spWindow)
+					return;
+				spWindow->scrollBy(-m_ImageSize.cx, -m_ImageSize.cy);
 			}
 		}
 	};	// lamda
@@ -3294,14 +3300,21 @@ void	CChildFrame::Impl::_AutoImageResize(bool bFirst)
 	wchar_t		wbuf[128];
 	swprintf_s(wbuf, L"%d%%", int(scl));
 	CComVariant variantVal(wbuf);
-	CComBSTR	bstrZoom( L"zoom" );
+	CComBSTR	bstrZoom(L"zoom");
 
 	CComPtr<IHTMLStyle>		pHtmlStyle;
 	if ( FAILED(spHTMLElement2->get_runtimeStyle(&pHtmlStyle)) || !pHtmlStyle )
 		return;
 	pHtmlStyle->setAttribute(bstrZoom, variantVal);
-	if (m_nImgSclSw)
+	if (m_nImgSclSw) {
 		pHtmlStyle->setAttribute(CComBSTR(L"overflow"), CComVariant(L"hidden"));
+
+		CComPtr<IHTMLWindow2> spWindow;
+		spDoc->get_parentWindow(&spWindow);
+		if (!spWindow)
+			return;
+		spWindow->scrollBy(-m_ImageSize.cx, -m_ImageSize.cy);
+	}
 	TRACEIN(L"  ÉäÉTÉCÉYê¨å˜");
 }
 
