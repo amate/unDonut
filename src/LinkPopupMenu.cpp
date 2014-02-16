@@ -1746,7 +1746,7 @@ void	CLinkPopupMenu::_UpdateItemPosition(bool bFirst /*= false*/)
 				if (bScrollBarExist == false)	// 初めてスクロールバーができるので
 					rcWork.right	+= ::GetSystemMetrics(SM_CXVSCROLL);
 			}
-			SetWindowPos(NULL, 0, 0, rcWindow.Width(), rcWindow.Height(), SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW);
+			SetWindowPos(NULL, 0, 0, rcWindow.Width(), rcWindow.Height(), SWP_NOMOVE | SWP_NOZORDER | SWP_NOREDRAW | SWP_NOACTIVATE);
 		}
 		CPoint ptOffset;
 		GetScrollOffset(ptOffset);

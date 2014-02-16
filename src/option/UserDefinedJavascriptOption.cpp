@@ -267,7 +267,7 @@ unique_ptr<UserDefinedJsData> CUserDefinedJsOption::_CreateJsData(const CString&
 
 	std::wregex	rx(L"// @(\\w+)\\s+(.+)");
 	std::wsmatch result;
-	while (std::getline(filestream, buff) != 0) {
+	while (std::getline(filestream, buff)) {
 		if (buff.find(L"// ==/UserScript==", 0) != -1)
 			break;
 		if (std::regex_search(buff.cbegin(), buff.cend(), result, rx)) {

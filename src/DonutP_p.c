@@ -3,11 +3,11 @@
 /* this ALWAYS GENERATED file contains the proxy stub code */
 
 
- /* File created by MIDL compiler version 8.00.0595 */
-/* at Sun Aug 11 19:46:32 2013
+ /* File created by MIDL compiler version 8.00.0603 */
+/* at Thu Dec 19 00:51:32 2013
  */
 /* Compiler settings for DonutP.idl:
-    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0595 
+    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 8.00.0603 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
@@ -2428,7 +2428,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
     1, /* -error bounds_check flag */
     0x50002, /* Ndr library version */
     0,
-    0x8000253, /* MIDL Version 8.0.595 */
+    0x800025b, /* MIDL Version 8.0.603 */
     0,
     UserMarshalRoutines,
     0,  /* notify & notify_flag routine table */

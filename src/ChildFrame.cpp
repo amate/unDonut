@@ -618,6 +618,7 @@ private:
 	DWORD	m_dwThreadIdFromNewWindow;
 	CString m_strNewWindowURL;
 	bool	m_bFirstNavigate;
+	bool	m_bWaitNavigateLock;	// for NavigateLock
 	int		m_nAutoLoginPrevIndex;
 	CString m_strDelayLoadURL;
 
@@ -650,6 +651,7 @@ private:
 	FindHilightData m_FindBarHilightData;
 
 	CSharedMemory	m_sharedMemKeyMessage;
+
 };
 
 #include "ChildFrame.inl"

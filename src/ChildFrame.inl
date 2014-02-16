@@ -27,6 +27,7 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_hMapChildFrameData(NULL),
 	m_dwThreadIdFromNewWindow(0),
 	m_bFirstNavigate(true),
+	m_bWaitNavigateLock(true),
 	m_nAutoLoginPrevIndex(-1),
 	m_bMClickFail(false)
 {	}
@@ -169,7 +170,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 		}
 		// Navigate lock
 		if ( _check_flag(DVS_EX_OPENNEWWIN, m_view.GetExStyle()) &&
-		     m_bFirstNavigate == false &&
+			 m_bWaitNavigateLock == false &&
 		     IsRefreshBeforeNavigate2(pDisp) == false )
 		{
 			NewChildFrameData	data(GetParent());
@@ -327,6 +328,8 @@ void	CChildFrame::Impl::OnDocumentComplete(IDispatch *pDisp, const CString& strU
 	}
 
 	if ( IsPageIWebBrowser(pDisp) || strURL.IsEmpty() ) {
+
+		m_bWaitNavigateLock = false;
 
 		// é©ìÆÉäÉTÉCÉYÇÃê›íËÇèâä˙âª
 		m_bImagePage	= false;

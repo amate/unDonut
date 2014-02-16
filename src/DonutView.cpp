@@ -528,7 +528,6 @@ int CDonutView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 		HRESULT hr = QueryControl(IID_IWebBrowser2, (void**)&m_spBrowser);
 		ATLASSERT(m_spBrowser);
 
-		BOOL	bCheck	= GetRegisterAsDropTarget();
 		hr = CoCreateInstance(CLSID_DragDropHelper, NULL, CLSCTX_INPROC_SERVER,
                      IID_IDropTargetHelper, (LPVOID*)&m_spDropTargetHelper);
 		ATLASSERT(hr == S_OK);
