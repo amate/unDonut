@@ -148,6 +148,7 @@
 #define IDD_RESTORE_TABLIST_SELECTOR    331
 #define IDI_FAVORITEGROUP               333
 #define IDD_FAVORITEGROUP_EDIT          334
+#define IDD_PROPPAGE_BROWSER_EMULATION	335
 #define IDC_SLIDER                      1000
 #define IDC_IGNORED_URL_LIST            1000
 #define IDC_EDIT                        1001
@@ -632,6 +633,9 @@
 #define IDC_STATIC_EXSISTCOMMAND        1457
 #define IDC_CHECKBOX_ENABLE_AUTOLOGIN	1458
 #define IDC_CHECKBOX_AUTOFILLONLY		1459
+#define IDC_COMBO_DEFAULT_BROWSER_EMULATION	1460
+#define IDC_LISTIVEW_BROWSER_EMULATION	1461
+#define IDC_BUTTON_ADDURL				1462
 #define IDC_CHECK_VIDEO                 2000
 #define IDC_CHECK_SOUND                 2001
 #define IDC_CHECK_IMAGE                 2002
@@ -1031,9 +1035,9 @@
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        335
+#define _APS_NEXT_RESOURCE_VALUE        340
 #define _APS_NEXT_COMMAND_VALUE         33242
-#define _APS_NEXT_CONTROL_VALUE         1460
+#define _APS_NEXT_CONTROL_VALUE         1480
 #define _APS_NEXT_SYMED_VALUE           130
 #endif
 #endif

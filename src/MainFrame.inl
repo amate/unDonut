@@ -2202,6 +2202,7 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 
 	CSurpressPopupPropertyPage		pageSurpreePopup(strURL, strTitle);
 	CUrlSecurityPropertyPage		pageUrlSecu(strURL, m_hWnd);		//+++
+	CBrowserEmulationPropertyPage	pageBrowserEmulation(strURL);
 	CUserDefinedCSSPropertyPage		pageUserCSS(strURL);
 	CUserDefinedJsPropertyPage		pageUserJs(strURL);
 	CDonutExecutablePropertyPage	pageExe;
@@ -2225,13 +2226,14 @@ void	CMainFrame::Impl::OnViewOptionDonut(UINT uNotifyCode, int nID, CWindow wndC
 	sheet.AddPage( pageDLC				 );
 	sheet.AddPage( pageSurpreePopup, TRUE  );
 	sheet.AddPage( pageUrlSecu 	 , FALSE );				//+++
+	sheet.AddPage( pageBrowserEmulation, FALSE );
 	//sheet.AddPage( pageUserCSS	 , FALSE );
 	//sheet.AddPage( pageUserJs	 , FALSE );
 	sheet.AddPage( pageStartUpFinish );
 	sheet.AddPage( pageExe			 );
 	sheet.AddPage( pageProxy		 );
 	sheet.AddPage( pageSkin 		 );
-	sheet.AddPage( pagePlugin		 );
+	//sheet.AddPage( pagePlugin		 );
 
 	/* [Donutのオプション]を表示 */
 	sheet.DoModal();

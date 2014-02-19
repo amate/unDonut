@@ -24,6 +24,8 @@
 #include "FileNotification.h"
 #include "Misc.h"
 
+#include "option\BrowserEmulationOption.h"
+
 
 // ImageDirectoryEntryToData
 #pragma comment(lib, "Dbghelp.lib")
@@ -501,8 +503,36 @@ BOOL WINAPI HookHttpQueryInfoA(
 	if (dwInfoLevel == HTTP_QUERY_CUSTOM && strcmp((LPCSTR)lpBuffer, "X-UA-Compatible") == 0) {
 		if (pfOrgHttpQueryInfoA(hRequest, dwInfoLevel, lpBuffer, lpdwBufferLength, lpdwIndex) && strncmp((LPCSTR)lpBuffer, "IE=", 3) == 0)
 			return TRUE;
-		::strcpy((LPSTR)lpBuffer, "IE=edge");
-		*lpdwBufferLength = 7;
+		//::strcpy((LPSTR)lpBuffer, "IE=edge");
+		//*lpdwBufferLength = 7;
+
+		CString strRequestHeaders;
+		DWORD dwBuffLength = 0;
+		DWORD dwIndex = 0;
+		::HttpQueryInfoW(hRequest, HTTP_QUERY_RAW_HEADERS_CRLF | HTTP_QUERY_FLAG_REQUEST_HEADERS, nullptr, &dwBuffLength, &dwIndex);
+		if (::HttpQueryInfoW(hRequest, HTTP_QUERY_RAW_HEADERS_CRLF | HTTP_QUERY_FLAG_REQUEST_HEADERS, strRequestHeaders.GetBuffer(dwBuffLength + 1), &dwBuffLength, &dwIndex)) {
+			strRequestHeaders.ReleaseBuffer();
+			int nSpaceBegin = strRequestHeaders.Find(_T(' '), 0);
+			int nSpaceEnd = strRequestHeaders.Find(_T(' '), nSpaceBegin + 1);
+			int nHostBegin = strRequestHeaders.Find(_T("Host: "), nSpaceEnd);
+			int nHostEnd = strRequestHeaders.Find(_T('\r'), nHostBegin);
+			if (nSpaceBegin < nSpaceEnd && nHostBegin < nHostEnd) {
+				CString URL;
+				CString path = strRequestHeaders.Mid(nSpaceBegin + 1, nSpaceEnd - nSpaceBegin - 1);
+				if (path.Left(4).CompareNoCase(_T("http")) == 0) {
+					URL = path;
+				} else {
+					CString host = strRequestHeaders.Mid(nHostBegin + 6, nHostEnd - nHostBegin - 6);
+					URL.Format(_T("http://%s%s"), host, path);
+				}
+				std::string mode = CBrowserEmulationOption::FindEmulationMode(URL);
+				if (mode.length() > 0) {
+					mode.insert(0, "IE=");
+					::strcpy((LPSTR)lpBuffer, mode.c_str());
+					*lpdwBufferLength = mode.length();
+				}
+			}
+		}
 		return TRUE;
 	}
 	return pfOrgHttpQueryInfoA(hRequest, dwInfoLevel, lpBuffer, lpdwBufferLength, lpdwIndex);

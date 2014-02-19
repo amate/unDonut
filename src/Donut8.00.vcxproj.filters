@@ -446,6 +446,9 @@
     <ClCompile Include="option\StartUpFinishOption.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
+    <ClCompile Include="option\BrowserEmulationOption.cpp">
+      <Filter>Source Files\option</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AccelManager.h">
@@ -932,6 +935,9 @@
       <Filter>Source Files</Filter>
     </ClInclude>
     <ClInclude Include="option\StartUpFinishOption.h">
+      <Filter>Source Files\option</Filter>
+    </ClInclude>
+    <ClInclude Include="option\BrowserEmulationOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
   </ItemGroup>

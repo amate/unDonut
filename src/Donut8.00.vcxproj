@@ -383,13 +383,13 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4308</DisableSpecificWarnings>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -404,6 +404,7 @@
       <SubSystem>Windows</SubSystem>
       <LargeAddressAware>true</LargeAddressAware>
       <TargetMachine>MachineX86</TargetMachine>
+      <ImageHasSafeExceptionHandlers />
     </Link>
     <ManifestResourceCompile />
   </ItemDefinitionGroup>
@@ -1206,6 +1207,7 @@
     <ClCompile Include="MultiThreadManager.cpp" />
     <ClCompile Include="newdelete.cpp" />
     <ClCompile Include="option\AddressBarPropertyPage.cpp" />
+    <ClCompile Include="option\BrowserEmulationOption.cpp" />
     <ClCompile Include="option\LinkBarPropertyPage.cpp" />
     <ClCompile Include="option\MDITabDialog.cpp" />
     <ClCompile Include="option\RightClickMenuDialog.cpp" />
@@ -1401,6 +1403,7 @@
     <ClInclude Include="Misc.h" />
     <ClInclude Include="MultiThreadManager.h" />
     <ClInclude Include="OleDragDropExpTreeViewCtrl.h" />
+    <ClInclude Include="option\BrowserEmulationOption.h" />
     <ClInclude Include="option\RightClickMenuDialog.h" />
     <ClInclude Include="option\UrlSecurityExPropDialog.h" />
     <ClInclude Include="option\UserDefinedCSSOption.h" />

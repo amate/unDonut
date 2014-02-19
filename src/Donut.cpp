@@ -234,6 +234,7 @@ static bool _PrivateInit()
 	CFileNewOption::GetProfile();
 	CStartUpOption::GetProfile();
 	CUrlSecurityOption::GetProfile();
+	CBrowserEmulationOption::GetProfile();
 	CUserDefinedCSSOption::LoadUserCSSConfig();
 	CUserDefinedJsOption::LoadUserJsConfig();
 	CDonutConfirmOption::GetProfile();
