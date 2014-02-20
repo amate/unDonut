@@ -16,23 +16,6 @@
 
 #define ENGINENAME_FOR_NO_SEARCH_INI	_T("search.iniが無いのでGoogleのみ")
 
-/// s_nMinimumLength以下の文字列を削除する
-void	DeleteMinimumLengthWord(CString& strWord)
-{
-	if ( 1 < CSearchBarOption::s_nMinimumLength && strWord.IsEmpty() == FALSE) {
-		std::vector<CString>	strSearchWords;
-		Misc::SeptTextToWords(strSearchWords, strWord);
-		strWord = _T("");
-		std::vector<CString>::iterator it = strSearchWords.begin();
-		for ( ; it != strSearchWords.end(); ++it ) {
-			if (CSearchBarOption::s_nMinimumLength <= it->GetLength() ) {
-				strWord += *it;
-				strWord += _T(" ");
-			}
-		}
-	}
-}
-
 /// コンボボックスの高さを指定する
 void	_SetVerticalItemCount(CComboBox &cmb, int count)
 {
@@ -140,6 +123,8 @@ public:
 	void	SetFocusToEngine();
 	void	RefreshEngine() { _threadInitComboBox(); _SetCmbKeywordEmptyStr(); }
 
+	void	AddToSearchBoxUnique(const CString& str);
+
 	BOOL	PreTranslateMessage(MSG *pMsg);
 
 	// Overrides
@@ -232,7 +217,6 @@ private:
 	void	_UpdateLayout(const CPoint& pt);
 	void	_UpdateLayout2(const CPoint& pt);
 	void	_OnEnterKeyDown(bool bEditText = false);
-	void	_AddToSearchBoxUnique(const CString& str);
 	void	_EncodeString(CString& str, int dwEncode);
 	void	_DrawDragEffect(bool bRemove);
 	void	_SaveHistory();
@@ -675,7 +659,7 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 		m_PostData.nPostBytes	= 0;
 
 		if (bUrlSearch == false)		//+++ url検索だった場合は、履歴に入れないで置く.
-			_AddToSearchBoxUnique(strOrg);
+			AddToSearchBoxUnique(strOrg);
 	}
 }
 
@@ -2092,7 +2076,7 @@ void CDonutSearchBar::Impl::_OnEnterKeyDown(bool bEditText /*= false*/)
 }
 
 /// 重複してたら消して検索履歴に追加する
-void CDonutSearchBar::Impl::_AddToSearchBoxUnique(const CString& str)
+void CDonutSearchBar::Impl::AddToSearchBoxUnique(const CString& str)
 {
 	// search the same string
 	int nCount = m_cmbKeyword.GetCount();
@@ -2286,6 +2270,11 @@ void	CDonutSearchBar::SetFocusToEngine()
 void	CDonutSearchBar::RefreshEngine()
 {
 	pImpl->RefreshEngine();
+}
+
+void	CDonutSearchBar::AddToSearchBoxUnique(const CString& str)
+{
+	pImpl->AddToSearchBoxUnique(str);
 }
 
 BOOL	CDonutSearchBar::PreTranslateMessage(MSG *pMsg)

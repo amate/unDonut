@@ -1332,7 +1332,7 @@ void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 			}
 			CString strWords = m_strSearchWord;
-			//DeleteMinimumLengthWord(strWords);
+			_DeleteMinimumHilightTextLengthWord(strWords);
 			m_bNowHilight = true;
 			_HilightText(_T(""), false);
 			_HilightText(strWords, true);
@@ -1345,11 +1345,78 @@ LRESULT CChildFrame::Impl::OnForwardMsg(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	return m_view.SendMessage(WM_FORWARDMSG, 0, (LPARAM)m_sharedMemKeyMessage.GetPointer());
 }
 
+CString	CChildFrame::Impl::_SearchBarHelper(const CString& URL)
+{
+	if (auto optName = CSearchBarHelper::FindName(URL)) {
+		CComPtr<IDispatch> spDisp;
+		m_spBrowser->get_Document(&spDisp);
+		CComQIPtr<IHTMLDocument2>	spDoc2 = spDisp;
+		if (spDoc2 == nullptr)
+			return CString();
+
+		const CString& targetName = *optName;
+		CString value;
+
+		CComPtr<IHTMLElementCollection>	spCol;
+		spDoc2->get_forms(&spCol);
+		ForEachHtmlElement(spCol, [&targetName, &value](IDispatch* pDisp) -> bool {
+			CComQIPtr<IHTMLFormElement>	spForm = pDisp;
+			ForEachHtmlElement(spForm, [&targetName, &value](IDispatch* pDisp) -> bool {
+				CComQIPtr<IHTMLInputElement>	spInput = pDisp;
+				if (spInput == nullptr)
+					return true;
+				CComBSTR inputName;
+				spInput->get_name(&inputName);
+				if (inputName == nullptr || inputName != (LPCTSTR)targetName)
+					return true;
+				CComBSTR strValue;
+				spInput->get_value(&strValue);
+				if (strValue == nullptr)
+					return true;
+				value = strValue;
+				return false;
+			});
+			if (value.GetLength() > 0)
+				return false;
+			else
+				return true;
+		});
+		return value;
+	}
+	return CString();
+}
+
+void	CChildFrame::Impl::_DeleteMinimumHilightTextLengthWord(CString& strWord)
+{
+	if (1 < m_pGlobalConfig->nMimimulHilightTextLength && strWord.IsEmpty() == FALSE) {
+		std::vector<CString>	strSearchWords;
+		Misc::SeptTextToWords(strSearchWords, strWord);
+		strWord = _T("");
+		std::vector<CString>::iterator it = strSearchWords.begin();
+		for (; it != strSearchWords.end(); ++it) {
+			if (m_pGlobalConfig->nMimimulHilightTextLength <= it->GetLength()) {
+				strWord += *it;
+				strWord += _T(" ");
+			}
+		}
+	}
+}
 
 LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CString strURL = GetLocationURL();
 	strURL.MakeLower();
+
+	CString formValue = _SearchBarHelper(strURL);
+	if (formValue.GetLength() > 0) {
+		COPYDATASTRUCT	cds;
+		cds.dwData = kAddToSearchBoxUnique;
+		cds.lpData = (LPVOID)formValue.GetBuffer(0);
+		cds.cbData = (formValue.GetLength() + 1) * sizeof(WCHAR);
+		GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+		
+		m_strSearchWord = formValue;
+	}
 
 	if (strURL.Left(30) == L"http://www.google.co.jp/search" || strURL.Left(31) == L"https://www.google.co.jp/search" ) {
 		SetTimer(kDelayHilightTimerId, kDelayHilightInterval);
@@ -1367,7 +1434,7 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 				GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
 			}
 			CString strWords = m_strSearchWord;
-			//DeleteMinimumLengthWord(strWords);
+			_DeleteMinimumHilightTextLengthWord(strWords);
 			m_bNowHilight = true;
 			_HilightText(strWords, true);
 		}
@@ -1760,14 +1827,15 @@ void 	CChildFrame::Impl::OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 LRESULT CChildFrame::Impl::OnHilight(const CString& strKeyWord)
 {
 	bool bHilightSw = m_pGlobalConfig->bHilightSwitch;
+	CString strHilight = strKeyWord;
 	m_bNowHilight	= bHilightSw;
 	if (bHilightSw) {
-		m_strSearchWord = strKeyWord;
-//		DeleteMinimumLengthWord(strKeyWord);
+		m_strSearchWord = strHilight;
+		_DeleteMinimumHilightTextLengthWord(strHilight);
 	} else {
 		m_strSearchWord.Empty();
 	}
-	_HilightText(strKeyWord, bHilightSw);
+	_HilightText(strHilight, bHilightSw);
 
 	return TRUE;
 }

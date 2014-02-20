@@ -36,6 +36,7 @@
 #include "ToolTipManager.h"
 #include "BingTranslatorMenu.h"
 #include "AutoLogin.h"
+#include "SearchBarHelper.h"
 //#include "PluginManager.h"
 //#include "Download\DownloadManager.h"
 //#include "MainFrame.h"
@@ -579,8 +580,10 @@ private:
 	int		_HilightFromFindBar(LPCTSTR strText, bool bNoHighlight, bool bEraseOld, long Flags);
 	void	_SetFocusToHTML();
 	bool	_ShowLinkTextSelectWindow(MSG* pMsg);
+	CString	_SearchBarHelper(const CString& URL);
 
 	void	_HilightText(LPCTSTR lpszKeyWord, bool bHilight);
+	void	_DeleteMinimumHilightTextLengthWord(CString& strWord);
 
 	// Data members
 	CChildFrame*	m_pParentChild;

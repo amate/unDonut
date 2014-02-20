@@ -26,6 +26,7 @@
 #include "DonutSimpleEventManager.h"
 #include "VersionControl.h"
 #include "APIHook.h"
+#include "SearchBarHelper.h"
 
 
 extern const UINT	g_uDropDownCommandID[] = {
@@ -248,6 +249,8 @@ static bool _PrivateInit()
 	CSkinOption::GetProfile();
 
 	CExMenuManager::Initialize();
+
+	CSearchBarHelper::LoadData();
 
 	return true;
 }

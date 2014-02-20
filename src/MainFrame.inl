@@ -1489,6 +1489,13 @@ BOOL	CMainFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 		}
 		break;
 
+	case kAddToSearchBoxUnique:
+		{
+			CString str = (LPCWSTR)pCopyDataStruct->lpData;
+			m_SearchBar.AddToSearchBoxUnique(str);
+		}
+		break;
+
 	case kOpenMultiUrl:
 		{
 			std::vector<CString> vecUrl = GetMultiText((LPCWSTR)pCopyDataStruct->lpData);

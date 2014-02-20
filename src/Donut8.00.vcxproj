@@ -1419,6 +1419,7 @@
     <ClInclude Include="RecentClosedTabList.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ScriptErrorCommandTargetImpl.h" />
+    <ClInclude Include="SearchBarHelper.h" />
     <ClInclude Include="SearchHistoryDialog.h" />
     <ClInclude Include="SharedMemoryUtil.h" />
     <ClInclude Include="ShellFileDialog.h" />

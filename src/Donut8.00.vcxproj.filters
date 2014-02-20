@@ -940,6 +940,9 @@
     <ClInclude Include="option\BrowserEmulationOption.h">
       <Filter>Source Files\option</Filter>
     </ClInclude>
+    <ClInclude Include="SearchBarHelper.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DonutP.idl">

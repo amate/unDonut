@@ -52,6 +52,7 @@ enum WmCopyDataUseage {
 	kSetFaviconURL,
 	kSearchTextWithEngine,
 	kSetSearchText,
+	kAddToSearchBoxUnique,
 	kHilightText,
 	kNavigateChildFrame,
 	kOpenMultiUrl,

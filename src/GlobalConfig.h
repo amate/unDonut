@@ -40,6 +40,7 @@ struct GlobalConfig
 	bool	bSaveSearchWord;
 	bool	bSaveSearchWordOrg;
 	HWND	SearchEditHWND;
+	int		nMimimulHilightTextLength;
 	
 	// SerachBar
 	bool	bHilightSwitch;

@@ -4,9 +4,6 @@
 
 #pragma once
 
-/// s_nMinimumLengthˆÈ‰º‚Ì•¶š—ñ‚ğíœ‚·‚é
-void	DeleteMinimumLengthWord(CString& strWord);
-
 
 struct SearchPostData {
 	LPVOID		pPostData;
@@ -52,6 +49,8 @@ public:
 
 	void	SetFocusToEngine();
 	void	RefreshEngine();
+
+	void	AddToSearchBoxUnique(const CString& str);
 
 	BOOL	PreTranslateMessage(MSG *pMsg);
 

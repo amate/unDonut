@@ -78,6 +78,7 @@ void	SetGlobalConfig(GlobalConfig* pConfig)
 	pConfig->bScrollCenter	= CSearchBarOption::s_bScrollCenter;
 	pConfig->bSaveSearchWord	= CSearchBarOption::s_bSaveSearchWord;
 	pConfig->bSaveSearchWordOrg = CSearchBarOption::s_bSaveSearchWord;
+	pConfig->nMimimulHilightTextLength	= CSearchBarOption::s_nMinimumLength;
 
 	// CAddressBarOption‚”
 	pConfig->bReplaceSpace	= CAddressBarOption::s_bReplaceSpace;
