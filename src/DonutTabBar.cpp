@@ -260,12 +260,12 @@ void	CTabSkin::_DrawText(CDCHandle dc, CPoint ptOffset, const TabItem& item, boo
 	rcBtn.DeflateRect(2, 0);
 
 	UINT	uFormat;
-	int		nWidth	= MtlComputeWidthOfText(item.strItem, dc.GetCurrentFont());
+	int		nWidth	= MtlComputeWidthOfText(item.strItem, dc.GetCurrentFont(), true);
 
 	if ( nWidth > rcBtn.Width() ) {
-		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_LEFT | DT_END_ELLIPSIS;
+		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | DT_LEFT | DT_END_ELLIPSIS | DT_NOPREFIX;
 	} else {
-		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | /*DT_CENTER | */DT_NOCLIP;
+		uFormat = DT_SINGLELINE | DT_VCENTER | DT_NOPREFIX | /*DT_CENTER | */DT_NOCLIP | DT_NOPREFIX;
 		if (CTabBarOption::s_bCenterAlign)
 			uFormat |= DT_CENTER;
 	}
@@ -2060,8 +2060,8 @@ LRESULT CDonutTabBar::Impl::OnGetDispInfo(LPNMHDR pnmh)
 		ATLASSERT( pChildFrameUIData );
 		CString	strName = pChildFrameUIData->strTitle;
 		CString	strUrl	= pChildFrameUIData->strLocationURL;
-		m_strTooltipText = strName + _T("\n") + strUrl;		
-
+		m_strTooltipText = strName + _T("\n") + strUrl;	
+		
 		pDispInfo->lpszText = m_strTooltipText.GetBuffer(0);
 	} else {
 		pDispInfo->lpszText = NULL;
@@ -2193,6 +2193,7 @@ void	CDonutTabBar::Impl::_InitTooltip()
 
 	// create a tool tip
 	m_ToolTip.Create(m_hWnd);
+	m_ToolTip.ModifyStyle(0, TTS_NOPREFIX);
 	ATLASSERT( m_ToolTip.IsWindow() );
 	CToolInfo tinfo(TTF_SUBCLASS, m_hWnd);			
 	if (bUseTheme == false)

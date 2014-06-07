@@ -621,6 +621,7 @@ LRESULT	CDonutAddressBar::Impl::OnCreate(LPCREATESTRUCT)
 	{
 		CToolTipCtrl	toolTipCtrl;
 		toolTipCtrl.Create(m_hWnd/*Parent*/);
+		toolTipCtrl.ModifyStyle(0, TTS_NOPREFIX);
 		toolTipCtrl.Activate(TRUE);
 		CToolInfo	toolInfo(TTF_SUBCLASS, GetEditCtrl());
 		toolTipCtrl.AddTool(toolInfo);
@@ -1305,6 +1306,9 @@ HWND	CDonutAddressBar::Impl::_CreateGoButton(int cx, int cy, COLORREF clrMask, U
 	/* 移動ボタン(ツールバー)を作成 */
 	m_wndGo.Create(m_hWnd, CRect(0, 0, 100, 100), _T("GoButton"), ATL_SIMPLE_TOOLBAR_PANE_STYLE | TBSTYLE_LIST | CCS_TOP, 0, 12);
 	m_wndGo.SetButtonStructSize();
+
+	m_wndGo.GetToolTips().ModifyStyle(0, TTS_NOPREFIX);
+
 	// フォント
 	if (m_font.m_hFont)
 		m_wndGo.SetFont(m_font.m_hFont);

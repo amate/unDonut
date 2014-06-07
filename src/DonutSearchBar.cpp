@@ -93,6 +93,10 @@ class CDonutSearchBar::Impl :
 	protected CSearchBarOption
 
 {
+	enum {
+		WM_KEYWORDSELCHANGEDELAY = WM_APP + 100,
+	};
+
 public:
 	Impl();
 	~Impl();
@@ -153,7 +157,8 @@ public:
 
 		COMMAND_ID_HANDLER_EX( ID_SEARCHENGINE_MENU, OnSearchEngineMenu )
 		NOTIFY_CODE_HANDLER_EX( TTN_GETDISPINFO, OnToolBarGetDispInfo )
-		COMMAND_HANDLER_EX	( IDC_CMB_KEYWORD, CBN_SELCHANGE, OnKeywordSelChange	)
+		COMMAND_HANDLER_EX(IDC_CMB_KEYWORD, CBN_SELCHANGE, OnKeywordSelChangeDeliver)
+		MESSAGE_HANDLER_EX(WM_KEYWORDSELCHANGEDELAY, OnKeywordSelChangeDelay)
 		COMMAND_HANDLER_EX	( IDC_CMB_ENGIN	 , CBN_SELCHANGE, OnEngineSelChange		)
 
 	ALT_MSG_MAP(1)	// KeywordEdit
@@ -190,7 +195,10 @@ public:
 	void	OnParentNotify(UINT message, UINT nChildID, LPARAM lParam);
 
 	LRESULT OnToolBarGetDispInfo(LPNMHDR pnmh);
-	void	OnKeywordSelChange(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnKeywordSelChangeDeliver(UINT uNotifyCode, int nID, CWindow wndCtl) {
+		PostMessage(WM_KEYWORDSELCHANGEDELAY);
+	}
+	LRESULT OnKeywordSelChangeDelay(UINT uMsg, WPARAM wParam, LPARAM lParam);
 	void	OnEngineSelChange(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	// KeywordEdit
@@ -649,6 +657,9 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 		args.strSection    = strEngine;
 		_RemoveShortcutWord(str);
 		args.strSearchWord = str;
+
+		if (bUrlSearch == false)		//+++ url検索だった場合は、履歴に入れないで置く.
+			AddToSearchBoxUnique(strOrg);
 		
 		SetSearchStr(str);
 
@@ -657,9 +668,6 @@ void	CDonutSearchBar::Impl::SearchWebWithEngine(CString str, CString strEngine)
 
 		m_PostData.pPostData	= NULL;
 		m_PostData.nPostBytes	= 0;
-
-		if (bUrlSearch == false)		//+++ url検索だった場合は、履歴に入れないで置く.
-			AddToSearchBoxUnique(strOrg);
 	}
 }
 
@@ -1418,7 +1426,7 @@ LRESULT CDonutSearchBar::Impl::OnToolBarGetDispInfo(LPNMHDR pnmh)
 
 /// キーワードComboBoxの選択が変わった
 /// 設定してあれば検索をかける
-void	CDonutSearchBar::Impl::OnKeywordSelChange(UINT uNotifyCode, int nID, CWindow wndCtl)
+LRESULT	CDonutSearchBar::Impl::OnKeywordSelChangeDelay(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	bool bSts = s_bKeyChgGo;
 	if (::GetKeyState(VK_SHIFT) < 0)
@@ -1426,6 +1434,7 @@ void	CDonutSearchBar::Impl::OnKeywordSelChange(UINT uNotifyCode, int nID, CWindo
 
 	if (bSts)
 		_OnEnterKeyDown();
+	return 0;
 }
 
 

@@ -44,18 +44,18 @@ inline bool MtlIsCrossRect(const WTL::CRect &rc1, const WTL::CRect &rc2)
 
 
 
-inline int MtlComputeWidthOfText(const CString &strText, HFONT hFont)
+inline int MtlComputeWidthOfText(const CString &strText, HFONT hFont, bool bNoPrefix = false)
 {
 	if ( strText.IsEmpty() )
 		return 0;
 
-	CString str = strText;	//+++
-	str.Remove(_T('&'));	//+++
-
 	CWindowDC dc(NULL);
 	CRect	  rcText(0, 0, 0, 0);
 	HFONT	  hOldFont = dc.SelectFont(hFont);
-	dc.DrawText(str/*+++strText*/, -1, &rcText, DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_CALCRECT);
+	UINT	format = DT_SINGLELINE | DT_LEFT | DT_VCENTER | DT_CALCRECT;
+	if (bNoPrefix)
+		format |= DT_NOPREFIX;
+	dc.DrawText(strText, strText.GetLength(), &rcText, format);
 	dc.SelectFont(hOldFont);
 
 	return rcText.Width();
