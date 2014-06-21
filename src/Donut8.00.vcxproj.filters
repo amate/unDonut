@@ -36,15 +36,6 @@
     <Filter Include="Source Files\DownloadManager">
       <UniqueIdentifier>{c62d03f5-8075-47c5-b214-1818866b90e8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="boost">
-      <UniqueIdentifier>{4519c687-f5db-420a-b0f8-aadca0d8990a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="boost\thread">
-      <UniqueIdentifier>{db8abc57-b810-48af-84a3-8ba90ed9b485}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="boost\serialization">
-      <UniqueIdentifier>{3d4d7afb-77c4-4929-8f33-bef7f7221d7f}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Window\Menu">
       <UniqueIdentifier>{d0c798ea-09be-4e9d-8d68-2dcfb491cdd3}</UniqueIdentifier>
     </Filter>
@@ -275,137 +266,14 @@
     <ClCompile Include="option\LinkBarPropertyPage.cpp">
       <Filter>Source Files\option</Filter>
     </ClCompile>
-    <ClCompile Include="boost\thread\thread.cpp">
-      <Filter>boost\thread</Filter>
-    </ClCompile>
     <ClCompile Include="GlobalConfig.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="DonutCommandBar.cpp">
       <Filter>Source Files\Window</Filter>
     </ClCompile>
-    <ClCompile Include="boost\serialization\extended_type_info.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\extended_type_info_no_rtti.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\extended_type_info_typeid.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\polymorphic_iarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\polymorphic_oarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\shared_ptr_helper.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\stl_port.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\text_iarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\text_oarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\text_wiarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\text_woarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\utf8_codecvt_facet.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\void_cast.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_archive_exception.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_grammar.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_iarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_oarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_wgrammar.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_wiarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\xml_woarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\archive_exception.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_archive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_iarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_iserializer.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_oarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_oserializer.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_pointer_iserializer.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_pointer_oserializer.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_serializer_map.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_text_iprimitive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_text_oprimitive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_text_wiprimitive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_text_woprimitive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\basic_xml_archive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\binary_iarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\binary_oarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\binary_wiarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\binary_woarchive.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\serialization\codecvt_null.cpp">
-      <Filter>boost\serialization</Filter>
-    </ClCompile>
     <ClCompile Include="FavoriteEditDialog.cpp">
       <Filter>Source Files\dialog</Filter>
-    </ClCompile>
-    <ClCompile Include="boost\thread\tss_null.cpp">
-      <Filter>boost\thread</Filter>
     </ClCompile>
     <ClCompile Include="ProcessMonitorDialog.cpp">
       <Filter>Source Files\dialog</Filter>
@@ -1054,9 +922,6 @@
     </None>
     <None Include="DonutCommandBar.inl">
       <Filter>Source Files\Window</Filter>
-    </None>
-    <None Include="boost\serialization\basic_xml_grammar.ipp">
-      <Filter>boost\serialization</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

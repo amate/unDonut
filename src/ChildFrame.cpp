@@ -702,12 +702,12 @@ HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRe
 	pImpl->m_strNewWindowURL	= data.strNewWindowURL;
 		
 	// ChildFrameウィンドウ作成
-	pImpl->SetDLCtrl(data.dwDLCtrl);
-	pImpl->SetExStyle(data.dwExStyle);
-
 	RECT rc;
 	::GetClientRect(data.hWndParent, &rc);
 	HWND hWndChildFrame = pImpl->Create(data.hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
+
+	pImpl->SetDLCtrl(data.dwDLCtrl);
+	pImpl->SetExStyle(data.dwExStyle);
 
 	pImpl->SetAutoRefreshStyle(data.dwAutoRefresh);
 	pImpl->SetSearchWordAutoHilight(data.searchWord, data.bAutoHilight);
