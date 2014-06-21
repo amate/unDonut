@@ -221,9 +221,6 @@
     <ClCompile Include="FaviconManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="APIHook.cpp">
-      <Filter>Source Files\Base</Filter>
-    </ClCompile>
     <ClCompile Include="GdiplusUtil.cpp">
       <Filter>Source Files\Base</Filter>
     </ClCompile>
@@ -316,6 +313,9 @@
     </ClCompile>
     <ClCompile Include="option\BrowserEmulationOption.cpp">
       <Filter>Source Files\option</Filter>
+    </ClCompile>
+    <ClCompile Include="APIHook.cpp">
+      <Filter>Source Files\Base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
