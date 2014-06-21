@@ -140,6 +140,7 @@ public:
 		COMMAND_ID_HANDLER_EX( IDC_BTN_TEST	, OnTest )
 		COMMAND_ID_HANDLER_EX( IDCANCEL	, OnFinish )
 		COMMAND_HANDLER_EX(IDC_URL_LIST, CBN_SELCHANGE, OnUrlListChange )
+		COMMAND_ID_HANDLER_EX(IDOK, OnURLFilterKeyDown)
 	END_MSG_MAP()
 
 	BOOL	OnInitDialog(CWindow wndFocus, LPARAM lInitParam);
@@ -153,6 +154,8 @@ public:
 	void	OnFinish(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnUrlListChange(UINT uNotifyCode, int nID, CWindow wndCtl);
 
+	void	OnURLFilterKeyDown(UINT uNotifyCode, int nID, CWindow wndCtl);
+
 private:
 	void	_SetLoginInfoData();
 	void	_SetCopyLoginInfo();
@@ -160,7 +163,7 @@ private:
 	// Data members
 	LoginInfomation	m_info;
 
-	CComboBox	m_UrlList;
+	CListBox	m_UrlList;
 
 	bool	m_bEnableAutoLogin;
 	CString	m_Url;

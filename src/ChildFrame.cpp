@@ -479,6 +479,7 @@ public:
 		COMMAND_ID_HANDLER_EX( ID_SPECIAL_UP		, OnSpecialKeys		)
 		COMMAND_ID_HANDLER_EX( ID_SPECIAL_DOWN 		, OnSpecialKeys		)
 		COMMAND_ID_HANDLER_EX( ID_SAVEIMAGE			, OnSaveImage		)
+		COMMAND_ID_HANDLER_EX( ID_DOAUTOLOGIN, OnDoAutoLogin )
 
 		COMMAND_ID_HANDLER_EX( ID_VIEW_REFRESH		, OnViewRefresh 	)
 
@@ -563,6 +564,7 @@ public:
 	void	OnHtmlZoom(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl);
 	void	OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl);
+	void	OnDoAutoLogin(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	void	OnViewRefresh(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 

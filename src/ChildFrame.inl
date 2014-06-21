@@ -1756,6 +1756,10 @@ HANDLE	CChildFrame::Impl::OnGetLoginInfomation(HANDLE hMapForClose)
 								} else if (strType == L"checkbox") {
 									CComBSTR	strName;
 									spInput->get_name(&strName);
+									if (strName == nullptr) {
+										CComQIPtr<IHTMLElement>	spInputElm = spInput;
+										spInputElm->get_id(&strName);
+									}
 									VARIANT_BOOL	vChecked;
 									spInput->get_checked(&vChecked);
 									info2.mapCheckbox.insert(std::make_pair(WTL::CString(strName), bool(vChecked != VARIANT_FALSE)));
@@ -2311,6 +2315,15 @@ void	CChildFrame::Impl::OnSaveImage(UINT uNotifyCode, int nID, CWindow wndCtl)
 
 	if (strUrl.GetLength() > 0)
 		m_view.StartTheDownload(strUrl, true);
+}
+
+void	CChildFrame::Impl::OnDoAutoLogin(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	CString strURL = GetLocationURL();
+	int nIndex = CLoginDataManager::Find(strURL);
+	if (nIndex != -1) {
+		bool bSuccess = CLoginDataManager::DoAutoLogin(nIndex, m_spBrowser);
+	}
 }
 
 

@@ -20,7 +20,7 @@ using namespace std;
 /////////////////////////////////////////////
 // CLoginDataManager
 
-#define AUTOLOGINVERSION	_T("3.1")
+#define AUTOLOGINVERSION	_T("3.2")
 #define AUTOLOGINSHAREDMEMNAME	_T("DonutAutoLoginSharedMemName")
 
 // ’è‹`
@@ -97,6 +97,10 @@ bool CLoginDataManager::DoAutoLogin(int nIndex, IWebBrowser2* pBrowser)
 						} else if (strType == L"checkbox") {
 							CComBSTR	strName;
 							spInput->get_name(&strName);
+							if (strName == nullptr) {
+								CComQIPtr<IHTMLElement>	spInputElm = spInput;
+								spInputElm->get_id(&strName);
+							}
 							if (strName.m_str) {
 								auto it = mapCheck.find(WTL::CString(strName));
 								if (it != mapCheck.end()) {
@@ -408,11 +412,20 @@ BOOL	CLoginInfoEditDialog::OnInitDialog(CWindow wndFocus, LPARAM lInitParam)
 
 	m_bEnableAutoLogin = s_loginInfoData.bEnableAutoLogin;
 
-	_SetLoginInfoData();
-
+	DoDataExchange(DDX_LOAD);
 	for (auto it = s_loginInfoData.vecLoginInfo.cbegin(); it != s_loginInfoData.vecLoginInfo.cend(); ++it) {
 		m_UrlList.AddString(it->strLoginUrl);
 	}
+
+	if (::GetKeyState(VK_SHIFT) < 0) {
+		int nIndex = CLoginDataManager::Find(m_info.strLoginUrl);
+		if (nIndex != -1) {
+			m_info = s_loginInfoData.vecLoginInfo[nIndex];
+			m_UrlList.SetCurSel(nIndex);
+		}
+	}
+	_SetLoginInfoData();
+	
 	return 0;
 }
 
@@ -536,6 +549,35 @@ void CLoginInfoEditDialog::OnUrlListChange(UINT uNotifyCode, int nID, CWindow wn
 
 	m_info = s_loginInfoData.vecLoginInfo[nIndex];
 	_SetLoginInfoData();
+}
+
+
+void	CLoginInfoEditDialog::OnURLFilterKeyDown(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	CEdit editURLFilter = GetDlgItem(IDC_EDIT_URLFILTER);
+	if (GetFocus() == editURLFilter) {
+		if (s_loginInfoData.vecLoginInfo.empty())
+			return;
+
+		CString filterText = MtlGetWindowText(editURLFilter);
+		filterText.MakeLower();
+		int nIndex = m_UrlList.GetCurSel();
+		if (nIndex == -1) {
+			nIndex = 0;
+		} else {
+			++nIndex;
+			if (m_UrlList.GetCount() <= nIndex)
+				nIndex = 0;
+		}
+		int nCount = (int)s_loginInfoData.vecLoginInfo.size();
+		for (; nIndex < nCount; ++nIndex) {
+			if (s_loginInfoData.vecLoginInfo[nIndex].strLoginUrl.Find(filterText) != -1) {
+				m_UrlList.SetCurSel(nIndex);
+				OnUrlListChange(0, 0, NULL);
+				break;
+			}
+		}
+	}
 }
 
 

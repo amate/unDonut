@@ -2023,6 +2023,11 @@ void	CMainFrame::Impl::OnAutoLoginEdit(UINT uNotifyCode, int nID, CWindow wndCtl
 	LoginInfomation info;
 	HWND activeChildFrame = m_ChildFrameClient.GetActiveChildFrameWindow();
 	if (activeChildFrame) {
+		if (GetKeyState(VK_CONTROL) < 0) {
+			::PostMessage(activeChildFrame, WM_COMMAND, ID_DOAUTOLOGIN, 0);
+			return;
+		}
+
 		HANDLE hMapForClose = (HANDLE)::SendMessage(activeChildFrame, WM_GETLOGININFOMATION, NULL, 0);
 		ATLASSERT( hMapForClose );
 		CString sharedMemName;
