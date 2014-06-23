@@ -10,7 +10,6 @@ CChildFrame::Impl::Impl(CChildFrame* pChild) :
 	m_view(m_UIChange),
 	m_BingTranslatorMenu(pChild),
 	m_bNowActive(false),
-	m_bNowHilight(false),
 	m_bAutoHilight(false),
 	m_bExecutedNewWindow(false),
 	m_bCancelRButtonUp(false),
@@ -185,7 +184,7 @@ void	CChildFrame::Impl::OnBeforeNavigate2(IDispatch*		pDisp,
 			data.dwExStyle	= dwExStyle;
 			data.bLink	= true;
 			data.searchWord	= m_strSearchWord;
-			data.bAutoHilight= m_bNowHilight;
+			data.bAutoHilight = m_bAutoHilight;
 			data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
 			data.strNewWindowURL	= strURL;
 
@@ -459,7 +458,7 @@ void	CChildFrame::Impl::OnNewWindow3(IDispatch **ppDisp, bool& bCancel, DWORD dw
 	data.dwExStyle	= dwExStyle;
 	data.bLink	= true;
 	data.searchWord	= m_strSearchWord;
-	data.bAutoHilight= m_bNowHilight;
+	data.bAutoHilight = m_bAutoHilight;
 	data.dwThreadIdFromNewWindow = ::GetCurrentThreadId();
 	data.strNewWindowURL	= bstrUrl;
 
@@ -1333,7 +1332,7 @@ void	CChildFrame::Impl::OnTimer(UINT_PTR nIDEvent)
 			}
 			CString strWords = m_strSearchWord;
 			_DeleteMinimumHilightTextLengthWord(strWords);
-			m_bNowHilight = true;
+			m_bAutoHilight = true;
 			_HilightText(_T(""), false);
 			_HilightText(strWords, true);
 		}
@@ -1414,8 +1413,18 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 		cds.lpData = (LPVOID)formValue.GetBuffer(0);
 		cds.cbData = (formValue.GetLength() + 1) * sizeof(WCHAR);
 		GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
-		
+
 		m_strSearchWord = formValue;
+
+		if (m_bNowActive) {
+			COPYDATASTRUCT	cds;
+			cds.dwData = kSetSearchText;
+			CString str;
+			str.Format(_T("%d%s"), m_bAutoHilight, m_strSearchWord);
+			cds.lpData = (LPVOID)str.GetBuffer(0);
+			cds.cbData = (str.GetLength() + 1) * sizeof(WCHAR);
+			GetTopLevelWindow().SendMessage(WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+		}		
 	}
 
 	if (strURL.Left(30) == L"http://www.google.co.jp/search" || strURL.Left(31) == L"https://www.google.co.jp/search" ) {
@@ -1435,7 +1444,7 @@ LRESULT CChildFrame::Impl::OnDelayDocumentComplete(UINT uMsg, WPARAM wParam, LPA
 			}
 			CString strWords = m_strSearchWord;
 			_DeleteMinimumHilightTextLengthWord(strWords);
-			m_bNowHilight = true;
+			m_bAutoHilight = true;
 			_HilightText(strWords, true);
 		}
 	}
@@ -1506,7 +1515,7 @@ void	CChildFrame::Impl::OnChildFrameActivate(HWND hWndAct, HWND hWndDeact)
 		// ƒ^ƒu‚²‚Æ‚ÉŒŸõ•¶Žš—ñ‚ð•Û‘¶‚·‚é
 		if (m_pGlobalConfig->bSaveSearchWord) {
 			CString str;
-			str.Format(_T("%d%s"), m_bNowHilight, m_strSearchWord);
+			str.Format(_T("%d%s"), m_bAutoHilight, m_strSearchWord);
 			COPYDATASTRUCT cds;
 			cds.dwData	= kSetSearchText;
 			cds.lpData	= static_cast<LPVOID>(str.GetBuffer(0));
@@ -1832,7 +1841,7 @@ LRESULT CChildFrame::Impl::OnHilight(const CString& strKeyWord)
 {
 	bool bHilightSw = m_pGlobalConfig->bHilightSwitch;
 	CString strHilight = strKeyWord;
-	m_bNowHilight	= bHilightSw;
+	m_bAutoHilight = bHilightSw;
 	if (bHilightSw) {
 		m_strSearchWord = strHilight;
 		_DeleteMinimumHilightTextLengthWord(strHilight);

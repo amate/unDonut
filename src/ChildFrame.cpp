@@ -597,7 +597,6 @@ private:
 	int*	m_pThreadRefCount;
 	bool	m_bNowActive;
 	CString	m_strSearchWord;
-	bool	m_bNowHilight;
 	bool	m_bAutoHilight;
 	CString m_strStatusText;
 	bool	m_bExecutedNewWindow;	// for OnMButtonHook
