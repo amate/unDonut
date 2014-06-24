@@ -42,7 +42,6 @@
 
 #include "ScriptErrorCommandTargetImpl.h"
 #include "Misc.h"
-#include "option/DLControlOption.h"
 
 #pragma pack(push,_ATL_PACKING)
 namespace ATL
@@ -743,7 +742,7 @@ GetClientRect(&rect);
 			}
 			return ptScroll;
 		};
-		if (m_spViewObject && /*Misc::IsGpuRendering() &&*/ m_bWindowless)
+		if (m_spViewObject && m_bWindowless)
 		{
 			PAINTSTRUCT ps;
 			HDC hdc = ::BeginPaint(m_hWnd, &ps);
@@ -757,8 +756,6 @@ GetClientRect(&rect);
 			HBITMAP hBitmap = CreateCompatibleBitmap(hdc, rcClient.right - rcClient.left, rcClient.bottom - rcClient.top);
 			if (hBitmap != NULL)
 			{
-				bool bDraw = false;
-
 				HDC hdcCompatible = ::CreateCompatibleDC(hdc);
 				if (hdcCompatible != NULL)
 				{
@@ -771,53 +768,13 @@ GetClientRect(&rect);
 							FillRect(hdcCompatible, &rcClient, hbrBack);
 							DeleteObject(hbrBack);
 
-							if (CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_CASH) {
-								if (m_rcPrev != rcClient) {
-									bDraw = true;
-									m_rcPrev = rcClient;
-								} else {
-									CComQIPtr<IWebBrowser2>	spBrowser = m_spOleObject;
-									if (spBrowser) {
-										CComBSTR strUrl;
-										spBrowser->get_LocationURL(&strUrl);
-										if (strUrl && m_strUrlPrev != strUrl) {
-											bDraw = true;
-											m_strUrlPrev = strUrl;
-										} else {
-											CComPtr<IDispatch>	spDisp;
-											spBrowser->get_Document(&spDisp);
-											CComQIPtr<IHTMLDocument2> spDoc = spDisp;
-											if (spDoc) {
-												CPoint pt = funcGetScrollPosition(spDoc);
-												if (pt != m_ptScroll) {
-													bDraw = true;
-													m_ptScroll = pt;
-												}
-											}
-										}
-									}
-								}
-								if (bDraw == false) {
-									::SelectObject(hdcCompatible, m_bmpPrev);
-								} else {
-									m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, (RECTL*)&m_rcPos, NULL, NULL);
-								}
-							} else if (CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_ALWAYS) {
-								m_spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, hdcCompatible, (RECTL*)&m_rcPos, (RECTL*)&m_rcPos, NULL, NULL);
-							}
-
 							::BitBlt(hdc, 0, 0, rcClient.right, rcClient.bottom,  hdcCompatible, 0, 0, SRCCOPY);
 						}
 						::SelectObject(hdcCompatible, hBitmapOld);
 					}
 					::DeleteDC(hdcCompatible);
 				}
-				if (bDraw) {
-					if (m_bmpPrev.m_hBitmap)
-						m_bmpPrev.DeleteObject();
-					m_bmpPrev = hBitmap;
-				} else
-					::DeleteObject(hBitmap);
+				::DeleteObject(hBitmap);
 			}
 			::EndPaint(m_hWnd, &ps);
 		}

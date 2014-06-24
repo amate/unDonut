@@ -319,7 +319,7 @@ CPoint GetScrollPosition(CComQIPtr<IHTMLDocument2> spDoc2)
 // CChildFrame::Impl
 
 class CChildFrame::Impl :
-	public CDoubleBufferWindowImpl<CChildFrame::Impl>,
+	public CWindowImpl<CChildFrame::Impl>,
 	public CMessageFilter,
 	public IWebBrowserEvents2Impl<CChildFrame::Impl, ID_DONUTVIEW>,
 	public CWebBrowserCommandHandler<CChildFrame::Impl>,
@@ -392,7 +392,6 @@ public:
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	virtual void OnFinalMessage(HWND /*hWnd*/) { delete m_pParentChild;/*this;*/ }
 	void	searchEngines(const CString &strKeyWord);
-	void	DoPaint(CDCHandle dc);
 
 	// Message map
 	BEGIN_MSG_MAP( Impl )
@@ -485,7 +484,6 @@ public:
 
 		CHAIN_COMMANDS_MEMBER( m_view )
 		CHAIN_MSG_MAP_MEMBER( m_BingTranslatorMenu )
-		CHAIN_MSG_MAP( CDoubleBufferWindowImpl<CChildFrame::Impl> )
 		CHAIN_MSG_MAP( CWebBrowserCommandHandler<CChildFrame::Impl> )
 
 		if (uMsg == WM_COMMAND)

@@ -66,6 +66,7 @@
 #include "dialog\RenameFileDialog.h"
 #include "DonutScriptHost.h"
 #include "MultiThreadManager.h"
+#include "PageMoveConfirmDialogAutoClose.h"
 
 
 namespace {
@@ -413,6 +414,7 @@ private:
 	CDonutScriptHost	m_donutScriptHost;
 
 	CSharedMemory	m_sharedMemKeyMessage;
+	CPageMoveConfirmDialogAutoClose	m_pageMoveConfirmAutoClose;
 };
 
 #include "MainFrame.inl"

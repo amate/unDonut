@@ -87,3 +87,5 @@ private:
 	Impl* pImpl;
 };
 
+extern	class CMainFrame *		g_pMainWnd;
+

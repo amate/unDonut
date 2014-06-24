@@ -33,6 +33,7 @@ void	CVersionControl::Run()
 		case 9: _9to10();
 		case 10: _10to11();
 		case 11: _11to12();
+		case 12: _12to13();
 			break;
 		}
 	}
@@ -248,5 +249,11 @@ void	CVersionControl::_11to12()
 
 }
 
+
+void	CVersionControl::_12to13()
+{
+	CIniFileO	pr(g_szIniFileName, _T("Browser"));
+	pr.DeleteValue(_T("GPURenderStyle"));
+}
 
 

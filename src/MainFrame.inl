@@ -812,6 +812,9 @@ int		CMainFrame::Impl::OnCreate(LPCREATESTRUCT lpCreateStruct)
 	strSharedMemNameKeyMessage.Format(_T("DonutKeyMessageSharedMemName%#x"), m_hWnd);
 	m_sharedMemKeyMessage.CreateSharedMemory(strSharedMemNameKeyMessage, sizeof(MSG));
 
+	if (CDLControlOption::s_bAutoClosePageMoveConfirmDialog)
+		ATLVERIFY(m_pageMoveConfirmAutoClose.WatchStart());
+
 	TIMERSTOP(L"ƒƒCƒ“ƒtƒŒ[ƒ€‚ÌOnCreate‚É‚©‚©‚Á‚½ŠÔ");
 	return 0;
 }
@@ -952,6 +955,8 @@ void	CMainFrame::Impl::OnDestroy()
 	KillTimer(kAutoBackupTimerId);
 
 	m_sharedMemKeyMessage.CloseHandle();
+
+	m_pageMoveConfirmAutoClose.WatchStop();
 
 	RevokeDragDrop();
 

@@ -1044,60 +1044,6 @@ static int _Pack(int hi, int low)
 	return (nhi << 4) + nlow;
 }
 
-#if 1
-void	CChildFrame::Impl::DoPaint(CDCHandle dc)
-{
-	RECT rect;
-	GetClientRect(&rect);
-	dc.FillSolidRect(&rect, RGB(255, 255, 255));
-#if 0
-	CComPtr<IDispatch>	spDisp;
-	m_spBrowser->get_Document(&spDisp);
-	CComQIPtr<IHTMLDocument2>	spDoc = spDisp;
-	if (spDoc) {
-		CComVariant	vBgColor;
-		spDoc->get_bgColor(&vBgColor);
-		if (vBgColor.bstrVal) {
-			CString strCol = vBgColor.bstrVal;
-
-			COLORREF col = RGB(_Pack(strCol[1], strCol[2]) ,
-							   _Pack(strCol[3], strCol[4]) ,
-							   _Pack(strCol[5], strCol[6]) );
-			dc.FillSolidRect(&rect, col);
-			goto FINISH_FILL;
-		}
-	}
-	dc.FillSolidRect(&rect, RGB(255, 255, 255));
-FINISH_FILL:
-#endif
-	if (   m_bClosing 
-		|| m_spBrowser == nullptr 
-		|| Misc::IsGpuRendering() == false 
-		|| CDLControlOption::s_nGPURenderStyle == CDLControlOption::GPURENDER_NONE)
-		return ;
-#if 0
-	if (m_pPageBitmap) {
-		CMemoryDC	memDC(dc, rect);
-		memDC.SelectBitmap(*m_pPageBitmap);
-	}
-#endif
-#if 1
-	CComQIPtr<IViewObject>	spViewObject = m_spBrowser;
-	if (spViewObject == nullptr)
-		return ;
-
-	spViewObject->Draw(DVASPECT_CONTENT, -1, NULL, NULL, NULL, dc, (RECTL*)&rect, (RECTL*)&rect, NULL, NULL);
-#endif
-
-#if 0
-	if (m_bmpPage.IsNull())
-		return ;
-	CMemoryDC	memDC(dc, rect);
-	memDC.SelectBitmap(m_bmpPage);
-#endif
-}
-#endif
-
 // Message map
 
 

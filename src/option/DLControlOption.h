@@ -15,12 +15,11 @@ class CDLControlOption {
 public:
 	// DL Control Flags
 	enum { DLCTL_DEFAULT	= (DLCTL_DLIMAGES | DLCTL_VIDEOS | DLCTL_BGSOUNDS) };
-	enum { GPURENDER_NONE, GPURENDER_CASH, GPURENDER_ALWAYS };
 
 	static DWORD	s_dwDLControlFlags; 			// default flags		//+++ ref by MainFrame.cpp
 	static DWORD	s_dwExtendedStyleFlags; 								//+++ ref by DonutView.cpp
 	static bool		s_bUseDLManager;
-	static int		s_nGPURenderStyle;
+	static bool		s_bAutoClosePageMoveConfirmDialog;
 
 	static void		SetUserAgent();
 
@@ -68,6 +67,7 @@ private:
 	BOOL		m_bMouseGesture;
 	BOOL		m_bBlockMailto;
 	BOOL		m_bUseDLManager;
+	BOOL		m_bAutoClosePageMoveConfirmDialog;
 
 	bool		m_bInit;
 public:
@@ -91,8 +91,8 @@ public:
 		DDX_CHECK( IDC_CHK_BLOCK_MAILTO 		, m_bBlockMailto	)
 		DDX_CHECK( IDC_CHK_USER_AGENT	 		, m_bUserAgent		)	//+++
 		DDX_CHECK( IDC_CHK_DLMANAGER			, m_bUseDLManager	)
+		DDX_CHECK( IDC_CHK_AUTOCLOSEPAGEMOVECONFIRMDIALOG, m_bAutoClosePageMoveConfirmDialog )
 		DDX_TEXT_LEN( IDC_EDIT_USER_AGENT, m_strUserAgent, MAX_PATH )	// UDT DGSTR
-		DDX_RADIO( IDC_RADIO_NONE, s_nGPURenderStyle )
 	END_DDX_MAP()
 
 	// Constructor

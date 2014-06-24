@@ -3,7 +3,7 @@
 
 #pragma once
 
-#define LATESTVERSION	(12)
+#define LATESTVERSION	(13)
 
 ///////////////////////////////////////////////////////////////////
 // CVersionControl
@@ -30,6 +30,7 @@ private:
 	void	_9to10();
 	void	_10to11();
 	void	_11to12();
+	void	_12to13();
 };
 
 

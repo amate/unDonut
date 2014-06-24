@@ -1141,6 +1141,7 @@
     <ClInclude Include="option\UrlSecurityExPropDialog.h" />
     <ClInclude Include="option\UserDefinedCSSOption.h" />
     <ClInclude Include="option\UserDefinedJavascriptOption.h" />
+    <ClInclude Include="PageMoveConfirmDialogAutoClose.h" />
     <ClInclude Include="ParseInternetShortcutFile.h" />
     <ClInclude Include="PluginBar.h" />
     <ClInclude Include="PluginEventImpl.h" />
