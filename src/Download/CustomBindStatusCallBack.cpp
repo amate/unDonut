@@ -466,33 +466,29 @@ bool	CCustomBindStatusCallBack::_GetFileName()
 		CString temp = Misc::GetFileBaseName(m_pDLItem->strURL);
 		int nQIndex = temp.Find(_T('?'));
 		if (nQIndex != -1) {
-			::wcscpy_s(m_pDLItem->strFileName, temp.Left(nQIndex));	// "?"から右は無視する
-		} else {
-			// ファイル名を入れるとMAX_PATHを超えるので切り詰め処理をする
-			int filepathlength = m_strDefaultDLFolder.GetLength() + temp.GetLength() + 20;
-			if (filepathlength > MAX_PATH) {
-				int reducelength = MAX_PATH - filepathlength;
-				ATLASSERT( temp.GetLength() - reducelength > 0 );
-				CString filebasename = Misc::GetFileBaseNoExt(temp);
-				CString fileext = Misc::GetFileExt(temp);
-				temp = filebasename.Left(filebasename.GetLength() - reducelength);
-				if (fileext.GetLength() > 0)
-					temp += _T(".") + fileext;
-			}
-			::wcscpy_s(m_pDLItem->strFileName, temp);
+			temp = temp.Left(nQIndex);	// "?"から右は無視する
 		}
-
-		if (m_pDLItem->strFileName[0] == L'\0')
-			::wcscpy_s(m_pDLItem->strFileName, _T("index"));	// めったにないと思うけど一応
-
-		temp = m_pDLItem->strFileName;
 		temp.Replace(_T("%20"), _T(" "));
 		if (temp.Find(_T('%')) != -1) {	// URLデコードする
 			//vector<char> filename = Misc::urlstr_decode(m_pDLItem->strFileName);
-			::wcscpy_s(m_pDLItem->strFileName, Misc::urlstr_decodeJpn(m_pDLItem->strFileName, 3));//Misc::UnknownToCString(filename);
-		} else {
-			::wcscpy_s(m_pDLItem->strFileName, temp);
+			temp = Misc::urlstr_decodeJpn(temp, 3);//Misc::UnknownToCString(filename);
 		}
+
+		// ファイル名を入れるとMAX_PATHを超えるので切り詰め処理をする
+		int filepathlength = m_strDefaultDLFolder.GetLength() + temp.GetLength() + 4;
+		if (filepathlength > MAX_PATH) {
+			int reducelength = MAX_PATH - filepathlength;
+			ATLASSERT(temp.GetLength() - reducelength > 0);
+			CString filebasename = Misc::GetFileBaseNoExt(temp);
+			CString fileext = Misc::GetFileExt(temp);
+			temp = filebasename.Left(filebasename.GetLength() - reducelength);
+			if (fileext.GetLength() > 0)
+				temp += _T(".") + fileext;
+		}
+		::wcscpy_s(m_pDLItem->strFileName, temp);
+		if (m_pDLItem->strFileName[0] == L'\0')
+			::wcscpy_s(m_pDLItem->strFileName, _T("index"));	// めったにないと思うけど一応
+
 	}
 
 	// 拡張子がなければContent-Typeから得た拡張子を付け加える(※とりあえず画像のみ)
