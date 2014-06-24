@@ -225,6 +225,7 @@ enum RenderingMode {
 	kIE8mode = 8,
 	kIE9mode = 9,
 	kIE10mode = 10,
+	kIE11mode = 11,
 };
 
 std::pair<RenderingMode, bool>	GetRenderingModeAndForce();

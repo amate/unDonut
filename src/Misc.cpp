@@ -1444,6 +1444,12 @@ std::pair<RenderingMode, bool>	GetRenderingModeAndForce()
 			case 10000:			
 				mode = kIE10mode;
 				break;
+
+			// IE11mode
+			case 11001:
+				bForce = true;
+			case 11000:
+				mode = kIE11mode;
 			}
 		}
 	};
