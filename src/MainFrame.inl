@@ -839,6 +839,7 @@ void	CMainFrame::Impl::OnClose()
 		return ;
 
 	std::set<DWORD>	setChildProcessId;
+	setChildProcessId.insert(GetCurrentProcessId());
 	for (auto id : MultiThreadManager::g_vecChildProcessProcessThreadId)
 		setChildProcessId.insert(id.dwProcessId);
 	if ( CDonutConfirmOption::OnDonutExit(m_hWnd, setChildProcessId) == false ) {
