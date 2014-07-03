@@ -1161,6 +1161,8 @@ void	CMainFrame::Impl::_initBandPosition(HWND hWndCmdBar,
 	});
 	boost::for_each(vecReBarBandInfo, [this](const ReBarBandInfo& rbi) {
 		AddSimpleReBarBandCtrl(m_ReBar, rbi.hWnd, rbi.nID, nullptr, rbi.fStyle, rbi.cx);
+		if (rbi.fStyle & RBBS_HIDDEN)
+			::ShowWindow(rbi.hWnd, SW_HIDE);
 	});
 	m_ReBar.LockBands( (vecReBarBandInfo.front().fStyle & RBBS_NOGRIPPER) != 0 );
 	m_AddressBar.InitReBarBandInfo(m_ReBar);

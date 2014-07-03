@@ -4,6 +4,7 @@
  */
 #include "stdafx.h"
 #include "aboutdlg.h"
+#include <sdkddkver.h>
 #include "../MtlWin.h"
 #include "../MtlMisc.h"
 #include "../appconst.h"
@@ -16,10 +17,32 @@
 static char THIS_FILE[] = __FILE__;
 #endif
 
+#ifndef _WIN32_WINNT_WIN8
+#define _WIN32_WINNT_WIN8                   0x0602
+#endif
+#ifndef _WIN32_WINNT_WINBLUE
+#define _WIN32_WINNT_WINBLUE                0x0603
+#endif
 
 //使用する名前空間の定義
 
 using namespace WTL;
+
+namespace {
+
+bool IsVersion(WORD wMajorVersion, WORD wMinorVersion) 
+{
+	OSVERSIONINFOEXW osvi = { sizeof(osvi), 0, 0, 0, 0, { 0 }, 0, 0 };
+	DWORDLONG        const dwlConditionMask = VerSetConditionMask(
+		VerSetConditionMask(0, VER_MAJORVERSION, VER_EQUAL),
+		VER_MINORVERSION, VER_EQUAL);
+
+	osvi.dwMajorVersion = wMajorVersion;
+	osvi.dwMinorVersion = wMinorVersion;
+	return VerifyVersionInfoW(&osvi, VER_MAJORVERSION | VER_MINORVERSION, dwlConditionMask) != FALSE;
+}
+
+}	// namespace
 
 
 //以下実装
@@ -265,11 +288,23 @@ CString CAboutDlg::GetVersion()
 
 	::GetVersionEx(&osvi);
 
-	CString 	  strVersion;
-	strVersion.Format(_T("%d.%d.%d"), osvi.dwMajorVersion,
-					  osvi.dwMinorVersion,
-					  osvi.dwBuildNumber & 0xffff);
-	return strVersion;
+	if (osvi.dwMajorVersion == 6 && (osvi.dwMinorVersion == 2 || osvi.dwMinorVersion == 3)) {
+		if (IsVersion(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8))) {
+			return _T("6.2");
+		} else if (IsVersion(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE))) {
+			return _T("6.3");
+		} else {
+			CString strVersion;
+			strVersion.Format(_T("%d.%d"), osvi.dwMajorVersion, osvi.dwMinorVersion);
+			return strVersion;
+		}
+	} else {
+		CString 	  strVersion;
+		strVersion.Format(_T("%d.%d.%d"), osvi.dwMajorVersion,
+			osvi.dwMinorVersion,
+			osvi.dwBuildNumber & 0xffff);
+		return strVersion;
+	}
 }
 
 
@@ -400,14 +435,28 @@ CString CAboutDlg::GetOSName_Version6(OSVERSIONINFO &osvi)	//Vista,Windows7
 				return _T("Vista");
 		  #endif
 		} else if (osvi.dwMinorVersion == 1) {
-		  #if defined _WIN64
-			return _T("Windows7(x64)");
-		  #else
-			if ( Misc::IsWow64() )
-				return _T("Windows7(x64)");
+#if defined _WIN64
+			return _T("7(x64)");
+#else
+			if (Misc::IsWow64())
+				return _T("7(x64)");
 			else
-				return _T("Windows7");
-		  #endif
+				return _T("7");
+#endif
+		} else if (osvi.dwMinorVersion == 2 || osvi.dwMinorVersion == 3) {
+			if (IsVersion(HIBYTE(_WIN32_WINNT_WIN8), LOBYTE(_WIN32_WINNT_WIN8))) {
+				if (Misc::IsWow64())
+					return _T("8(x64)");
+				else
+					return _T("8");
+			} else if (IsVersion(HIBYTE(_WIN32_WINNT_WINBLUE), LOBYTE(_WIN32_WINNT_WINBLUE))) {
+				if (Misc::IsWow64())
+					return _T("8.1(x64)");
+				else
+					return _T("8.1");
+			} else {
+				return UNKNOWNCODE;
+			}
 		} else {
 			return UNKNOWNCODE;
 		}
