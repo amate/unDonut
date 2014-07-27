@@ -170,7 +170,7 @@ void	CDLListWindow::OnClose()
 	pr.SetValue(m_DLList.GetColumnWidth(0), _T("ColumnWidthURL"));
 
 	CString strPath = MtlGetWindowText(m_cmbDLFolder);
-	CDLOptions::_SavePathHistory(strPath, CDLOptions::s_vecImageDLFolderHistory);
+	CDLOptions::SavePathToHistory(strPath, CDLOptions::kImageDLFolderHistory);
 
 	pr.SetValue(m_cmbDLOption.GetCurSel(), _T("DLOption"));
 

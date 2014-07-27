@@ -34,6 +34,7 @@ void	CVersionControl::Run()
 		case 10: _10to11();
 		case 11: _11to12();
 		case 12: _12to13();
+		case 13: _13to14();
 			break;
 		}
 	}
@@ -256,4 +257,12 @@ void	CVersionControl::_12to13()
 	pr.DeleteValue(_T("GPURenderStyle"));
 }
 
+void	CVersionControl::_13to14()
+{
+	CIniFileIO	pr(GetConfigFilePath(_T("Download.ini")), _T("ImageDLFolderHistory"));
+	CString DLFinishSoundPath = pr.GetString(_T("DLFinishSoundFilePath"));
+	pr.DeleteValue(_T("DLFinishSoundFilePath"));
 
+	pr.ChangeSectionName(_T("Main"));
+	pr.SetString(DLFinishSoundPath, _T("DLFinishSoundFilePath"));
+}

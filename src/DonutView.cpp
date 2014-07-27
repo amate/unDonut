@@ -719,6 +719,7 @@ void	CDonutView::OnAutoRefreshNone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 {
 	m_dwAutoRefreshStyle = 0;
 	KillTimer(AutoRefreshTimerID);
+	m_UIChange.SetAutoRefreshStyle(m_dwAutoRefreshStyle);
 }
 
 void	CDonutView::OnAutoRefresh15sec(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)

@@ -110,7 +110,7 @@ void	SetDefaultToolBarButton(bool bLoadOnlyIndex = false)
 	}
 
 	static const int defaultBtns[] = { 0, 1, 2, 3, 4, 5, 51, 60, -1, 9, 10, -1, 12 };
-	CToolBarOption::s_vecShowBtn.insert(CToolBarOption::s_vecShowBtn.begin(), defaultBtns, defaultBtns + _countof(defaultBtns));
+	CToolBarOption::s_vecShowBtn.assign(std::begin(defaultBtns), std::end(defaultBtns));
 
 }
 
@@ -196,10 +196,15 @@ void CToolBarOption::GetProfile()
 				s_vecTBbtns.push_back(tbbtn);
 			}
 			nCount = pr.GetValuei(_T("button.count"));
-			for (int i = 0; i < nCount; ++i) {
-				CString strtemp;
-				strtemp.Format(_T("button%d.iBitmap"), i);
-				s_vecShowBtn.push_back(pr.GetValuei(strtemp));
+			if (nCount > 0) {
+				for (int i = 0; i < nCount; ++i) {
+					CString strtemp;
+					strtemp.Format(_T("button%d.iBitmap"), i);
+					s_vecShowBtn.push_back(pr.GetValuei(strtemp));
+				}
+			} else {
+				static const int defaultBtns[] = { 0, 1, 2, 3, 4, 5, 51, 60, -1, 9, 10, -1, 12 };
+				s_vecShowBtn.assign(std::begin(defaultBtns), std::end(defaultBtns));
 			}
 			s_dwToolbarStyle = pr.GetValue(_T("Std_ToolBar_Style"), STD_TBSTYLE_DEFAULT);
 			WriteProfileToolbar();	// VŒ`Ž®‚É‚µ‚Ä‚¨‚­

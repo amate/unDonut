@@ -43,7 +43,7 @@ struct CDLOptions
 	static CString	strImgDLFolderPath;
 	static DWORD	dwImgExStyle;
 
-	enum { kMaxHistory = 15 };
+	enum { kMaxHistory = 30 };
 	static vector<CString>	s_vecDLFolderHistory;
 	static vector<CString>	s_vecImageDLFolderHistory;
 
@@ -60,6 +60,8 @@ struct CDLOptions
 
 		strImgDLFolderPath  = pr.GetString(_T("ImgDLFolder"), strDLFolderPath);
 		dwImgExStyle		= pr.GetValue(_T("ImgExStyle"), DLO_OVERWRITEPROMPT);
+
+		s_strDLFinishSoundFilePath = pr.GetString(_T("DLFinishSoundFilePath"));
 
 		s_vecDLFolderHistory.clear();
 		pr.ChangeSectionName(_T("DLFolderHistory"));
@@ -82,8 +84,6 @@ struct CDLOptions
 				break;
 			s_vecImageDLFolderHistory.push_back(strFolder);
 		}
-
-		s_strDLFinishSoundFilePath = pr.GetString(_T("DLFinishSoundFilePath"));
 	}
 
 	static void	SaveProfile()
@@ -99,39 +99,47 @@ struct CDLOptions
 		pr.SetString(strImgDLFolderPath, _T("ImgDLFolder"));
 		pr.SetValue(dwImgExStyle, _T("ImgExStyle"));
 
-		{
-			pr.ChangeSectionName(_T("DLFolderHistory"));
-			int nCount = (int)s_vecDLFolderHistory.size();
-			for (int i = 0; i < nCount; ++i) {
-				CString strName;
-				strName.Append(i);
-				pr.SetString(s_vecDLFolderHistory[i], strName);
-			}
-		}
-		{
-			pr.ChangeSectionName(_T("ImageDLFolderHistory"));
-			int nCount = (int)s_vecImageDLFolderHistory.size();
-			for (int i = 0; i < nCount; ++i) {
-				CString strName;
-				strName.Append(i);
-				pr.SetString(s_vecImageDLFolderHistory[i], strName);
-			}
-		}
-
 		pr.SetString(s_strDLFinishSoundFilePath, _T("DLFinishSoundFilePath"));
 	}
 
-	static void _SavePathHistory(CString strPath, vector<CString>& vecPathHistory)
+	enum SaveTargetFolderHistory { kDLFolderHistory, kImageDLFolderHistory };
+
+	static void SavePathToHistory(CString strPath, SaveTargetFolderHistory kTarget)
 	{
+		vector<CString>* pvecHistory = nullptr;
+		LPCTSTR saveSectionName = nullptr;
+		switch (kTarget) {
+		case kDLFolderHistory:
+			pvecHistory = &s_vecDLFolderHistory;
+			saveSectionName = _T("DLFolderHistory");
+			break;
+
+		case kImageDLFolderHistory:
+			pvecHistory = &s_vecImageDLFolderHistory;
+			saveSectionName = _T("ImageDLFolderHistory");
+			break;
+
+		default:
+			ATLASSERT(FALSE);
+			return;
+		}
 		MTL::MtlMakeSureTrailingBackSlash(strPath);
-		int nCount = (int)vecPathHistory.size();
-		for (int i = 0; i < nCount; ++i) {
-			if (strPath == vecPathHistory[i]) {	// d•¡‚Ìíœ
-				vecPathHistory.erase(vecPathHistory.begin() + i);
+		for (auto it = pvecHistory->begin(); it != pvecHistory->end(); ++it) {
+			if (strPath == *it) {	// d•¡‚Ìíœ
+				pvecHistory->erase(it);
 				break;
 			}
 		}
-		vecPathHistory.insert(vecPathHistory.begin(), strPath);
+		pvecHistory->insert(pvecHistory->begin(), strPath);
+
+		CIniFileO pr(s_DLIniFilePath, saveSectionName);
+		pr.DeleteSection();
+		int nCount = (int)pvecHistory->size();
+		for (int i = 0; i < nCount; ++i) {
+			CString strName;
+			strName.Append(i);
+			pr.SetString(pvecHistory->at(i), strName);
+		}
 	}
 
 	static void PlaySoundDLFinish()
@@ -234,8 +242,8 @@ public:
 		}
 
 		/* —š—ð‚Ì•Û‘¶ */
-		_SavePathHistory(strDLFolderPath, s_vecDLFolderHistory);
-		_SavePathHistory(strImgDLFolderPath, s_vecImageDLFolderHistory);
+		SavePathToHistory(strDLFolderPath, kDLFolderHistory);
+		SavePathToHistory(strImgDLFolderPath, kImageDLFolderHistory);
 
 
 		if (m_nRadioImg == 0)

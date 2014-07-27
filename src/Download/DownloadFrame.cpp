@@ -160,7 +160,7 @@ LRESULT CDownloadFrame::OnSetDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 	if (strPath.IsEmpty() == FALSE) {
 		MTL::MtlMakeSureTrailingBackSlash(strPath);
 		CDLOptions::strDLFolderPath	   = strPath;
-		CDLOptions::_SavePathHistory(strPath, CDLOptions::s_vecDLFolderHistory);
+		CDLOptions::SavePathToHistory(strPath, CDLOptions::kDLFolderHistory);
 		CDLOptions::SaveProfile();
 	}
 	return 0;
@@ -180,7 +180,7 @@ LRESULT CDownloadFrame::OnAppAbout(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hW
 {
 	//CAboutDlg dlg;
 	//dlg.DoModal();
-	MessageBox(_T("　　　version 3.3　　　"), _T("DownloadManager"));
+	MessageBox(_T("　　　version 3.4　　　"), _T("DownloadManager"));
 	return 0;
 }
 
