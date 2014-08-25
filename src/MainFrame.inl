@@ -317,7 +317,8 @@ CMainFrame::Impl::Impl() :
 	m_ExplorerBar(m_SplitterWindow),
 	m_hWndRestoreFocus(NULL),
 	m_bFullScreen(false),
-	m_donutScriptHost(this)
+	m_donutScriptHost(this),
+	m_bInitProcessFinished(false)
 {
 	GdiplusInit();
 }
@@ -438,6 +439,8 @@ void	CMainFrame::Impl::SaveAllTab()
 		MessageBox(_T("SaveAllTabでエラー発生!"));
 	}
 }
+
+
 
 void	CMainFrame::Impl::UserOpenFile(LPCTSTR url, DWORD openFlags /*= DonutGetStdOpenFlag()*/, 
 									   DWORD DLCtrl /*= -1*/, 
@@ -712,7 +715,28 @@ bool CMainFrame::Impl::OnDDEOpenFile(const CString& strFileName)
 			dwOpen |= D_OPENFILE_NOSETFOCUS;
 	}
 
-	UserOpenFile( strFileName, dwOpen );
+	if (m_bInitProcessFinished == false && m_deqNewChildFrameData.size() > 0) {
+		auto pNewData = std::make_unique<NewChildFrameData>(m_ChildFrameClient.m_hWnd);
+
+		CString strFileOrURL = strFileName;
+		if (MtlIsExt(strFileOrURL, _T(".url")) && ::PathFileExists(strFileOrURL)) {
+			DWORD dwExProp = 0xAAAAAA;		//+++ 初期値変更
+			DWORD dwExProp2 = 0x8;			//+++ 拡張プロパティを増設.
+			if (CExProperty::CheckExPropertyFlag(dwExProp, dwExProp2, strFileOrURL)) {
+				CExProperty  ExProp(CDLControlOption::s_dwDLControlFlags, CDLControlOption::s_dwExtendedStyleFlags, 0, dwExProp, dwExProp2);
+				pNewData->dwDLCtrl = ExProp.GetDLControlFlags();
+				pNewData->dwExStyle = ExProp.GetExtendedStyleFlags();
+				pNewData->dwAutoRefresh = ExProp.GetAutoRefreshFlag();
+			}
+			ATLVERIFY(MTL::ParseInternetShortcutFile(strFileOrURL));
+		}
+		pNewData->strURL = strFileOrURL;
+		pNewData->bActive = dwOpen & D_OPENFILE_ACTIVATE != 0;
+		m_deqNewChildFrameData.push_back(std::move(pNewData));
+
+	} else {
+		UserOpenFile(strFileName, dwOpen);
+	}
 	if (CStartUpOption::s_bActivateOnExternalOpen) {
 		_DeleteTrayIcon();							//+++ トレイ状態だったら復活.
 		if (IsZoomed() == FALSE)
@@ -1662,8 +1686,7 @@ BOOL	CMainFrame::Impl::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 /// コマンドラインを実行する
 void	CMainFrame::Impl::OnInitProcessFinished(bool bHome)
 {
-	static bool s_bInit = false;
-	if (s_bInit == false) {
+	if (m_bInitProcessFinished == false) {
 		extern CString g_commandline;	// Donut.cppにある
 		if (bHome) {
 			m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>());
@@ -1686,7 +1709,7 @@ void	CMainFrame::Impl::OnInitProcessFinished(bool bHome)
 		if (CMainOption::s_dwMainExtendedStyle & MAIN_EX_BACKUP)
 			SetTimer(kAutoBackupTimerId, CMainOption::s_dwBackUpTime * 60000);
 
-		s_bInit = true;
+		m_bInitProcessFinished = true;
 	}
 }
 
@@ -2895,9 +2918,17 @@ void	CMainFrame::Impl::_NewDonutInstance(const CString& strURL)
 		OnDDEOpenFile(vecUrl.front());
 
 	} else if (vecUrl.size() > 1) {
-		for (auto it = vecUrl.cbegin(); it !=  vecUrl.cend(); ++it) {
-			std::unique_ptr<NewChildFrameData>	item(new NewChildFrameData(m_ChildFrameClient));
-			item->strURL	= *it;
+		for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
+			std::unique_ptr<NewChildFrameData>    item(new NewChildFrameData(m_ChildFrameClient));
+			item->strURL = *it;
+			m_deqNewChildFrameData.push_back(std::move(item));
+		}
+		OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
+
+		m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>());
+		for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
+			std::unique_ptr<NewChildFrameData>    item(new NewChildFrameData(m_ChildFrameClient));
+			item->strURL = *it;
 			m_deqNewChildFrameData.push_back(std::move(item));
 		}
 		OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);

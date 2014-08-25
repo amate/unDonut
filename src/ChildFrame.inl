@@ -2081,7 +2081,7 @@ void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
 		return ;
 	}
 
-	if (nID == ID_SPECIAL_HOME || ID_SPECIAL_END) {
+	if (nID == ID_SPECIAL_HOME || nID == ID_SPECIAL_END) {
 		auto funcGetHTMLWindowOnCursorPos = [](CPoint& pt, IHTMLDocument3* pDoc) -> CComPtr<IHTMLWindow2> {
 			HRESULT hr = S_OK;
 			CComQIPtr<IHTMLDocument2>	spDoc2 = pDoc;
@@ -2177,33 +2177,39 @@ void	CChildFrame::Impl::OnSpecialKeys(UINT uNotifyCode, int nID, CWindow wndCtl)
 			}
 
 			if (nID == ID_SPECIAL_HOME)
-				spWindow->scrollBy(0, -300000);
+				spWindow->scrollBy(0, -1000000000L);
 			else if (nID == ID_SPECIAL_END)
-				spWindow->scrollBy(0, +300000);
+				spWindow->scrollBy(0, +1000000000L);
 		} else {
 			CComQIPtr<IHTMLDocument2>	spDocument2 = spDocument;
 			spDocument2->get_parentWindow(&spWindow);
 			ATLASSERT(spWindow);
 			if (nID == ID_SPECIAL_HOME)
-				spWindow->scrollBy(0, -300000);
+				spWindow->scrollBy(0, -1000000000L);
 			else if (nID == ID_SPECIAL_END)
-				spWindow->scrollBy(0, +300000);
+				spWindow->scrollBy(0, +1000000000L);
 		}
 	} else {
 		m_view.SetFocus();
 
-		INPUT	inputs[2] = { 0 };
-		inputs[0].type		= INPUT_KEYBOARD;
-		inputs[0].ki.wVk	= nCode;
-		inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[0].ki.dwFlags= 0;
-		inputs[1].type		= INPUT_KEYBOARD;
-		inputs[1].ki.wVk	= nCode;
-		inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
-		inputs[1].ki.dwFlags= KEYEVENTF_KEYUP;
-		SendInput(2, inputs, sizeof(INPUT));
+		//INPUT	inputs[2] = {};
+		//inputs[0].type		= INPUT_KEYBOARD;
+		//inputs[0].ki.wVk	= nCode;
+		////inputs[0].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		//inputs[0].ki.dwFlags= KEYEVENTF_EXTENDEDKEY;
+		//inputs[0].ki.dwExtraInfo = ::GetMessageExtraInfo();
 
-		//PostMessage(WM_KEYDOWN, nCode, 0);
+		//inputs[1].type		= INPUT_KEYBOARD;
+		//inputs[1].ki.wVk	= nCode;
+		////inputs[1].ki.wScan	= ::MapVirtualKey(nCode, 0);
+		//inputs[1].ki.dwFlags = KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP;
+		//inputs[1].ki.dwExtraInfo = ::GetMessageExtraInfo();
+
+		//SendInput(2, inputs, sizeof(INPUT));
+
+		m_view.SendMessageToDescendants(WM_KEYDOWN, nCode, 0);
+		m_view.SendMessageToDescendants(WM_KEYUP, nCode, 0);
+
 	}
 }
 
@@ -3531,10 +3537,14 @@ BOOL CChildFrame::Impl::_FindKeyWordOne(IHTMLDocument2* pDocument, const CString
 		if ( FAILED(hr) )
 			return;
 
+		CComQIPtr<IHTMLElement2>	spElm2 = pElem;
+		if (spElm2 == nullptr)
+			return;
+
 		long		height = 0;
 		long		width = 0;
-		hr	= pElem->get_offsetHeight(&height); 	// HTML•\Ž¦—Ìˆæ‚Ì‚‚³
-		hr  = pElem->get_offsetWidth(&width);
+		hr = spElm2->get_clientHeight(&height); 	// HTML•\Ž¦—Ìˆæ‚Ì‚‚³
+		hr = spElm2->get_clientWidth(&width);
 		if ( FAILED(hr) )
 			return;
 

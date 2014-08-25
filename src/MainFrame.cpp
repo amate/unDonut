@@ -415,6 +415,7 @@ private:
 
 	CSharedMemory	m_sharedMemKeyMessage;
 	CPageMoveConfirmDialogAutoClose	m_pageMoveConfirmAutoClose;
+	bool			m_bInitProcessFinished;
 };
 
 #include "MainFrame.inl"
