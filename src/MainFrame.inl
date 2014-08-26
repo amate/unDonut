@@ -2924,14 +2924,6 @@ void	CMainFrame::Impl::_NewDonutInstance(const CString& strURL)
 			m_deqNewChildFrameData.push_back(std::move(item));
 		}
 		OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
-
-		m_deqNewChildFrameData.push_back(std::unique_ptr<NewChildFrameData>());
-		for (auto it = vecUrl.cbegin(); it != vecUrl.cend(); ++it) {
-			std::unique_ptr<NewChildFrameData>    item(new NewChildFrameData(m_ChildFrameClient));
-			item->strURL = *it;
-			m_deqNewChildFrameData.push_back(std::move(item));
-		}
-		OnDDEOpenFile(m_deqNewChildFrameData[0]->strURL);
 	}
 }
 

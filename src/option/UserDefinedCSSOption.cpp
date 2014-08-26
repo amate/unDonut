@@ -92,7 +92,7 @@ void CUserDefinedCSSOption::SaveUserCSSConfig()
 		}
 		CString strUserDefinedCSSConfig = GetConfigFilePath(_T("UserDefinedCSSConfig.xml"));
 		std::wstringstream	strstream;
-		write_xml(strstream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+		write_xml(strstream, pt, xml_writer_make_settings<std::wstring>(L' ', 2, widen<std::wstring>("UTF-8")));
 
 		FILE* fp = nullptr;
 		if (_wfopen_s(&fp, strUserDefinedCSSConfig, L"w, ccs=UTF-8") != 0) 

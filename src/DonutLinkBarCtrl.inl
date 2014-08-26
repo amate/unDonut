@@ -1255,7 +1255,7 @@ void	CDonutLinkBarCtrl::Impl::_SaveLinkBookmark()
 					_AddPtree(pt.add(L"LinkBookmark", L""), &m_BookmarkList, &s_bCancel);
 
 					filestream.imbue(std::locale(std::locale(), new std::codecvt_utf8_utf16<wchar_t>));
-					write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));
+					write_xml(filestream, pt, xml_writer_make_settings<std::wstring>(L' ', 2, widen<std::wstring>("UTF-8")));
 					filestream.close();
 					::MoveFileEx(tempPath, LinkBookmarkFilePath, MOVEFILE_REPLACE_EXISTING);
 

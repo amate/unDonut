@@ -248,7 +248,7 @@ void CToolBarOption::WriteProfileToolbar()
 			ptItem.add(L"<xmlattr>.command", it->idCommand);
 			ptItem.add(L"<xmlattr>.style", it->fsStyle);
 		}
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("Shift_JIS")));
+		write_xml(filestream, pt, xml_writer_make_settings<std::wstring>(L' ', 2, widen<std::wstring>("UTF-8")));
 
 	} catch (...) {
 		MessageBox(NULL, _T("ツールバーの設定保存に失敗"), NULL, NULL);
@@ -274,7 +274,7 @@ void CToolBarOption::WriteProfileToolbarShowButton()
 			wptree& ptButton = ptToolBarShowButton.add(L"button", L"");
 			ptButton.add(L"<xmlattr>.index", *it);
 		}
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("Shift_JIS")));
+		write_xml(filestream, pt, xml_writer_make_settings<std::wstring>(L' ', 2, widen<std::wstring>("UTF-8")));
 
 	} catch (...) {
 		MessageBox(NULL, _T("現在表示中のツールバーの状態を保存できませんでした"), NULL, NULL);

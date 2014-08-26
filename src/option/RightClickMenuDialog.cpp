@@ -413,7 +413,7 @@ void	CCustomContextMenuOption::WriteProfile()
 		WriteAllMenuItem(s_menuHoldLeftButton, ptCustomContextMenu.add(L"CONTEXT_MENU_HOLDLEFTBUTTON", L""));
 		WriteAllMenuItem(s_menuTabItem		, ptCustomContextMenu.add(L"CONTEXT_MENU_TABITEM", L""));
 
-		write_xml(filestream, pt, xml_writer_make_settings(L' ', 2, widen<wchar_t>("UTF-8")));	
+		write_xml(filestream, pt, xml_writer_make_settings<std::wstring>(L' ', 2, widen<std::wstring>("UTF-8")));
 	} catch (...) {
 		MessageBox(NULL, _T("カスタムコンテキストメニューの設定保存に失敗"), NULL, NULL);
 	}
