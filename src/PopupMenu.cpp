@@ -19,6 +19,7 @@
 #include "ChildFrame.h"
 #include "MainFrame.h"
 #include "DonutTabList.h"
+#include "MtlFile.h"
 
 using namespace boost::property_tree;
 
@@ -802,20 +803,22 @@ void	CRootFavoritePopupMenu::LinkExportToFolder(LPCTSTR folder, bool bOverWrite)
 	funcAddLinkFile = [&](LPCTSTR folder, LinkFolderPtr pFolder) {
 		for (auto it = pFolder->begin(); it != pFolder->end(); ++it) {
 			LinkItem& item = *it->get();
+			CString itemName = item.strName;
+			MtlValidateFileName(itemName, _T(" "));
 			if (item.pFolder) {
 				CString strNewFolder = folder;
-				strNewFolder += item.strName;
+				strNewFolder += itemName;
 				MtlMakeSureTrailingBackSlash(strNewFolder);
 				CreateDirectory(strNewFolder, NULL);
 				funcAddLinkFile(strNewFolder, item.pFolder);
 
 			} else {
 				CString LinkFilePath = folder;
-				LinkFilePath += item.strName + _T(".url");
+				LinkFilePath += itemName + _T(".url");
 				if (bOverWrite == false) {
 					int i = 0;
 					while (::PathFileExists(LinkFilePath)) {
-						LinkFilePath.Format(_T("%s%s(%d).url"), folder, item.strName, i);
+						LinkFilePath.Format(_T("%s%s(%d).url"), folder, itemName, i);
 						++i;
 					}
 				}

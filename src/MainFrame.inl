@@ -731,7 +731,7 @@ bool CMainFrame::Impl::OnDDEOpenFile(const CString& strFileName)
 			ATLVERIFY(MTL::ParseInternetShortcutFile(strFileOrURL));
 		}
 		pNewData->strURL = strFileOrURL;
-		pNewData->bActive = dwOpen & D_OPENFILE_ACTIVATE != 0;
+		pNewData->bActive = (dwOpen & D_OPENFILE_ACTIVATE) != 0;
 		m_deqNewChildFrameData.push_back(std::move(pNewData));
 
 	} else {

@@ -97,17 +97,17 @@ inline bool MtlIsProtocol(const CString &strPath, const CString &strProSrc)
 
 
 /// ファイル作成時の無効な文字を置換する
-inline void MtlValidateFileName(CString &strName)
+inline void MtlValidateFileName(CString &strName, LPCTSTR replaceChar = _T("-"))
 {
-	strName.Replace( _T("\\"), _T("-") );
-	strName.Replace( _T("/" ), _T("-") );
-	strName.Replace( _T(":" ), _T("-") );
-	strName.Replace( _T("*" ), _T("-") );
-	strName.Replace( _T("?" ), _T("-") );
-	strName.Replace( _T("\""), _T("-") );
-	strName.Replace( _T("<" ), _T("-") );
-	strName.Replace( _T(">" ), _T("-") );
-	strName.Replace( _T("|" ), _T("-") );
+	strName.Replace( _T("\\"), replaceChar );
+	strName.Replace( _T("/" ), replaceChar );
+	strName.Replace( _T(":" ), replaceChar );
+	strName.Replace( _T("*" ), replaceChar );
+	strName.Replace( _T("?" ), replaceChar );
+	strName.Replace( _T("\""), replaceChar );
+	strName.Replace( _T("<" ), replaceChar );
+	strName.Replace( _T(">" ), replaceChar );
+	strName.Replace( _T("|" ), replaceChar );
 }
 
 /// 有効なファイル名ならtrueを返す

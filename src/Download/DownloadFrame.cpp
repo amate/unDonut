@@ -170,7 +170,7 @@ LRESULT CDownloadFrame::OnSetDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /
 /// DL先フォルダを開く
 LRESULT CDownloadFrame::OnOpenDLFolder(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/, BOOL& /*bHandled*/)
 {
-	::ShellExecute(NULL, NULL, CDLOptions::strDLFolderPath, NULL, NULL, SW_NORMAL);
+	HINSTANCE ret = ::ShellExecute(m_hWnd, NULL, CDLOptions::strDLFolderPath, NULL, NULL, SW_NORMAL);
 	return 0;
 }
 
