@@ -457,6 +457,9 @@ public:
 
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_BACK1   , ID_VIEW_BACK9	, OnViewBackX	)
 		COMMAND_RANGE_HANDLER_EX( ID_VIEW_FORWARD1, ID_VIEW_FORWARD9, OnViewForwardX)
+
+		// タブバーから
+		COMMAND_ID_HANDLER_EX( ID_TAB_CLONE	, OnTabClone )
 		
 		// 検索バーから
 		USER_MSG_WM_CHILDFRAMEFINDKEYWORD	( OnFindKeyWord 	)
@@ -548,6 +551,9 @@ public:
 
 	// ウィンドウ
 	void 	OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
+
+	// タブバーから
+	void	OnTabClone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/);
 
 	// 検索バーから
 	LRESULT OnHilight(const CString& strKeyWord);

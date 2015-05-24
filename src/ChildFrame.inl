@@ -1780,6 +1780,16 @@ void 	CChildFrame::Impl::OnFileClose(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*
 	PostMessage(WM_CLOSE);
 }
 
+// タブバーから
+void	CChildFrame::Impl::OnTabClone(WORD /*wNotifyCode*/, WORD /*wID*/, HWND /*hWndCtl*/)
+{
+	CString url = GetLocationURL();
+	std::vector<CString> vecUrl;
+	vecUrl.emplace_back(url);
+	auto pair = CreateMultiText(vecUrl);
+	OpenMultiUrl(pair, m_hWnd);
+}
+
 // 検索バーから
 
 /// ハイライト
