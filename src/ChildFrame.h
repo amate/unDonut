@@ -148,6 +148,7 @@ public:
 	static void	AsyncCreate(NewChildFrameData& data);
 
 	HWND	CreateChildFrame(const NewChildFrameData& data, int* pThreadRefCount);
+	void	InitChildFrame(const NewChildFrameData& data);
 
 	HWND	GetHwnd() const;
 

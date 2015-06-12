@@ -318,6 +318,7 @@ public:
 	void	OnSpecialRefreshSearchEngine(UINT uNotifyCode, int nID, CWindow wndCtl) {
 		m_SearchBar.RefreshEngine();
 	}
+	void	OnMainFrameMiniMaximize(UINT uNotifyCode, int nID, CWindow wndCtl);
 
 	LRESULT OnShowToolBarMenu();
 	void	OnShowBandTextChange(bool bShow);

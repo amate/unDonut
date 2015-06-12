@@ -710,7 +710,11 @@ HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRe
 	RECT rc;
 	::GetClientRect(data.hWndParent, &rc);
 	HWND hWndChildFrame = pImpl->Create(data.hWndParent, rc, NULL, WS_CHILD /*| WS_VISIBLE*/ | WS_CLIPSIBLINGS);
+	return hWndChildFrame;
+}
 
+void	CChildFrame::InitChildFrame(const NewChildFrameData& data)
+{
 	pImpl->SetDLCtrl(data.dwDLCtrl);
 	pImpl->SetExStyle(data.dwExStyle);
 
@@ -722,7 +726,6 @@ HWND	CChildFrame::CreateChildFrame(const NewChildFrameData& data, int* pThreadRe
 	else
 		pImpl->m_strDelayLoadURL = data.strURL;
 	pImpl->OnTitleChange(data.strTitle);
-	return hWndChildFrame;
 }
 
 HWND	CChildFrame::GetHwnd() const

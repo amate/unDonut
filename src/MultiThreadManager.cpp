@@ -91,6 +91,7 @@ int	RunChildFrameMessageLoop(const NewChildFrameData& NewChildData)
 
 	//if (NewChildData.strURL.GetLength() > 0)
 	//	pData->pChild->Navigate2(NewChildData.strURL);
+	pChild->InitChildFrame(NewChildData);
 
 	CThreadRefManager threadRefManager(&nThreadRefCount);
 	theLoop.AddMessageFilter(&threadRefManager);

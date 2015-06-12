@@ -126,6 +126,9 @@ BEGIN_MSG_MAP_EX_impl( CMainFrame::Impl )
 	// Special Command
 	COMMAND_ID_HANDLER_EX( ID_RECENT_DOCUMENT	, OnMenuRecentLast		)
 	COMMAND_ID_HANDLER_EX( ID_SPECIAL_REFRESH_SEARCHENGIN, OnSpecialRefreshSearchEngine	)
+	COMMAND_ID_HANDLER_EX(ID_MAINFRAME_MINIMIZE, OnMainFrameMiniMaximize)
+	COMMAND_ID_HANDLER_EX(ID_MAINFRAME_MAXIMIZE, OnMainFrameMiniMaximize)
+	
 
 	USER_MSG_WM_SHOW_TOOLBARMENU( OnShowToolBarMenu )
 	USER_MSG_WM_SHOW_BAND_TEXT_CHANGE( OnShowBandTextChange	)
@@ -2419,6 +2422,21 @@ void	CMainFrame::Impl::OnAuthorWebSite(UINT uNotifyCode, int nID, CWindow wndCtl
 	UserOpenFile( strSite, DonutGetStdOpenFlag() );
 }
 
+void	CMainFrame::Impl::OnMainFrameMiniMaximize(UINT uNotifyCode, int nID, CWindow wndCtl)
+{
+	switch (nID) {
+	case ID_MAINFRAME_MINIMIZE:
+		ShowWindow(SW_MINIMIZE);
+		break;
+
+	case ID_MAINFRAME_MAXIMIZE:
+		ShowWindow(SW_MAXIMIZE);
+		break;
+
+	default:
+		ATLASSERT(FALSE);
+	}
+}
 
 /// メインメニューの [表示]-[ツールバー]を表示する
 LRESULT CMainFrame::Impl::OnShowToolBarMenu()
