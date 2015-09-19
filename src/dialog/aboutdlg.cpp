@@ -101,7 +101,7 @@ LRESULT CAboutDlg::OnInitDialog(UINT /*uMsg*/, WPARAM /*wParam*/, LPARAM /*lPara
 	lf.SetMenuFont();
 	m_wndEdit.SetFont(lf.CreateFontIndirect());
 
-	if (IsCompositionEnabled()) {
+	if (Misc::Is10later() == false && IsCompositionEnabled()) {
 		MARGINS m = {-1};
 		CRect rcEdit;
 		CRect rcWindow;
@@ -325,6 +325,8 @@ CString CAboutDlg::GetOSName()
 		return GetOSName_Version5(osvi);
 	} else if (osvi.dwMajorVersion == 6) {
 		return GetOSName_Version6(osvi);
+	} else if (osvi.dwMajorVersion == 10) {
+		return GetOSName_Version10(osvi);
 	} else {
 		return UNKNOWNCODE;
 	}
@@ -464,3 +466,23 @@ CString CAboutDlg::GetOSName_Version6(OSVERSIONINFO &osvi)	//Vista,Windows7
 		return UNKNOWNCODE;
 	}
 }
+
+CString 	CAboutDlg::GetOSName_Version10(OSVERSIONINFO &osvi)
+{
+	if (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) {
+		if (osvi.dwMinorVersion == 0) {
+#if defined _WIN64
+			return _T("10(x64)");
+#else
+			if (Misc::IsWow64()) {
+				return _T("10(x64)");
+			} else {
+				return _T("10");
+		}
+#endif
+		}
+	}
+	return UNKNOWNCODE;
+}
+
+

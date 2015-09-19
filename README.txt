@@ -28,8 +28,8 @@ serializationとthreadを利用しています
  https://sites.google.com/site/boostjp/howtobuild
 コマンドライン
 // x86
-b2.exe install -j2 --prefix=lib toolset=msvc-12.0 runtime-link=static --with-thread --with-date_time --with-serialization
+b2.exe install -j4 --prefix=lib toolset=msvc-14.0 runtime-link=static --with-thread --with-date_time --with-serialization
 // x64
-b2.exe install -j2 --prefix=lib64 toolset=msvc-12.0 runtime-link=static address-model=64 --with-thread --with-date_time --with-serialization
+b2.exe install -j4 --prefix=lib64 toolset=msvc-14.0 runtime-link=static address-model=64 --with-thread --with-date_time --with-serialization
 
 

@@ -233,6 +233,7 @@ std::pair<RenderingMode, bool>	GetRenderingModeAndForce();
 unsigned getIEMejourVersion();		//+++
 bool	IsGpuRendering();
 bool	IsVistalater();
+bool	Is10later();
 
 
 // ==========================================================================

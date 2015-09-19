@@ -2499,9 +2499,9 @@ void	CMainFrame::Impl::OnTabCreate(HWND hWndChildFrame, DWORD dwOption)
 	}
 	m_TabBar.OnMDIChildCreate(hWndChildFrame, (dwOption & TAB_ACTIVE) != 0);
 	
-	//if ( _check_flag(m_view.m_ViewOption.m_dwExStyle, DVS_EX_OPENNEWWIN)) {
-	//	m_MDITab.NavigateLockTab(m_hWnd, true);
-	//}
+	if (dwOption & TAB_LOCK) {
+		m_TabBar.NavigateLockTab(hWndChildFrame, true);
+	}
 	if (m_deqNewChildFrameData.size() > 0) {
 		m_deqNewChildFrameData.pop_front();
 		if (m_deqNewChildFrameData.size() > 0) {

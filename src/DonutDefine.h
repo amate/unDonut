@@ -422,6 +422,7 @@ struct _EXPROP_ARGS {
 enum TabCreateOption {
 	TAB_ACTIVE	= 0x01,
 	TAB_LINK	= 0x02,
+	TAB_LOCK	= 0x04,
 };
 #define WM_TABCREATE	(WM_USER + 101)
 #define USER_MSG_WM_TABCREATE(func)	\

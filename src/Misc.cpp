@@ -1531,6 +1531,13 @@ bool	IsVistalater()
 	return osvi.dwMajorVersion >= 6;
 }
 
+bool	Is10later()
+{
+	OSVERSIONINFO osvi = { sizeof(OSVERSIONINFO) };
+	::GetVersionEx(&osvi);
+	return osvi.dwMajorVersion >= 10;
+}
+
 
 
 /** +++ XP以降で使える、osヒープ取得で、フラグメンテーションを少なくするモードへの設定.

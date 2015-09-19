@@ -21,6 +21,7 @@
 #include "option\KeyBoardDialog.h"
 #include "option\UrlSecurityOption.h"
 #include "AutoLogin.h"
+#include "ExStyle.h"
 
 namespace {
 
@@ -70,29 +71,33 @@ private:
 
 int	RunChildFrameMessageLoop(const NewChildFrameData& NewChildData)
 {
+#if 1
 	::CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
 	::OleInitialize(NULL);
 
 	CMessageLoop theLoop;
 	_Module.AddMessageLoop(&theLoop);
-
+#endif
 	// ChildFrameウィンドウ作成
 	CChildFrame* pChild = new CChildFrame;
 	int	nThreadRefCount = 0;
 	CWindow wnd = pChild->CreateChildFrame(NewChildData, &nThreadRefCount);
+
+	//if (NewChildData.strURL.GetLength() > 0)
+	//	pData->pChild->Navigate2(NewChildData.strURL);
+	pChild->InitChildFrame(NewChildData);
 
 	DWORD dwOption = 0;
 	if (NewChildData.bActive)
 		dwOption |= TAB_ACTIVE;
 	if (NewChildData.bLink)
 		dwOption |= TAB_LINK;
+	if (NewChildData.dwExStyle & DVS_EX_OPENNEWWIN)
+		dwOption |= TAB_LOCK;
 	CWindow wndMainFrame = wnd.GetTopLevelWindow();
 	wndMainFrame.SendMessage(WM_TABCREATE, (WPARAM)wnd.m_hWnd, (LPARAM)dwOption);
 
-	//if (NewChildData.strURL.GetLength() > 0)
-	//	pData->pChild->Navigate2(NewChildData.strURL);
-	pChild->InitChildFrame(NewChildData);
-
+#if 1
 	CThreadRefManager threadRefManager(&nThreadRefCount);
 	theLoop.AddMessageFilter(&threadRefManager);
 
@@ -106,6 +111,8 @@ int	RunChildFrameMessageLoop(const NewChildFrameData& NewChildData)
 	::CoUninitialize();
 
 	return nRet;
+#endif
+	return 0;
 }
 
 }	// namespace
@@ -119,6 +126,7 @@ class CMainProcessChildFrameThreadManager
 public:
 	DWORD	CreateChildFrameThread(const NewChildFrameData& data)
 	{
+#if 1
 		DWORD dwThreadID;
 		HANDLE hThread = ::CreateThread(NULL, 0, RunChildFrameThread, (LPVOID)new NewChildFrameData(data), 0, &dwThreadID);
 		if(hThread == NULL) {
@@ -128,6 +136,9 @@ public:
 		::CloseHandle(hThread);
 
 		return dwThreadID;
+#endif
+		//RunChildFrameThread((LPVOID)new NewChildFrameData(data));
+		return 0;
 	}
 
 private:

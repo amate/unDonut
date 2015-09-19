@@ -55,7 +55,8 @@ public:
 	CString 	GetOSName_Version3(OSVERSIONINFO &osvi);	//NT3.51
 	CString 	GetOSName_Version4(OSVERSIONINFO &osvi);	//95 98 Me NT4
 	CString 	GetOSName_Version5(OSVERSIONINFO &osvi);	//2000 XP 2003Server
-	CString 	GetOSName_Version6(OSVERSIONINFO &osvi);	//Vista
+	CString 	GetOSName_Version6(OSVERSIONINFO &osvi);	//Vista 7 8 8.1
+	CString 	GetOSName_Version10(OSVERSIONINFO &osvi);	//10
 
 private:
 	void	_subclassWindows(HWND hWndChild);
