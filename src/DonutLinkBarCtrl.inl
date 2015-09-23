@@ -178,6 +178,9 @@ void	CDonutLinkBarCtrl::Impl::LinkExportToFolder(LPCTSTR folder)
 // Overrides
 void CDonutLinkBarCtrl::Impl::DoPaint(CDCHandle dc)
 {
+	if (m_bLoading)
+		return;
+
 	HWND	hWnd = GetParent();
 	CPoint	pt;
 	MapWindowPoints(hWnd, &pt, 1);

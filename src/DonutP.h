@@ -3,11 +3,11 @@
 /* this ALWAYS GENERATED file contains the definitions for the interfaces */
 
 
- /* File created by MIDL compiler version 8.00.0603 */
-/* at Sat Sep 19 21:25:03 2015
+ /* File created by MIDL compiler version 7.00.0555 */
+/* at Sat Sep 19 22:31:54 2015
  */
 /* Compiler settings for DonutP.idl:
-    Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 8.00.0603 
+    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
@@ -48,35 +48,30 @@
 #ifndef __IAPI_FWD_DEFINED__
 #define __IAPI_FWD_DEFINED__
 typedef interface IAPI IAPI;
-
 #endif 	/* __IAPI_FWD_DEFINED__ */
 
 
 #ifndef __IAPI2_FWD_DEFINED__
 #define __IAPI2_FWD_DEFINED__
 typedef interface IAPI2 IAPI2;
-
 #endif 	/* __IAPI2_FWD_DEFINED__ */
 
 
 #ifndef __IAPI3_FWD_DEFINED__
 #define __IAPI3_FWD_DEFINED__
 typedef interface IAPI3 IAPI3;
-
 #endif 	/* __IAPI3_FWD_DEFINED__ */
 
 
 #ifndef __IAPI4_FWD_DEFINED__
 #define __IAPI4_FWD_DEFINED__
 typedef interface IAPI4 IAPI4;
-
 #endif 	/* __IAPI4_FWD_DEFINED__ */
 
 
 #ifndef __IDonutPEvents_FWD_DEFINED__
 #define __IDonutPEvents_FWD_DEFINED__
 typedef interface IDonutPEvents IDonutPEvents;
-
 #endif 	/* __IDonutPEvents_FWD_DEFINED__ */
 
 
@@ -171,7 +166,6 @@ EXTERN_C const IID IID_IAPI;
             /* [retval][out] */ long *pVal) = 0;
         
     };
-    
     
 #else 	/* C style interface */
 
@@ -475,7 +469,6 @@ EXTERN_C const IID IID_IAPI2;
             BOOL bOff) = 0;
         
     };
-    
     
 #else 	/* C style interface */
 
@@ -888,7 +881,6 @@ EXTERN_C const IID IID_IAPI3;
             /* [retval][out] */ long *pVal) = 0;
         
     };
-    
     
 #else 	/* C style interface */
 
@@ -1338,7 +1330,6 @@ EXTERN_C const IID IID_IAPI4;
             /* [retval][out] */ LONG_PTR *pVal) = 0;
         
     };
-    
     
 #else 	/* C style interface */
 

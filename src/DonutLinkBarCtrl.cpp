@@ -6,6 +6,7 @@
 #include "stdafx.h"
 #include "DonutLinkBarCtrl.h"
 #include <codecvt>
+#include <atomic>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <boost/thread.hpp>
@@ -195,7 +196,7 @@ private:
 	CToolTipCtrl	m_tip;
 	CString			m_strTipText;
 
-	bool			m_bLoading;
+	std::atomic_bool	m_bLoading;
 	boost::thread	m_thread_load;
 	boost::thread	m_thread_save;
 };

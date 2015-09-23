@@ -1190,12 +1190,19 @@ BOOL	CChildFrame::Impl::OnCopyData(CWindow wnd, PCOPYDATASTRUCT pCopyDataStruct)
 			boost::archive::text_wiarchive	ar(ss);
 			ar >> data;
 		
-			if (data.dwDLCtrl != -1)
-				SetDLCtrl(data.dwDLCtrl);
-			if (data.dwExStyle != -1)
-				SetExStyle(data.dwExStyle);
-			if (data.dwAutoRefresh)
+			if (data.dwDLCtrl == -1) {
+				data.dwDLCtrl = _GetInheritedDLCtrlFlags();
+			}
+			SetDLCtrl(data.dwDLCtrl);
+
+			if (data.dwExStyle == -1) {
+				data.dwExStyle = _GetInheritedExStyleFlags();
+			}
+			SetExStyle(data.dwExStyle);
+
+			if (data.dwAutoRefresh) {
 				SetAutoRefreshStyle(data.dwAutoRefresh);
+			}
 			Navigate2(data.strURL);
 		}
 		break;
